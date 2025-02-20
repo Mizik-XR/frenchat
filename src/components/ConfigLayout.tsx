@@ -26,6 +26,7 @@ export const ConfigLayout = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [isConfigured, setIsConfigured] = useState(false);
 
   useEffect(() => {
     initializeClient();
@@ -33,7 +34,6 @@ export const ConfigLayout = () => {
 
   const initializeClient = async () => {
     try {
-      // Vérifier si le client existe déjà
       let { data: existingClient } = await supabase
         .from("clients")
         .select()
@@ -41,7 +41,6 @@ export const ConfigLayout = () => {
         .single();
 
       if (!existingClient) {
-        // Créer le client s'il n'existe pas
         const { data: newClient, error: clientError } = await supabase
           .from("clients")
           .insert([{ name: DEFAULT_CLIENT_EMAIL }])
@@ -54,7 +53,6 @@ export const ConfigLayout = () => {
 
       setClientId(existingClient.id);
 
-      // Charger les paramètres existants
       const { data: settings } = await supabase
         .from("settings")
         .select()
@@ -68,6 +66,9 @@ export const ConfigLayout = () => {
           microsoftClientId: settings.microsoft_client_id || "",
           microsoftTenantId: settings.microsoft_tenant_id || "",
         });
+        setIsConfigured(
+          Boolean(settings.google_client_id && settings.microsoft_client_id)
+        );
       }
     } catch (error: any) {
       console.error("Erreur d'initialisation:", error);
@@ -91,7 +92,6 @@ export const ConfigLayout = () => {
 
     setIsLoading(true);
     try {
-      // Sauvegarder les paramètres
       const { error: settingsError } = await supabase
         .from("settings")
         .upsert({
@@ -104,6 +104,7 @@ export const ConfigLayout = () => {
 
       if (settingsError) throw settingsError;
 
+      setIsConfigured(true);
       toast({
         title: "Succès",
         description: "Configuration sauvegardée avec succès",
@@ -122,13 +123,15 @@ export const ConfigLayout = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8 slide-up">
+        <div className="text-center mb-8">
           <Settings className="mx-auto h-12 w-12 text-gray-400" />
           <h2 className="mt-4 text-3xl font-bold text-gray-900">
             Configuration CNXRIA
           </h2>
           <p className="mt-2 text-gray-600">
-            Configurez vos identifiants API pour Google Drive et Microsoft Teams
+            {isConfigured
+              ? "Vos identifiants API sont configurés"
+              : "Configurez vos identifiants API pour commencer"}
           </p>
         </div>
 

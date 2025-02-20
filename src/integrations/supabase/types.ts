@@ -111,7 +111,7 @@ export type Database = {
           client_id: string | null
           content: string | null
           created_at: string | null
-          document_type: Database["public"]["Enums"]["document_type"]
+          document_type: string
           external_id: string | null
           id: string
           metadata: Json | null
@@ -122,7 +122,7 @@ export type Database = {
           client_id?: string | null
           content?: string | null
           created_at?: string | null
-          document_type: Database["public"]["Enums"]["document_type"]
+          document_type: string
           external_id?: string | null
           id?: string
           metadata?: Json | null
@@ -133,7 +133,7 @@ export type Database = {
           client_id?: string | null
           content?: string | null
           created_at?: string | null
-          document_type?: Database["public"]["Enums"]["document_type"]
+          document_type?: string
           external_id?: string | null
           id?: string
           metadata?: Json | null
