@@ -1,7 +1,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Credentials } from "../types/config";
+import { Credentials } from "@/types/config";
 
 interface GoogleDriveConfigProps {
   credentials: Credentials;
