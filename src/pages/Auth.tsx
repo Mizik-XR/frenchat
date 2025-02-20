@@ -28,10 +28,10 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: isSignUp ? "Account created" : "Welcome back!",
+        title: isSignUp ? "Compte créé" : "Bon retour !",
         description: isSignUp 
-          ? "Please check your email to verify your account."
-          : "You have been successfully logged in.",
+          ? "Veuillez vérifier votre email pour activer votre compte."
+          : "Vous êtes maintenant connecté.",
       });
 
       if (!isSignUp) {
@@ -39,7 +39,7 @@ const Auth = () => {
       }
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Erreur",
         description: error.message,
         variant: "destructive",
       });
@@ -53,19 +53,19 @@ const Auth = () => {
       <Card className="max-w-md w-full space-y-8 p-8 glass-panel">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            {isSignUp ? "Create an account" : "Welcome back"}
+            {isSignUp ? "Créer un compte" : "Bienvenue"}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             {isSignUp 
-              ? "Sign up to access the document management system"
-              : "Sign in to access your documents"}
+              ? "Inscrivez-vous pour accéder au système de gestion documentaire"
+              : "Connectez-vous pour accéder à vos documents"}
           </p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="email">Email address</Label>
+              <Label htmlFor="email">Adresse email</Label>
               <Input
                 id="email"
                 type="email"
@@ -73,11 +73,11 @@ const Auth = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-field"
-                placeholder="Enter your email"
+                placeholder="Entrez votre email"
               />
             </div>
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Mot de passe</Label>
               <Input
                 id="password"
                 type="password"
@@ -85,7 +85,7 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="input-field"
-                placeholder="Enter your password"
+                placeholder="Entrez votre mot de passe"
               />
             </div>
           </div>
@@ -102,10 +102,10 @@ const Auth = () => {
                 <LogIn className="w-4 h-4 mr-2" />
               )}
               {isLoading
-                ? "Processing..."
+                ? "Traitement en cours..."
                 : isSignUp
-                ? "Sign Up"
-                : "Sign In"}
+                ? "S'inscrire"
+                : "Se connecter"}
             </Button>
           </div>
 
@@ -116,8 +116,8 @@ const Auth = () => {
               className="text-sm text-blue-600 hover:text-blue-800"
             >
               {isSignUp
-                ? "Already have an account? Sign in"
-                : "Don't have an account? Sign up"}
+                ? "Déjà un compte ? Connectez-vous"
+                : "Pas encore de compte ? Inscrivez-vous"}
             </button>
           </div>
         </form>
