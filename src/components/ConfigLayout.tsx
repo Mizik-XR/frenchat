@@ -3,10 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
-import { Settings, Save, LogOut } from "lucide-react";
-import { useAuth } from "./AuthProvider";
+import { Settings, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Credentials {
@@ -16,8 +15,9 @@ export interface Credentials {
   microsoftTenantId: string;
 }
 
+const DEFAULT_CLIENT_EMAIL = "client@cnxria.com";
+
 export const ConfigLayout = () => {
-  const { user, signOut } = useAuth();
   const [credentials, setCredentials] = useState<Credentials>({
     googleClientId: "",
     googleApiKey: "",
@@ -25,56 +25,92 @@ export const ConfigLayout = () => {
     microsoftTenantId: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [clientId, setClientId] = useState<string | null>(null);
 
-  const handleSave = async () => {
-    setIsLoading(true);
+  useEffect(() => {
+    initializeClient();
+  }, []);
+
+  const initializeClient = async () => {
     try {
-      // Get or create client
-      const { data: clientData, error: clientError } = await supabase
+      // Vérifier si le client existe déjà
+      let { data: existingClient } = await supabase
         .from("clients")
-        .insert([{ name: user?.email }])
         .select()
+        .eq("name", DEFAULT_CLIENT_EMAIL)
         .single();
 
-      if (clientError && clientError.code !== "23505") { // Ignore unique violation
-        throw clientError;
+      if (!existingClient) {
+        // Créer le client s'il n'existe pas
+        const { data: newClient, error: clientError } = await supabase
+          .from("clients")
+          .insert([{ name: DEFAULT_CLIENT_EMAIL }])
+          .select()
+          .single();
+
+        if (clientError) throw clientError;
+        existingClient = newClient;
       }
 
-      // Get the client (either newly created or existing)
-      const { data: existingClient } = await supabase
-        .from("clients")
+      setClientId(existingClient.id);
+
+      // Charger les paramètres existants
+      const { data: settings } = await supabase
+        .from("settings")
         .select()
-        .eq("name", user?.email)
+        .eq("client_id", existingClient.id)
         .single();
 
-      const clientId = existingClient?.id;
-
-      // Update profile with client_id if not set
-      await supabase
-        .from("profiles")
-        .upsert({
-          id: user?.id,
-          client_id: clientId,
-          full_name: user?.email
+      if (settings) {
+        setCredentials({
+          googleClientId: settings.google_client_id || "",
+          googleApiKey: settings.google_api_key || "",
+          microsoftClientId: settings.microsoft_client_id || "",
+          microsoftTenantId: settings.microsoft_tenant_id || "",
         });
+      }
+    } catch (error: any) {
+      console.error("Erreur d'initialisation:", error);
+      toast({
+        title: "Erreur d'initialisation",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
-      // Save settings
+  const handleSave = async () => {
+    if (!clientId) {
+      toast({
+        title: "Erreur",
+        description: "Client non initialisé",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Sauvegarder les paramètres
       const { error: settingsError } = await supabase
         .from("settings")
         .upsert({
           client_id: clientId,
-          ...credentials
+          google_client_id: credentials.googleClientId,
+          google_api_key: credentials.googleApiKey,
+          microsoft_client_id: credentials.microsoftClientId,
+          microsoft_tenant_id: credentials.microsoftTenantId
         });
 
       if (settingsError) throw settingsError;
 
       toast({
-        title: "Success",
-        description: "Credentials saved successfully",
+        title: "Succès",
+        description: "Configuration sauvegardée avec succès",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Erreur",
         description: error.message,
         variant: "destructive",
       });
@@ -86,24 +122,13 @@ export const ConfigLayout = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        <div className="flex justify-end mb-4">
-          <Button
-            variant="outline"
-            onClick={signOut}
-            className="hover-scale"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
-        </div>
-
         <div className="text-center mb-8 slide-up">
           <Settings className="mx-auto h-12 w-12 text-gray-400" />
           <h2 className="mt-4 text-3xl font-bold text-gray-900">
-            Configuration
+            Configuration CNXRIA
           </h2>
           <p className="mt-2 text-gray-600">
-            Enter your API credentials to connect with Google Drive and Microsoft Teams
+            Configurez vos identifiants API pour Google Drive et Microsoft Teams
           </p>
         </div>
 
@@ -120,11 +145,11 @@ export const ConfigLayout = () => {
                     setCredentials({ ...credentials, googleClientId: e.target.value })
                   }
                   className="input-field"
-                  placeholder="Enter Google Client ID"
+                  placeholder="Entrez votre Google Client ID"
                 />
               </div>
               <div>
-                <Label htmlFor="googleApiKey">API Key</Label>
+                <Label htmlFor="googleApiKey">Clé API</Label>
                 <Input
                   id="googleApiKey"
                   value={credentials.googleApiKey}
@@ -132,7 +157,7 @@ export const ConfigLayout = () => {
                     setCredentials({ ...credentials, googleApiKey: e.target.value })
                   }
                   className="input-field"
-                  placeholder="Enter Google API Key"
+                  placeholder="Entrez votre Google API Key"
                   type="password"
                 />
               </div>
@@ -151,7 +176,7 @@ export const ConfigLayout = () => {
                     setCredentials({ ...credentials, microsoftClientId: e.target.value })
                   }
                   className="input-field"
-                  placeholder="Enter Microsoft Client ID"
+                  placeholder="Entrez votre Microsoft Client ID"
                 />
               </div>
               <div>
@@ -163,7 +188,7 @@ export const ConfigLayout = () => {
                     setCredentials({ ...credentials, microsoftTenantId: e.target.value })
                   }
                   className="input-field"
-                  placeholder="Enter Microsoft Tenant ID"
+                  placeholder="Entrez votre Microsoft Tenant ID"
                   type="password"
                 />
               </div>
@@ -177,7 +202,7 @@ export const ConfigLayout = () => {
               disabled={isLoading}
             >
               <Save className="w-4 h-4 mr-2" />
-              {isLoading ? "Saving..." : "Save Credentials"}
+              {isLoading ? "Sauvegarde..." : "Sauvegarder"}
             </Button>
           </div>
         </Card>
