@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
-import { Settings, Save } from "lucide-react";
+import { Settings, Save, LogOut } from "lucide-react";
+import { useAuth } from "./AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Credentials {
   googleClientId: string;
@@ -15,32 +17,86 @@ export interface Credentials {
 }
 
 export const ConfigLayout = () => {
+  const { user, signOut } = useAuth();
   const [credentials, setCredentials] = useState<Credentials>({
     googleClientId: "",
     googleApiKey: "",
     microsoftClientId: "",
     microsoftTenantId: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = async () => {
+    setIsLoading(true);
     try {
-      // TODO: Implement Supabase integration for saving credentials
+      // Get or create client
+      const { data: clientData, error: clientError } = await supabase
+        .from("clients")
+        .insert([{ name: user?.email }])
+        .select()
+        .single();
+
+      if (clientError && clientError.code !== "23505") { // Ignore unique violation
+        throw clientError;
+      }
+
+      // Get the client (either newly created or existing)
+      const { data: existingClient } = await supabase
+        .from("clients")
+        .select()
+        .eq("name", user?.email)
+        .single();
+
+      const clientId = existingClient?.id;
+
+      // Update profile with client_id if not set
+      await supabase
+        .from("profiles")
+        .upsert({
+          id: user?.id,
+          client_id: clientId,
+          full_name: user?.email
+        });
+
+      // Save settings
+      const { error: settingsError } = await supabase
+        .from("settings")
+        .upsert({
+          client_id: clientId,
+          ...credentials
+        });
+
+      if (settingsError) throw settingsError;
+
       toast({
         title: "Success",
         description: "Credentials saved successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to save credentials",
+        description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            onClick={signOut}
+            className="hover-scale"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
+
         <div className="text-center mb-8 slide-up">
           <Settings className="mx-auto h-12 w-12 text-gray-400" />
           <h2 className="mt-4 text-3xl font-bold text-gray-900">
@@ -118,9 +174,10 @@ export const ConfigLayout = () => {
             <Button
               onClick={handleSave}
               className="hover-scale"
+              disabled={isLoading}
             >
               <Save className="w-4 h-4 mr-2" />
-              Save Credentials
+              {isLoading ? "Saving..." : "Save Credentials"}
             </Button>
           </div>
         </Card>
