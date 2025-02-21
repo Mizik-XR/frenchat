@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
@@ -185,8 +184,6 @@ export const Chat = () => {
           webUIConfig={webUIConfig}
           onWebUIConfigChange={handleWebUIConfigChange}
           onProviderChange={handleProviderChange}
-          onGDriveConfig={handleGDriveConfig}
-          onTeamsConfig={handleTeamsConfig}
         />
       )}
 

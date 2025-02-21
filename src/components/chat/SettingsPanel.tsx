@@ -1,26 +1,25 @@
 
-import { Cloud, Key } from "lucide-react";
+import { Cloud, Key, Settings } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AIProvider, WebUIConfig } from "@/types/chat";
 import { AIProviderSelect } from "./AIProviderSelect";
+import { useNavigate } from "react-router-dom";
 
 interface SettingsPanelProps {
   webUIConfig: WebUIConfig;
   onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
   onProviderChange: (provider: AIProvider) => void;
-  onGDriveConfig: () => void;
-  onTeamsConfig: () => void;
 }
 
 export const SettingsPanel = ({
   webUIConfig,
   onWebUIConfigChange,
   onProviderChange,
-  onGDriveConfig,
-  onTeamsConfig,
 }: SettingsPanelProps) => {
+  const navigate = useNavigate();
+
   return (
     <Card className="absolute top-16 right-4 z-10 p-4 w-80 bg-white/95 backdrop-blur-sm shadow-xl border border-blue-100 rounded-xl">
       <div className="space-y-6">
@@ -68,23 +67,15 @@ export const SettingsPanel = ({
         </div>
 
         <div>
-          <h3 className="font-medium text-gray-800 border-b pb-2 mb-4">Intégrations externes</h3>
+          <h3 className="font-medium text-gray-800 border-b pb-2 mb-4">Configuration des APIs</h3>
           <div className="space-y-3">
             <Button 
               variant="outline" 
               className="w-full justify-start" 
-              onClick={onGDriveConfig}
+              onClick={() => navigate('/config')}
             >
-              <Cloud className="h-4 w-4 mr-2" />
-              Configurer Google Drive
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start" 
-              onClick={onTeamsConfig}
-            >
-              <Key className="h-4 w-4 mr-2" />
-              Configurer Microsoft Teams
+              <Settings className="h-4 w-4 mr-2" />
+              Configurer les APIs
             </Button>
           </div>
         </div>

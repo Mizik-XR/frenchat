@@ -1,15 +1,17 @@
 
-import { Chat } from "@/components/Chat";
-import "./App.css";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Index } from "@/pages/Index";
+import { Config } from "@/pages/Config";
+import { NotFound } from "@/pages/NotFound";
 
-function App() {
+export default function App() {
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <Chat />
-      </div>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/config" element={<Config />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
   );
 }
-
-export default App;
