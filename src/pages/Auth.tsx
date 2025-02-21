@@ -1,42 +1,67 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { LogIn, UserPlus } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Mail, Key, UserPlus, LogIn } from "lucide-react";
 
-const Auth = () => {
+export default function Auth() {
+  const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    if (password !== confirmPassword) {
+      toast({
+        title: "Erreur",
+        description: "Les mots de passe ne correspondent pas",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      const { error } = isSignUp 
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) throw error;
-
-      toast({
-        title: isSignUp ? "Compte créé" : "Bon retour !",
-        description: isSignUp 
-          ? "Veuillez vérifier votre email pour activer votre compte."
-          : "Vous êtes maintenant connecté.",
+      setLoading(true);
+      const { error: signUpError, data: { user } } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
       });
 
-      if (!isSignUp) {
-        navigate("/");
+      if (signUpError) throw signUpError;
+
+      // Créer le profil utilisateur
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: user.id,
+              email: email,
+              full_name: fullName,
+            }
+          ]);
+
+        if (profileError) throw profileError;
       }
+
+      toast({
+        title: "Inscription réussie",
+        description: "Veuillez vérifier votre email pour confirmer votre compte",
+      });
     } catch (error: any) {
       toast({
         title: "Erreur",
@@ -44,86 +69,207 @@ const Auth = () => {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
+    }
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      navigate("/chat");
+      toast({
+        title: "Connexion réussie",
+        description: "Bienvenue !",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email envoyé",
+        description: "Vérifiez votre boîte mail pour vous connecter",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="max-w-md w-full space-y-8 p-8 glass-panel">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            {isSignUp ? "Créer un compte" : "Bienvenue"}
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {isSignUp 
-              ? "Inscrivez-vous pour accéder au système de gestion documentaire"
-              : "Connectez-vous pour accéder à vos documents"}
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md p-6 space-y-6 shadow-xl">
+        <Tabs defaultValue="signin" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="signin">Connexion</TabsTrigger>
+            <TabsTrigger value="signup">Inscription</TabsTrigger>
+          </TabsList>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="email">Adresse email</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
-                placeholder="Entrez votre email"
-              />
-            </div>
-            <div>
-              <Label htmlFor="password">Mot de passe</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input-field"
-                placeholder="Entrez votre mot de passe"
-              />
-            </div>
-          </div>
+          <TabsContent value="signin">
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="signin-email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="signin-email"
+                    type="email"
+                    placeholder="votre@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
 
-          <div>
-            <Button
-              type="submit"
-              className="w-full hover-scale"
-              disabled={isLoading}
-            >
-              {isSignUp ? (
-                <UserPlus className="w-4 h-4 mr-2" />
-              ) : (
+              <div className="space-y-2">
+                <Label htmlFor="signin-password">Mot de passe</Label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="signin-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading}
+              >
                 <LogIn className="w-4 h-4 mr-2" />
-              )}
-              {isLoading
-                ? "Traitement en cours..."
-                : isSignUp
-                ? "S'inscrire"
-                : "Se connecter"}
-            </Button>
-          </div>
+                {loading ? "Connexion..." : "Se connecter"}
+              </Button>
 
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm text-blue-600 hover:text-blue-800"
-            >
-              {isSignUp
-                ? "Déjà un compte ? Connectez-vous"
-                : "Pas encore de compte ? Inscrivez-vous"}
-            </button>
-          </div>
-        </form>
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">Ou</span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleMagicLink}
+                disabled={loading}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Connexion avec un lien magique
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="signup">
+            <form onSubmit={handleSignUp} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="signup-name">Nom complet</Label>
+                <Input
+                  id="signup-name"
+                  type="text"
+                  placeholder="Jean Dupont"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="votre@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-password">Mot de passe</Label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirmer le mot de passe</Label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                {loading ? "Création..." : "Créer un compte"}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
       </Card>
     </div>
   );
-};
-
-export default Auth;
+}
