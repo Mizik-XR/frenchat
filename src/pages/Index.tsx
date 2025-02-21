@@ -1,6 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
-import { Settings } from "lucide-react";
+import { Settings, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Index() {
@@ -16,13 +16,24 @@ export default function Index() {
         <p className="text-gray-600">
           Pour commencer, configurez vos accès aux API Google Drive et Microsoft Teams.
         </p>
-        <Button 
-          onClick={() => navigate('/config')}
-          size="lg"
-          className="w-full sm:w-auto"
-        >
-          Configurer les API
-        </Button>
+        <div className="space-y-4">
+          <Button 
+            onClick={() => navigate('/config')}
+            size="lg"
+            className="w-full sm:w-auto"
+          >
+            Configurer les API
+          </Button>
+          <Button 
+            onClick={() => navigate('/chat')}
+            size="lg"
+            variant="secondary"
+            className="w-full sm:w-auto"
+          >
+            <MessageCircle className="mr-2" />
+            Accéder au Chat
+          </Button>
+        </div>
       </div>
     </div>
   );
