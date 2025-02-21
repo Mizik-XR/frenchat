@@ -5,6 +5,12 @@ import { TeamsConfig } from "@/types/config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { HelpCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MicrosoftTeamsConfigProps {
   config: TeamsConfig;
@@ -26,10 +32,16 @@ export const MicrosoftTeamsConfig = ({ config, onConfigChange, onSave }: Microso
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Label htmlFor="microsoftClientId">Client ID</Label>
-              <HelpCircle 
-                className="h-4 w-4 text-gray-400 cursor-help"
-                title="Trouvez votre Client ID dans le portail Azure AD sous App Registrations"
-              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Trouvez votre Client ID dans le portail Azure AD sous App Registrations</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <Input
               id="microsoftClientId"
@@ -46,10 +58,16 @@ export const MicrosoftTeamsConfig = ({ config, onConfigChange, onSave }: Microso
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Label htmlFor="microsoftTenantId">Tenant ID</Label>
-              <HelpCircle 
-                className="h-4 w-4 text-gray-400 cursor-help"
-                title="Le Tenant ID se trouve dans les propriétés de votre Azure AD"
-              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Le Tenant ID se trouve dans les propriétés de votre Azure AD</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <Input
               id="microsoftTenantId"
