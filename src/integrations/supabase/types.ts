@@ -100,7 +100,9 @@ export type Database = {
       chat_conversations: {
         Row: {
           created_at: string | null
+          folder_id: string | null
           id: string
+          is_pinned: boolean | null
           settings: Json | null
           title: string
           updated_at: string | null
@@ -108,7 +110,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          folder_id?: string | null
           id?: string
+          is_pinned?: boolean | null
           settings?: Json | null
           title: string
           updated_at?: string | null
@@ -116,13 +120,23 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          folder_id?: string | null
           id?: string
+          is_pinned?: boolean | null
           settings?: Json | null
           title?: string
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_conversations_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_folders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_messages: {
         Row: {
@@ -178,6 +192,30 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      conversation_folders: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

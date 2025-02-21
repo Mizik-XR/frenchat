@@ -1,16 +1,19 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Conversation, WebUIConfig } from "@/types/chat";
 import { toast } from "@/hooks/use-toast";
 
 export function useConversations() {
-  const { data: conversations, refetch } = useQuery({
+  const queryClient = useQueryClient();
+
+  const { data: conversations } = useQuery({
     queryKey: ['conversations'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('chat_conversations')
         .select('*')
+        .order('is_pinned', { ascending: false })
         .order('updated_at', { ascending: false });
       
       if (error) throw error;
@@ -19,6 +22,8 @@ export function useConversations() {
         id: conv.id,
         title: conv.title,
         updatedAt: new Date(conv.updated_at),
+        folderId: conv.folder_id,
+        isPinned: conv.is_pinned,
         settings: conv.settings
       }));
     }
@@ -49,12 +54,40 @@ export function useConversations() {
       throw error;
     }
 
-    refetch();
+    queryClient.invalidateQueries({ queryKey: ['conversations'] });
     return data;
   };
 
+  const updateConversation = useMutation({
+    mutationFn: async (params: { 
+      id: string; 
+      title?: string; 
+      folderId?: string | null;
+      isPinned?: boolean;
+    }) => {
+      const { error } = await supabase
+        .from('chat_conversations')
+        .update({
+          title: params.title,
+          folder_id: params.folderId,
+          is_pinned: params.isPinned
+        })
+        .eq('id', params.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      toast({
+        title: "Conversation mise à jour",
+        description: "La conversation a été mise à jour avec succès"
+      });
+    }
+  });
+
   return {
     conversations,
-    createNewConversation
+    createNewConversation,
+    updateConversation: updateConversation.mutate
   };
 }

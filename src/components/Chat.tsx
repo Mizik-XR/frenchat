@@ -26,7 +26,7 @@ export const Chat = () => {
   });
 
   const { messages } = useChatMessages(selectedConversationId);
-  const { conversations, createNewConversation } = useConversations();
+  const { conversations, createNewConversation, updateConversation } = useConversations();
   const { isLoading, processMessage } = useChatLogic(selectedConversationId);
 
   const handleProviderChange = (provider: AIProvider) => {
@@ -66,9 +66,10 @@ export const Chat = () => {
       <div className="flex h-screen">
         <ConversationList
           conversations={conversations || []}
-          selectedId={selectedConversationId || undefined}
+          selectedId={selectedConversationId}
           onSelect={setSelectedConversationId}
           onNew={() => createNewConversation(webUIConfig)}
+          onUpdateConversation={updateConversation}
         />
         
         <div className="flex-1 p-4">
