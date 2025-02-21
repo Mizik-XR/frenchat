@@ -1,57 +1,42 @@
 
 import { useState } from 'react';
-import { Message } from '@/types/chat';
+import { Message, MessageType } from '@/types/chat';
 import { toast } from '@/hooks/use-toast';
 
 export function useChatMessages() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const generateMessageId = () => {
-    return Math.random().toString(36).substring(2, 15);
-  };
+  const createMessage = (
+    role: 'user' | 'assistant',
+    content: string,
+    type: MessageType = 'text',
+    context?: string
+  ): Message => ({
+    id: Math.random().toString(36).substring(2, 15),
+    role,
+    content,
+    type,
+    context,
+    timestamp: new Date(),
+  });
 
   const addUserMessage = (content: string) => {
-    const newMessage: Message = {
-      id: generateMessageId(),
-      role: 'user',
-      content: content,
-      type: 'text',
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, newMessage]);
+    const message = createMessage('user', content);
+    setMessages((prev) => [...prev, message]);
   };
 
   const updateLastMessage = (content: string, context?: string) => {
-    setMessages(prev => {
-      const newMessages = [...prev];
-      const lastMessage: Message = {
-        id: generateMessageId(),
-        role: 'assistant',
-        content: content,
-        type: 'text',
-        context: context,
-        timestamp: new Date()
-      };
-      newMessages[newMessages.length - 1] = lastMessage;
-      return newMessages;
+    setMessages((prev) => {
+      if (prev.length === 0) return prev;
+      const message = createMessage('assistant', content, 'text', context);
+      return [...prev.slice(0, -1), message];
     });
   };
 
   const setAssistantResponse = (content: string, context?: string) => {
-    const newMessage: Message = {
-      id: generateMessageId(),
-      role: 'assistant',
-      content: content,
-      type: 'text',
-      context: context,
-      timestamp: new Date()
-    };
-    
-    setMessages(prev => [
-      ...prev.slice(0, -1),
-      newMessage
-    ]);
+    const message = createMessage('assistant', content, 'text', context);
+    setMessages((prev) => [...prev.slice(0, -1), message]);
   };
 
   return {
@@ -60,6 +45,6 @@ export function useChatMessages() {
     setIsLoading,
     addUserMessage,
     updateLastMessage,
-    setAssistantResponse
+    setAssistantResponse,
   };
 }
