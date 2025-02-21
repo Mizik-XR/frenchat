@@ -1,7 +1,7 @@
 
 /// <reference types="vitest" />
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { performanceMonitor } from '@/monitoring/PerformanceMonitor';
 
 describe('Tests unitaires - Monitoring', () => {
