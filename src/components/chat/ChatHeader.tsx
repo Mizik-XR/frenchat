@@ -1,8 +1,13 @@
 
-import { Settings, Bot } from "lucide-react";
+import { Settings, Bot, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ChatHeaderProps {
   mode: 'auto' | 'manual';
@@ -25,6 +30,19 @@ export const ChatHeader = ({ mode, onModeChange, onToggleSettings }: ChatHeaderP
             onCheckedChange={(checked) => onModeChange(checked ? 'auto' : 'manual')}
           />
           <Label>Mode Auto</Label>
+          <Tooltip>
+            <TooltipTrigger>
+              <Info className="h-4 w-4 text-gray-500" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-xs">
+                Le mode Auto sélectionne intelligemment le meilleur modèle selon votre demande :
+                <br/>- Images : Utilise OpenAI DALL-E
+                <br/>- Documents : Utilise Google Drive/Teams
+                <br/>- Texte : Utilise Hugging Face
+              </p>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         <Button

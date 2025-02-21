@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import { AIProvider } from "@/types/chat";
 import { toast } from "@/hooks/use-toast";
+import { LLM_PROVIDERS } from "@/components/config/llm/constants";
 
 interface AIProviderSelectProps {
   aiProvider: AIProvider;
@@ -19,29 +20,37 @@ interface AIProviderSelectProps {
 export const AIProviderSelect = ({ aiProvider, onProviderChange }: AIProviderSelectProps) => {
   const handleAIProviderChange = (value: AIProvider) => {
     onProviderChange(value);
-    if (value === 'openai') {
+    const provider = LLM_PROVIDERS.find(p => p.id === value);
+    
+    if (provider?.requiresApiKey) {
       toast({
-        title: "Configuration OpenAI",
-        description: "Assurez-vous d'avoir configuré votre clé API OpenAI dans les paramètres.",
+        title: `Configuration ${provider.name}`,
+        description: "Assurez-vous d'avoir configuré votre clé API dans les paramètres.",
       });
     } else {
       toast({
-        title: "Mode Hugging Face",
-        description: "Le traitement sera effectué localement dans votre navigateur. Le modèle est en cours de chargement...",
+        title: `Mode ${provider.name}`,
+        description: provider.isLocal 
+          ? "Le traitement sera effectué localement dans votre navigateur."
+          : "Le modèle est en cours d'initialisation...",
       });
     }
   };
 
   const handleConfigureAI = () => {
-    if (aiProvider === 'openai') {
+    const provider = LLM_PROVIDERS.find(p => p.id === aiProvider);
+    
+    if (provider?.requiresApiKey) {
       toast({
-        title: "Configuration OpenAI",
-        description: "Pour utiliser OpenAI, vous devez configurer votre clé API. Coût : ~0.01$ par 1000 tokens.",
+        title: `Configuration ${provider.name}`,
+        description: provider.setupInstructions || "Pour utiliser ce modèle, vous devez configurer votre clé API dans les paramètres.",
       });
     } else {
       toast({
-        title: "Configuration Hugging Face",
-        description: "Hugging Face est gratuit et fonctionne localement. Le modèle est déjà en cours de chargement !",
+        title: `Configuration ${provider.name}`,
+        description: provider.isLocal 
+          ? "Ce modèle fonctionne localement et ne nécessite pas de configuration."
+          : "Le modèle est gratuit et prêt à être utilisé !",
       });
     }
   };
@@ -56,8 +65,11 @@ export const AIProviderSelect = ({ aiProvider, onProviderChange }: AIProviderSel
           <SelectValue placeholder="Choisir le modèle IA" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="openai">OpenAI (API Key requise)</SelectItem>
-          <SelectItem value="huggingface">Hugging Face (Gratuit, Local)</SelectItem>
+          {LLM_PROVIDERS.map((provider) => (
+            <SelectItem key={provider.id} value={provider.id}>
+              {provider.name} {provider.requiresApiKey ? "(API Key requise)" : provider.isLocal ? "(Local)" : "(Gratuit)"}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
       <Button variant="outline" size="sm" onClick={handleConfigureAI}>
