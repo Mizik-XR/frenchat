@@ -1,9 +1,17 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Credentials, ServiceCredentials } from "../types/config";
+import { ServiceCredentials } from "../types/config";
 
 const DEFAULT_CLIENT_EMAIL = "client@cnxria.com";
+
+type Credentials = {
+  googleClientId: string;
+  googleApiKey: string;
+  microsoftClientId: string;
+  microsoftTenantId: string;
+};
 
 export const useConfig = () => {
   const [credentials, setCredentials] = useState<Credentials>({
