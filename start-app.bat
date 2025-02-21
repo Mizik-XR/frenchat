@@ -1,5 +1,6 @@
 
 @echo off
+chcp 65001
 echo ================================
 echo Installation et lancement de l'application
 echo ================================
