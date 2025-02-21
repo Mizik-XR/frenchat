@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Info } from "lucide-react";
 import {
   Tooltip,
@@ -40,7 +41,8 @@ export const LLMConfigComponent = ({ config, onConfigChange, onSave }: LLMConfig
       ...config,
       provider: value,
       model: '',
-      apiKey: newProvider?.requiresApiKey ? config.apiKey : ''
+      apiKey: newProvider?.requiresApiKey ? config.apiKey : '',
+      useLocal: newProvider?.isLocal || false
     });
   };
 
@@ -60,8 +62,8 @@ export const LLMConfigComponent = ({ config, onConfigChange, onSave }: LLMConfig
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
               <p>
-                Hugging Face propose des modèles open source gratuits ne nécessitant pas de clé API.
-                Les autres fournisseurs peuvent nécessiter une clé API et engendrer des coûts.
+                Vous pouvez utiliser des modèles locaux ou distants. Les modèles locaux nécessitent
+                l'installation d'Ollama sur votre machine.
               </p>
             </TooltipContent>
           </Tooltip>
@@ -96,6 +98,43 @@ export const LLMConfigComponent = ({ config, onConfigChange, onSave }: LLMConfig
                 />
               </div>
             )}
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-gray-700">Activer le cache</Label>
+                  <p className="text-sm text-gray-500">
+                    Améliore les performances en mettant en cache les résultats
+                  </p>
+                </div>
+                <Switch
+                  checked={config.cacheEnabled}
+                  onCheckedChange={(checked) =>
+                    onConfigChange({ ...config, cacheEnabled: checked })
+                  }
+                />
+              </div>
+
+              <div>
+                <Label className="text-gray-700">Taille des lots (batching)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={config.batchSize || 10}
+                  onChange={(e) =>
+                    onConfigChange({
+                      ...config,
+                      batchSize: parseInt(e.target.value) || 10,
+                    })
+                  }
+                  className="mt-1"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Nombre de documents traités simultanément pour l'indexation
+                </p>
+              </div>
+            </div>
 
             <div className="pt-4">
               <Button 

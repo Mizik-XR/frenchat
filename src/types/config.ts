@@ -1,5 +1,5 @@
 
-export type ServiceType = 'huggingface' | 'openai' | 'deepseek' | 'google_drive' | 'microsoft_teams';
+export type ServiceType = 'huggingface' | 'openai' | 'deepseek' | 'google_drive' | 'microsoft_teams' | 'ollama' | 'phi' | 'local';
 
 export type LLMProvider = {
   id: ServiceType;
@@ -8,6 +8,8 @@ export type LLMProvider = {
   models: string[];
   docsUrl: string;
   requiresApiKey: boolean;
+  isLocal?: boolean;
+  setupInstructions?: string;
 };
 
 export type LLMConfig = {
@@ -15,6 +17,9 @@ export type LLMConfig = {
   apiKey: string;
   model: string;
   rateLimit: number;
+  useLocal?: boolean;
+  batchSize?: number;
+  cacheEnabled?: boolean;
 };
 
 export type GoogleConfig = {
@@ -27,7 +32,6 @@ export type TeamsConfig = {
   tenantId: string;
 };
 
-// Anciennement Credentials, maintenant retiré car non utilisé
 export type ServiceCredentials = {
   apiKey?: string;
   clientId?: string;
