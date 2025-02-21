@@ -1,4 +1,6 @@
 
+/// <reference types="vitest" />
+
 import { describe, it, expect, beforeEach } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
 import { LLMConfig } from '@/types/config';

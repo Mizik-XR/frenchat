@@ -14,7 +14,7 @@ class PerformanceMonitor {
   private static instance: PerformanceMonitor;
   private metrics: PerformanceMetrics[] = [];
   private readonly BATCH_SIZE = 10;
-  private flushInterval: number;
+  private flushInterval: NodeJS.Timeout;
 
   private constructor() {
     this.flushInterval = setInterval(() => this.flushMetrics(), 600000); // 10 minutes
