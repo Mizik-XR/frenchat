@@ -37,6 +37,8 @@ export type Conversation = {
   updatedAt: Date;
   folderId?: string;
   isPinned: boolean;
+  isArchived: boolean;
+  archiveDate?: Date;
   settings: {
     model: AIProvider;
     maxTokens: number;

@@ -24,6 +24,8 @@ export function useConversations() {
         updatedAt: new Date(conv.updated_at),
         folderId: conv.folder_id,
         isPinned: conv.is_pinned,
+        isArchived: conv.is_archived,
+        archiveDate: conv.archive_date ? new Date(conv.archive_date) : undefined,
         settings: conv.settings
       }));
     }
@@ -40,7 +42,8 @@ export function useConversations() {
       .insert({
         title: "Nouvelle conversation",
         settings: webUIConfig,
-        user_id: user.user.id
+        user_id: user.user.id,
+        is_archived: false
       })
       .select()
       .single();
@@ -64,14 +67,20 @@ export function useConversations() {
       title?: string; 
       folderId?: string | null;
       isPinned?: boolean;
+      isArchived?: boolean;
     }) => {
+      const updates: any = {};
+      if (params.title !== undefined) updates.title = params.title;
+      if (params.folderId !== undefined) updates.folder_id = params.folderId;
+      if (params.isPinned !== undefined) updates.is_pinned = params.isPinned;
+      if (params.isArchived !== undefined) {
+        updates.is_archived = params.isArchived;
+        updates.archive_date = params.isArchived ? new Date() : null;
+      }
+
       const { error } = await supabase
         .from('chat_conversations')
-        .update({
-          title: params.title,
-          folder_id: params.folderId,
-          is_pinned: params.isPinned
-        })
+        .update(updates)
         .eq('id', params.id);
 
       if (error) throw error;

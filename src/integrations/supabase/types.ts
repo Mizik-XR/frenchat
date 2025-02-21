@@ -99,9 +99,11 @@ export type Database = {
       }
       chat_conversations: {
         Row: {
+          archive_date: string | null
           created_at: string | null
           folder_id: string | null
           id: string
+          is_archived: boolean | null
           is_pinned: boolean | null
           settings: Json | null
           title: string
@@ -109,9 +111,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archive_date?: string | null
           created_at?: string | null
           folder_id?: string | null
           id?: string
+          is_archived?: boolean | null
           is_pinned?: boolean | null
           settings?: Json | null
           title: string
@@ -119,9 +123,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archive_date?: string | null
           created_at?: string | null
           folder_id?: string | null
           id?: string
+          is_archived?: boolean | null
           is_pinned?: boolean | null
           settings?: Json | null
           title?: string
