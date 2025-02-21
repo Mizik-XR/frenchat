@@ -31,6 +31,14 @@ export const Chat = () => {
 
   const huggingFaceModel = useHuggingFace('huggingface');
 
+  const handleProviderChange = (provider: AIProvider) => {
+    setWebUIConfig(prev => ({ ...prev, model: provider }));
+    toast({
+      title: "Modèle IA changé",
+      description: `Modèle changé pour : ${provider}`,
+    });
+  };
+
   useEffect(() => {
     toast({
       title: "Chat initialisé",
@@ -143,40 +151,54 @@ export const Chat = () => {
       </div>
 
       {showSettings && (
-        <Card className="absolute top-16 right-4 z-10 p-4 w-72 bg-white/95 backdrop-blur-sm shadow-xl border border-blue-100 rounded-xl">
+        <Card className="absolute top-16 right-4 z-10 p-4 w-80 bg-white/95 backdrop-blur-sm shadow-xl border border-blue-100 rounded-xl">
           <div className="space-y-4">
             <h3 className="font-medium text-gray-800 border-b pb-2">Paramètres du chat</h3>
-            <div className="space-y-2">
-              <label className="text-sm text-gray-600">Température</label>
-              <Input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={webUIConfig.temperature}
-                onChange={(e) => setWebUIConfig(prev => ({
-                  ...prev,
-                  temperature: parseFloat(e.target.value)
-                }))}
-                className="accent-blue-500"
-              />
-              <div className="text-xs text-gray-500 text-right">
-                {webUIConfig.temperature}
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600">Modèle IA</label>
+                <AIProviderSelect 
+                  aiProvider={webUIConfig.model} 
+                  onProviderChange={handleProviderChange}
+                />
               </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm text-gray-600">Tokens maximum</label>
-              <Input
-                type="number"
-                min="100"
-                max="4000"
-                value={webUIConfig.maxTokens}
-                onChange={(e) => setWebUIConfig(prev => ({
-                  ...prev,
-                  maxTokens: parseInt(e.target.value)
-                }))}
-                className="border-blue-200 focus:border-blue-500"
-              />
+
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600">Température</label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={webUIConfig.temperature}
+                    onChange={(e) => setWebUIConfig(prev => ({
+                      ...prev,
+                      temperature: parseFloat(e.target.value)
+                    }))}
+                    className="flex-1 accent-blue-500"
+                  />
+                  <span className="text-xs text-gray-500 w-8 text-right">
+                    {webUIConfig.temperature}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600">Tokens maximum</label>
+                <Input
+                  type="number"
+                  min="100"
+                  max="4000"
+                  value={webUIConfig.maxTokens}
+                  onChange={(e) => setWebUIConfig(prev => ({
+                    ...prev,
+                    maxTokens: parseInt(e.target.value)
+                  }))}
+                  className="border-blue-200 focus:border-blue-500"
+                />
+              </div>
             </div>
           </div>
         </Card>
