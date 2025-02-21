@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import { Send, Bot, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Message, AIProvider } from "@/types/chat";
+import { Message, AIProvider, WebUIConfig } from "@/types/chat";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
 import { AIProviderSelect } from "./chat/AIProviderSelect";
 import { MessageList } from "./chat/MessageList";
@@ -22,15 +21,16 @@ export const Chat = () => {
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   
-  // Configuration OpenWebUI
-  const [webUIConfig, setWebUIConfig] = useState({
-    model: "llama-2-70b-chat",
+  // Configuration OpenWebUI avec le bon type
+  const [webUIConfig, setWebUIConfig] = useState<WebUIConfig>({
+    model: 'llama-2-70b-chat',
     maxTokens: 2000,
     temperature: 0.7,
     streamResponse: true
   });
 
-  const huggingFaceModel = useHuggingFace('llama-2-70b-chat');
+  // Utilisation du type correct pour le modèle
+  const huggingFaceModel = useHuggingFace('huggingface');
 
   useEffect(() => {
     toast({
