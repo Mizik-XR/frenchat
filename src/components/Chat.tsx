@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,6 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import { Send, Bot, FileText, Paperclip, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { pipeline } from "@huggingface/transformers";
 import {
   Select,
   SelectContent,
@@ -28,8 +28,9 @@ export const Chat = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
-  const [aiProvider, setAIProvider] = useState<AIProvider>('openai');
+  const [aiProvider, setAIProvider] = useState<AIProvider>('huggingface');
   const [showTutorial, setShowTutorial] = useState(true);
+  const [huggingFaceModel, setHuggingFaceModel] = useState<any>(null);
 
   useEffect(() => {
     if (showTutorial) {
@@ -48,6 +49,42 @@ export const Chat = () => {
       setShowTutorial(false);
     }
   }, [showTutorial]);
+
+  useEffect(() => {
+    const initHuggingFace = async () => {
+      if (aiProvider === 'huggingface' && !huggingFaceModel) {
+        try {
+          toast({
+            title: "Chargement du modèle",
+            description: "Le modèle Hugging Face est en cours de chargement...",
+          });
+
+          const model = await pipeline(
+            'text-generation',
+            'mistral-7b-instruct-v0.2',
+            { device: 'cpu' }
+          );
+
+          setHuggingFaceModel(model);
+          
+          toast({
+            title: "Modèle chargé",
+            description: "Le modèle Hugging Face est prêt à être utilisé !",
+          });
+        } catch (error) {
+          console.error('Erreur lors du chargement du modèle:', error);
+          toast({
+            title: "Erreur de chargement",
+            description: "Impossible de charger le modèle Hugging Face. Basculement vers OpenAI.",
+            variant: "destructive"
+          });
+          setAIProvider('openai');
+        }
+      }
+    };
+
+    initHuggingFace();
+  }, [aiProvider]);
 
   const { data: documents } = useQuery({
     queryKey: ['documents'],
@@ -70,7 +107,7 @@ export const Chat = () => {
     } else {
       toast({
         title: "Mode Hugging Face",
-        description: "Le traitement sera effectué localement dans votre navigateur, c'est gratuit mais peut être plus lent.",
+        description: "Le traitement sera effectué localement dans votre navigateur. Le modèle est en cours de chargement...",
       });
     }
   };
@@ -91,21 +128,32 @@ export const Chat = () => {
         }
       }
 
-      const { data, error } = await supabase.functions.invoke('chat', {
-        body: { 
-          message,
-          context: context || undefined,
-          provider: aiProvider
-        }
-      });
+      let assistantMessage = '';
 
-      if (error) throw error;
+      if (aiProvider === 'huggingface' && huggingFaceModel) {
+        const prompt = context 
+          ? `Contexte: ${context}\n\nQuestion: ${message}\n\nRéponse:`
+          : `Question: ${message}\n\nRéponse:`;
 
-      // Si c'est Hugging Face, on simule une réponse locale pour l'exemple
-      // Dans une vraie implémentation, on utiliserait transformers.js ici
-      const assistantMessage = data.choices 
-        ? data.choices[0].message.content
-        : "Je suis le modèle local Hugging Face. Cette démonstration montre comment l'intégrer.";
+        const result = await huggingFaceModel(prompt, {
+          max_length: 500,
+          temperature: 0.7,
+          top_p: 0.95,
+        });
+
+        assistantMessage = result[0].generated_text;
+      } else {
+        const { data, error } = await supabase.functions.invoke('chat', {
+          body: { 
+            message,
+            context: context || undefined,
+            provider: 'openai'
+          }
+        });
+
+        if (error) throw error;
+        assistantMessage = data.choices[0].message.content;
+      }
 
       setMessages(prev => [...prev, { 
         role: 'assistant', 
@@ -132,7 +180,7 @@ export const Chat = () => {
     } else {
       toast({
         title: "Configuration Hugging Face",
-        description: "Hugging Face est gratuit et fonctionne localement. Pas de configuration nécessaire !",
+        description: "Hugging Face est gratuit et fonctionne localement. Le modèle est déjà en cours de chargement !",
       });
     }
   };
