@@ -5,18 +5,20 @@ export type AIProvider = 'auto' | ServiceType | 'stable-diffusion';
 
 export type MessageType = 'text' | 'document' | 'image';
 
+export type MessageMetadata = {
+  provider?: AIProvider;
+  documentId?: string;
+  imageUrl?: string;
+  confidence?: number;
+};
+
 export type Message = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   type: MessageType;
   context?: string;
-  metadata?: {
-    provider?: AIProvider;
-    documentId?: string;
-    imageUrl?: string;
-    confidence?: number;
-  };
+  metadata?: MessageMetadata;
   conversationId: string;
   timestamp: Date;
 };

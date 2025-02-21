@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Message, MessageType } from "@/types/chat";
+import { Message, MessageType, MessageMetadata } from "@/types/chat";
 
 export const chatService = {
   async sendUserMessage(content: string, conversationId: string): Promise<Message> {
@@ -23,11 +23,11 @@ export const chatService = {
 
     return {
       id: data.id,
-      role: data.role,
+      role: data.role === 'user' ? 'user' : 'assistant',
       content: data.content,
       type: data.message_type as MessageType,
       context: data.context,
-      metadata: data.metadata,
+      metadata: data.metadata as MessageMetadata,
       conversationId: data.conversation_id,
       timestamp: new Date(data.created_at)
     };
@@ -37,7 +37,7 @@ export const chatService = {
     content: string, 
     conversationId: string, 
     type: MessageType = 'text',
-    metadata?: any
+    metadata?: MessageMetadata
   ): Promise<Message> {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error("User not authenticated");
@@ -59,11 +59,11 @@ export const chatService = {
 
     return {
       id: data.id,
-      role: data.role,
+      role: data.role === 'user' ? 'user' : 'assistant',
       content: data.content,
       type: data.message_type as MessageType,
       context: data.context,
-      metadata: data.metadata,
+      metadata: data.metadata as MessageMetadata,
       conversationId: data.conversation_id,
       timestamp: new Date(data.created_at)
     };

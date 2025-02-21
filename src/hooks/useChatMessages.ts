@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Message, MessageType } from '@/types/chat';
+import { Message, MessageType, MessageMetadata } from '@/types/chat';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -32,11 +32,11 @@ export function useChatMessages(conversationId: string | null) {
 
       setMessages(data.map((msg: any): Message => ({
         id: msg.id,
-        role: msg.role,
+        role: msg.role === 'user' ? 'user' : 'assistant',
         content: msg.content,
         type: msg.message_type as MessageType,
         context: msg.context,
-        metadata: msg.metadata,
+        metadata: msg.metadata as MessageMetadata,
         conversationId: msg.conversation_id,
         timestamp: new Date(msg.created_at)
       })));
@@ -44,7 +44,6 @@ export function useChatMessages(conversationId: string | null) {
 
     fetchMessages();
 
-    // Souscription aux nouveaux messages
     const subscription = supabase
       .channel('chat_messages')
       .on('postgres_changes', {
@@ -56,11 +55,11 @@ export function useChatMessages(conversationId: string | null) {
         const newMsg = payload.new as any;
         setMessages(prev => [...prev, {
           id: newMsg.id,
-          role: newMsg.role,
+          role: newMsg.role === 'user' ? 'user' : 'assistant',
           content: newMsg.content,
           type: newMsg.message_type as MessageType,
           context: newMsg.context,
-          metadata: newMsg.metadata,
+          metadata: newMsg.metadata as MessageMetadata,
           conversationId: newMsg.conversation_id,
           timestamp: new Date(newMsg.created_at)
         }]);
@@ -76,13 +75,15 @@ export function useChatMessages(conversationId: string | null) {
     role: 'user' | 'assistant',
     content: string,
     type: MessageType = 'text',
-    context?: string
+    context?: string,
+    metadata?: MessageMetadata
   ): Message => ({
     id: Math.random().toString(36).substring(2, 15),
     role,
     content,
     type,
     context,
+    metadata,
     conversationId: conversationId!,
     timestamp: new Date(),
   });
@@ -100,11 +101,8 @@ export function useChatMessages(conversationId: string | null) {
     });
   };
 
-  const setAssistantResponse = (content: string, context?: string, metadata?: Message['metadata']) => {
-    const message = createMessage('assistant', content, metadata?.type || 'text', context);
-    if (metadata) {
-      message.metadata = metadata;
-    }
+  const setAssistantResponse = (content: string, context?: string, metadata?: MessageMetadata) => {
+    const message = createMessage('assistant', content, 'text', context, metadata);
     setMessages((prev) => [...prev, message]);
   };
 
