@@ -469,6 +469,33 @@ export type Database = {
           },
         ]
       }
+      system_reports: {
+        Row: {
+          cache_stats: Json
+          created_at: string | null
+          id: string
+          metrics_summary: Json
+          recent_errors: Json
+          timestamp: string
+        }
+        Insert: {
+          cache_stats: Json
+          created_at?: string | null
+          id?: string
+          metrics_summary: Json
+          recent_errors: Json
+          timestamp: string
+        }
+        Update: {
+          cache_stats?: Json
+          created_at?: string | null
+          id?: string
+          metrics_summary?: Json
+          recent_errors?: Json
+          timestamp?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
