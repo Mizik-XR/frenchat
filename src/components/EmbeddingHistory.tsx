@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import type { Json } from "@/integrations/supabase/types";
 
 interface EmbeddingVersion {
   version: number;
@@ -15,6 +16,17 @@ interface EmbeddingVersion {
 interface EmbeddingHistoryProps {
   documentId: string;
 }
+
+// Helper function to validate metadata structure
+const isValidMetadata = (metadata: Json): metadata is EmbeddingVersion['metadata'] => {
+  if (!metadata || typeof metadata !== 'object') return false;
+  
+  const meta = metadata as Record<string, unknown>;
+  return (
+    typeof meta.updated_at === 'string' &&
+    typeof meta.chunk_index === 'number'
+  );
+};
 
 export const EmbeddingHistory = ({ documentId }: EmbeddingHistoryProps) => {
   const [versions, setVersions] = useState<EmbeddingVersion[]>([]);
@@ -35,11 +47,13 @@ export const EmbeddingHistory = ({ documentId }: EmbeddingHistoryProps) => {
 
       if (error) throw error;
       
-      const typedVersions: EmbeddingVersion[] = data?.map(item => ({
-        version: item.version,
-        created_at: item.created_at,
-        metadata: item.metadata
-      })) || [];
+      const typedVersions: EmbeddingVersion[] = (data || [])
+        .filter(item => isValidMetadata(item.metadata))
+        .map(item => ({
+          version: item.version,
+          created_at: item.created_at,
+          metadata: item.metadata as EmbeddingVersion['metadata']
+        }));
       
       setVersions(typedVersions);
     } catch (error) {
