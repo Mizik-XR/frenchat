@@ -40,6 +40,29 @@ interface SystemReport {
   recent_errors: RecentError[];
 }
 
+const validateSystemReport = (data: unknown): SystemReport[] => {
+  if (!Array.isArray(data)) return [];
+  
+  return data.filter((item): item is SystemReport => {
+    if (!item || typeof item !== 'object') return false;
+    
+    const report = item as any;
+    return (
+      typeof report.id === 'string' &&
+      typeof report.timestamp === 'string' &&
+      typeof report.metrics_summary === 'object' &&
+      typeof report.metrics_summary.success_rate === 'number' &&
+      typeof report.metrics_summary.avg_duration === 'number' &&
+      typeof report.metrics_summary.error_count === 'number' &&
+      typeof report.metrics_summary.total_operations === 'number' &&
+      typeof report.cache_stats === 'object' &&
+      typeof report.cache_stats.hit_rate === 'number' &&
+      typeof report.cache_stats.miss_rate === 'number' &&
+      Array.isArray(report.recent_errors)
+    );
+  });
+};
+
 export const SystemReportChart = () => {
   const { data: reports, isLoading, error } = useQuery({
     queryKey: ['systemReports'],
@@ -51,7 +74,7 @@ export const SystemReportChart = () => {
         .limit(24);
 
       if (error) throw error;
-      return data as SystemReport[];
+      return validateSystemReport(data);
     },
     refetchInterval: 60000
   });
