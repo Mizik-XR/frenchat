@@ -1,0 +1,35 @@
+
+{
+  "data": [
+    {
+      "id": "1",
+      "timestamp": "2024-03-20T10:00:00Z",
+      "metrics_summary": {
+        "success_rate": 98.5,
+        "avg_duration": 150,
+        "error_count": 2,
+        "total_operations": 200
+      },
+      "cache_stats": {
+        "hit_rate": 75.5,
+        "miss_rate": 24.5
+      },
+      "recent_errors": []
+    },
+    {
+      "id": "2",
+      "timestamp": "2024-03-20T10:10:00Z",
+      "metrics_summary": {
+        "success_rate": 99.0,
+        "avg_duration": 145,
+        "error_count": 1,
+        "total_operations": 210
+      },
+      "cache_stats": {
+        "hit_rate": 78.0,
+        "miss_rate": 22.0
+      },
+      "recent_errors": []
+    }
+  ]
+}
