@@ -8,7 +8,7 @@ import { AIProvider, WebUIConfig } from "@/types/chat";
 
 export function useChatLogic(selectedConversationId: string | null) {
   const [isLoading, setIsLoading] = useState(false);
-  const { huggingface } = useHuggingFace();
+  const { textGeneration } = useHuggingFace();
 
   const determineProvider = async (message: string, mode: 'auto' | 'manual', model: AIProvider) => {
     if (mode === 'manual') {
@@ -67,7 +67,7 @@ export function useChatLogic(selectedConversationId: string | null) {
         };
       } else {
         const prompt = `[INST] ${message} [/INST]`;
-        const response = await huggingface.textGeneration({
+        const response = await textGeneration({
           model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
           inputs: prompt,
           parameters: {

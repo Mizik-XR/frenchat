@@ -1,6 +1,6 @@
 
-export function useHuggingFace(provider: string) {
-  return async (prompt: string, options: any = {}) => {
+export function useHuggingFace(provider: string = 'huggingface') {
+  const textGeneration = async (options: any) => {
     try {
       // Simulation de réponse pour le moment
       return [{
@@ -11,4 +11,6 @@ export function useHuggingFace(provider: string) {
       throw error;
     }
   };
+
+  return { textGeneration };
 }

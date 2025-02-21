@@ -20,7 +20,17 @@ export const chatService = {
       .single();
 
     if (error) throw error;
-    return data;
+
+    return {
+      id: data.id,
+      role: data.role,
+      content: data.content,
+      type: data.message_type as MessageType,
+      context: data.context,
+      metadata: data.metadata,
+      conversationId: data.conversation_id,
+      timestamp: new Date(data.created_at)
+    };
   },
 
   async sendAssistantMessage(
@@ -46,6 +56,16 @@ export const chatService = {
       .single();
 
     if (error) throw error;
-    return data;
+
+    return {
+      id: data.id,
+      role: data.role,
+      content: data.content,
+      type: data.message_type as MessageType,
+      context: data.context,
+      metadata: data.metadata,
+      conversationId: data.conversation_id,
+      timestamp: new Date(data.created_at)
+    };
   }
 };
