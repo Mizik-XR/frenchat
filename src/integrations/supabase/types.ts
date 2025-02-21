@@ -182,6 +182,44 @@ export type Database = {
           },
         ]
       }
+      service_configurations: {
+        Row: {
+          client_id: string | null
+          config: Json
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          service_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          config?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          service_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          config?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          service_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_configurations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
           client_id: string | null
