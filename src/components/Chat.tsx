@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
@@ -19,7 +18,8 @@ export const Chat = () => {
   const [input, setInput] = useState('');
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
   const [webUIConfig, setWebUIConfig] = useState<WebUIConfig>({
     mode: 'auto',
     model: 'huggingface',
@@ -59,12 +59,54 @@ export const Chat = () => {
     }
   });
 
+  const generateImage = async (prompt: string) => {
+    setIsGeneratingImage(true);
+    try {
+      const { data: { data: imageData }, error } = await supabase.functions.invoke('generate-image', {
+        body: { 
+          prompt,
+          documentId: selectedDocumentId,
+          model: webUIConfig.model 
+        }
+      });
+
+      if (error) throw error;
+
+      setAssistantResponse(
+        "Voici l'image générée selon votre demande :",
+        selectedDocumentId ? "Image générée à partir du document" : undefined,
+        {
+          type: 'image',
+          imageUrl: imageData.image_url
+        }
+      );
+
+      toast({
+        title: "Image générée",
+        description: "L'image a été générée avec succès",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   const determineProvider = async (message: string) => {
     if (webUIConfig.mode === 'manual') {
       return webUIConfig.model;
     }
 
-    // Mode auto : analyse le message pour choisir le meilleur modèle
+    if (message.toLowerCase().includes('génère une image') || 
+        message.toLowerCase().includes('créer une image') ||
+        message.toLowerCase().includes('visualiser')) {
+      return 'stable-diffusion';
+    }
+
     if (message.toLowerCase().includes('image') || message.toLowerCase().includes('graphique')) {
       return 'openai'; // Pour la génération d'images
     } else if (message.toLowerCase().includes('document') || message.toLowerCase().includes('fichier')) {
@@ -81,48 +123,53 @@ export const Chat = () => {
     setInput('');
 
     try {
-      let context = '';
-      if (selectedDocumentId && documents) {
-        const selectedDoc = documents.find(doc => doc.id === selectedDocumentId);
-        if (selectedDoc) {
-          context = `Document analysé: ${selectedDoc.title}\nContenu: ${selectedDoc.content}`;
-        }
-      }
-
       const provider = await determineProvider(message);
-      const prompt = context 
-        ? `[INST] Context: ${context}\n\nQuestion: ${message} [/INST]`
-        : `[INST] ${message} [/INST]`;
-
-      if (webUIConfig.streamResponse) {
-        let partialResponse = '';
-        const words = "Traitement de votre demande...".split(' ');
-        
-        for (const word of words) {
-          partialResponse += word + ' ';
-          updateLastMessage(partialResponse, context);
-          await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (provider === 'stable-diffusion') {
+        await generateImage(message);
+      } else {
+        let context = '';
+        if (selectedDocumentId && documents) {
+          const selectedDoc = documents.find(doc => doc.id === selectedDocumentId);
+          if (selectedDoc) {
+            context = `Document analysé: ${selectedDoc.title}\nContenu: ${selectedDoc.content}`;
+          }
         }
-      }
 
-      let result;
-      switch (provider) {
-        case 'google_drive':
-        case 'microsoft_teams':
-          // Logique pour interroger les documents
-          break;
-        case 'openai':
-          // Logique pour génération d'images ou texte avancé
-          break;
-        default:
-          result = await huggingFaceModel(prompt, {
-            max_length: webUIConfig.maxTokens,
-            temperature: webUIConfig.temperature,
-            top_p: 0.95,
-          });
-      }
+        const prompt = context 
+          ? `[INST] Context: ${context}\n\nQuestion: ${message} [/INST]`
+          : `[INST] ${message} [/INST]`;
 
-      setAssistantResponse(result ? result[0].generated_text : "Je n'ai pas pu traiter votre demande.", context);
+        if (webUIConfig.streamResponse) {
+          let partialResponse = '';
+          const words = "Traitement de votre demande...".split(' ');
+          
+          for (const word of words) {
+            partialResponse += word + ' ';
+            updateLastMessage(partialResponse, context);
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
+
+        let result;
+        switch (provider) {
+          case 'google_drive':
+          case 'microsoft_teams':
+            // Logique pour interroger les documents
+            break;
+          case 'openai':
+            // Logique pour génération d'images ou texte avancé
+            break;
+          default:
+            result = await huggingFaceModel(prompt, {
+              max_length: webUIConfig.maxTokens,
+              temperature: webUIConfig.temperature,
+              top_p: 0.95,
+            });
+        }
+
+        setAssistantResponse(result ? result[0].generated_text : "Je n'ai pas pu traiter votre demande.", context);
+      }
     } catch (error: any) {
       toast({
         title: "Erreur",
@@ -167,13 +214,16 @@ export const Chat = () => {
       )}
 
       <div className="flex-1 overflow-y-auto mb-4 bg-white/60 rounded-lg p-4">
-        <MessageList messages={messages} />
+        <MessageList 
+          messages={messages} 
+          isLoading={isLoading || isGeneratingImage}
+        />
       </div>
 
       <ChatInput
         input={input}
         setInput={setInput}
-        isLoading={isLoading}
+        isLoading={isLoading || isGeneratingImage}
         selectedDocumentId={selectedDocumentId}
         onSubmit={handleSubmit}
       />

@@ -1,7 +1,7 @@
 
 import { ServiceType } from "./config";
 
-export type AIProvider = 'auto' | ServiceType;
+export type AIProvider = 'auto' | ServiceType | 'stable-diffusion';
 
 export type MessageType = 'text' | 'document' | 'image';
 

@@ -325,6 +325,47 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_images: {
+        Row: {
+          created_at: string | null
+          document_id: string | null
+          id: string
+          image_url: string | null
+          metadata: Json | null
+          model: string
+          prompt: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          image_url?: string | null
+          metadata?: Json | null
+          model: string
+          prompt: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          image_url?: string | null
+          metadata?: Json | null
+          model?: string
+          prompt?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_images_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       performance_metrics: {
         Row: {
           cache_hit: boolean | null
