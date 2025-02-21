@@ -11,6 +11,7 @@ import { useHuggingFace } from "@/hooks/useHuggingFace";
 import { AIProviderSelect } from "./chat/AIProviderSelect";
 import { MessageList } from "./chat/MessageList";
 import { DocumentList } from "./chat/DocumentList";
+import { useServiceConfig } from '@/hooks/useServiceConfig';
 
 import "@/styles/chat.css";
 
@@ -29,6 +30,8 @@ export const Chat = () => {
   });
 
   const huggingFaceModel = useHuggingFace('huggingface');
+
+  const { saveConfig, getConfig, isLoading: configLoading } = useServiceConfig();
 
   const handleProviderChange = (provider: AIProvider) => {
     setWebUIConfig(prev => ({ ...prev, model: provider }));
@@ -132,19 +135,60 @@ export const Chat = () => {
     sendMessage(input);
   };
 
-  const handleGDriveConfig = () => {
-    toast({
-      title: "Configuration Google Drive",
-      description: "Pour utiliser Google Drive, vous devez configurer vos identifiants OAuth.",
-    });
+  const handleGDriveConfig = async () => {
+    try {
+      const config = {
+        clientId: "your-client-id",
+        clientSecret: "your-client-secret",
+        redirectUri: window.location.origin
+      };
+      
+      await saveConfig('google_drive', config);
+      
+      toast({
+        title: "Configuration Google Drive",
+        description: "Configuration enregistrée avec succès.",
+      });
+    } catch (error) {
+      console.error('Erreur lors de la configuration de Google Drive:', error);
+    }
   };
 
-  const handleTeamsConfig = () => {
-    toast({
-      title: "Configuration Microsoft Teams",
-      description: "Pour utiliser Teams, vous devez configurer votre tenant Azure AD.",
-    });
+  const handleTeamsConfig = async () => {
+    try {
+      const config = {
+        tenantId: "your-tenant-id",
+        clientId: "your-client-id",
+        clientSecret: "your-client-secret"
+      };
+      
+      await saveConfig('microsoft_teams', config);
+      
+      toast({
+        title: "Configuration Microsoft Teams",
+        description: "Configuration enregistrée avec succès.",
+      });
+    } catch (error) {
+      console.error('Erreur lors de la configuration de Microsoft Teams:', error);
+    }
   };
+
+  useEffect(() => {
+    const loadConfigs = async () => {
+      try {
+        const [gdriveConfig, teamsConfig] = await Promise.all([
+          getConfig('google_drive'),
+          getConfig('microsoft_teams')
+        ]);
+        
+        console.log('Configurations chargées:', { gdriveConfig, teamsConfig });
+      } catch (error) {
+        console.error('Erreur lors du chargement des configurations:', error);
+      }
+    };
+
+    loadConfigs();
+  }, []);
 
   return (
     <Card className="flex flex-col h-[600px] p-4 relative bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 shadow-lg">
