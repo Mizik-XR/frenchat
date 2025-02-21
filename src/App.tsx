@@ -1,8 +1,8 @@
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Index } from "@/pages/Index";
+import Index from "@/pages/Index";
 import { Config } from "@/pages/Config";
-import { NotFound } from "@/pages/NotFound";
+import NotFound from "@/pages/NotFound";
 
 export default function App() {
   return (

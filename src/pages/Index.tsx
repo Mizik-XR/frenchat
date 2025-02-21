@@ -1,8 +1,6 @@
 
 import { ConfigLayout } from "@/components/ConfigLayout";
 
-const Index = () => {
+export default function Index() {
   return <ConfigLayout />;
-};
-
-export default Index;
+}
