@@ -43,7 +43,7 @@ export default function Auth() {
 
       if (signUpError) throw signUpError;
 
-      // Créer le profil utilisateur
+      // Créer le profil utilisateur avec l'email
       if (user) {
         const { error: profileError } = await supabase
           .from('profiles')
