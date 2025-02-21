@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MessageSquare, Plus, Folder, Pin, PinOff, Pencil, Archive, RefreshCw } from "lucide-react";
 import { Conversation, ConversationFolder } from "@/types/chat";
@@ -30,7 +31,7 @@ export const ConversationList = ({
   onNew,
   onUpdateConversation
 }: ConversationListProps) => {
-  const { folders } = useConversationFolders();
+  const { folders, createFolder } = useConversationFolders();
   const [newFolderName, setNewFolderName] = useState("");
   const [activeTab, setActiveTab] = useState("active");
 
