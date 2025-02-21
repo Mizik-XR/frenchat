@@ -14,6 +14,32 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
+interface MetricsSummary {
+  total_operations: number;
+  success_rate: number;
+  avg_duration: number;
+  error_count: number;
+}
+
+interface CacheStats {
+  hit_rate: number;
+  miss_rate: number;
+}
+
+interface RecentError {
+  operation: string;
+  error: string;
+  timestamp: string;
+}
+
+interface SystemReport {
+  id: string;
+  timestamp: string;
+  metrics_summary: MetricsSummary;
+  cache_stats: CacheStats;
+  recent_errors: RecentError[];
+}
+
 export const SystemReportChart = () => {
   const { data: reports, isLoading, error } = useQuery({
     queryKey: ['systemReports'],
@@ -22,12 +48,12 @@ export const SystemReportChart = () => {
         .from('system_reports')
         .select('*')
         .order('timestamp', { ascending: true })
-        .limit(24); // 4 heures de données (avec un rapport toutes les 10 minutes)
+        .limit(24);
 
       if (error) throw error;
-      return data;
+      return data as SystemReport[];
     },
-    refetchInterval: 60000 // Rafraîchir toutes les minutes
+    refetchInterval: 60000
   });
 
   if (isLoading) {
@@ -55,7 +81,7 @@ export const SystemReportChart = () => {
 
   return (
     <div className="space-y-6">
-      <Card className="p-6">
+      <Card className="p-6" data-cy="success-rate-chart">
         <h3 className="text-lg font-semibold mb-4">Taux de succès et Performance</h3>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -84,7 +110,7 @@ export const SystemReportChart = () => {
         </div>
       </Card>
 
-      <Card className="p-6">
+      <Card className="p-6" data-cy="cache-stats-chart">
         <h3 className="text-lg font-semibold mb-4">Cache et Erreurs</h3>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
