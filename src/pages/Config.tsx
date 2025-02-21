@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -5,7 +6,8 @@ import { ArrowLeft, Cloud, Key, Bot, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useServiceConfig } from "@/hooks/useServiceConfig";
-import { LLMConfigComponent, LLM_PROVIDERS } from "@/components/config/LLMConfig";
+import { LLMConfigComponent } from "@/components/config/LLMConfig";
+import { LLM_PROVIDERS } from "@/components/config/llm/constants";
 import { ImageConfig } from "@/components/config/ImageConfig";
 import { LLMConfig, GoogleConfig, TeamsConfig } from "@/types/config";
 import { GoogleDriveConfig } from "@/components/config/GoogleDriveConfig";
