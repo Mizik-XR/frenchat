@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -28,7 +27,7 @@ export const Config = () => {
   });
   
   const [llmConfig, setLlmConfig] = useState<LLMConfig>({
-    provider: 'openai',
+    provider: 'huggingface',
     apiKey: '',
     model: '',
     rateLimit: 0
@@ -114,18 +113,40 @@ export const Config = () => {
 
   const handleSaveLLMConfig = async () => {
     try {
-      if (!llmConfig.provider || !llmConfig.model || !llmConfig.apiKey) {
+      const provider = LLM_PROVIDERS.find(p => p.id === llmConfig.provider);
+      
+      if (!provider) {
         toast({
-          title: "Champs manquants",
-          description: "Veuillez remplir tous les champs requis.",
+          title: "Erreur de configuration",
+          description: "Fournisseur LLM invalide.",
           variant: "destructive",
         });
         return;
       }
+
+      if (!llmConfig.model) {
+        toast({
+          title: "Champs manquants",
+          description: "Veuillez sélectionner un modèle.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (provider.requiresApiKey && !llmConfig.apiKey) {
+        toast({
+          title: "Champs manquants",
+          description: "Une clé API est requise pour ce fournisseur.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       await saveConfig(llmConfig.provider, {
         ...llmConfig,
         rateLimit: Number(llmConfig.rateLimit)
       });
+
       toast({
         title: "Configuration sauvegardée",
         description: "Les paramètres du modèle de langage ont été enregistrés avec succès.",

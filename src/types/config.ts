@@ -1,5 +1,5 @@
 
-export type ServiceType = 'google_drive' | 'microsoft_teams' | 'openai' | 'deepseek' | 'huggingface' | 'stable_diffusion';
+export type ServiceType = 'huggingface' | 'openai' | 'deepseek';
 
 export type LLMProvider = {
   id: ServiceType;
@@ -7,6 +7,7 @@ export type LLMProvider = {
   description: string;
   models: string[];
   docsUrl: string;
+  requiresApiKey: boolean;
 };
 
 export type LLMConfig = {
@@ -14,21 +15,4 @@ export type LLMConfig = {
   apiKey: string;
   model: string;
   rateLimit: number;
-};
-
-export type Credentials = {
-  googleClientId?: string;
-  googleApiKey?: string;
-  microsoftClientId?: string;
-  microsoftTenantId?: string;
-};
-
-export type GoogleConfig = {
-  clientId: string;
-  apiKey: string;
-};
-
-export type TeamsConfig = {
-  clientId: string;
-  tenantId: string;
 };
