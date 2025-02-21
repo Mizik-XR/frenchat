@@ -2,14 +2,15 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GoogleConfig } from "@/types/config";
-import { Info } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { HelpCircle } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
 
 interface GoogleDriveConfigProps {
   config: GoogleConfig;
@@ -19,85 +20,71 @@ interface GoogleDriveConfigProps {
 
 export const GoogleDriveConfig = ({ config, onConfigChange, onSave }: GoogleDriveConfigProps) => {
   return (
-    <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold text-gray-900">Configuration Google Drive</h3>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <Info className="h-5 w-5 text-primary/60" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-sm">
-              <p>Pour obtenir vos identifiants Google Drive :</p>
-              <ol className="list-decimal ml-4 mt-2 space-y-1">
-                <li>Accédez à la Console Google Cloud</li>
-                <li>Créez un projet ou sélectionnez-en un existant</li>
-                <li>Activez l'API Google Drive</li>
-                <li>Créez des identifiants OAuth 2.0</li>
-              </ol>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Configuration Google Drive</CardTitle>
+        <CardDescription>
+          Configurez l'accès à Google Drive pour indexer et rechercher vos documents.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="googleClientId">Client ID</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>L'identifiant client OAuth 2.0 de votre application Google Cloud</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <Input
+              id="googleClientId"
+              value={config.clientId}
+              onChange={(e) => onConfigChange({ ...config, clientId: e.target.value })}
+              className="w-full"
+              placeholder="Entrez votre Google Client ID"
+            />
+            <p className="text-sm text-gray-500">
+              Trouvable dans la console Google Cloud Platform sous "Identifiants OAuth 2.0".
+            </p>
+          </div>
 
-      <div className="grid gap-6">
-        <div>
-          <Label htmlFor="googleClientId">
-            Client ID
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger className="ml-1">
-                  <Info className="h-4 w-4 text-primary/60 inline" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>L'identifiant client OAuth 2.0 de votre application Google Cloud</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </Label>
-          <Input
-            id="googleClientId"
-            value={config.clientId}
-            onChange={(e) =>
-              onConfigChange({ ...config, clientId: e.target.value })
-            }
-            className="input-field mt-1"
-            placeholder="Entrez votre Google Client ID"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="googleApiKey">
-            Clé API
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger className="ml-1">
-                  <Info className="h-4 w-4 text-primary/60 inline" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>La clé API pour accéder aux services Google Cloud</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </Label>
-          <Input
-            id="googleApiKey"
-            value={config.apiKey}
-            onChange={(e) =>
-              onConfigChange({ ...config, apiKey: e.target.value })
-            }
-            className="input-field mt-1"
-            placeholder="Entrez votre Google API Key"
-            type="password"
-          />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="googleApiKey">Clé API</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>La clé API pour accéder aux services Google Cloud</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <Input
+              id="googleApiKey"
+              value={config.apiKey}
+              onChange={(e) => onConfigChange({ ...config, apiKey: e.target.value })}
+              className="w-full"
+              placeholder="Entrez votre Google API Key"
+              type="password"
+            />
+            <p className="text-sm text-gray-500">
+              Générable dans la console Google Cloud Platform sous "Identifiants".
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-col gap-4">
-          <Button 
-            onClick={onSave}
-            className="w-full"
-            disabled={!config.clientId || !config.apiKey}
-          >
+          <Button onClick={onSave} className="w-full sm:w-auto self-end">
             Sauvegarder la configuration
           </Button>
 
@@ -106,19 +93,19 @@ export const GoogleDriveConfig = ({ config, onConfigChange, onSave }: GoogleDriv
               Documentation & Ressources
             </h4>
             <p className="text-sm text-gray-600 mb-3">
-              Consultez la documentation Google Cloud pour plus d'informations sur la configuration de l'API.
+              Pour obtenir vos identifiants, rendez-vous sur la Console Google Cloud et activez l'API Google Drive.
             </p>
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => window.open('https://cloud.google.com/docs', '_blank')}
+              onClick={() => window.open('https://console.cloud.google.com/apis/credentials', '_blank')}
               className="w-full"
             >
-              Accéder à la documentation
+              Accéder à la console Google Cloud
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
