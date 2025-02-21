@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,21 +22,25 @@ export const Chat = () => {
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   
-  // Configuration OpenWebUI avec le bon type
   const [webUIConfig, setWebUIConfig] = useState<WebUIConfig>({
-    model: 'llama-2-70b-chat',
+    model: 'huggingface',
     maxTokens: 2000,
     temperature: 0.7,
     streamResponse: true
   });
 
-  // Utilisation du type correct pour le modèle
   const huggingFaceModel = useHuggingFace('huggingface');
 
   useEffect(() => {
     toast({
       title: "Chat initialisé",
       description: "Interface OpenWebUI chargée avec succès",
+    });
+
+    // Log de diagnostic
+    console.log("Chat component initialized", {
+      model: webUIConfig.model,
+      huggingFaceModel: Boolean(huggingFaceModel)
     });
   }, []);
 
