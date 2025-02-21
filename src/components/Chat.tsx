@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Send } from "lucide-react";
+import { Send, Bot, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Message, AIProvider } from "@/types/chat";
@@ -13,33 +13,31 @@ import { AIProviderSelect } from "./chat/AIProviderSelect";
 import { MessageList } from "./chat/MessageList";
 import { DocumentList } from "./chat/DocumentList";
 
+import "@/styles/chat.css";
+
 export const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
-  const [aiProvider, setAIProvider] = useState<AIProvider>('huggingface');
-  const [showTutorial, setShowTutorial] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // Configuration OpenWebUI
+  const [webUIConfig, setWebUIConfig] = useState({
+    model: "llama-2-70b-chat",
+    maxTokens: 2000,
+    temperature: 0.7,
+    streamResponse: true
+  });
 
-  const huggingFaceModel = useHuggingFace(aiProvider);
+  const huggingFaceModel = useHuggingFace('llama-2-70b-chat');
 
   useEffect(() => {
-    if (showTutorial) {
-      toast({
-        title: "Bienvenue dans l'interface de chat !",
-        description: "Vous pouvez choisir entre OpenAI (nécessite une clé API) ou Hugging Face (gratuit, local)",
-        duration: 5000,
-      });
-
-      toast({
-        title: "Comment ça marche ?",
-        description: "Sélectionnez un document à analyser et posez vos questions. L'IA vous aidera à l'analyser.",
-        duration: 5000,
-      });
-
-      setShowTutorial(false);
-    }
-  }, [showTutorial]);
+    toast({
+      title: "Chat initialisé",
+      description: "Interface OpenWebUI chargée avec succès",
+    });
+  }, []);
 
   const { data: documents } = useQuery({
     queryKey: ['documents'],
@@ -68,38 +66,46 @@ export const Chat = () => {
         }
       }
 
-      let assistantMessage = '';
+      const prompt = context 
+        ? `[INST] Context: ${context}\n\nQuestion: ${message} [/INST]`
+        : `[INST] ${message} [/INST]`;
 
-      if (aiProvider === 'huggingface' && huggingFaceModel) {
-        const prompt = context 
-          ? `Contexte: ${context}\n\nQuestion: ${message}\n\nRéponse:`
-          : `Question: ${message}\n\nRéponse:`;
-
-        const result = await huggingFaceModel(prompt, {
-          max_length: 500,
-          temperature: 0.7,
-          top_p: 0.95,
-        });
-
-        assistantMessage = result[0].generated_text;
-      } else {
-        const { data, error } = await supabase.functions.invoke('chat', {
-          body: { 
-            message,
-            context: context || undefined,
-            provider: 'openai'
-          }
-        });
-
-        if (error) throw error;
-        assistantMessage = data.choices[0].message.content;
+      if (webUIConfig.streamResponse) {
+        // Simulation de streaming pour la démo
+        let partialResponse = '';
+        const words = "Traitement de votre demande...".split(' ');
+        
+        for (const word of words) {
+          partialResponse += word + ' ';
+          setMessages(prev => {
+            const newMessages = [...prev];
+            newMessages[newMessages.length - 1] = {
+              role: 'assistant',
+              content: partialResponse,
+              context: context || undefined
+            };
+            return newMessages;
+          });
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
 
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: assistantMessage,
-        context: context || undefined
-      }]);
+      const result = await huggingFaceModel(prompt, {
+        max_length: webUIConfig.maxTokens,
+        temperature: webUIConfig.temperature,
+        top_p: 0.95,
+      });
+
+      const assistantMessage = result[0].generated_text;
+
+      setMessages(prev => [
+        ...prev.slice(0, -1),
+        { 
+          role: 'assistant', 
+          content: assistantMessage,
+          context: context || undefined
+        }
+      ]);
     } catch (error: any) {
       toast({
         title: "Erreur",
@@ -111,51 +117,77 @@ export const Chat = () => {
     }
   };
 
-  const handleSelectDocument = async (documentId: string) => {
-    setSelectedDocumentId(documentId);
-    toast({
-      title: "Document sélectionné",
-      description: "Le document sera utilisé comme contexte pour l'analyse",
-    });
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     sendMessage(input);
   };
 
   return (
-    <div className="space-y-4">
-      <Card className="p-4">
-        <AIProviderSelect 
-          aiProvider={aiProvider}
-          onProviderChange={setAIProvider}
-        />
-        {documents && <DocumentList
-          documents={documents}
-          selectedDocumentId={selectedDocumentId}
-          onDocumentSelect={handleSelectDocument}
-        />}
-      </Card>
+    <Card className="flex flex-col h-[600px] p-4 relative">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <Bot className="h-6 w-6 text-blue-500" />
+          <h2 className="text-xl font-semibold">Assistant IA</h2>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowSettings(!showSettings)}
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
+      </div>
 
-      <Card className="flex flex-col h-[600px] p-4">
-        <MessageList messages={messages} />
-        
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={selectedDocumentId 
-              ? "Posez une question sur le document..." 
-              : "Posez votre question..."
-            }
-            disabled={isLoading}
-          />
-          <Button type="submit" disabled={isLoading || !input.trim()}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
-      </Card>
-    </div>
+      {showSettings && (
+        <Card className="absolute top-16 right-4 z-10 p-4 w-72 space-y-4 bg-white shadow-lg">
+          <h3 className="font-medium">Paramètres du chat</h3>
+          <div className="space-y-2">
+            <label className="text-sm">Température</label>
+            <Input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={webUIConfig.temperature}
+              onChange={(e) => setWebUIConfig(prev => ({
+                ...prev,
+                temperature: parseFloat(e.target.value)
+              }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm">Tokens maximum</label>
+            <Input
+              type="number"
+              min="100"
+              max="4000"
+              value={webUIConfig.maxTokens}
+              onChange={(e) => setWebUIConfig(prev => ({
+                ...prev,
+                maxTokens: parseInt(e.target.value)
+              }))}
+            />
+          </div>
+        </Card>
+      )}
+
+      <MessageList messages={messages} />
+
+      <form onSubmit={handleSubmit} className="flex gap-2 mt-4">
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={selectedDocumentId 
+            ? "Posez une question sur le document..." 
+            : "Posez votre question..."
+          }
+          disabled={isLoading}
+          className="flex-1"
+        />
+        <Button type="submit" disabled={isLoading || !input.trim()}>
+          <Send className="h-4 w-4" />
+        </Button>
+      </form>
+    </Card>
   );
 };
