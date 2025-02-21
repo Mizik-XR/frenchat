@@ -29,9 +29,17 @@ export function useConversationFolders() {
 
   const createFolder = useMutation({
     mutationFn: async (name: string) => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        throw new Error("User not authenticated");
+      }
+
       const { data, error } = await supabase
         .from('conversation_folders')
-        .insert({ name })
+        .insert({ 
+          name,
+          user_id: userData.user.id
+        })
         .select()
         .single();
 
