@@ -1,17 +1,17 @@
 
-import { useEffect, useState } from "react";
-import { toast } from "@/hooks/use-toast";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Cloud, Key, Bot, Image } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Cloud, Key, Bot, Image } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useServiceConfig } from "@/hooks/useServiceConfig";
+import { ConfigHeader } from "@/components/config/ConfigHeader";
+import { ConfigIntro } from "@/components/config/ConfigIntro";
 import { LLMConfigComponent } from "@/components/config/LLMConfig";
-import { LLM_PROVIDERS } from "@/components/config/llm/constants";
 import { ImageConfig } from "@/components/config/ImageConfig";
-import { LLMConfig, GoogleConfig, TeamsConfig } from "@/types/config";
 import { GoogleDriveConfig } from "@/components/config/GoogleDriveConfig";
 import { MicrosoftTeamsConfig } from "@/components/config/MicrosoftTeamsConfig";
+import { toast } from "@/hooks/use-toast";
+import { GoogleConfig, TeamsConfig, LLMConfig as LLMConfigType } from "@/types/config";
 
 export const Config = () => {
   const navigate = useNavigate();
@@ -28,14 +28,14 @@ export const Config = () => {
     tenantId: ''
   });
   
-  const [llmConfig, setLlmConfig] = useState<LLMConfig>({
+  const [llmConfig, setLlmConfig] = useState<LLMConfigType>({
     provider: 'huggingface',
     apiKey: '',
     model: '',
     rateLimit: 0
   });
 
-  useEffect(() => {
+  useState(() => {
     const loadConfigs = async () => {
       try {
         const [gdriveConfig, teamsConfig, openaiConfig] = await Promise.all([
@@ -46,7 +46,7 @@ export const Config = () => {
         
         if (gdriveConfig) setGoogleConfig(gdriveConfig as GoogleConfig);
         if (teamsConfig) setTeamsConfig(teamsConfig as TeamsConfig);
-        if (openaiConfig) setLlmConfig(openaiConfig as LLMConfig);
+        if (openaiConfig) setLlmConfig(openaiConfig as LLMConfigType);
         
         setLoading(false);
       } catch (error) {
@@ -115,30 +115,10 @@ export const Config = () => {
 
   const handleSaveLLMConfig = async () => {
     try {
-      const provider = LLM_PROVIDERS.find(p => p.id === llmConfig.provider);
-      
-      if (!provider) {
-        toast({
-          title: "Erreur de configuration",
-          description: "Fournisseur LLM invalide.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!llmConfig.model) {
+      if (!llmConfig.provider || !llmConfig.model) {
         toast({
           title: "Champs manquants",
-          description: "Veuillez sélectionner un modèle.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (provider.requiresApiKey && !llmConfig.apiKey) {
-        toast({
-          title: "Champs manquants",
-          description: "Une clé API est requise pour ce fournisseur.",
+          description: "Veuillez sélectionner un fournisseur et un modèle.",
           variant: "destructive",
         });
         return;
@@ -173,19 +153,8 @@ export const Config = () => {
 
   return (
     <div className="container mx-auto py-8 px-4 bg-gray-50">
-      <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-bold text-gray-900">Configuration des API</h1>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <p className="text-gray-600 mb-4">
-          Cette page vous permet de configurer les différentes API nécessaires au fonctionnement de l'application.
-          Chaque section contient des instructions détaillées et des liens vers la documentation pertinente.
-        </p>
-      </div>
+      <ConfigHeader onBack={() => navigate('/')} />
+      <ConfigIntro />
 
       <Tabs defaultValue="drive" className="w-full">
         <TabsList className="grid w-full grid-cols-4 mb-8">
