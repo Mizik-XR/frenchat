@@ -1,16 +1,14 @@
 
-import { useState, useEffect } from 'react';
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface EmbeddingVersion {
   version: number;
   created_at: string;
   metadata: {
-    chunk_index: number;
     updated_at: string;
+    chunk_index: number;
   };
 }
 
@@ -20,21 +18,23 @@ interface EmbeddingHistoryProps {
 
 export const EmbeddingHistory = ({ documentId }: EmbeddingHistoryProps) => {
   const [versions, setVersions] = useState<EmbeddingVersion[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     loadVersions();
   }, [documentId]);
 
   const loadVersions = async () => {
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('document_embeddings_versions')
-        .select('version, created_at, metadata');
+        .select('version, created_at, metadata')
+        .eq('document_id', documentId)
+        .order('version', { ascending: false });
 
       if (error) throw error;
       
-      // Explicitly type and transform the data
       const typedVersions: EmbeddingVersion[] = data?.map(item => ({
         version: item.version,
         created_at: item.created_at,
@@ -48,62 +48,72 @@ export const EmbeddingHistory = ({ documentId }: EmbeddingHistoryProps) => {
         description: "Impossible de charger l'historique des versions",
         variant: "destructive",
       });
+      console.error("Error loading versions:", error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const restoreVersion = async (version: number) => {
     try {
-      const { data: response, error } = await supabase
-        .from('document_embeddings')
-        .update({ version: version })
-        .eq('document_id', documentId)
-        .select();
+      const { data, error } = await supabase
+        .rpc('restore_embedding_version', {
+          p_document_id: documentId,
+          p_version: version
+        });
 
       if (error) throw error;
 
-      toast({
-        title: "Succès",
-        description: `Version ${version} restaurée avec succès`,
-      });
-
-      // Recharger les versions après la restauration
-      await loadVersions();
+      if (data) {
+        toast({
+          title: "Succès",
+          description: `Version ${version} restaurée avec succès`,
+        });
+        await loadVersions(); // Recharger les versions après la restauration
+      }
     } catch (error) {
       toast({
         title: "Erreur",
-        description: "Impossible de restaurer la version",
+        description: "Impossible de restaurer cette version",
         variant: "destructive",
       });
+      console.error("Error restoring version:", error);
     }
   };
 
-  if (loading) {
-    return <div>Chargement...</div>;
+  if (isLoading) {
+    return <div>Chargement de l'historique...</div>;
   }
 
   return (
-    <Card className="p-4">
-      <h3 className="text-lg font-semibold mb-4">Historique des versions</h3>
-      <div className="space-y-4">
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Historique des versions</h3>
+      <div className="space-y-2">
         {versions.map((version) => (
-          <div key={version.version} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div
+            key={version.version}
+            className="flex items-center justify-between p-3 bg-white rounded-lg border"
+          >
             <div>
-              <p className="font-medium">Version {version.version}</p>
-              <p className="text-sm text-gray-500">
-                Créée le {new Date(version.created_at).toLocaleString()}
-              </p>
+              <div className="font-medium">Version {version.version}</div>
+              <div className="text-sm text-gray-500">
+                Créée le {new Date(version.created_at).toLocaleDateString()}
+              </div>
+              {version.metadata && (
+                <div className="text-sm text-gray-500">
+                  Chunk {version.metadata.chunk_index}
+                </div>
+              )}
             </div>
-            <Button
-              variant="outline"
+            <button
               onClick={() => restoreVersion(version.version)}
+              className="px-3 py-1 text-sm text-white bg-primary rounded hover:bg-primary/90 transition-colors"
             >
               Restaurer
-            </Button>
+            </button>
           </div>
         ))}
       </div>
-    </Card>
+    </div>
   );
 };

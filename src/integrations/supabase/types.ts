@@ -50,6 +50,53 @@ export type Database = {
           },
         ]
       }
+      archived_documents: {
+        Row: {
+          archived_at: string | null
+          client_id: string | null
+          content: string | null
+          created_at: string | null
+          document_id: string
+          document_type: string
+          id: string
+          metadata: Json | null
+          original_id: string
+          title: string
+        }
+        Insert: {
+          archived_at?: string | null
+          client_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          document_id: string
+          document_type: string
+          id?: string
+          metadata?: Json | null
+          original_id: string
+          title: string
+        }
+        Update: {
+          archived_at?: string | null
+          client_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          document_id?: string
+          document_type?: string
+          id?: string
+          metadata?: Json | null
+          original_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           created_at: string | null
@@ -108,6 +155,36 @@ export type Database = {
             referencedColumns: ["document_id"]
           },
         ]
+      }
+      document_embeddings_versions: {
+        Row: {
+          content: string
+          created_at: string | null
+          document_id: string
+          embedding: string
+          id: string
+          metadata: Json | null
+          version: number
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          document_id: string
+          embedding: string
+          id?: string
+          metadata?: Json | null
+          version: number
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          document_id?: string
+          embedding?: string
+          id?: string
+          metadata?: Json | null
+          version?: number
+        }
+        Relationships: []
       }
       document_metadata: {
         Row: {
@@ -358,6 +435,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      archive_old_documents: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       binary_quantize:
         | {
             Args: {
@@ -469,6 +550,13 @@ export type Database = {
             }
             Returns: unknown
           }
+      restore_embedding_version: {
+        Args: {
+          p_document_id: string
+          p_version: number
+        }
+        Returns: boolean
+      }
       sparsevec_out: {
         Args: {
           "": unknown
