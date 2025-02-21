@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { AIProvider, WebUIConfig } from "@/types/chat";
+import { AIProvider, WebUIConfig, Message } from "@/types/chat";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
 import { useServiceConfig } from '@/hooks/useServiceConfig';
 import { useChatMessages } from '@/hooks/useChatMessages';
@@ -20,6 +21,7 @@ export const Chat = () => {
   const [showSettings, setShowSettings] = useState(false);
   
   const [webUIConfig, setWebUIConfig] = useState<WebUIConfig>({
+    mode: 'auto',
     model: 'huggingface',
     maxTokens: 2000,
     temperature: 0.7,
@@ -57,6 +59,20 @@ export const Chat = () => {
     }
   });
 
+  const determineProvider = async (message: string) => {
+    if (webUIConfig.mode === 'manual') {
+      return webUIConfig.model;
+    }
+
+    // Mode auto : analyse le message pour choisir le meilleur modèle
+    if (message.toLowerCase().includes('image') || message.toLowerCase().includes('graphique')) {
+      return 'openai'; // Pour la génération d'images
+    } else if (message.toLowerCase().includes('document') || message.toLowerCase().includes('fichier')) {
+      return selectedDocumentId ? 'google_drive' : 'microsoft_teams';
+    }
+    return 'huggingface'; // Modèle par défaut pour le texte
+  };
+
   const sendMessage = async (message: string) => {
     if (!message.trim()) return;
 
@@ -73,6 +89,7 @@ export const Chat = () => {
         }
       }
 
+      const provider = await determineProvider(message);
       const prompt = context 
         ? `[INST] Context: ${context}\n\nQuestion: ${message} [/INST]`
         : `[INST] ${message} [/INST]`;
@@ -88,13 +105,24 @@ export const Chat = () => {
         }
       }
 
-      const result = await huggingFaceModel(prompt, {
-        max_length: webUIConfig.maxTokens,
-        temperature: webUIConfig.temperature,
-        top_p: 0.95,
-      });
+      let result;
+      switch (provider) {
+        case 'google_drive':
+        case 'microsoft_teams':
+          // Logique pour interroger les documents
+          break;
+        case 'openai':
+          // Logique pour génération d'images ou texte avancé
+          break;
+        default:
+          result = await huggingFaceModel(prompt, {
+            max_length: webUIConfig.maxTokens,
+            temperature: webUIConfig.temperature,
+            top_p: 0.95,
+          });
+      }
 
-      setAssistantResponse(result[0].generated_text, context);
+      setAssistantResponse(result ? result[0].generated_text : "Je n'ai pas pu traiter votre demande.", context);
     } catch (error: any) {
       toast({
         title: "Erreur",
@@ -115,69 +143,20 @@ export const Chat = () => {
     setWebUIConfig(prev => ({ ...prev, ...config }));
   };
 
-  const handleGDriveConfig = async () => {
-    try {
-      const config = {
-        clientId: "your-client-id",
-        clientSecret: "your-client-secret",
-        redirectUri: window.location.origin
-      };
-      
-      await saveConfig('google_drive', config);
-      
-      toast({
-        title: "Configuration Google Drive",
-        description: "Configuration enregistrée avec succès.",
-      });
-    } catch (error) {
-      console.error('Erreur lors de la configuration de Google Drive:', error);
-    }
-  };
-
-  const handleTeamsConfig = async () => {
-    try {
-      const config = {
-        tenantId: "your-tenant-id",
-        clientId: "your-client-id",
-        clientSecret: "your-client-secret"
-      };
-      
-      await saveConfig('microsoft_teams', config);
-      
-      toast({
-        title: "Configuration Microsoft Teams",
-        description: "Configuration enregistrée avec succès.",
-      });
-    } catch (error) {
-      console.error('Erreur lors de la configuration de Microsoft Teams:', error);
-    }
-  };
-
   useEffect(() => {
-    const loadConfigs = async () => {
-      try {
-        const [gdriveConfig, teamsConfig] = await Promise.all([
-          getConfig('google_drive'),
-          getConfig('microsoft_teams')
-        ]);
-        
-        console.log('Configurations chargées:', { gdriveConfig, teamsConfig });
-      } catch (error) {
-        console.error('Erreur lors du chargement des configurations:', error);
-      }
-    };
-
-    loadConfigs();
-    
     toast({
       title: "Chat initialisé",
-      description: "Interface OpenWebUI chargée avec succès",
+      description: "Interface de chat chargée avec succès",
     });
   }, []);
 
   return (
     <Card className="flex flex-col h-[600px] p-4 relative bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 shadow-lg">
-      <ChatHeader onToggleSettings={() => setShowSettings(!showSettings)} />
+      <ChatHeader 
+        mode={webUIConfig.mode}
+        onModeChange={(mode) => handleWebUIConfigChange({ mode })}
+        onToggleSettings={() => setShowSettings(!showSettings)} 
+      />
 
       {showSettings && (
         <SettingsPanel

@@ -1,15 +1,29 @@
 
-export interface Message {
+import { ServiceType } from "./config";
+
+export type AIProvider = 'auto' | ServiceType;
+
+export type MessageType = 'text' | 'document' | 'image';
+
+export type Message = {
+  id: string;
   role: 'user' | 'assistant';
   content: string;
+  type: MessageType;
   context?: string;
-}
+  metadata?: {
+    provider?: AIProvider;
+    documentId?: string;
+    imageUrl?: string;
+    confidence?: number;
+  };
+  timestamp: Date;
+};
 
-export type AIProvider = 'openai' | 'huggingface' | 'llama-2-70b-chat';
-
-export interface WebUIConfig {
+export type WebUIConfig = {
+  mode: 'auto' | 'manual';
   model: AIProvider;
   maxTokens: number;
   temperature: number;
   streamResponse: boolean;
-}
+};
