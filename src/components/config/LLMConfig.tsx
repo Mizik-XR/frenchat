@@ -1,17 +1,10 @@
 
-import { LLMProvider, LLMConfig as LLMConfigType, ServiceType } from "@/types/config";
+import { LLMConfig as LLMConfigType, ServiceType } from "@/types/config";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Info } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -19,33 +12,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
-
-export const LLM_PROVIDERS: LLMProvider[] = [
-  {
-    id: 'huggingface',
-    name: 'Hugging Face',
-    description: 'Plateforme open source avec de nombreux modèles gratuits.',
-    models: ['mistral-7b', 'llama-2', 'falcon-40b'],
-    docsUrl: 'https://huggingface.co/docs/api-inference/index',
-    requiresApiKey: false
-  },
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    description: 'Service payant avec d\'excellentes performances. Nécessite une clé API.',
-    models: ['gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'],
-    docsUrl: 'https://platform.openai.com/docs/api-reference',
-    requiresApiKey: true
-  },
-  {
-    id: 'deepseek',
-    name: 'DeepSeek',
-    description: 'Alternative performante pour les tâches spécialisées. Nécessite une clé API.',
-    models: ['deepseek-coder', 'deepseek-chat'],
-    docsUrl: 'https://github.com/deepseek-ai/DeepSeek-LLM',
-    requiresApiKey: true
-  }
-];
+import { LLM_PROVIDERS } from "./llm/constants";
+import { ProviderSelector } from "./llm/ProviderSelector";
+import { ModelSelector } from "./llm/ModelSelector";
+import { ProviderDocs } from "./llm/ProviderDocs";
 
 interface LLMConfigProps {
   config: LLMConfigType;
@@ -99,54 +69,18 @@ export const LLMConfigComponent = ({ config, onConfigChange, onSave }: LLMConfig
       </div>
 
       <div className="space-y-6">
-        <div>
-          <Label className="text-gray-700">Fournisseur LLM</Label>
-          <Select
-            value={config.provider}
-            onValueChange={handleProviderChange}
-          >
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Choisissez un fournisseur" />
-            </SelectTrigger>
-            <SelectContent>
-              {LLM_PROVIDERS.map((provider) => (
-                <SelectItem 
-                  key={provider.id} 
-                  value={provider.id}
-                  className="py-3"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="font-medium">{provider.name}</span>
-                    <span className="text-xs text-gray-500">{provider.description}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <ProviderSelector 
+          value={config.provider} 
+          onValueChange={handleProviderChange}
+        />
 
         {selectedProvider && (
           <>
-            <div>
-              <Label className="text-gray-700">Modèle</Label>
-              <Select
-                value={config.model}
-                onValueChange={(value) => 
-                  onConfigChange({ ...config, model: value })
-                }
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Sélectionnez un modèle" />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedProvider.models.map((model) => (
-                    <SelectItem key={model} value={model}>
-                      {model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <ModelSelector
+              value={config.model}
+              models={selectedProvider.models}
+              onValueChange={(value) => onConfigChange({ ...config, model: value })}
+            />
 
             {selectedProvider.requiresApiKey && (
               <div>
@@ -177,22 +111,7 @@ export const LLMConfigComponent = ({ config, onConfigChange, onSave }: LLMConfig
               </Button>
             </div>
 
-            <div className="mt-4 p-4 bg-primary/5 rounded-md">
-              <h3 className="text-sm font-medium text-primary mb-2">
-                Documentation {selectedProvider.name}
-              </h3>
-              <p className="text-sm text-gray-600 mb-3">
-                {selectedProvider.description}
-              </p>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => window.open(selectedProvider.docsUrl, '_blank')}
-                className="w-full"
-              >
-                Voir la documentation
-              </Button>
-            </div>
+            <ProviderDocs provider={selectedProvider} />
           </>
         )}
       </div>
