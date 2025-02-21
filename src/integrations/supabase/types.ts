@@ -325,6 +325,39 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_metrics: {
+        Row: {
+          cache_hit: boolean | null
+          created_at: string | null
+          duration: number
+          error: string | null
+          id: string
+          operation: string
+          success: boolean
+          timestamp: string
+        }
+        Insert: {
+          cache_hit?: boolean | null
+          created_at?: string | null
+          duration: number
+          error?: string | null
+          id?: string
+          operation: string
+          success: boolean
+          timestamp: string
+        }
+        Update: {
+          cache_hit?: boolean | null
+          created_at?: string | null
+          duration?: number
+          error?: string | null
+          id?: string
+          operation?: string
+          success?: boolean
+          timestamp?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           client_id: string | null
@@ -479,6 +512,10 @@ export type Database = {
             }
             Returns: unknown
           }
+      clean_old_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_expired_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined

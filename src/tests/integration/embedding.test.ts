@@ -1,9 +1,9 @@
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
 import { LLMConfig } from '@/types/config';
 
-describe('Tests d'intégration - Embeddings', () => {
+describe('Tests integration - Embeddings', () => {
   let testConfig: LLMConfig;
 
   beforeEach(() => {
@@ -15,7 +15,7 @@ describe('Tests d'intégration - Embeddings', () => {
     };
   });
 
-  it('devrait générer et mettre en cache un embedding', async () => {
+  it('devrait generer et mettre en cache un embedding', async () => {
     const testText = "Ceci est un test d'embedding";
     
     const { data: embedding, error } = await supabase.functions.invoke('generate-embedding', {
@@ -27,8 +27,8 @@ describe('Tests d'intégration - Embeddings', () => {
     expect(Array.isArray(embedding)).toBe(true);
   });
 
-  it('devrait récupérer un embedding depuis le cache', async () => {
-    const testText = "Test de récupération du cache";
+  it('devrait recuperer un embedding depuis le cache', async () => {
+    const testText = "Test de recuperation du cache";
     
     // Première génération pour mettre en cache
     await supabase.functions.invoke('generate-embedding', {
