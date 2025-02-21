@@ -5,7 +5,7 @@ import { ArrowLeft, Cloud, Key, Bot, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useServiceConfig } from "@/hooks/useServiceConfig";
-import { LLMConfigComponent } from "@/components/config/LLMConfig";
+import { LLMConfigComponent, LLM_PROVIDERS } from "@/components/config/LLMConfig";
 import { ImageConfig } from "@/components/config/ImageConfig";
 import { LLMConfig, GoogleConfig, TeamsConfig } from "@/types/config";
 import { GoogleDriveConfig } from "@/components/config/GoogleDriveConfig";
@@ -42,9 +42,9 @@ export const Config = () => {
           getConfig('openai')
         ]);
         
-        if (gdriveConfig) setGoogleConfig(gdriveConfig);
-        if (teamsConfig) setTeamsConfig(teamsConfig);
-        if (openaiConfig) setLlmConfig(openaiConfig);
+        if (gdriveConfig) setGoogleConfig(gdriveConfig as GoogleConfig);
+        if (teamsConfig) setTeamsConfig(teamsConfig as TeamsConfig);
+        if (openaiConfig) setLlmConfig(openaiConfig as LLMConfig);
         
         setLoading(false);
       } catch (error) {
