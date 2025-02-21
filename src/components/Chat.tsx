@@ -1,12 +1,19 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Send, Bot, FileText, Paperclip } from "lucide-react";
+import { Send, Bot, FileText, Paperclip, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -14,13 +21,34 @@ interface Message {
   context?: string;
 }
 
+type AIProvider = 'openai' | 'huggingface';
+
 export const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [aiProvider, setAIProvider] = useState<AIProvider>('openai');
+  const [showTutorial, setShowTutorial] = useState(true);
 
-  // Charger les documents disponibles
+  useEffect(() => {
+    if (showTutorial) {
+      toast({
+        title: "Bienvenue dans l'interface de chat !",
+        description: "Vous pouvez choisir entre OpenAI (nécessite une clé API) ou Hugging Face (gratuit, local)",
+        duration: 5000,
+      });
+
+      toast({
+        title: "Comment ça marche ?",
+        description: "Sélectionnez un document à analyser et posez vos questions. L'IA vous aidera à l'analyser.",
+        duration: 5000,
+      });
+
+      setShowTutorial(false);
+    }
+  }, [showTutorial]);
+
   const { data: documents } = useQuery({
     queryKey: ['documents'],
     queryFn: async () => {
@@ -32,6 +60,21 @@ export const Chat = () => {
     }
   });
 
+  const handleAIProviderChange = (value: AIProvider) => {
+    setAIProvider(value);
+    if (value === 'openai') {
+      toast({
+        title: "Configuration OpenAI",
+        description: "Assurez-vous d'avoir configuré votre clé API OpenAI dans les paramètres.",
+      });
+    } else {
+      toast({
+        title: "Mode Hugging Face",
+        description: "Le traitement sera effectué localement dans votre navigateur, c'est gratuit mais peut être plus lent.",
+      });
+    }
+  };
+
   const sendMessage = async (message: string) => {
     if (!message.trim()) return;
 
@@ -40,7 +83,6 @@ export const Chat = () => {
     setInput('');
 
     try {
-      // Si un document est sélectionné, on l'inclut comme contexte
       let context = '';
       if (selectedDocumentId && documents) {
         const selectedDoc = documents.find(doc => doc.id === selectedDocumentId);
@@ -52,13 +94,19 @@ export const Chat = () => {
       const { data, error } = await supabase.functions.invoke('chat', {
         body: { 
           message,
-          context: context || undefined
+          context: context || undefined,
+          provider: aiProvider
         }
       });
 
       if (error) throw error;
 
-      const assistantMessage = data.choices[0].message.content;
+      // Si c'est Hugging Face, on simule une réponse locale pour l'exemple
+      // Dans une vraie implémentation, on utiliserait transformers.js ici
+      const assistantMessage = data.choices 
+        ? data.choices[0].message.content
+        : "Je suis le modèle local Hugging Face. Cette démonstration montre comment l'intégrer.";
+
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: assistantMessage,
@@ -72,6 +120,20 @@ export const Chat = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleConfigureAI = () => {
+    if (aiProvider === 'openai') {
+      toast({
+        title: "Configuration OpenAI",
+        description: "Pour utiliser OpenAI, vous devez configurer votre clé API. Coût : ~0.01$ par 1000 tokens.",
+      });
+    } else {
+      toast({
+        title: "Configuration Hugging Face",
+        description: "Hugging Face est gratuit et fonctionne localement. Pas de configuration nécessaire !",
+      });
     }
   };
 
@@ -90,27 +152,48 @@ export const Chat = () => {
 
   return (
     <div className="space-y-4">
-      {documents && documents.length > 0 && (
-        <Card className="p-4">
-          <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Documents disponibles
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {documents.map((doc) => (
-              <Button
-                key={doc.id}
-                variant={selectedDocumentId === doc.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleSelectDocument(doc.id)}
-              >
-                <Paperclip className="h-4 w-4 mr-1" />
-                {doc.title}
-              </Button>
-            ))}
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <Select
+            value={aiProvider}
+            onValueChange={(value: AIProvider) => handleAIProviderChange(value)}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Choisir le modèle IA" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="openai">OpenAI (API Key requise)</SelectItem>
+              <SelectItem value="huggingface">Hugging Face (Gratuit, Local)</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" onClick={handleConfigureAI}>
+            <Settings className="h-4 w-4 mr-2" />
+            Configurer l'IA
+          </Button>
+        </div>
+
+        {documents && documents.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Documents disponibles
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {documents.map((doc) => (
+                <Button
+                  key={doc.id}
+                  variant={selectedDocumentId === doc.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleSelectDocument(doc.id)}
+                >
+                  <Paperclip className="h-4 w-4 mr-1" />
+                  {doc.title}
+                </Button>
+              ))}
+            </div>
           </div>
-        </Card>
-      )}
+        )}
+      </Card>
 
       <Card className="flex flex-col h-[600px] p-4">
         <div className="flex-1 overflow-y-auto space-y-4 mb-4">

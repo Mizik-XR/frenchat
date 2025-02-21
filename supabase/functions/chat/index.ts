@@ -13,51 +13,47 @@ serve(async (req) => {
   }
 
   try {
-    const { message, context } = await req.json()
-    const apiKey = Deno.env.get('PERPLEXITY_API_KEY')
+    const { message, context, provider = 'openai' } = await req.json()
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
 
-    if (!apiKey) {
-      throw new Error('PERPLEXITY_API_KEY is not set')
+    if (!openAIApiKey && provider === 'openai') {
+      throw new Error('OPENAI_API_KEY is not set')
     }
 
     const systemPrompt = context 
       ? `Utilise le contexte suivant pour répondre aux questions. Contexte: ${context}`
       : 'Tu es un assistant helpful qui aide à analyser des documents et à générer du contenu.'
 
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: message
-          }
-        ],
-        temperature: 0.2,
-        max_tokens: 1000,
-        return_images: false,
-        return_related_questions: false,
-        search_domain_filter: ['perplexity.ai'],
-        search_recency_filter: 'month',
-        frequency_penalty: 1,
-        presence_penalty: 0
+    if (provider === 'openai') {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: message }
+          ],
+        }),
+      })
+
+      const data = await response.json()
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Si provider n'est pas OpenAI, on utilise Hugging Face directement depuis le front-end
+    return new Response(
+      JSON.stringify({ 
+        error: 'Hugging Face processing should be done client-side',
+        shouldUseClientSide: true 
       }),
-    })
-
-    const data = await response.json()
-
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   } catch (error) {
     console.error('Error:', error)
     return new Response(
