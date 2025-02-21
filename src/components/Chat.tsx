@@ -1,25 +1,22 @@
 
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Send, Bot, Settings, Cloud, Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Message, AIProvider, WebUIConfig } from "@/types/chat";
+import { AIProvider, WebUIConfig } from "@/types/chat";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
-import { AIProviderSelect } from "./chat/AIProviderSelect";
-import { MessageList } from "./chat/MessageList";
-import { DocumentList } from "./chat/DocumentList";
 import { useServiceConfig } from '@/hooks/useServiceConfig';
+import { useChatMessages } from '@/hooks/useChatMessages';
+import { ChatHeader } from "./chat/ChatHeader";
+import { ChatInput } from "./chat/ChatInput";
+import { SettingsPanel } from "./chat/SettingsPanel";
+import { MessageList } from "./chat/MessageList";
 
 import "@/styles/chat.css";
 
 export const Chat = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   
@@ -30,9 +27,17 @@ export const Chat = () => {
     streamResponse: true
   });
 
-  const huggingFaceModel = useHuggingFace('huggingface');
+  const {
+    messages,
+    isLoading,
+    setIsLoading,
+    addUserMessage,
+    updateLastMessage,
+    setAssistantResponse
+  } = useChatMessages();
 
-  const { saveConfig, getConfig, isLoading: configLoading } = useServiceConfig();
+  const huggingFaceModel = useHuggingFace('huggingface');
+  const { saveConfig, getConfig } = useServiceConfig();
 
   const handleProviderChange = (provider: AIProvider) => {
     setWebUIConfig(prev => ({ ...prev, model: provider }));
@@ -41,18 +46,6 @@ export const Chat = () => {
       description: `Modèle changé pour : ${provider}`,
     });
   };
-
-  useEffect(() => {
-    toast({
-      title: "Chat initialisé",
-      description: "Interface OpenWebUI chargée avec succès",
-    });
-
-    console.log("Chat component initialized", {
-      model: webUIConfig.model,
-      huggingFaceModel: Boolean(huggingFaceModel)
-    });
-  }, []);
 
   const { data: documents } = useQuery({
     queryKey: ['documents'],
@@ -69,7 +62,7 @@ export const Chat = () => {
     if (!message.trim()) return;
 
     setIsLoading(true);
-    setMessages(prev => [...prev, { role: 'user', content: message }]);
+    addUserMessage(message);
     setInput('');
 
     try {
@@ -91,15 +84,7 @@ export const Chat = () => {
         
         for (const word of words) {
           partialResponse += word + ' ';
-          setMessages(prev => {
-            const newMessages = [...prev];
-            newMessages[newMessages.length - 1] = {
-              role: 'assistant',
-              content: partialResponse,
-              context: context || undefined
-            };
-            return newMessages;
-          });
+          updateLastMessage(partialResponse, context);
           await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
@@ -110,16 +95,7 @@ export const Chat = () => {
         top_p: 0.95,
       });
 
-      const assistantMessage = result[0].generated_text;
-
-      setMessages(prev => [
-        ...prev.slice(0, -1),
-        { 
-          role: 'assistant', 
-          content: assistantMessage,
-          context: context || undefined
-        }
-      ]);
+      setAssistantResponse(result[0].generated_text, context);
     } catch (error: any) {
       toast({
         title: "Erreur",
@@ -134,6 +110,10 @@ export const Chat = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     sendMessage(input);
+  };
+
+  const handleWebUIConfigChange = (config: Partial<WebUIConfig>) => {
+    setWebUIConfig(prev => ({ ...prev, ...config }));
   };
 
   const handleGDriveConfig = async () => {
@@ -189,125 +169,38 @@ export const Chat = () => {
     };
 
     loadConfigs();
+    
+    toast({
+      title: "Chat initialisé",
+      description: "Interface OpenWebUI chargée avec succès",
+    });
   }, []);
 
   return (
     <Card className="flex flex-col h-[600px] p-4 relative bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 shadow-lg">
-      <div className="flex justify-between items-center mb-4 bg-white p-3 rounded-lg shadow-sm">
-        <div className="flex items-center gap-2">
-          <Bot className="h-6 w-6 text-blue-500" />
-          <h2 className="text-xl font-semibold text-gray-800">Assistant IA</h2>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowSettings(!showSettings)}
-          className="hover:bg-blue-50 transition-colors"
-        >
-          <Settings className="h-5 w-5 text-blue-600" />
-        </Button>
-      </div>
+      <ChatHeader onToggleSettings={() => setShowSettings(!showSettings)} />
 
       {showSettings && (
-        <Card className="absolute top-16 right-4 z-10 p-4 w-80 bg-white/95 backdrop-blur-sm shadow-xl border border-blue-100 rounded-xl">
-          <div className="space-y-6">
-            <div>
-              <h3 className="font-medium text-gray-800 border-b pb-2 mb-4">Paramètres IA</h3>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">Modèle IA</label>
-                  <AIProviderSelect 
-                    aiProvider={webUIConfig.model} 
-                    onProviderChange={handleProviderChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">Température</label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={webUIConfig.temperature}
-                      onChange={(e) => setWebUIConfig(prev => ({
-                        ...prev,
-                        temperature: parseFloat(e.target.value)
-                      }))}
-                      className="flex-1 accent-blue-500"
-                    />
-                    <span className="text-xs text-gray-500 w-8 text-right">
-                      {webUIConfig.temperature}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-600">Tokens maximum</label>
-                  <Input
-                    type="number"
-                    min="100"
-                    max="4000"
-                    value={webUIConfig.maxTokens}
-                    onChange={(e) => setWebUIConfig(prev => ({
-                      ...prev,
-                      maxTokens: parseInt(e.target.value)
-                    }))}
-                    className="border-blue-200 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-medium text-gray-800 border-b pb-2 mb-4">Intégrations externes</h3>
-              <div className="space-y-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start" 
-                  onClick={handleGDriveConfig}
-                >
-                  <Cloud className="h-4 w-4 mr-2" />
-                  Configurer Google Drive
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start" 
-                  onClick={handleTeamsConfig}
-                >
-                  <Key className="h-4 w-4 mr-2" />
-                  Configurer Microsoft Teams
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <SettingsPanel
+          webUIConfig={webUIConfig}
+          onWebUIConfigChange={handleWebUIConfigChange}
+          onProviderChange={handleProviderChange}
+          onGDriveConfig={handleGDriveConfig}
+          onTeamsConfig={handleTeamsConfig}
+        />
       )}
 
       <div className="flex-1 overflow-y-auto mb-4 bg-white/60 rounded-lg p-4">
         <MessageList messages={messages} />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-2 bg-white p-2 rounded-lg shadow-sm">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={selectedDocumentId 
-            ? "Posez une question sur le document..." 
-            : "Posez votre question..."
-          }
-          disabled={isLoading}
-          className="flex-1 border-blue-200 focus:border-blue-500"
-        />
-        <Button 
-          type="submit" 
-          disabled={isLoading || !input.trim()}
-          className="bg-blue-500 hover:bg-blue-600 transition-colors"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
-      </form>
+      <ChatInput
+        input={input}
+        setInput={setInput}
+        isLoading={isLoading}
+        selectedDocumentId={selectedDocumentId}
+        onSubmit={handleSubmit}
+      />
     </Card>
   );
 };
