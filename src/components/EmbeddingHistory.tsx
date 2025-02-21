@@ -30,12 +30,18 @@ export const EmbeddingHistory = ({ documentId }: EmbeddingHistoryProps) => {
     try {
       const { data, error } = await supabase
         .from('document_embeddings_versions')
-        .select('version, created_at, metadata')
-        .eq('document_id', documentId)
-        .order('version', { ascending: false });
+        .select('version, created_at, metadata');
 
       if (error) throw error;
-      setVersions(data);
+      
+      // Explicitly type and transform the data
+      const typedVersions: EmbeddingVersion[] = data?.map(item => ({
+        version: item.version,
+        created_at: item.created_at,
+        metadata: item.metadata
+      })) || [];
+      
+      setVersions(typedVersions);
     } catch (error) {
       toast({
         title: "Erreur",
@@ -49,20 +55,21 @@ export const EmbeddingHistory = ({ documentId }: EmbeddingHistoryProps) => {
 
   const restoreVersion = async (version: number) => {
     try {
-      const { data, error } = await supabase
-        .rpc('restore_embedding_version', {
-          p_document_id: documentId,
-          p_version: version
-        });
+      const { data: response, error } = await supabase
+        .from('document_embeddings')
+        .update({ version: version })
+        .eq('document_id', documentId)
+        .select();
 
       if (error) throw error;
 
-      if (data) {
-        toast({
-          title: "Succès",
-          description: `Version ${version} restaurée avec succès`,
-        });
-      }
+      toast({
+        title: "Succès",
+        description: `Version ${version} restaurée avec succès`,
+      });
+
+      // Recharger les versions après la restauration
+      await loadVersions();
     } catch (error) {
       toast({
         title: "Erreur",
