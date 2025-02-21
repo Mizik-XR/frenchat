@@ -7,6 +7,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  TooltipProvider,
 } from "@/components/ui/tooltip";
 
 interface ChatHeaderProps {
@@ -30,19 +31,21 @@ export const ChatHeader = ({ mode, onModeChange, onToggleSettings }: ChatHeaderP
             onCheckedChange={(checked) => onModeChange(checked ? 'auto' : 'manual')}
           />
           <Label>Mode Auto</Label>
-          <Tooltip>
-            <TooltipTrigger>
-              <Info className="h-4 w-4 text-gray-500" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="max-w-xs">
-                Le mode Auto sélectionne intelligemment le meilleur modèle selon votre demande :
-                <br/>- Images : Utilise OpenAI DALL-E
-                <br/>- Documents : Utilise Google Drive/Teams
-                <br/>- Texte : Utilise Hugging Face
-              </p>
-            </TooltipContent>
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-4 w-4 text-gray-500" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="max-w-xs">
+                  Le mode Auto sélectionne intelligemment le meilleur modèle selon votre demande :
+                  <br/>- Images : Utilise OpenAI DALL-E
+                  <br/>- Documents : Utilise Google Drive/Teams
+                  <br/>- Texte : Utilise Hugging Face
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         <Button
