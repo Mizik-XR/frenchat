@@ -298,6 +298,33 @@ export type Database = {
           },
         ]
       }
+      embeddings_cache: {
+        Row: {
+          compression_enabled: boolean | null
+          created_at: string | null
+          expires_at: string
+          id: string
+          key: string
+          value: Json
+        }
+        Insert: {
+          compression_enabled?: boolean | null
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          key: string
+          value: Json
+        }
+        Update: {
+          compression_enabled?: boolean | null
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          key?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           client_id: string | null
@@ -452,6 +479,10 @@ export type Database = {
             }
             Returns: unknown
           }
+      cleanup_expired_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       halfvec_avg: {
         Args: {
           "": number[]

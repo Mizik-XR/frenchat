@@ -1,6 +1,6 @@
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 
 export const OptimizationDocs = () => {
   return (
@@ -46,7 +46,7 @@ export const OptimizationDocs = () => {
           </section>
 
           <Alert>
-            <InfoCircle className="h-4 w-4" />
+            <Info className="h-4 w-4" />
             <AlertDescription className="ml-2">
               Ces optimisations peuvent réduire les coûts d'API Hugging Face jusqu'à 80% en 
               minimisant les appels redondants et en maximisant l'utilisation des ressources locales.
