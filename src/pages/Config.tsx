@@ -3,10 +3,12 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Bot, Cloud, Key, Info } from "lucide-react";
+import { ArrowLeft, Cloud, Key, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useServiceConfig } from "@/hooks/useServiceConfig";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Tooltip,
   TooltipContent,
@@ -16,18 +18,35 @@ import {
 
 export const Config = () => {
   const navigate = useNavigate();
-  const { getConfig } = useServiceConfig();
+  const { getConfig, saveConfig } = useServiceConfig();
   const [loading, setLoading] = useState(true);
+
+  // États pour les formulaires
+  const [googleConfig, setGoogleConfig] = useState({
+    clientId: '',
+    apiKey: ''
+  });
+  const [teamsConfig, setTeamsConfig] = useState({
+    clientId: '',
+    tenantId: ''
+  });
 
   useEffect(() => {
     const loadConfigs = async () => {
       try {
-        const [openaiConfig, gdriveConfig, teamsConfig] = await Promise.all([
-          getConfig('openai'),
+        const [gdriveConfig, teamsConfig] = await Promise.all([
           getConfig('google_drive'),
           getConfig('microsoft_teams')
         ]);
-        console.info('Configurations chargées:', { openaiConfig, gdriveConfig, teamsConfig });
+        console.info('Configurations chargées:', { gdriveConfig, teamsConfig });
+        
+        if (gdriveConfig) {
+          setGoogleConfig(gdriveConfig);
+        }
+        if (teamsConfig) {
+          setTeamsConfig(teamsConfig);
+        }
+        
         setLoading(false);
         
         if (!gdriveConfig || !teamsConfig) {
@@ -49,6 +68,38 @@ export const Config = () => {
 
     loadConfigs();
   }, []);
+
+  const handleSaveGoogleConfig = async () => {
+    try {
+      await saveConfig('google_drive', googleConfig);
+      toast({
+        title: "Configuration sauvegardée",
+        description: "Les identifiants Google Drive ont été enregistrés avec succès.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder la configuration Google Drive.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveTeamsConfig = async () => {
+    try {
+      await saveConfig('microsoft_teams', teamsConfig);
+      toast({
+        title: "Configuration sauvegardée",
+        description: "Les identifiants Microsoft Teams ont été enregistrés avec succès.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder la configuration Microsoft Teams.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -89,18 +140,19 @@ export const Config = () => {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Pour utiliser Google Drive, suivez ces étapes :
-              </p>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
-                <li>Créez un projet dans la Google Cloud Console</li>
-                <li>Activez l'API Google Drive</li>
-                <li>Configurez les identifiants OAuth2</li>
-                <li>Copiez vos identifiants ci-dessous</li>
-              </ol>
-              <div className="space-y-2">
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Pour utiliser Google Drive, suivez ces étapes :
+                </p>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 mb-6">
+                  <li>Créez un projet dans la Google Cloud Console</li>
+                  <li>Activez l'API Google Drive</li>
+                  <li>Configurez les identifiants OAuth2</li>
+                  <li>Copiez vos identifiants ci-dessous</li>
+                </ol>
                 <Button 
+                  variant="outline"
                   onClick={() => {
                     window.open('https://console.cloud.google.com/apis/credentials', '_blank');
                     toast({
@@ -108,8 +160,43 @@ export const Config = () => {
                       description: "Suivez les instructions pour obtenir vos identifiants.",
                     });
                   }}
+                  className="mb-6"
                 >
                   Ouvrir Google Cloud Console
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="googleClientId">Client ID</Label>
+                  <Input
+                    id="googleClientId"
+                    placeholder="Votre Google Client ID"
+                    value={googleConfig.clientId}
+                    onChange={(e) => setGoogleConfig(prev => ({
+                      ...prev,
+                      clientId: e.target.value
+                    }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="googleApiKey">API Key</Label>
+                  <Input
+                    id="googleApiKey"
+                    placeholder="Votre Google API Key"
+                    value={googleConfig.apiKey}
+                    onChange={(e) => setGoogleConfig(prev => ({
+                      ...prev,
+                      apiKey: e.target.value
+                    }))}
+                  />
+                </div>
+                <Button 
+                  onClick={handleSaveGoogleConfig}
+                  className="w-full"
+                  disabled={!googleConfig.clientId || !googleConfig.apiKey}
+                >
+                  Sauvegarder la configuration Google Drive
                 </Button>
               </div>
             </div>
@@ -134,18 +221,19 @@ export const Config = () => {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Pour utiliser Microsoft Teams, suivez ces étapes :
-              </p>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
-                <li>Accédez au portail Azure</li>
-                <li>Enregistrez une nouvelle application</li>
-                <li>Configurez les permissions Teams</li>
-                <li>Copiez vos identifiants ci-dessous</li>
-              </ol>
-              <div className="space-y-2">
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Pour utiliser Microsoft Teams, suivez ces étapes :
+                </p>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 mb-6">
+                  <li>Accédez au portail Azure</li>
+                  <li>Enregistrez une nouvelle application</li>
+                  <li>Configurez les permissions Teams</li>
+                  <li>Copiez vos identifiants ci-dessous</li>
+                </ol>
                 <Button 
+                  variant="outline"
                   onClick={() => {
                     window.open('https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade', '_blank');
                     toast({
@@ -153,8 +241,43 @@ export const Config = () => {
                       description: "Suivez les instructions pour obtenir vos identifiants.",
                     });
                   }}
+                  className="mb-6"
                 >
                   Ouvrir le portail Azure
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="teamsClientId">Client ID</Label>
+                  <Input
+                    id="teamsClientId"
+                    placeholder="Votre Teams Client ID"
+                    value={teamsConfig.clientId}
+                    onChange={(e) => setTeamsConfig(prev => ({
+                      ...prev,
+                      clientId: e.target.value
+                    }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="teamsTenantId">Tenant ID</Label>
+                  <Input
+                    id="teamsTenantId"
+                    placeholder="Votre Teams Tenant ID"
+                    value={teamsConfig.tenantId}
+                    onChange={(e) => setTeamsConfig(prev => ({
+                      ...prev,
+                      tenantId: e.target.value
+                    }))}
+                  />
+                </div>
+                <Button 
+                  onClick={handleSaveTeamsConfig}
+                  className="w-full"
+                  disabled={!teamsConfig.clientId || !teamsConfig.tenantId}
+                >
+                  Sauvegarder la configuration Microsoft Teams
                 </Button>
               </div>
             </div>
