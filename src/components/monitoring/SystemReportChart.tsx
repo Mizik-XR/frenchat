@@ -100,7 +100,7 @@ export const SystemReportChart = () => {
     avgDuration: report.metrics_summary.avg_duration,
     errorCount: report.metrics_summary.error_count,
     cacheHitRate: report.cache_stats.hit_rate
-  }));
+  })) ?? [];
 
   return (
     <div className="space-y-6">
