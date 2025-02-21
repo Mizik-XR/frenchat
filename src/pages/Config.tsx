@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useServiceConfig } from "@/hooks/useServiceConfig";
 import { LLMConfigComponent } from "@/components/config/LLMConfig";
 import { ImageConfig } from "@/components/config/ImageConfig";
-import { LLMConfig } from "@/types/config";
+import { LLMConfig, GoogleConfig, TeamsConfig } from "@/types/config";
 import { GoogleDriveConfig } from "@/components/config/GoogleDriveConfig";
 import { MicrosoftTeamsConfig } from "@/components/config/MicrosoftTeamsConfig";
 
@@ -16,14 +17,16 @@ export const Config = () => {
   const { getConfig, saveConfig } = useServiceConfig();
   const [loading, setLoading] = useState(true);
 
-  const [googleConfig, setGoogleConfig] = useState({
+  const [googleConfig, setGoogleConfig] = useState<GoogleConfig>({
     clientId: '',
     apiKey: ''
   });
-  const [teamsConfig, setTeamsConfig] = useState({
+  
+  const [teamsConfig, setTeamsConfig] = useState<TeamsConfig>({
     clientId: '',
     tenantId: ''
   });
+  
   const [llmConfig, setLlmConfig] = useState<LLMConfig>({
     provider: 'openai',
     apiKey: '',
@@ -73,6 +76,10 @@ export const Config = () => {
       rateLimit: Number(llmConfig.rateLimit)
     });
   };
+
+  if (loading) {
+    return <div>Chargement...</div>;
+  }
 
   return (
     <div className="container mx-auto py-8 px-4">

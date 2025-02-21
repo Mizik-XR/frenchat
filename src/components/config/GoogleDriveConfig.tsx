@@ -1,14 +1,15 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Credentials } from "@/types/config";
+import { GoogleConfig } from "@/types/config";
 
 interface GoogleDriveConfigProps {
-  credentials: Credentials;
-  setCredentials: (credentials: Credentials) => void;
+  config: GoogleConfig;
+  onConfigChange: (config: GoogleConfig) => void;
+  onSave: () => void;
 }
 
-export const GoogleDriveConfig = ({ credentials, setCredentials }: GoogleDriveConfigProps) => {
+export const GoogleDriveConfig = ({ config, onConfigChange }: GoogleDriveConfigProps) => {
   return (
     <div className="space-y-4">
       <h3 className="text-xl font-semibold text-gray-900">Google Drive</h3>
@@ -17,9 +18,9 @@ export const GoogleDriveConfig = ({ credentials, setCredentials }: GoogleDriveCo
           <Label htmlFor="googleClientId">Client ID</Label>
           <Input
             id="googleClientId"
-            value={credentials.googleClientId}
+            value={config.clientId}
             onChange={(e) =>
-              setCredentials({ ...credentials, googleClientId: e.target.value })
+              onConfigChange({ ...config, clientId: e.target.value })
             }
             className="input-field"
             placeholder="Entrez votre Google Client ID"
@@ -29,9 +30,9 @@ export const GoogleDriveConfig = ({ credentials, setCredentials }: GoogleDriveCo
           <Label htmlFor="googleApiKey">Clé API</Label>
           <Input
             id="googleApiKey"
-            value={credentials.googleApiKey}
+            value={config.apiKey}
             onChange={(e) =>
-              setCredentials({ ...credentials, googleApiKey: e.target.value })
+              onConfigChange({ ...config, apiKey: e.target.value })
             }
             className="input-field"
             placeholder="Entrez votre Google API Key"

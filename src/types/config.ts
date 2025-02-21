@@ -15,3 +15,20 @@ export type LLMConfig = {
   model: string;
   rateLimit: number;
 };
+
+export type Credentials = {
+  googleClientId?: string;
+  googleApiKey?: string;
+  microsoftClientId?: string;
+  microsoftTenantId?: string;
+};
+
+export type GoogleConfig = {
+  clientId: string;
+  apiKey: string;
+};
+
+export type TeamsConfig = {
+  clientId: string;
+  tenantId: string;
+};
