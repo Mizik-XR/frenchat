@@ -2,8 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from './use-toast';
-
-type ServiceType = 'google_drive' | 'microsoft_teams' | 'openai';
+import { ServiceType } from '@/types/config';
 
 export function useServiceConfig() {
   const [isLoading, setIsLoading] = useState(false);
