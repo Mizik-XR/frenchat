@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Credentials } from "../types/config";
+import { Credentials, ServiceCredentials } from "../types/config";
 
 const DEFAULT_CLIENT_EMAIL = "client@cnxria.com";
 

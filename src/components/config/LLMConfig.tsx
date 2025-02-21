@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 
-const LLM_PROVIDERS: LLMProvider[] = [
+export const LLM_PROVIDERS: LLMProvider[] = [
   {
     id: 'huggingface',
     name: 'Hugging Face',
