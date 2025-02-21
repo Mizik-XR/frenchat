@@ -17,7 +17,20 @@ export type Message = {
     imageUrl?: string;
     confidence?: number;
   };
+  conversationId: string;
   timestamp: Date;
+};
+
+export type Conversation = {
+  id: string;
+  title: string;
+  updatedAt: Date;
+  settings: {
+    model: AIProvider;
+    maxTokens: number;
+    temperature: number;
+    streamResponse: boolean;
+  };
 };
 
 export type WebUIConfig = {
