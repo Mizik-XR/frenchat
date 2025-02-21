@@ -63,31 +63,105 @@ export const Config = () => {
   }, []);
 
   const handleSaveGoogleConfig = async () => {
-    await saveConfig('google_drive', googleConfig);
+    try {
+      if (!googleConfig.clientId || !googleConfig.apiKey) {
+        toast({
+          title: "Champs manquants",
+          description: "Veuillez remplir tous les champs requis.",
+          variant: "destructive",
+        });
+        return;
+      }
+      await saveConfig('google_drive', googleConfig);
+      toast({
+        title: "Configuration sauvegardée",
+        description: "Les paramètres Google Drive ont été enregistrés avec succès.",
+      });
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder la configuration Google Drive.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSaveTeamsConfig = async () => {
-    await saveConfig('microsoft_teams', teamsConfig);
+    try {
+      if (!teamsConfig.clientId || !teamsConfig.tenantId) {
+        toast({
+          title: "Champs manquants",
+          description: "Veuillez remplir tous les champs requis.",
+          variant: "destructive",
+        });
+        return;
+      }
+      await saveConfig('microsoft_teams', teamsConfig);
+      toast({
+        title: "Configuration sauvegardée",
+        description: "Les paramètres Microsoft Teams ont été enregistrés avec succès.",
+      });
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder la configuration Microsoft Teams.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSaveLLMConfig = async () => {
-    await saveConfig(llmConfig.provider, {
-      ...llmConfig,
-      rateLimit: Number(llmConfig.rateLimit)
-    });
+    try {
+      if (!llmConfig.provider || !llmConfig.model || !llmConfig.apiKey) {
+        toast({
+          title: "Champs manquants",
+          description: "Veuillez remplir tous les champs requis.",
+          variant: "destructive",
+        });
+        return;
+      }
+      await saveConfig(llmConfig.provider, {
+        ...llmConfig,
+        rateLimit: Number(llmConfig.rateLimit)
+      });
+      toast({
+        title: "Configuration sauvegardée",
+        description: "Les paramètres du modèle de langage ont été enregistrés avec succès.",
+      });
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder la configuration du modèle de langage.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
-    return <div>Chargement...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-pulse text-lg text-primary">Chargement...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4 bg-gray-50">
       <div className="flex items-center gap-4 mb-8">
         <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-2xl font-bold">Configuration des API</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Configuration des API</h1>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <p className="text-gray-600 mb-4">
+          Cette page vous permet de configurer les différentes API nécessaires au fonctionnement de l'application.
+          Chaque section contient des instructions détaillées et des liens vers la documentation pertinente.
+        </p>
       </div>
 
       <Tabs defaultValue="drive" className="w-full">
