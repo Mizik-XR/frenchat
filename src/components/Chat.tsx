@@ -10,8 +10,15 @@ import { ChatInput } from "./chat/ChatInput";
 import { SettingsPanel } from "./chat/SettingsPanel";
 import { MessageList } from "./chat/MessageList";
 import { ConversationList } from "./chat/ConversationList";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Button } from "./ui/button";
+import { LogIn } from "lucide-react";
 
 export const Chat = () => {
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [input, setInput] = useState('');
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -24,6 +31,21 @@ export const Chat = () => {
     temperature: 0.7,
     streamResponse: true
   });
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session?.user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const { messages } = useChatMessages(selectedConversationId);
   const { conversations, createNewConversation, updateConversation } = useConversations();
@@ -60,6 +82,33 @@ export const Chat = () => {
       setSelectedConversationId(conversations[0].id);
     }
   }, [conversations]);
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="p-8">
+          <div className="animate-pulse">
+            Chargement...
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="p-8 text-center space-y-4">
+          <h2 className="text-xl font-semibold">Connexion requise</h2>
+          <p className="text-gray-600">Veuillez vous connecter pour accéder au chat</p>
+          <Button onClick={() => navigate('/auth')} className="gap-2">
+            <LogIn className="w-4 h-4" />
+            Se connecter
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
