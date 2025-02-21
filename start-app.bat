@@ -23,15 +23,6 @@ if not exist "node_modules\" (
     )
 )
 
-REM Vérification du fichier .env
-if not exist ".env" (
-    echo Création du fichier .env...
-    echo VITE_SUPABASE_URL=votre_url_supabase > .env
-    echo VITE_SUPABASE_ANON_KEY=votre_clé_anon_supabase >> .env
-    echo ATTENTION: Veuillez configurer vos variables d'environnement dans le fichier .env
-    notepad .env
-)
-
 echo Lancement de l'application...
 start http://localhost:8080
 call npm run dev
