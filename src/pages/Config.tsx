@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Cloud, Key, Bot, Image } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,7 +35,7 @@ export const Config = () => {
     rateLimit: 0
   });
 
-  useState(() => {
+  useEffect(() => {
     const loadConfigs = async () => {
       try {
         const [gdriveConfig, teamsConfig, openaiConfig] = await Promise.all([
