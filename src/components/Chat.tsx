@@ -37,7 +37,6 @@ export const Chat = () => {
       description: "Interface OpenWebUI chargée avec succès",
     });
 
-    // Log de diagnostic
     console.log("Chat component initialized", {
       model: webUIConfig.model,
       huggingFaceModel: Boolean(huggingFaceModel)
@@ -76,7 +75,6 @@ export const Chat = () => {
         : `[INST] ${message} [/INST]`;
 
       if (webUIConfig.streamResponse) {
-        // Simulation de streaming pour la démo
         let partialResponse = '';
         const words = "Traitement de votre demande...".split(' ');
         
@@ -128,57 +126,67 @@ export const Chat = () => {
   };
 
   return (
-    <Card className="flex flex-col h-[600px] p-4 relative">
-      <div className="flex justify-between items-center mb-4">
+    <Card className="flex flex-col h-[600px] p-4 relative bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 shadow-lg">
+      <div className="flex justify-between items-center mb-4 bg-white p-3 rounded-lg shadow-sm">
         <div className="flex items-center gap-2">
           <Bot className="h-6 w-6 text-blue-500" />
-          <h2 className="text-xl font-semibold">Assistant IA</h2>
+          <h2 className="text-xl font-semibold text-gray-800">Assistant IA</h2>
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setShowSettings(!showSettings)}
+          className="hover:bg-blue-50 transition-colors"
         >
-          <Settings className="h-5 w-5" />
+          <Settings className="h-5 w-5 text-blue-600" />
         </Button>
       </div>
 
       {showSettings && (
-        <Card className="absolute top-16 right-4 z-10 p-4 w-72 space-y-4 bg-white shadow-lg">
-          <h3 className="font-medium">Paramètres du chat</h3>
-          <div className="space-y-2">
-            <label className="text-sm">Température</label>
-            <Input
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={webUIConfig.temperature}
-              onChange={(e) => setWebUIConfig(prev => ({
-                ...prev,
-                temperature: parseFloat(e.target.value)
-              }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm">Tokens maximum</label>
-            <Input
-              type="number"
-              min="100"
-              max="4000"
-              value={webUIConfig.maxTokens}
-              onChange={(e) => setWebUIConfig(prev => ({
-                ...prev,
-                maxTokens: parseInt(e.target.value)
-              }))}
-            />
+        <Card className="absolute top-16 right-4 z-10 p-4 w-72 bg-white/95 backdrop-blur-sm shadow-xl border border-blue-100 rounded-xl">
+          <div className="space-y-4">
+            <h3 className="font-medium text-gray-800 border-b pb-2">Paramètres du chat</h3>
+            <div className="space-y-2">
+              <label className="text-sm text-gray-600">Température</label>
+              <Input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={webUIConfig.temperature}
+                onChange={(e) => setWebUIConfig(prev => ({
+                  ...prev,
+                  temperature: parseFloat(e.target.value)
+                }))}
+                className="accent-blue-500"
+              />
+              <div className="text-xs text-gray-500 text-right">
+                {webUIConfig.temperature}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm text-gray-600">Tokens maximum</label>
+              <Input
+                type="number"
+                min="100"
+                max="4000"
+                value={webUIConfig.maxTokens}
+                onChange={(e) => setWebUIConfig(prev => ({
+                  ...prev,
+                  maxTokens: parseInt(e.target.value)
+                }))}
+                className="border-blue-200 focus:border-blue-500"
+              />
+            </div>
           </div>
         </Card>
       )}
 
-      <MessageList messages={messages} />
+      <div className="flex-1 overflow-y-auto mb-4 bg-white/60 rounded-lg p-4">
+        <MessageList messages={messages} />
+      </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-2 mt-4">
+      <form onSubmit={handleSubmit} className="flex gap-2 bg-white p-2 rounded-lg shadow-sm">
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -187,9 +195,13 @@ export const Chat = () => {
             : "Posez votre question..."
           }
           disabled={isLoading}
-          className="flex-1"
+          className="flex-1 border-blue-200 focus:border-blue-500"
         />
-        <Button type="submit" disabled={isLoading || !input.trim()}>
+        <Button 
+          type="submit" 
+          disabled={isLoading || !input.trim()}
+          className="bg-blue-500 hover:bg-blue-600 transition-colors"
+        >
           <Send className="h-4 w-4" />
         </Button>
       </form>
