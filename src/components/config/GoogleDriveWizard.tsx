@@ -92,6 +92,10 @@ export const GoogleDriveWizard = ({
 
         setIsConnected(!!data && !error);
         console.log('État de la connexion:', !!data && !error);
+        
+        if (!!data && !error) {
+          onConfigSave();
+        }
       } catch (err) {
         console.error("Erreur lors de la vérification de la connexion:", err);
       }
@@ -99,7 +103,7 @@ export const GoogleDriveWizard = ({
 
     fetchClientId();
     checkGoogleDriveConnection();
-  }, [user]);
+  }, [user, onConfigSave]);
 
   const initiateGoogleAuth = async () => {
     if (!user) {
@@ -122,8 +126,8 @@ export const GoogleDriveWizard = ({
     
     setIsConnecting(true);
     const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
-    const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback/google`);
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent&state=${user.id}`;
+    const redirectUri = encodeURIComponent(REDIRECT_URI);
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
     
     console.log('Redirection vers Google OAuth:', authUrl);
     window.location.href = authUrl;
