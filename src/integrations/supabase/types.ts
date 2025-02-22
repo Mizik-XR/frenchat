@@ -611,32 +611,32 @@ export type Database = {
         Row: {
           client_id: string | null
           config: Json
-          created_at: string | null
+          created_at: string
           id: string
           is_active: boolean | null
           oauth_connected: boolean | null
           service_type: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           client_id?: string | null
           config?: Json
-          created_at?: string | null
+          created_at?: string
           id?: string
           is_active?: boolean | null
           oauth_connected?: boolean | null
           service_type: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           client_id?: string | null
           config?: Json
-          created_at?: string | null
+          created_at?: string
           id?: string
           is_active?: boolean | null
           oauth_connected?: boolean | null
           service_type?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {

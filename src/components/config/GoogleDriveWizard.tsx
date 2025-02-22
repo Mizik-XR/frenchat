@@ -57,8 +57,9 @@ export const GoogleDriveWizard = ({
         return;
       }
 
-      if (data?.config?.client_id) {
-        setClientId(data.config.client_id);
+      // Type guard pour s'assurer que config est un objet avec client_id
+      if (data?.config && typeof data.config === 'object' && 'client_id' in data.config) {
+        setClientId(data.config.client_id as string);
       }
     };
 
