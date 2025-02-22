@@ -21,7 +21,7 @@ export const ChatHeader = ({ mode, onModeChange, onToggleSettings }: ChatHeaderP
     <div className="flex items-center justify-between mb-4 pb-4 border-b border-blue-100">
       <div className="flex items-center space-x-2">
         <Bot className="h-6 w-6 text-blue-600" />
-        <h2 className="text-xl font-semibold text-gray-900">Assistant IA</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Files Chat</h2>
       </div>
 
       <div className="flex items-center space-x-4">
