@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +42,7 @@ export const GoogleDriveWizard = ({
   const [isConnecting, setIsConnecting] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
 
   useEffect(() => {
     const fetchClientId = async () => {
@@ -133,6 +133,11 @@ export const GoogleDriveWizard = ({
     window.location.href = authUrl;
   };
 
+  const handleSetupComplete = () => {
+    setShowSetup(false);
+    fetchClientId(); // Recharger la configuration
+  };
+
   return (
     <div className="space-y-6">
       <Alert className="mb-6">
@@ -161,39 +166,52 @@ export const GoogleDriveWizard = ({
           <CardDescription>{wizardSteps[currentStep].description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isConnected ? (
-            <Alert className="bg-green-50 border-green-200">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertTitle>Connexion établie</AlertTitle>
-              <AlertDescription>
-                Votre compte Google Drive est correctement configuré et prêt à être utilisé.
-              </AlertDescription>
-            </Alert>
+          {showSetup ? (
+            <GoogleDriveSetup onConfigured={handleSetupComplete} />
           ) : (
-            <Button
-              onClick={initiateGoogleAuth}
-              className="w-full"
-              disabled={isConnecting || !clientId}
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              {isConnecting ? 'Connexion en cours...' : 'Se connecter avec Google Drive'}
-            </Button>
-          )}
+            <>
+              {isConnected ? (
+                <Alert className="bg-green-50 border-green-200">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <AlertTitle>Connexion établie</AlertTitle>
+                  <AlertDescription>
+                    Votre compte Google Drive est correctement configuré et prêt à être utilisé.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Button
+                  onClick={initiateGoogleAuth}
+                  className="w-full"
+                  disabled={isConnecting || !clientId}
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  {isConnecting ? 'Connexion en cours...' : 'Se connecter avec Google Drive'}
+                </Button>
+              )}
 
-          {!clientId && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Configuration manquante</AlertTitle>
-              <AlertDescription>
-                La configuration Google Drive n'est pas complète. Veuillez configurer l'ID client dans les paramètres.
-              </AlertDescription>
-            </Alert>
-          )}
+              {!clientId && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Configuration manquante</AlertTitle>
+                  <AlertDescription className="space-y-2">
+                    <p>La configuration Google Drive n'est pas complète.</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowSetup(true)}
+                    >
+                      Configurer maintenant
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
 
-          <div className="text-sm text-muted-foreground bg-secondary/20 p-4 rounded-md">
-            En cliquant sur le bouton ci-dessus, vous serez redirigé vers Google pour autoriser l'accès à vos documents.
-            Vous pourrez choisir quels dossiers partager avec l'application.
-          </div>
+              <div className="text-sm text-muted-foreground bg-secondary/20 p-4 rounded-md">
+                En cliquant sur le bouton ci-dessus, vous serez redirigé vers Google pour autoriser l'accès à vos documents.
+                Vous pourrez choisir quels dossiers partager avec l'application.
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -201,6 +219,11 @@ export const GoogleDriveWizard = ({
         <Button variant="outline" onClick={onSkip}>
           Configurer plus tard
         </Button>
+        {showSetup && (
+          <Button variant="outline" onClick={() => setShowSetup(false)}>
+            Retour
+          </Button>
+        )}
       </div>
     </div>
   );
