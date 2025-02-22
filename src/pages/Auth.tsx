@@ -14,19 +14,19 @@ export default function Auth() {
   
   const { loading, handleSignUp, handleSignIn, handleMagicLink } = useAuthActions();
 
-  const onSignUp = (e: React.FormEvent) => {
+  const onSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    handleSignUp(email, password, confirmPassword, fullName);
+    await handleSignUp(email, password, confirmPassword, fullName);
   };
 
-  const onSignIn = (e: React.FormEvent) => {
+  const onSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    handleSignIn(email, password);
+    await handleSignIn(email, password);
   };
 
-  const onMagicLink = (e: React.FormEvent) => {
+  const onMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    handleMagicLink(email);
+    await handleMagicLink(email);
   };
 
   return (
