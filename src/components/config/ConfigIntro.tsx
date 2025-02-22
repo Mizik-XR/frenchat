@@ -1,5 +1,5 @@
 
-export const ConfigIntro = () => {
+export function ConfigIntro() {
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
       <p className="text-gray-600">
@@ -8,4 +8,4 @@ export const ConfigIntro = () => {
       </p>
     </div>
   );
-};
+}
