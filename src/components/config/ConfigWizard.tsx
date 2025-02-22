@@ -1,43 +1,23 @@
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Steps } from "@/components/ui/steps";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+import { WelcomeStep } from "./steps/WelcomeStep";
+import { SummaryStep } from "./steps/SummaryStep";
 import { GoogleDriveWizard } from "./GoogleDriveWizard";
 import { MicrosoftTeamsConfig } from "./MicrosoftTeamsConfig";
 import { LLMConfigComponent } from "./LLMConfig";
 import { ImageConfig } from "./ImageConfig";
-import { useNavigate } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
 
-// Définition des étapes du wizard
-const steps = [
-  {
-    title: "Bienvenue",
-    description: "Configuration initiale de l'application"
-  },
-  {
-    title: "Google Drive",
-    description: "Connexion à vos documents Google"
-  },
-  {
-    title: "Microsoft Teams",
-    description: "Intégration avec Teams"
-  },
-  {
-    title: "LLM",
-    description: "Configuration du modèle de langage"
-  },
-  {
-    title: "Image",
-    description: "Paramètres de génération d'images"
-  },
-  {
-    title: "Récapitulatif",
-    description: "Vérification finale"
-  }
+const STEPS = [
+  { title: "Bienvenue", description: "Configuration initiale de l'application" },
+  { title: "Google Drive", description: "Connexion à vos documents Google" },
+  { title: "Microsoft Teams", description: "Intégration avec Teams" },
+  { title: "LLM", description: "Configuration du modèle de langage" },
+  { title: "Image", description: "Paramètres de génération d'images" },
+  { title: "Récapitulatif", description: "Vérification finale" }
 ];
 
 export const ConfigWizard = () => {
@@ -51,10 +31,9 @@ export const ConfigWizard = () => {
   });
 
   const handleNext = () => {
-    if (currentStep < steps.length - 1) {
+    if (currentStep < STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
-      // Si on est à la dernière étape, on termine la configuration
       navigate("/chat");
       toast({
         title: "Configuration terminée",
@@ -63,32 +42,21 @@ export const ConfigWizard = () => {
     }
   };
 
-  const handleSkip = () => {
-    handleNext();
-  };
+  const handleSkip = () => handleNext();
 
   const handleGoogleDriveComplete = (config: any) => {
     setConfigStatus(prev => ({ ...prev, googleDrive: true }));
     handleNext();
+    toast({
+      title: "Google Drive configuré",
+      description: "La connexion à Google Drive a été établie avec succès.",
+    });
   };
 
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 0:
-        return (
-          <Card className="p-6 animate-fade-in">
-            <CardContent className="space-y-4">
-              <h2 className="text-2xl font-semibold">Bienvenue dans la configuration !</h2>
-              <p className="text-muted-foreground">
-                Nous allons vous guider pas à pas dans la configuration de vos services.
-                Vous pourrez ignorer certaines étapes et y revenir plus tard.
-              </p>
-              <Button onClick={handleNext} className="w-full">
-                Commencer la configuration
-              </Button>
-            </CardContent>
-          </Card>
-        );
+        return <WelcomeStep onNext={handleNext} />;
 
       case 1:
         return (
@@ -109,6 +77,10 @@ export const ConfigWizard = () => {
               onSave={() => {
                 setConfigStatus(prev => ({ ...prev, teams: true }));
                 handleNext();
+                toast({
+                  title: "Microsoft Teams configuré",
+                  description: "L'intégration avec Teams a été configurée avec succès.",
+                });
               }}
             />
           </div>
@@ -131,6 +103,10 @@ export const ConfigWizard = () => {
               onSave={() => {
                 setConfigStatus(prev => ({ ...prev, llm: true }));
                 handleNext();
+                toast({
+                  title: "LLM configuré",
+                  description: "Le modèle de langage a été configuré avec succès.",
+                });
               }}
             />
           </div>
@@ -144,56 +120,17 @@ export const ConfigWizard = () => {
               onModelChange={() => {
                 setConfigStatus(prev => ({ ...prev, image: true }));
                 handleNext();
+                toast({
+                  title: "Configuration des images",
+                  description: "Les paramètres de génération d'images ont été sauvegardés.",
+                });
               }}
             />
           </div>
         );
 
       case 5:
-        return (
-          <Card className="p-6 animate-fade-in">
-            <CardContent className="space-y-6">
-              <h2 className="text-2xl font-semibold">Récapitulatif</h2>
-              <div className="space-y-4">
-                <Alert variant={configStatus.googleDrive ? "default" : "destructive"}>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Google Drive</AlertTitle>
-                  <AlertDescription>
-                    {configStatus.googleDrive ? "Configuré" : "Non configuré"}
-                  </AlertDescription>
-                </Alert>
-
-                <Alert variant={configStatus.teams ? "default" : "destructive"}>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Microsoft Teams</AlertTitle>
-                  <AlertDescription>
-                    {configStatus.teams ? "Configuré" : "Non configuré"}
-                  </AlertDescription>
-                </Alert>
-
-                <Alert variant={configStatus.llm ? "default" : "destructive"}>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>LLM</AlertTitle>
-                  <AlertDescription>
-                    {configStatus.llm ? "Configuré" : "Non configuré"}
-                  </AlertDescription>
-                </Alert>
-
-                <Alert variant={configStatus.image ? "default" : "destructive"}>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Génération d'images</AlertTitle>
-                  <AlertDescription>
-                    {configStatus.image ? "Configuré" : "Non configuré"}
-                  </AlertDescription>
-                </Alert>
-              </div>
-
-              <Button onClick={handleNext} className="w-full">
-                Terminer la configuration
-              </Button>
-            </CardContent>
-          </Card>
-        );
+        return <SummaryStep configStatus={configStatus} onFinish={handleNext} />;
 
       default:
         return null;
@@ -204,7 +141,7 @@ export const ConfigWizard = () => {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="mb-8">
         <Steps
-          steps={steps.map(s => s.title)}
+          steps={STEPS.map(s => s.title)}
           currentStep={currentStep}
           onStepClick={setCurrentStep}
         />
@@ -212,7 +149,7 @@ export const ConfigWizard = () => {
 
       {renderCurrentStep()}
 
-      {currentStep > 0 && currentStep < steps.length - 1 && (
+      {currentStep > 0 && currentStep < STEPS.length - 1 && (
         <div className="flex justify-between mt-6">
           <Button
             variant="outline"
