@@ -500,6 +500,42 @@ export type Database = {
         }
         Relationships: []
       }
+      oauth_tokens: {
+        Row: {
+          access_token: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          metadata: Json | null
+          provider: string
+          refresh_token: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          provider: string
+          refresh_token?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          provider?: string
+          refresh_token?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       performance_metrics: {
         Row: {
           cache_hit: boolean | null
@@ -578,6 +614,7 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
+          oauth_connected: boolean | null
           service_type: string
           updated_at: string | null
         }
@@ -587,6 +624,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          oauth_connected?: boolean | null
           service_type: string
           updated_at?: string | null
         }
@@ -596,6 +634,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          oauth_connected?: boolean | null
           service_type?: string
           updated_at?: string | null
         }
