@@ -44,9 +44,10 @@ export const GoogleDriveConfig = () => {
       const { error } = await supabase
         .from('service_configurations')
         .upsert({
-          config: { client_id: clientId, client_secret: clientSecret }
-        })
-        .eq('service_type', 'GOOGLE_OAUTH');
+          service_type: 'GOOGLE_OAUTH',
+          config: { client_id: clientId, client_secret: clientSecret },
+          updated_at: new Date().toISOString()
+        });
 
       if (error) throw error;
 

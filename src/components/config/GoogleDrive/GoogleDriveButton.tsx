@@ -25,13 +25,13 @@ export const GoogleDriveButton = ({ isConnecting: externalIsConnecting, onClick 
 
     try {
       setInternalIsConnecting(true);
-      const { data: config, error } = await supabase
+      const { data: configData, error } = await supabase
         .from('service_configurations')
         .select('config')
         .eq('service_type', 'GOOGLE_OAUTH')
         .single();
 
-      if (error || !config?.config?.client_id) {
+      if (error || !configData?.config || typeof configData.config !== 'object') {
         toast({
           title: "Erreur de configuration",
           description: "La configuration Google OAuth n'est pas disponible",
@@ -40,10 +40,20 @@ export const GoogleDriveButton = ({ isConnecting: externalIsConnecting, onClick 
         return;
       }
 
+      const config = configData.config as { client_id: string };
+      if (!config.client_id) {
+        toast({
+          title: "Erreur de configuration",
+          description: "Client ID manquant dans la configuration",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const redirectUri = `${window.location.origin}/auth/callback/google`;
       const scope = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
       
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${config.config.client_id}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${config.client_id}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
       
       window.location.href = authUrl;
     } catch (error) {
