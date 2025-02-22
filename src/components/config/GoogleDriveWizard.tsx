@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Steps } from "@/components/ui/steps";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { GoogleDriveSetup } from "./GoogleDriveSetup";
 
 interface WizardStep {
   title: string;
@@ -44,39 +46,41 @@ export const GoogleDriveWizard = ({
   const [isConnected, setIsConnected] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
 
-  useEffect(() => {
-    const fetchClientId = async () => {
-      try {
-        console.log('Récupération de la configuration Google OAuth...');
-        const { data, error } = await supabase
-          .from('service_configurations')
-          .select('config')
-          .eq('service_type', 'GOOGLE_OAUTH')
-          .maybeSingle();
+  const fetchClientId = async () => {
+    try {
+      console.log('Récupération de la configuration Google OAuth...');
+      const { data, error } = await supabase
+        .from('service_configurations')
+        .select('config')
+        .eq('service_type', 'GOOGLE_OAUTH')
+        .maybeSingle();
 
-        if (error) {
-          console.error("Erreur lors de la récupération du client ID:", error);
-          toast({
-            title: "Erreur de configuration",
-            description: "Impossible de récupérer la configuration Google Drive",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        if (data?.config && 
-            typeof data.config === 'object' && 
-            'client_id' in data.config && 
-            typeof data.config.client_id === 'string') {
-          console.log('Client ID trouvé:', data.config.client_id);
-          setClientId(data.config.client_id);
-        } else {
-          console.log('Aucun client ID trouvé dans la configuration');
-        }
-      } catch (err) {
-        console.error('Erreur lors de la récupération de la configuration:', err);
+      if (error) {
+        console.error("Erreur lors de la récupération du client ID:", error);
+        toast({
+          title: "Erreur de configuration",
+          description: "Impossible de récupérer la configuration Google Drive",
+          variant: "destructive",
+        });
+        return;
       }
-    };
+
+      if (data?.config && 
+          typeof data.config === 'object' && 
+          'client_id' in data.config && 
+          typeof data.config.client_id === 'string') {
+        console.log('Client ID trouvé:', data.config.client_id);
+        setClientId(data.config.client_id);
+      } else {
+        console.log('Aucun client ID trouvé dans la configuration');
+      }
+    } catch (err) {
+      console.error('Erreur lors de la récupération de la configuration:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchClientId();
 
     const checkGoogleDriveConnection = async () => {
       if (!user) return;
@@ -101,7 +105,6 @@ export const GoogleDriveWizard = ({
       }
     };
 
-    fetchClientId();
     checkGoogleDriveConnection();
   }, [user, onConfigSave]);
 
