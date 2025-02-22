@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -29,7 +28,8 @@ export default function Auth() {
 
     try {
       setLoading(true);
-      const { error: signUpError, data: { user } } = await supabase.auth.signUp({
+      
+      const { error: signUpError, data: { session } } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -41,24 +41,31 @@ export default function Auth() {
 
       if (signUpError) throw signUpError;
 
-      if (user) {
+      if (session) {
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([
             {
-              id: user.id,
+              id: session.user.id,
               email: email,
               full_name: fullName,
             }
-          ]);
+          ])
+          .single();
 
         if (profileError) throw profileError;
-      }
 
-      toast({
-        title: "Inscription réussie",
-        description: "Veuillez vérifier votre email pour confirmer votre compte",
-      });
+        navigate("/chat");
+        toast({
+          title: "Inscription réussie",
+          description: "Bienvenue !",
+        });
+      } else {
+        toast({
+          title: "Inscription réussie",
+          description: "Veuillez vérifier votre email pour confirmer votre compte",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Erreur",
