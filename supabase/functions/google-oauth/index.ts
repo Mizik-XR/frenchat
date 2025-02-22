@@ -1,75 +1,75 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-user-id',
-};
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+const REDIRECT_URI = Deno.env.get('REDIRECT_URI') || 'http://localhost:5173/auth/callback/google'
 
 serve(async (req) => {
-  console.log('Function invoked with method:', req.method);
-  
+  // Handle CORS
   if (req.method === 'OPTIONS') {
-    console.log('Handling CORS preflight request');
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    console.log('Starting Google OAuth flow...');
-    const requestData = await req.json();
-    console.log('Request data:', requestData);
-    
-    const { code } = requestData;
-    const userId = req.headers.get('x-user-id');
+    const { code } = await req.json()
+    const userId = req.headers.get('x-user-id')
 
-    console.log('Extracted code and userId:', { userId, hasCode: !!code });
-
-    if (!code || !userId) {
-      console.error('Missing required data:', { code: !!code, userId: !!userId });
-      throw new Error('Authorization code or user ID missing');
+    if (!code) {
+      throw new Error('Code d\'autorisation manquant')
     }
 
-    const supabase = createClient(
+    if (!userId) {
+      throw new Error('User ID manquant')
+    }
+
+    console.log('Démarrage de l\'échange du code d\'autorisation...')
+
+    // Récupération de la configuration Google OAuth
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    )
 
-    console.log('Fetching Google OAuth configuration...');
-    const { data: configData, error: configError } = await supabase
+    const { data: config, error: configError } = await supabaseAdmin
       .from('service_configurations')
       .select('config')
       .eq('service_type', 'GOOGLE_OAUTH')
-      .single();
+      .single()
 
-    if (configError || !configData?.config) {
-      console.error('Configuration error:', configError);
-      throw new Error('Google OAuth configuration not found');
+    if (configError || !config) {
+      throw new Error('Configuration Google OAuth non trouvée')
     }
 
-    console.log('Exchanging auth code for tokens...');
+    const { client_id, client_secret } = config.config
+
+    // Échange du code contre les tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         code,
-        client_id: configData.config.client_id,
-        client_secret: configData.config.client_secret,
-        redirect_uri: `${req.headers.get('origin')}/auth/callback/google`,
+        client_id,
+        client_secret,
+        redirect_uri: REDIRECT_URI,
         grant_type: 'authorization_code',
       }),
-    });
-
-    const tokens = await tokenResponse.json();
-    console.log('Token exchange response status:', tokenResponse.status);
+    })
 
     if (!tokenResponse.ok) {
-      console.error('Token exchange error:', tokens);
-      throw new Error(tokens.error_description || 'Failed to exchange tokens');
+      console.error('Erreur lors de l\'échange du code:', await tokenResponse.text())
+      throw new Error('Échec de l\'échange du code d\'autorisation')
     }
 
-    console.log('Saving tokens to database...');
-    const { error: tokenError } = await supabase
+    const tokens = await tokenResponse.json()
+    console.log('Tokens reçus avec succès')
+
+    // Stockage des tokens dans Supabase
+    const { error: insertError } = await supabaseAdmin
       .from('oauth_tokens')
       .upsert({
         user_id: userId,
@@ -77,37 +77,25 @@ serve(async (req) => {
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-      });
+      })
 
-    if (tokenError) {
-      console.error('Token storage error:', tokenError);
-      throw new Error('Failed to save tokens');
+    if (insertError) {
+      console.error('Erreur lors du stockage des tokens:', insertError)
+      throw new Error('Échec du stockage des tokens')
     }
 
-    // Mettre à jour le statut de la configuration
-    await supabase
-      .from('service_configurations')
-      .upsert({
-        service_type: 'google_drive',
-        status: 'configured',
-        oauth_connected: true,
-        updated_at: new Date().toISOString()
-      });
-
-    console.log('Google OAuth flow completed successfully');
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
+    )
   } catch (error) {
-    console.error('Error in Google OAuth flow:', error);
+    console.error('Erreur dans la fonction google-oauth:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400 
       }
-    );
+    )
   }
-});
+})
