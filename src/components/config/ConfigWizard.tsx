@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Steps } from "@/components/ui/steps";
 import { Button } from "@/components/ui/button";
@@ -81,11 +82,16 @@ export const ConfigWizard = () => {
         );
 
       case 2:
-        return importMethod === "drive" ? (
-          <div className="animate-fade-in">
-            <GoogleDriveConfig />
-          </div>
-        ) : handleNext();
+        if (importMethod === "drive") {
+          return (
+            <div className="animate-fade-in">
+              <GoogleDriveConfig />
+            </div>
+          );
+        }
+        // Si ce n'est pas le mode drive, on passe à l'étape suivante
+        setCurrentStep(prev => prev + 1);
+        return null;
 
       case 3:
         return (
