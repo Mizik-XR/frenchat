@@ -25,61 +25,64 @@ export const SettingsPanel = ({
   };
 
   return (
-    <Card className="absolute top-16 right-4 z-10 p-4 w-80 bg-white/95 backdrop-blur-sm shadow-xl border border-blue-100 rounded-xl">
+    <Card className="absolute top-16 right-4 z-10 p-4 w-80 bg-gray-50/90 backdrop-blur supports-[backdrop-filter]:bg-gray-50/90">
       <div className="space-y-6">
-        <div>
-          <h3 className="font-medium text-gray-800 border-b pb-2 mb-4">Paramètres IA</h3>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm text-gray-600">Modèle IA</label>
-              <AIProviderSelect 
-                aiProvider={webUIConfig.model} 
-                onProviderChange={onProviderChange}
-              />
-            </div>
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight">Paramètres</h2>
+          <p className="text-sm text-muted-foreground">
+            Ajustez les paramètres de l'IA et la configuration
+          </p>
+        </div>
 
-            <div className="space-y-2">
-              <label className="text-sm text-gray-600">Température</label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={webUIConfig.temperature}
-                  onChange={(e) => onWebUIConfigChange({ temperature: parseFloat(e.target.value) })}
-                  className="flex-1 accent-blue-500"
-                />
-                <span className="text-xs text-gray-500 w-8 text-right">
-                  {webUIConfig.temperature}
-                </span>
-              </div>
-            </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Modèle IA</label>
+            <AIProviderSelect 
+              aiProvider={webUIConfig.model} 
+              onProviderChange={onProviderChange}
+            />
+          </div>
 
-            <div className="space-y-2">
-              <label className="text-sm text-gray-600">Tokens maximum</label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Température</label>
+            <div className="flex items-center gap-2">
               <Input
-                type="number"
-                min="100"
-                max="4000"
-                value={webUIConfig.maxTokens}
-                onChange={(e) => onWebUIConfigChange({ maxTokens: parseInt(e.target.value) })}
-                className="border-blue-200 focus:border-blue-500"
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={webUIConfig.temperature}
+                onChange={(e) => onWebUIConfigChange({ temperature: parseFloat(e.target.value) })}
+                className="flex-1"
               />
+              <span className="text-sm text-gray-500 w-12 text-right">
+                {webUIConfig.temperature}
+              </span>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Tokens maximum</label>
+            <Input
+              type="number"
+              min="100"
+              max="4000"
+              value={webUIConfig.maxTokens}
+              onChange={(e) => onWebUIConfigChange({ maxTokens: parseInt(e.target.value) })}
+            />
           </div>
         </div>
 
-        <div>
-          <h3 className="font-medium text-gray-800 border-b pb-2 mb-4">Configuration des APIs</h3>
-          <div className="space-y-3">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Configuration</h3>
             <Button 
               variant="outline" 
-              className="w-full justify-start" 
+              className="w-full justify-start"
               onClick={handleConfigClick}
             >
               <Settings className="h-4 w-4 mr-2" />
-              Configurer les APIs
+              Configuration des APIs
             </Button>
           </div>
         </div>
