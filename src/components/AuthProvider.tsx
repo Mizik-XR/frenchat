@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       setIsLoading(false);
 
-      if (!session?.user && location.pathname !== "/auth" && !isFirstLoad) {
+      if (!session?.user && !isFirstLoad) {
         console.log("No user found, redirecting to /auth");
         navigate("/auth");
       }
@@ -67,7 +67,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
         isFirstLoad = false;
 
-        if (location.pathname === '/auth') {
+        // Si l'utilisateur est sur la racine ou sur /auth, rediriger
+        if (location.pathname === '/' || location.pathname === '/auth') {
           if (profile?.is_first_login) {
             navigate('/config');
           } else {
@@ -79,6 +80,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
         isFirstLoad = false;
         
+        // Rediriger vers /auth si l'utilisateur n'est pas sur /auth
         if (location.pathname !== '/auth') {
           navigate('/auth');
         }
