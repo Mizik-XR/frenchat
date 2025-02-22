@@ -9,12 +9,15 @@ import { useAuth } from "@/components/AuthProvider";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
+  
+  console.log("PrivateRoute - user:", user, "isLoading:", isLoading);
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
   if (!user) {
+    console.log("PrivateRoute - redirecting to /auth");
     return <Navigate to="/auth" />;
   }
 

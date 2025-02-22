@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ConfigHeader } from "@/components/config/ConfigHeader";
 import { ConfigIntro } from "@/components/config/ConfigIntro";
@@ -32,6 +33,8 @@ const defaultLLMConfig: LLMConfig = {
 };
 
 export function Config() {
+  console.log("Config component mounting...");
+  
   const navigate = useNavigate();
   const { user } = useAuth();
   const [googleConfig, setGoogleConfig] = useState<GoogleConfig>(defaultGoogleConfig);
@@ -39,11 +42,17 @@ export function Config() {
   const [llmConfig, setLLMConfig] = useState<LLMConfig>(defaultLLMConfig);
   const [stableDiffusionModel, setStableDiffusionModel] = useState("sd-v1.5");
 
+  useEffect(() => {
+    console.log("Config useEffect running, user:", user);
+  }, [user]);
+
   const handleBack = () => {
+    console.log("Back button clicked");
     navigate(-1);
   };
 
   const handleSaveGoogle = async () => {
+    console.log("Saving Google config");
     toast({
       title: "Configuration Google Drive sauvegardée",
       description: "Vos paramètres Google Drive ont été mis à jour avec succès.",
@@ -65,6 +74,7 @@ export function Config() {
   };
 
   const handleSkipConfig = () => {
+    console.log("Skip config clicked");
     toast({
       title: "Configuration reportée",
       description: "Vous pourrez configurer vos services plus tard depuis les paramètres.",
@@ -72,8 +82,10 @@ export function Config() {
     navigate("/chat");
   };
 
+  console.log("Config component rendering...");
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background p-4">
       <div className="container mx-auto py-8">
         <ConfigHeader onBack={handleBack} />
         <ConfigIntro />
