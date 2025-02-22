@@ -2,7 +2,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface SummaryStepProps {
   configStatus: {
@@ -39,9 +40,18 @@ export const SummaryStep = ({ configStatus, onFinish }: SummaryStepProps) => {
           ))}
         </div>
 
-        <Button onClick={onFinish} className="w-full">
-          Terminer la configuration
-        </Button>
+        <div className="space-y-4">
+          <Button onClick={onFinish} className="w-full">
+            Terminer la configuration
+          </Button>
+          
+          <div className="text-center">
+            <Link to="/advanced-config" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Settings className="h-4 w-4 mr-1" />
+              Accéder à la configuration avancée
+            </Link>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
