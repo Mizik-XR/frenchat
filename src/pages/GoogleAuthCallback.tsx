@@ -38,6 +38,7 @@ export default function GoogleAuthCallback() {
       }
 
       try {
+        console.log("Démarrage de l'échange du code d'autorisation...");
         const { error: functionError } = await supabase.functions.invoke(
           'google-oauth',
           {
@@ -48,6 +49,7 @@ export default function GoogleAuthCallback() {
 
         if (functionError) throw functionError;
 
+        console.log('Configuration Google Drive réussie');
         toast({
           title: "Succès",
           description: "Google Drive connecté avec succès",
@@ -70,12 +72,12 @@ export default function GoogleAuthCallback() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-      <div className="text-center">
+      <div className="text-center max-w-md w-full">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <h2 className="text-xl font-semibold text-gray-700">
+        <h2 className="text-xl font-semibold text-gray-700 mb-2">
           Configuration de Google Drive en cours...
         </h2>
-        <p className="text-gray-500 mt-2">
+        <p className="text-gray-500">
           Veuillez patienter pendant que nous finalisons la configuration.
         </p>
       </div>
