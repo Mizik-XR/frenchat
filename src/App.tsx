@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/components/AuthProvider";
 import Auth from "@/pages/Auth";
 import Chat from "@/pages/Chat";
-import Config from "@/pages/Config";
+import { Config } from "@/pages/Config";
 
 export default function App() {
   return (
