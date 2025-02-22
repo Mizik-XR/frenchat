@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +36,7 @@ export function useAuthActions() {
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: `${window.location.origin}/config`
+          emailRedirectTo: `${window.location.origin}/auth?firstLogin=true`
         },
       });
 
@@ -61,18 +60,10 @@ export function useAuthActions() {
           console.error('Profile creation error:', profileError);
         }
 
-        if (authData.session) {
-          toast({
-            title: "Inscription réussie !",
-            description: "Votre compte a été créé avec succès. Configurons maintenant votre espace.",
-          });
-          navigate("/config");
-        } else {
-          toast({
-            title: "Inscription réussie",
-            description: "Veuillez vérifier votre email pour confirmer votre compte",
-          });
-        }
+        toast({
+          title: "Inscription réussie",
+          description: "Veuillez vérifier votre email pour confirmer votre compte",
+        });
       }
     } catch (error: any) {
       console.error('Signup error:', error);
@@ -108,17 +99,17 @@ export function useAuthActions() {
           .update({ is_first_login: false })
           .eq('email', email);
 
+        navigate("/config");
         toast({
-          title: "Connexion réussie",
+          title: "Première connexion",
           description: "Bienvenue ! Configurons votre espace.",
         });
-        navigate("/config");
       } else {
+        navigate("/chat");
         toast({
           title: "Connexion réussie",
           description: "Bienvenue !",
         });
-        navigate("/chat");
       }
     } catch (error: any) {
       toast({
