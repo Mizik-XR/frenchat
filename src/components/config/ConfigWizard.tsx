@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Steps } from "@/components/ui/steps";
 import { Button } from "@/components/ui/button";
@@ -43,15 +44,6 @@ export const ConfigWizard = () => {
 
   const handleSkip = () => handleNext();
 
-  const handleGoogleDriveComplete = () => {
-    setConfigStatus(prev => ({ ...prev, googleDrive: true }));
-    handleNext();
-    toast({
-      title: "Google Drive configuré",
-      description: "La connexion à Google Drive a été établie avec succès.",
-    });
-  };
-
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 0:
@@ -68,8 +60,6 @@ export const ConfigWizard = () => {
         return (
           <div className="animate-fade-in">
             <MicrosoftTeamsConfig
-              config={{ clientId: "", tenantId: "" }}
-              onConfigChange={() => {}}
               onSave={() => {
                 setConfigStatus(prev => ({ ...prev, teams: true }));
                 handleNext();
@@ -86,16 +76,6 @@ export const ConfigWizard = () => {
         return (
           <div className="animate-fade-in">
             <LLMConfigComponent
-              config={{
-                provider: "openai",
-                model: "",
-                apiKey: "",
-                rateLimit: 10,
-                batchSize: 10,
-                cacheEnabled: true,
-                useLocal: false
-              }}
-              onConfigChange={() => {}}
               onSave={() => {
                 setConfigStatus(prev => ({ ...prev, llm: true }));
                 handleNext();
@@ -112,8 +92,7 @@ export const ConfigWizard = () => {
         return (
           <div className="animate-fade-in">
             <ImageConfig
-              model="sd-v1.5"
-              onModelChange={() => {
+              onSave={() => {
                 setConfigStatus(prev => ({ ...prev, image: true }));
                 handleNext();
                 toast({

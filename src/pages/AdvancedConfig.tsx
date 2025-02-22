@@ -43,8 +43,6 @@ export function AdvancedConfig() {
       icon: MessageSquare,
       component: (
         <MicrosoftTeamsConfig
-          config={{ clientId: "", tenantId: "" }}
-          onConfigChange={() => {}}
           onSave={() => {
             setSelectedService(null);
             toast({
@@ -61,16 +59,6 @@ export function AdvancedConfig() {
       icon: AlertCircle,
       component: (
         <LLMConfigComponent
-          config={{
-            provider: "openai",
-            model: "",
-            apiKey: "",
-            rateLimit: 10,
-            batchSize: 10,
-            cacheEnabled: true,
-            useLocal: false
-          }}
-          onConfigChange={() => {}}
           onSave={() => {
             setSelectedService(null);
             toast({
@@ -87,8 +75,7 @@ export function AdvancedConfig() {
       icon: Image,
       component: (
         <ImageConfig
-          model="sd-v1.5"
-          onModelChange={() => {
+          onSave={() => {
             setSelectedService(null);
             toast({
               title: "Configuration mise à jour",

@@ -2,11 +2,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ServiceType, LLMConfig } from '@/types/config';
+import { ServiceType } from '@/types/config';
+
+type ServiceStatus = 'not_configured' | 'configured' | 'error';
 
 export function useServiceConfiguration(serviceType: ServiceType) {
   const [config, setConfig] = useState<any>(null);
-  const [status, setStatus] = useState<'not_configured' | 'configured' | 'error'>('not_configured');
+  const [status, setStatus] = useState<ServiceStatus>('not_configured');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export function useServiceConfiguration(serviceType: ServiceType) {
 
       if (data) {
         setConfig(data.config);
-        setStatus(data.status);
+        setStatus(data.status as ServiceStatus);
       }
     } catch (error) {
       console.error('Error fetching config:', error);
@@ -54,7 +56,7 @@ export function useServiceConfiguration(serviceType: ServiceType) {
       if (error) throw error;
 
       setConfig(data.config);
-      setStatus(data.status);
+      setStatus(data.status as ServiceStatus);
 
       toast({
         title: "Configuration mise à jour",
