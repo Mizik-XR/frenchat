@@ -42,15 +42,52 @@ export const FileUploader = ({ onFilesSelected, loading }: FileUploaderProps) =>
       'image/webp': ['.webp'],
       'image/svg+xml': ['.svg'],
       'image/tiff': ['.tiff', '.tif'],
-      'image/bmp': ['.bmp']
+      'image/bmp': ['.bmp'],
+      // Archives
+      'application/zip': ['.zip'],
+      'application/x-rar-compressed': ['.rar'],
+      'application/x-7z-compressed': ['.7z'],
+      'application/x-tar': ['.tar'],
+      'application/gzip': ['.gz'],
+      // Audio
+      'audio/mpeg': ['.mp3'],
+      'audio/wav': ['.wav'],
+      'audio/ogg': ['.ogg'],
+      'audio/aac': ['.aac'],
+      // Video
+      'video/mp4': ['.mp4'],
+      'video/webm': ['.webm'],
+      'video/ogg': ['.ogv'],
+      'video/quicktime': ['.mov'],
+      // Code
+      'text/javascript': ['.js'],
+      'text/typescript': ['.ts', '.tsx'],
+      'text/css': ['.css'],
+      'application/json': ['.json'],
+      'text/xml': ['.xml'],
+      // Autres
+      'application/vnd.oasis.opendocument.text': ['.odt'],
+      'application/vnd.oasis.opendocument.spreadsheet': ['.ods'],
+      'application/vnd.oasis.opendocument.presentation': ['.odp'],
+      'application/x-yaml': ['.yaml', '.yml']
     },
     multiple: true,
   });
 
   const supportedFormats = [
-    'PDF', 'TXT', 'DOCX', 'DOC', 'XLS', 'XLSX',
-    'PPT', 'PPTX', 'MD', 'CSV', 'RTF', 'HTML', 'EPUB',
-    'JPG/JPEG', 'PNG', 'GIF', 'WEBP', 'SVG', 'TIFF', 'BMP'
+    // Documents
+    'PDF', 'TXT', 'DOCX', 'DOC', 'XLS', 'XLSX', 'PPT', 'PPTX', 
+    'MD', 'CSV', 'RTF', 'HTML', 'EPUB', 'ODT', 'ODS', 'ODP',
+    // Images
+    'JPG/JPEG', 'PNG', 'GIF', 'WEBP', 'SVG', 'TIFF', 'BMP',
+    // Archives
+    'ZIP', 'RAR', '7Z', 'TAR', 'GZ',
+    // Audio
+    'MP3', 'WAV', 'OGG', 'AAC',
+    // Video
+    'MP4', 'WEBM', 'OGV', 'MOV',
+    // Code
+    'JS', 'TS/TSX', 'CSS', 'JSON', 'XML', 'YAML/YML'
   ].join(', ');
 
   const handleDragEnter = (e: React.DragEvent) => {
