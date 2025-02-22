@@ -22,8 +22,9 @@ export const FileUploader = ({ onFilesSelected, loading }: FileUploaderProps) =>
     }
   }, [onFilesSelected]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
+    noClick: true, // Disable click on the dropzone area
     accept: {
       // Documents
       'application/pdf': ['.pdf'],
@@ -121,7 +122,7 @@ export const FileUploader = ({ onFilesSelected, loading }: FileUploaderProps) =>
             }
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            ou cliquez pour sélectionner des fichiers
+            ou utilisez le bouton ci-dessous
           </p>
           <p className="text-xs text-muted-foreground mt-2">
             Formats acceptés: {supportedFormats}
@@ -133,6 +134,7 @@ export const FileUploader = ({ onFilesSelected, loading }: FileUploaderProps) =>
         variant="outline"
         className="mt-4 w-full"
         disabled={loading}
+        onClick={open}
       >
         {loading ? "Traitement en cours..." : "Sélectionner des fichiers"}
       </Button>

@@ -36,7 +36,8 @@ export const ChatInput = ({ input, setInput, isLoading, selectedDocumentId, onSu
         // Insert the file link into the chat input
         const fileUrl = data.publicUrl;
         const fileName = data.fileName;
-        setInput((prev) => prev + `\n[${fileName}](${fileUrl})`);
+        // Fix TypeScript error by providing a string directly instead of a function
+        setInput(input + `\n[${fileName}](${fileUrl})`);
       }
       setShowUploader(false);
       toast({
