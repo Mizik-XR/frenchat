@@ -20,6 +20,8 @@ interface WizardStep {
   description: string;
   action?: string;
   actionUrl?: string;
+  apis?: string[];
+  details?: string;
 }
 
 const wizardSteps: WizardStep[] = [
@@ -30,22 +32,44 @@ const wizardSteps: WizardStep[] = [
     actionUrl: "https://console.cloud.google.com/projectcreate"
   },
   {
-    title: "Activer l'API Google Drive",
-    description: "Activez l'API Google Drive pour votre projet.",
-    action: "Activer l'API",
-    actionUrl: "https://console.cloud.google.com/apis/library/drive.googleapis.com"
+    title: "Activer les APIs nécessaires",
+    description: "Activez les APIs Google requises pour le bon fonctionnement de l'application.",
+    action: "Ouvrir la bibliothèque d'APIs",
+    actionUrl: "https://console.cloud.google.com/apis/library",
+    apis: [
+      "Google Drive API",
+      "Google Picker API",
+      "Google OAuth2 API"
+    ],
+    details: "Ces APIs sont nécessaires pour accéder aux fichiers, afficher le sélecteur de fichiers et gérer l'authentification."
   },
   {
     title: "Configurer l'écran de consentement",
     description: "Configurez l'écran OAuth qui sera présenté à vos utilisateurs.",
     action: "Configurer",
-    actionUrl: "https://console.cloud.google.com/apis/credentials/consent"
+    actionUrl: "https://console.cloud.google.com/apis/credentials/consent",
+    details: `Scope requis:
+    - https://www.googleapis.com/auth/drive.file (accès limité aux fichiers)
+    - https://www.googleapis.com/auth/drive.readonly (lecture seule)
+    - https://www.googleapis.com/auth/userinfo.profile (information utilisateur)`
   },
   {
     title: "Créer les identifiants",
-    description: "Créez un ID Client OAuth 2.0 et une Clé API.",
+    description: "Créez les identifiants nécessaires pour l'authentification et l'accès aux APIs.",
     action: "Créer les identifiants",
-    actionUrl: "https://console.cloud.google.com/apis/credentials"
+    actionUrl: "https://console.cloud.google.com/apis/credentials",
+    details: `Vous aurez besoin de :
+    1. Un ID Client OAuth 2.0 pour l'authentification
+    2. Une Clé API pour les requêtes à l'API
+    
+    Pour l'ID Client OAuth :
+    - Type : Application Web
+    - Origines JavaScript autorisées : Ajoutez votre URL (ex: http://localhost:5173)
+    - URI de redirection : Ajoutez votre URL de callback (ex: http://localhost:5173/auth/callback)
+    
+    Pour la Clé API :
+    - Restreignez-la aux APIs Google Drive et Picker
+    - Limitez-la à votre domaine pour la sécurité`
   }
 ];
 
@@ -80,7 +104,7 @@ export const GoogleDriveWizard = ({
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Configuration requise</AlertTitle>
         <AlertDescription>
-          Pour permettre à l'application d'accéder à vos documents Google Drive, vous devez configurer les identifiants Google Cloud. Suivez le guide ci-dessous ou cliquez sur "Configurer plus tard".
+          Pour permettre à l'application d'accéder à vos documents Google Drive, vous devez configurer les identifiants Google Cloud et activer plusieurs APIs. Suivez le guide ci-dessous ou cliquez sur "Configurer plus tard".
         </AlertDescription>
       </Alert>
 
@@ -96,6 +120,25 @@ export const GoogleDriveWizard = ({
           <CardDescription>{wizardSteps[currentStep].description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {wizardSteps[currentStep].apis && (
+            <Alert variant="default" className="bg-blue-50 border-blue-200">
+              <AlertTitle>APIs requises</AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc list-inside space-y-1 mt-2">
+                  {wizardSteps[currentStep].apis.map((api, index) => (
+                    <li key={index}>{api}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {wizardSteps[currentStep].details && (
+            <div className="text-sm text-muted-foreground bg-secondary/20 p-4 rounded-md whitespace-pre-wrap">
+              {wizardSteps[currentStep].details}
+            </div>
+          )}
+
           {currentStep === wizardSteps.length - 1 ? (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -159,6 +202,21 @@ export const GoogleDriveWizard = ({
               <div key={index} className="space-y-2">
                 <h3 className="font-medium">Étape {index + 1}: {step.title}</h3>
                 <p className="text-sm text-muted-foreground">{step.description}</p>
+                {step.apis && (
+                  <div className="bg-blue-50 p-3 rounded-md">
+                    <p className="font-medium mb-1">APIs nécessaires :</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {step.apis.map((api, apiIndex) => (
+                        <li key={apiIndex}>{api}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {step.details && (
+                  <div className="bg-secondary/20 p-3 rounded-md">
+                    <pre className="whitespace-pre-wrap text-sm">{step.details}</pre>
+                  </div>
+                )}
                 {step.actionUrl && (
                   <Button
                     variant="outline"
