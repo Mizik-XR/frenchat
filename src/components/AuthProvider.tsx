@@ -25,20 +25,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed:", _event, "session:", session);
       setUser(session?.user ?? null);
       setIsLoading(false);
 
       if (!session?.user && location.pathname !== "/auth") {
+        console.log("No user found, redirecting to /auth");
         navigate("/auth");
       }
     });
 
     // Vérification initiale de la session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session);
       setUser(session?.user ?? null);
       setIsLoading(false);
 
       if (!session?.user && location.pathname !== "/auth") {
+        console.log("No initial session, redirecting to /auth");
         navigate("/auth");
       }
     });
@@ -62,6 +66,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
+
+  console.log("AuthProvider rendering, user:", user, "isLoading:", isLoading);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, signOut }}>
