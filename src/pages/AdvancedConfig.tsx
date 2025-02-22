@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { ConfigHeader } from "@/components/config/ConfigHeader";
@@ -12,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { GoogleDriveWizard } from "@/components/config/GoogleDriveWizard";
+import { GoogleDriveConfig } from "@/components/config/GoogleDrive/GoogleDriveConfig";
 import { MicrosoftTeamsConfig } from "@/components/config/MicrosoftTeamsConfig";
 import { LLMConfigComponent } from "@/components/config/LLMConfig";
 import { ImageConfig } from "@/components/config/ImageConfig";
@@ -36,18 +35,7 @@ export function AdvancedConfig() {
       title: "Google Drive",
       description: "Gérez l'accès à vos documents Google Drive",
       icon: FileJson,
-      component: (
-        <GoogleDriveWizard
-          onConfigSave={() => {
-            setSelectedService(null);
-            toast({
-              title: "Configuration mise à jour",
-              description: "Les paramètres Google Drive ont été sauvegardés.",
-            });
-          }}
-          onSkip={() => setSelectedService(null)}
-        />
-      )
+      component: <GoogleDriveConfig />
     },
     {
       title: "Microsoft Teams",

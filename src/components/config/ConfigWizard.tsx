@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Steps } from "@/components/ui/steps";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { WelcomeStep } from "./steps/WelcomeStep";
 import { SummaryStep } from "./steps/SummaryStep";
-import { GoogleDriveWizard } from "./GoogleDriveWizard";
+import { GoogleDriveConfig } from "./GoogleDrive/GoogleDriveConfig";
 import { MicrosoftTeamsConfig } from "./MicrosoftTeamsConfig";
 import { LLMConfigComponent } from "./LLMConfig";
 import { ImageConfig } from "./ImageConfig";
@@ -61,10 +60,7 @@ export const ConfigWizard = () => {
       case 1:
         return (
           <div className="animate-fade-in">
-            <GoogleDriveWizard
-              onConfigSave={handleGoogleDriveComplete}
-              onSkip={handleSkip}
-            />
+            <GoogleDriveConfig />
           </div>
         );
 
