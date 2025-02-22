@@ -7,6 +7,7 @@ import Auth from "@/pages/Auth";
 import Chat from "@/pages/Chat";
 import { Config } from "@/pages/Config";
 import { AdvancedConfig } from "@/pages/AdvancedConfig";
+import Documents from "@/pages/Documents";
 import GoogleAuthCallback from "@/pages/GoogleAuthCallback";
 import { useAuth } from "@/components/AuthProvider";
 
@@ -59,6 +60,14 @@ export default function App() {
             element={
               <PrivateRoute>
                 <AdvancedConfig />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/documents" 
+            element={
+              <PrivateRoute>
+                <Documents />
               </PrivateRoute>
             } 
           />
