@@ -25,6 +25,7 @@ const defaultLLMConfig: LLMConfig = {
   provider: "openai",
   model: "",
   apiKey: "",
+  rateLimit: 10,
   batchSize: 10,
   cacheEnabled: true,
   useLocal: false,
