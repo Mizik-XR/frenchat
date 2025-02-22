@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -28,28 +29,8 @@ export default function Auth() {
 
     try {
       setLoading(true);
-      
-      // 1. On vérifie d'abord si l'email existe déjà
-      const { data: existingUsers, error: getUserError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .single();
 
-      if (getUserError && getUserError.code !== 'PGRST116') {
-        throw getUserError;
-      }
-
-      if (existingUsers) {
-        toast({
-          title: "Erreur",
-          description: "Cette adresse email est déjà utilisée",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // 2. On crée l'utilisateur
+      // 1. On crée l'utilisateur avec Supabase Auth
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -62,8 +43,12 @@ export default function Auth() {
 
       if (signUpError) throw signUpError;
 
-      // 3. Si l'utilisateur est créé, on crée son profil
+      // 2. Si l'utilisateur est créé avec succès
       if (authData?.user) {
+        // On attend un peu pour laisser le temps à la session d'être établie
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // 3. On crée le profil de l'utilisateur
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([
@@ -74,7 +59,10 @@ export default function Auth() {
             }
           ]);
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          // On continue car l'utilisateur est quand même créé
+        }
 
         // 4. On vérifie si une confirmation par email est requise
         if (authData.session) {
