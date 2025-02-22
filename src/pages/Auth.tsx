@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -56,6 +55,7 @@ export default function Auth() {
               id: authData.user.id,
               email: email,
               full_name: fullName,
+              is_first_login: true, // Ajout d'un flag pour détecter la première connexion
             }
           ]);
 
@@ -66,14 +66,14 @@ export default function Auth() {
 
         // 4. On vérifie si une confirmation par email est requise
         if (authData.session) {
-          navigate("/chat");
           toast({
-            title: "Inscription réussie",
-            description: "Bienvenue !",
+            title: "Inscription réussie !",
+            description: "Votre compte a été créé avec succès. Configurons maintenant votre espace.",
           });
+          navigate("/config");
         } else {
           toast({
-            title: "Inscription réussie",
+            title: "Inscription r��ussie",
             description: "Veuillez vérifier votre email pour confirmer votre compte",
           });
         }
@@ -101,11 +101,32 @@ export default function Auth() {
 
       if (error) throw error;
 
-      navigate("/chat");
-      toast({
-        title: "Connexion réussie",
-        description: "Bienvenue !",
-      });
+      // Vérifie si c'est la première connexion
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_first_login')
+        .eq('email', email)
+        .single();
+
+      if (profile?.is_first_login) {
+        // Met à jour le flag is_first_login
+        await supabase
+          .from('profiles')
+          .update({ is_first_login: false })
+          .eq('email', email);
+
+        toast({
+          title: "Connexion réussie",
+          description: "Bienvenue ! Configurons votre espace.",
+        });
+        navigate("/config");
+      } else {
+        toast({
+          title: "Connexion réussie",
+          description: "Bienvenue !",
+        });
+        navigate("/chat");
+      }
     } catch (error: any) {
       toast({
         title: "Erreur",
