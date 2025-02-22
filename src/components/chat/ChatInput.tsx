@@ -6,6 +6,7 @@ import { FileUploader } from "@/components/config/ImportMethod/FileUploader";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 
 interface ChatInputProps {
   input: string;
@@ -19,8 +20,18 @@ export const ChatInput = ({ input, setInput, isLoading, selectedDocumentId, onSu
   const [showUploader, setShowUploader] = useState(false);
   const [mode, setMode] = useState<'chat' | 'search' | 'deepthink'>('chat');
   const [uploadLoading, setUploadLoading] = useState(false);
+  const { user } = useAuth();
 
   const handleFilesSelected = async (files: File[]) => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour téléverser des fichiers",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setUploadLoading(true);
     try {
       for (const file of files) {
@@ -28,7 +39,10 @@ export const ChatInput = ({ input, setInput, isLoading, selectedDocumentId, onSu
         formData.append('file', file);
 
         const { data, error } = await supabase.functions.invoke('upload-chat-file', {
-          body: formData
+          body: formData,
+          headers: {
+            'x-user-id': user.id
+          }
         });
 
         if (error) throw error;
@@ -36,7 +50,6 @@ export const ChatInput = ({ input, setInput, isLoading, selectedDocumentId, onSu
         // Insert the file link into the chat input
         const fileUrl = data.publicUrl;
         const fileName = data.fileName;
-        // Fix TypeScript error by providing a string directly instead of a function
         setInput(input + `\n[${fileName}](${fileUrl})`);
       }
       setShowUploader(false);
@@ -46,11 +59,19 @@ export const ChatInput = ({ input, setInput, isLoading, selectedDocumentId, onSu
       });
     } catch (error) {
       console.error('Upload error:', error);
-      toast({
-        title: "Erreur lors du téléversement",
-        description: "Une erreur est survenue lors du téléversement des fichiers",
-        variant: "destructive"
-      });
+      if (error.message?.includes('Google Drive not connected')) {
+        toast({
+          title: "Google Drive non connecté",
+          description: "Veuillez connecter votre compte Google Drive dans les paramètres",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Erreur lors du téléversement",
+          description: "Une erreur est survenue lors du téléversement des fichiers",
+          variant: "destructive"
+        });
+      }
     } finally {
       setUploadLoading(false);
     }
