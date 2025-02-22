@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { TeamsConfig } from '@/types/config';
+import { toast } from '@/hooks/use-toast';
 
 export interface MicrosoftTeamsConfigProps {
   onSave?: () => void;
@@ -17,18 +17,39 @@ export const MicrosoftTeamsConfig = ({ onSave }: MicrosoftTeamsConfigProps) => {
   const [tenantId, setTenantId] = useState(config?.tenantId || '');
 
   const handleSave = async () => {
-    const newConfig: TeamsConfig = {
-      clientId,
-      tenantId
-    };
-    
-    await updateConfig(newConfig);
-    onSave?.();
+    try {
+      if (!clientId || !tenantId) {
+        toast({
+          title: "Erreur de validation",
+          description: "Veuillez remplir tous les champs requis",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await updateConfig({
+        clientId,
+        tenantId
+      });
+
+      toast({
+        title: "Configuration sauvegardée",
+        description: "La configuration de Microsoft Teams a été mise à jour avec succès",
+      });
+
+      onSave?.();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder la configuration",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <Card className="p-4">
-      <h2 className="text-lg font-semibold mb-4">Configuration Microsoft Teams</h2>
+    <Card className="p-6">
+      <h2 className="text-xl font-semibold mb-4">Configuration Microsoft Teams</h2>
       <div className="space-y-4">
         <div>
           <Label htmlFor="clientId">Client ID</Label>
@@ -37,6 +58,7 @@ export const MicrosoftTeamsConfig = ({ onSave }: MicrosoftTeamsConfigProps) => {
             value={clientId}
             onChange={(e) => setClientId(e.target.value)}
             placeholder="Entrez votre Client ID"
+            className="mt-1"
           />
         </div>
         <div>
@@ -46,9 +68,15 @@ export const MicrosoftTeamsConfig = ({ onSave }: MicrosoftTeamsConfigProps) => {
             value={tenantId}
             onChange={(e) => setTenantId(e.target.value)}
             placeholder="Entrez votre Tenant ID"
+            className="mt-1"
           />
         </div>
-        <Button onClick={handleSave}>Sauvegarder</Button>
+        <Button 
+          onClick={handleSave}
+          className="w-full"
+        >
+          Sauvegarder
+        </Button>
       </div>
     </Card>
   );
