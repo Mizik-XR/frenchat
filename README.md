@@ -1,69 +1,192 @@
-# Welcome to your Lovable project
 
-## Project info
+# DocuChatter
 
-**URL**: https://lovable.dev/projects/714061e3-5a0a-4841-a9ad-4de7e88e77ef
+Application de chat intelligente avec intégration de Google Drive et traitement de documents.
 
-## How can I edit this code?
+## Fonctionnalités
 
-There are several ways of editing your application.
+- 💬 Chat interactif avec IA
+- 📁 Intégration Google Drive
+- 📄 Traitement de documents
+- 🔒 Authentification sécurisée
+- 🎨 Interface utilisateur moderne avec shadcn/ui
+- 🌐 Architecture full-stack avec Supabase
 
-**Use Lovable**
+## Prérequis
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/714061e3-5a0a-4841-a9ad-4de7e88e77ef) and start prompting.
+- Node.js 18+ installé
+- Un compte Supabase
+- Un compte Google Cloud Platform (pour l'intégration Google Drive)
 
-Changes made via Lovable will be committed automatically to this repo.
+## Installation
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+1. Cloner le repository :
+```bash
+git clone <votre-repo>
+cd docu-chatter
 ```
 
-**Edit a file directly in GitHub**
+2. Installer les dépendances :
+```bash
+npm install
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. Configuration de l'environnement :
 
-**Use GitHub Codespaces**
+Créez un fichier `.env` à la racine du projet avec les variables suivantes :
+```env
+VITE_SUPABASE_URL=votre_url_supabase
+VITE_SUPABASE_ANON_KEY=votre_clé_anon_supabase
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Configuration de Supabase
 
-## What technologies are used for this project?
+1. Créez un nouveau projet sur Supabase
+2. Dans la section Authentication > Settings :
+   - Activez "Enable Email Signup"
+   - Configurez les URL de redirection
+3. Dans Database, exécutez les migrations SQL fournies
 
-This project is built with .
+### Configuration de Google Drive
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Créez un projet sur Google Cloud Console
+2. Activez l'API Google Drive
+3. Créez des identifiants OAuth 2.0
+4. Configurez les URL de redirection autorisées
+5. Ajoutez les identifiants dans la configuration Supabase
 
-## How can I deploy this project?
+## Structure du Projet
 
-Simply open [Lovable](https://lovable.dev/projects/714061e3-5a0a-4841-a9ad-4de7e88e77ef) and click on Share -> Publish.
+```
+src/
+├── components/        # Composants React
+│   ├── auth/         # Composants d'authentification
+│   ├── chat/         # Composants de chat
+│   ├── config/       # Composants de configuration
+│   └── ui/           # Composants UI réutilisables
+├── hooks/            # Hooks React personnalisés
+├── integrations/     # Intégrations externes
+├── pages/           # Pages de l'application
+├── services/        # Services métier
+├── styles/          # Styles globaux
+├── tests/           # Tests
+└── types/           # Types TypeScript
+```
 
-## I want to use a custom domain - is that possible?
+## Composants Principaux
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+### AuthProvider
+
+Gère l'authentification et l'état de connexion :
+```typescript
+import { useAuth } from '@/components/AuthProvider';
+const { user, isLoading, signOut } = useAuth();
+```
+
+### GoogleDriveConfig
+
+Configure l'intégration Google Drive :
+```typescript
+import { GoogleDriveConfig } from '@/components/config/GoogleDrive/GoogleDriveConfig';
+<GoogleDriveConfig onSave={() => console.log('Configuration sauvegardée')} />
+```
+
+### Chat
+
+Interface de chat principale :
+```typescript
+import { Chat } from '@/components/Chat';
+<Chat />
+```
+
+## Hooks Personnalisés
+
+### useGoogleDrive
+
+Gère la connexion à Google Drive :
+```typescript
+const { isConnecting, isConnected, initiateGoogleAuth } = useGoogleDrive(user, onConfigSave);
+```
+
+### useChatMessages
+
+Gère les messages du chat :
+```typescript
+const { messages, isLoading } = useChatMessages(conversationId);
+```
+
+## Fonctions Edge Supabase
+
+### manage-embeddings-cache
+
+Gère le cache des embeddings :
+```typescript
+await supabase.functions.invoke('manage-embeddings-cache', {
+  body: { 
+    action: 'get|set|invalidate',
+    key: 'cache-key',
+    value: data,
+    ttl: 3600
+  }
+});
+```
+
+### google-oauth
+
+Gère l'authentification OAuth avec Google :
+```typescript
+await supabase.functions.invoke('google-oauth', {
+  body: { code: 'auth-code' }
+});
+```
+
+## Tests
+
+L'application inclut des tests unitaires et d'intégration :
+
+```bash
+# Exécuter les tests
+npm test
+
+# Tests d'intégration
+npm run test:integration
+
+# Tests unitaires
+npm run test:unit
+```
+
+## Déploiement
+
+1. Configurez votre projet Supabase
+2. Déployez les Edge Functions :
+```bash
+supabase functions deploy
+```
+
+3. Déployez l'application frontend :
+```bash
+npm run build
+```
+
+## Bonnes Pratiques
+
+- Utilisez les composants UI de shadcn/ui pour la cohérence visuelle
+- Suivez les patterns React modernes (hooks, context)
+- Utilisez TypeScript pour le typage statique
+- Testez les fonctionnalités critiques
+- Gérez proprement les états de chargement et les erreurs
+
+## Sécurité
+
+- Les clés API sont stockées de manière sécurisée dans Supabase
+- L'authentification utilise JWT
+- Les politiques RLS Supabase contrôlent l'accès aux données
+- CORS configuré pour la sécurité
+
+## Support
+
+Pour toute question ou problème :
+1. Consultez les issues GitHub
+2. Vérifiez les logs Supabase
+3. Contactez l'équipe de développement
+
