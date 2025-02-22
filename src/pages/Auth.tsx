@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -29,7 +30,8 @@ export default function Auth() {
     try {
       setLoading(true);
       
-      const { error: signUpError, data: { session } } = await supabase.auth.signUp({
+      // 1. D'abord on crée l'utilisateur
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -41,30 +43,35 @@ export default function Auth() {
 
       if (signUpError) throw signUpError;
 
-      if (session) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: session.user.id,
-              email: email,
-              full_name: fullName,
-            }
-          ])
-          .single();
+      // 2. Si l'utilisateur est créé, on crée son profil
+      if (authData.user) {
+        // Vérifions que nous avons bien une session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: authData.user.id,
+                email: email,
+                full_name: fullName,
+              }
+            ]);
 
-        if (profileError) throw profileError;
+          if (profileError) throw profileError;
 
-        navigate("/chat");
-        toast({
-          title: "Inscription réussie",
-          description: "Bienvenue !",
-        });
-      } else {
-        toast({
-          title: "Inscription réussie",
-          description: "Veuillez vérifier votre email pour confirmer votre compte",
-        });
+          navigate("/chat");
+          toast({
+            title: "Inscription réussie",
+            description: "Bienvenue !",
+          });
+        } else {
+          toast({
+            title: "Inscription réussie",
+            description: "Veuillez vérifier votre email pour confirmer votre compte",
+          });
+        }
       }
     } catch (error: any) {
       toast({
