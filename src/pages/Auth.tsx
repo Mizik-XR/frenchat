@@ -1,10 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -13,6 +15,15 @@ export default function Auth() {
   const [fullName, setFullName] = useState("");
   
   const { loading, handleSignUp, handleSignIn, handleMagicLink } = useAuthActions();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Si l'utilisateur est déjà connecté, rediriger vers /chat
+    if (user) {
+      navigate("/chat");
+    }
+  }, [user, navigate]);
 
   const onSignUp = async (e: React.FormEvent) => {
     e.preventDefault();

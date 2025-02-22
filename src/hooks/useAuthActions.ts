@@ -37,6 +37,7 @@ export function useAuthActions() {
           data: {
             full_name: fullName,
           },
+          emailRedirectTo: `${window.location.origin}/config`
         },
       });
 
@@ -136,7 +137,7 @@ export function useAuthActions() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: window.location.origin + "/config"
+          emailRedirectTo: `${window.location.origin}/config`
         }
       });
 
