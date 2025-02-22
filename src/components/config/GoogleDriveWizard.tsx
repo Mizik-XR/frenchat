@@ -14,6 +14,10 @@ interface WizardStep {
   description: string;
 }
 
+interface GoogleOAuthConfig {
+  client_id: string;
+}
+
 const wizardSteps: WizardStep[] = [
   {
     title: "Connexion à Google Drive",
@@ -59,7 +63,8 @@ export const GoogleDriveWizard = ({
 
       // Type guard pour s'assurer que config est un objet avec client_id
       if (data?.config && typeof data.config === 'object' && 'client_id' in data.config) {
-        setClientId(data.config.client_id as string);
+        const config = data.config as GoogleOAuthConfig;
+        setClientId(config.client_id);
       }
     };
 
