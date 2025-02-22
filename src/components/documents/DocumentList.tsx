@@ -47,12 +47,12 @@ export const DocumentList = ({ documents }: DocumentListProps) => {
 
       // Créer un lien de téléchargement
       const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = document.title;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const link = window.document.createElement('a');
+      link.href = url;
+      link.download = document.title;
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error: any) {
       toast({
