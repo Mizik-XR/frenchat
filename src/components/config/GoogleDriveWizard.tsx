@@ -44,52 +44,56 @@ export const GoogleDriveWizard = ({
   const [clientId, setClientId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  // Vérifier la connexion Google Drive
-  const checkGoogleDriveConnection = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('oauth_tokens')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('provider', 'google')
-        .single();
-
-      if (error) {
-        console.error("Erreur lors de la vérification de la connexion:", error);
-        return;
-      }
-
-      setIsConnected(!!data);
-    } catch (err) {
-      console.error("Erreur lors de la vérification de la connexion:", err);
-    }
-  };
-
   useEffect(() => {
     const fetchClientId = async () => {
-      const { data, error } = await supabase
-        .from('service_configurations')
-        .select('config')
-        .eq('service_type', 'GOOGLE_OAUTH')
-        .maybeSingle();
+      try {
+        console.log('Récupération de la configuration Google OAuth...');
+        const { data, error } = await supabase
+          .from('service_configurations')
+          .select('config')
+          .eq('service_type', 'GOOGLE_OAUTH')
+          .maybeSingle();
 
-      if (error) {
-        console.error("Erreur lors de la récupération du client ID:", error);
-        toast({
-          title: "Erreur de configuration",
-          description: "Impossible de récupérer la configuration Google Drive",
-          variant: "destructive",
-        });
-        return;
+        if (error) {
+          console.error("Erreur lors de la récupération du client ID:", error);
+          toast({
+            title: "Erreur de configuration",
+            description: "Impossible de récupérer la configuration Google Drive",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (data?.config && 
+            typeof data.config === 'object' && 
+            'client_id' in data.config && 
+            typeof data.config.client_id === 'string') {
+          console.log('Client ID trouvé:', data.config.client_id);
+          setClientId(data.config.client_id);
+        } else {
+          console.log('Aucun client ID trouvé dans la configuration');
+        }
+      } catch (err) {
+        console.error('Erreur lors de la récupération de la configuration:', err);
       }
+    };
 
-      if (data?.config && 
-          typeof data.config === 'object' && 
-          'client_id' in data.config && 
-          typeof data.config.client_id === 'string') {
-        setClientId(data.config.client_id);
+    const checkGoogleDriveConnection = async () => {
+      if (!user) return;
+
+      try {
+        console.log('Vérification de la connexion Google Drive...');
+        const { data, error } = await supabase
+          .from('oauth_tokens')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('provider', 'google')
+          .maybeSingle();
+
+        setIsConnected(!!data && !error);
+        console.log('État de la connexion:', !!data && !error);
+      } catch (err) {
+        console.error("Erreur lors de la vérification de la connexion:", err);
       }
     };
 
@@ -118,8 +122,10 @@ export const GoogleDriveWizard = ({
     
     setIsConnecting(true);
     const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent&state=${user.id}`;
+    const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback/google`);
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent&state=${user.id}`;
     
+    console.log('Redirection vers Google OAuth:', authUrl);
     window.location.href = authUrl;
   };
 
