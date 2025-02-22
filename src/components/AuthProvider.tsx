@@ -24,12 +24,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    let isFirstLoad = true;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("Auth state changed:", _event, "session:", session);
+      
+      if (_event === 'SIGNED_IN') {
+        setUser(session?.user ?? null);
+        setIsLoading(false);
+        navigate('/config');
+        return;
+      }
+
+      if (_event === 'SIGNED_OUT') {
+        setUser(null);
+        setIsLoading(false);
+        navigate('/auth');
+        return;
+      }
+
       setUser(session?.user ?? null);
       setIsLoading(false);
 
-      if (!session?.user && location.pathname !== "/auth") {
+      // Ne redirigez vers /auth que si nous ne sommes pas déjà sur /auth
+      if (!session?.user && location.pathname !== "/auth" && !isFirstLoad) {
         console.log("No user found, redirecting to /auth");
         navigate("/auth");
       }
@@ -40,6 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Initial session check:", session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+      isFirstLoad = false;
 
       if (!session?.user && location.pathname !== "/auth") {
         console.log("No initial session, redirecting to /auth");
