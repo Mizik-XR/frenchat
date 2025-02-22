@@ -1,7 +1,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import { google } from 'https://deno.land/x/google_auth@v1.1.0/mod.ts'
+import { OAuth2Client } from "https://deno.land/x/oauth2_client@v1.0.2/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,81 +52,114 @@ serve(async (req) => {
       )
     }
 
-    // Initialize Google Drive client
-    const auth = new google.auth.OAuth2(
-      Deno.env.get('GOOGLE_CLIENT_ID'),
-      Deno.env.get('GOOGLE_CLIENT_SECRET')
-    )
+    const oauth2Client = new OAuth2Client({
+      clientId: Deno.env.get('GOOGLE_CLIENT_ID')!,
+      clientSecret: Deno.env.get('GOOGLE_CLIENT_SECRET')!,
+      authorizationEndpointUri: "https://accounts.google.com/o/oauth2/v2/auth",
+      tokenUri: "https://oauth2.googleapis.com/token",
+      redirectUri: `${Deno.env.get('SITE_URL')}/auth/callback/google`,
+      defaults: {
+        scope: ["https://www.googleapis.com/auth/drive.file"],
+      },
+    });
 
-    auth.setCredentials({
+    // Set the tokens
+    oauth2Client.setTokens({
       access_token: tokenData.access_token,
       refresh_token: tokenData.refresh_token,
-    })
+    });
 
-    const drive = google.drive({ version: 'v3', auth })
-
-    // Check if the chat files folder exists, if not create it
-    let folderId: string | null = null
-    const folderName = 'Chat Files'
-    
-    const folderResponse = await drive.files.list({
-      q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-      spaces: 'drive',
-      fields: 'files(id, name)',
-    })
-
-    if (folderResponse.data.files && folderResponse.data.files.length > 0) {
-      folderId = folderResponse.data.files[0].id
-    } else {
-      const folderMetadata = {
-        name: folderName,
-        mimeType: 'application/vnd.google-apps.folder',
+    // Create the chat files folder if it doesn't exist
+    const folderName = 'Chat Files';
+    const folderSearchResponse = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      {
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+        },
       }
-      const folder = await drive.files.create({
-        requestBody: folderMetadata,
-        fields: 'id',
-      })
-      folderId = folder.data.id
+    );
+
+    const folderData = await folderSearchResponse.json();
+    let folderId: string;
+
+    if (folderData.files && folderData.files.length > 0) {
+      folderId = folderData.files[0].id;
+    } else {
+      // Create the folder
+      const createFolderResponse = await fetch(
+        'https://www.googleapis.com/drive/v3/files',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${tokenData.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: folderName,
+            mimeType: 'application/vnd.google-apps.folder',
+          }),
+        }
+      );
+      const newFolder = await createFolderResponse.json();
+      folderId = newFolder.id;
     }
 
-    if (!folderId) {
-      throw new Error('Could not create or find folder')
-    }
-
-    // Upload file to Google Drive
-    const fileMetadata = {
+    // Upload the file
+    const metadata = {
       name: file.name,
       parents: [folderId],
-    }
+    };
 
-    const arrayBuffer = await file.arrayBuffer()
-    const uint8Array = new Uint8Array(arrayBuffer)
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', file);
 
-    const media = {
-      mimeType: file.type,
-      body: uint8Array,
-    }
+    const uploadResponse = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+        },
+        body: form,
+      }
+    );
 
-    const driveFile = await drive.files.create({
-      requestBody: fileMetadata,
-      media: media,
-      fields: 'id, webViewLink',
-    })
+    const uploadedFile = await uploadResponse.json();
 
     // Make the file accessible via link
-    await drive.permissions.create({
-      fileId: driveFile.data.id!,
-      requestBody: {
-        role: 'reader',
-        type: 'anyone',
-      },
-    })
+    await fetch(
+      `https://www.googleapis.com/drive/v3/files/${uploadedFile.id}/permissions`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: 'reader',
+          type: 'anyone',
+        }),
+      }
+    );
+
+    // Get the webViewLink
+    const fileResponse = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${uploadedFile.id}?fields=webViewLink`,
+      {
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+        },
+      }
+    );
+    const fileData = await fileResponse.json();
 
     return new Response(
       JSON.stringify({ 
         message: 'File uploaded successfully', 
         fileName: file.name,
-        publicUrl: driveFile.data.webViewLink,
+        publicUrl: fileData.webViewLink,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
