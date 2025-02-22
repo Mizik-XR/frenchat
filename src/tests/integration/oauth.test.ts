@@ -32,7 +32,10 @@ describe('Tests d\'intégration - OAuth et Google Drive', () => {
     if (tokens) {
       expect(tokensError).toBeNull();
       expect(tokens.access_token).toBeDefined();
-      expect(new Date(tokens.expires_at as string)).toBeGreaterThan(new Date());
+      // Conversion des dates en timestamps pour la comparaison
+      const expiresAtTimestamp = new Date(tokens.expires_at as string).getTime();
+      const nowTimestamp = Date.now();
+      expect(expiresAtTimestamp).toBeGreaterThan(nowTimestamp);
     }
   });
 
