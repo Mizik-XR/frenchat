@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-import { pipeline } from 'https://esm.sh/@huggingface/transformers@2.11.0';
+import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,23 +22,18 @@ serve(async (req) => {
   try {
     const { text, documentId, chunkIndex } = await req.json() as RequestBody;
 
-    // Initialiser le pipeline Sentence Transformers
-    const extractor = await pipeline(
-      'feature-extraction',
-      'sentence-transformers/all-MiniLM-L6-v2',
-      { revision: 'main' }
-    );
-
+    // Initialiser Hugging Face avec l'API token
+    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'));
+    
     console.log('Generating embeddings for text:', text.substring(0, 100) + '...');
 
-    // Générer les embeddings
-    const embeddings = await extractor(text, {
-      pooling: "mean",
-      normalize: true
+    // Utiliser le modèle sentence-transformers via l'API Inference
+    const response = await hf.featureExtraction({
+      model: 'sentence-transformers/all-MiniLM-L6-v2',
+      inputs: text
     });
 
-    // Convertir le tenseur en array pour stockage
-    const embeddingArray = Array.from(embeddings.data);
+    const embeddingArray = Array.from(response);
 
     // Créer le client Supabase
     const supabaseClient = createClient(
