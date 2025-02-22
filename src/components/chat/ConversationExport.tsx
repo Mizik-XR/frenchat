@@ -18,7 +18,6 @@ interface ConversationExportProps {
 }
 
 interface SharedConversation {
-  id?: string;
   title: string;
   messages: Message[];
   expires_at: string;
@@ -35,12 +34,12 @@ export const ConversationExport = ({ messages, title }: ConversationExportProps)
 
     const blob = new Blob([content], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${title || "conversation"}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const link = window.document.createElement("a");
+    link.href = url;
+    link.download = `${title || "conversation"}.md`;
+    window.document.body.appendChild(link);
+    link.click();
+    window.document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
     toast({
@@ -53,12 +52,12 @@ export const ConversationExport = ({ messages, title }: ConversationExportProps)
     const content = JSON.stringify(messages, null, 2);
     const blob = new Blob([content], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${title || "conversation"}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const link = window.document.createElement("a");
+    link.href = url;
+    link.download = `${title || "conversation"}.json`;
+    window.document.body.appendChild(link);
+    link.click();
+    window.document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
     toast({
@@ -86,18 +85,17 @@ export const ConversationExport = ({ messages, title }: ConversationExportProps)
     }
   };
 
-  const generateShareLink = async (messages: Message[]) => {
-    const sharedConversation: SharedConversation = {
-      title,
-      messages,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-    };
-
-    const { data, error } = await supabase
+  const generateShareLink = async (messages: Message[]): Promise<string> => {
+    // Utiliser une assertion de type pour la table
+    const { data, error } = await (supabase
       .from('shared_conversations')
-      .insert(sharedConversation)
+      .insert({
+        title,
+        messages,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      } as any)
       .select()
-      .single();
+      .single()) as any;
 
     if (error) throw error;
     return data.id;

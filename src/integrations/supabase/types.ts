@@ -698,6 +698,30 @@ export type Database = {
           },
         ]
       }
+      shared_conversations: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          messages: Json
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          messages: Json
+          title: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          messages?: Json
+          title?: string
+        }
+        Relationships: []
+      }
       system_reports: {
         Row: {
           cache_stats: Json
