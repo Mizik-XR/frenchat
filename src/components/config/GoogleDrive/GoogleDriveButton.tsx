@@ -1,16 +1,30 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
 import { Check, Loader2, LogIn } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-export const GoogleDriveButton = () => {
+interface GoogleDriveButtonProps {
+  isConnecting?: boolean;
+  onClick?: () => void;
+}
+
+export const GoogleDriveButton = ({ isConnecting: externalIsConnecting, onClick }: GoogleDriveButtonProps) => {
   const isConnected = useGoogleDriveStatus();
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [internalIsConnecting, setInternalIsConnecting] = useState(false);
+  
+  const isConnecting = externalIsConnecting ?? internalIsConnecting;
 
   const handleConnect = async () => {
+    if (onClick) {
+      onClick();
+      return;
+    }
+
     try {
-      setIsConnecting(true);
+      setInternalIsConnecting(true);
       const { data: config, error } = await supabase
         .from('service_configurations')
         .select('config')
@@ -39,7 +53,7 @@ export const GoogleDriveButton = () => {
         variant: "destructive",
       });
     } finally {
-      setIsConnecting(false);
+      setInternalIsConnecting(false);
     }
   };
 

@@ -43,7 +43,7 @@ export const GoogleDriveConfig = () => {
     try {
       const { error } = await supabase
         .from('service_configurations')
-        .update({
+        .upsert({
           config: { client_id: clientId, client_secret: clientSecret }
         })
         .eq('service_type', 'GOOGLE_OAUTH');
@@ -76,10 +76,7 @@ export const GoogleDriveConfig = () => {
           </div>
         ) : (
           <>
-            <GoogleDriveButton
-              isConnecting={isConnecting}
-              onClick={initiateGoogleAuth}
-            />
+            <GoogleDriveButton />
 
             <div className="text-sm text-muted-foreground">
               Autorisez l'accès à vos documents Google Drive en un clic.
