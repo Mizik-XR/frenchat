@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
 import { Check, Loader2, LogIn } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,6 +15,7 @@ interface GoogleDriveButtonProps {
 export const GoogleDriveButton = ({ isConnecting: externalIsConnecting, onClick }: GoogleDriveButtonProps) => {
   const isConnected = useGoogleDriveStatus();
   const [internalIsConnecting, setInternalIsConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const isConnecting = externalIsConnecting ?? internalIsConnecting;
 
@@ -22,6 +24,8 @@ export const GoogleDriveButton = ({ isConnecting: externalIsConnecting, onClick 
       onClick();
       return;
     }
+
+    setError(null);
 
     try {
       setInternalIsConnecting(true);
@@ -57,6 +61,7 @@ export const GoogleDriveButton = ({ isConnecting: externalIsConnecting, onClick 
       
       window.location.href = authUrl;
     } catch (error) {
+      setError("Impossible de démarrer la connexion à Google Drive. Veuillez réessayer.");
       toast({
         title: "Erreur",
         description: "Impossible de démarrer la connexion à Google Drive",
@@ -69,25 +74,40 @@ export const GoogleDriveButton = ({ isConnecting: externalIsConnecting, onClick 
 
   if (isConnected) {
     return (
-      <Button className="w-full" variant="outline" disabled>
-        <Check className="mr-2 h-4 w-4" />
-        Google Drive connecté
-      </Button>
+      <>
+        <Button className="w-full" variant="outline" disabled>
+          <Check className="mr-2 h-4 w-4" />
+          Google Drive connecté
+        </Button>
+        <p className="text-sm text-muted-foreground mt-2">
+          Votre compte Google Drive est correctement connecté et prêt à être utilisé.
+        </p>
+      </>
     );
   }
 
   return (
-    <Button 
-      onClick={handleConnect}
-      disabled={isConnecting}
-      className="w-full"
-    >
-      {isConnecting ? (
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-      ) : (
-        <LogIn className="mr-2 h-4 w-4" />
+    <>
+      <Button 
+        onClick={handleConnect}
+        disabled={isConnecting}
+        className="w-full"
+      >
+        {isConnecting ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <LogIn className="mr-2 h-4 w-4" />
+        )}
+        {isConnecting ? 'Connexion en cours...' : 'Connecter Google Drive'}
+      </Button>
+      {error && (
+        <Alert variant="destructive" className="mt-2">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
-      {isConnecting ? 'Connexion en cours...' : 'Connecter Google Drive'}
-    </Button>
+      <p className="text-sm text-muted-foreground mt-2">
+        Autorisez l'accès à Google Drive pour pouvoir indexer et rechercher dans vos documents.
+      </p>
+    </>
   );
 };
