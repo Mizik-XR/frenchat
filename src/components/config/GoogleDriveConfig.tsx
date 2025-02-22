@@ -4,13 +4,14 @@ import { Label } from "@/components/ui/label";
 import { GoogleConfig } from "@/types/config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, ExternalLink } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
 
 interface GoogleDriveConfigProps {
   config: GoogleConfig;
@@ -19,26 +20,59 @@ interface GoogleDriveConfigProps {
 }
 
 export const GoogleDriveConfig = ({ config, onConfigChange, onSave }: GoogleDriveConfigProps) => {
+  const handleGoogleConsoleOpen = () => {
+    window.open('https://console.cloud.google.com/apis/credentials', '_blank');
+  };
+
+  const handleDocsOpen = () => {
+    window.open('https://docs.google.com/document/create', '_blank');
+  };
+
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Configuration Google Drive</CardTitle>
-        <CardDescription>
-          Configurez l'accès à Google Drive pour indexer et rechercher vos documents.
+      <CardHeader className="space-y-2">
+        <CardTitle className="text-2xl">Configuration Google Drive</CardTitle>
+        <CardDescription className="text-base">
+          Pour permettre l'accès aux documents Google Drive, deux clés sont nécessaires :
         </CardDescription>
       </CardHeader>
+
       <CardContent className="space-y-6">
+        <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-800">
+          <div className="flex items-start">
+            <div className="mr-2">ℹ️</div>
+            <div>
+              <p className="font-medium">Guide rapide :</p>
+              <ol className="list-decimal ml-4 mt-2 space-y-1">
+                <li>Créez un projet dans la Console Google Cloud</li>
+                <li>Activez l'API Google Drive</li>
+                <li>Créez un ID Client OAuth 2.0</li>
+                <li>Créez une Clé API</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <Separator className="my-4" />
+
         <div className="space-y-4">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="googleClientId">Client ID</Label>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="googleClientId" className="text-base">ID Client OAuth 2.0</Label>
+                <p className="text-sm text-gray-500">
+                  Nécessaire pour l'authentification des utilisateurs
+                </p>
+              </div>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
-                    <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                    <HelpCircle className="h-4 w-4 text-gray-400" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>L'identifiant client OAuth 2.0 de votre application Google Cloud</p>
+                    <p className="max-w-xs">
+                      L'ID Client OAuth permet aux utilisateurs d'autoriser l'accès à leurs documents Google Drive
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -48,23 +82,27 @@ export const GoogleDriveConfig = ({ config, onConfigChange, onSave }: GoogleDriv
               value={config.clientId}
               onChange={(e) => onConfigChange({ ...config, clientId: e.target.value })}
               className="w-full"
-              placeholder="Entrez votre Google Client ID"
+              placeholder="xxx.apps.googleusercontent.com"
             />
-            <p className="text-sm text-gray-500">
-              Trouvable dans la console Google Cloud Platform sous "Identifiants OAuth 2.0".
-            </p>
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="googleApiKey">Clé API</Label>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="googleApiKey" className="text-base">Clé API</Label>
+                <p className="text-sm text-gray-500">
+                  Nécessaire pour les requêtes à l'API Google Drive
+                </p>
+              </div>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
-                    <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+                    <HelpCircle className="h-4 w-4 text-gray-400" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>La clé API pour accéder aux services Google Cloud</p>
+                    <p className="max-w-xs">
+                      La clé API permet d'effectuer des recherches et d'indexer les documents
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -74,37 +112,39 @@ export const GoogleDriveConfig = ({ config, onConfigChange, onSave }: GoogleDriv
               value={config.apiKey}
               onChange={(e) => onConfigChange({ ...config, apiKey: e.target.value })}
               className="w-full"
-              placeholder="Entrez votre Google API Key"
+              placeholder="AIza..."
               type="password"
             />
-            <p className="text-sm text-gray-500">
-              Générable dans la console Google Cloud Platform sous "Identifiants".
-            </p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <Button onClick={onSave} className="w-full sm:w-auto self-end">
-            Sauvegarder la configuration
-          </Button>
-
-          <div className="bg-primary/5 p-4 rounded-md">
-            <h4 className="text-sm font-medium text-primary mb-2">
-              Documentation & Ressources
-            </h4>
-            <p className="text-sm text-gray-600 mb-3">
-              Pour obtenir vos identifiants, rendez-vous sur la Console Google Cloud et activez l'API Google Drive.
-            </p>
+        <div className="rounded-lg border p-4 space-y-4">
+          <h3 className="text-sm font-medium">Liens utiles</h3>
+          
+          <div className="space-y-2">
             <Button 
               variant="outline" 
-              size="sm"
-              onClick={() => window.open('https://console.cloud.google.com/apis/credentials', '_blank')}
-              className="w-full"
+              onClick={handleGoogleConsoleOpen}
+              className="w-full justify-between"
             >
-              Accéder à la console Google Cloud
+              <span>Console Google Cloud</span>
+              <ExternalLink className="h-4 w-4" />
+            </Button>
+
+            <Button 
+              variant="outline"
+              onClick={handleDocsOpen}
+              className="w-full justify-between"
+            >
+              <span>Tester avec un Document Google</span>
+              <ExternalLink className="h-4 w-4" />
             </Button>
           </div>
         </div>
+
+        <Button onClick={onSave} className="w-full" disabled={!config.clientId || !config.apiKey}>
+          Sauvegarder la configuration
+        </Button>
       </CardContent>
     </Card>
   );
