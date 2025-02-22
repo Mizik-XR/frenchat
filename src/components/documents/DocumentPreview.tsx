@@ -6,6 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Save } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
 
 interface DocumentPreviewProps {
   file: File;
@@ -16,6 +18,7 @@ export const DocumentPreview = ({ file }: DocumentPreviewProps) => {
   const [content, setContent] = useState<string>('');
   const [isEdited, setIsEdited] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!file) return;
@@ -46,15 +49,31 @@ export const DocumentPreview = ({ file }: DocumentPreviewProps) => {
   };
 
   const handleSave = async () => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour sauvegarder des modifications.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       // Création d'un nouveau fichier avec le contenu modifié
       const blob = new Blob([content], { type: file.type });
       const newFile = new File([blob], file.name, { type: file.type });
       
-      // TODO: Implémenter la sauvegarde dans Supabase ici
-      // Pour l'instant, on simule une sauvegarde
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Sauvegarde de la nouvelle version dans Supabase
+      const { error } = await supabase
+        .from('document_versions')
+        .insert({
+          document_id: file.name, // Utilisation du nom du fichier comme identifiant
+          content: content,
+          user_id: user.id
+        });
+
+      if (error) throw error;
       
       setIsEdited(false);
       toast({
@@ -62,6 +81,7 @@ export const DocumentPreview = ({ file }: DocumentPreviewProps) => {
         description: "Le document a été mis à jour avec succès."
       });
     } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
       toast({
         title: "Erreur lors de la sauvegarde",
         description: "Une erreur est survenue lors de l'enregistrement des modifications.",

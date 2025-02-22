@@ -330,36 +330,28 @@ export type Database = {
         Row: {
           content: string | null
           created_at: string | null
-          created_by: string | null
-          document_id: string | null
+          document_id: string
           id: string
-          metadata: Json | null
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
           content?: string | null
           created_at?: string | null
-          created_by?: string | null
-          document_id?: string | null
+          document_id: string
           id?: string
-          metadata?: Json | null
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
           content?: string | null
           created_at?: string | null
-          created_by?: string | null
-          document_id?: string | null
+          document_id?: string
           id?: string
-          metadata?: Json | null
+          updated_at?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "document_versions_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       documents: {
         Row: {
