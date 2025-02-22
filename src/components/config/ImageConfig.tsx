@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -16,31 +17,46 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useServiceConfiguration } from '@/hooks/useServiceConfiguration';
 
 const STABLE_DIFFUSION_MODELS = ['sd-v1.5', 'sd-v2.1', 'sdxl'];
 
 interface ImageConfigProps {
-  model: string;
-  onModelChange: (model: string) => void;
+  onSave?: () => void;
 }
 
-export const ImageConfig = ({ model, onModelChange }: ImageConfigProps) => {
+export const ImageConfig = ({ onSave }: ImageConfigProps) => {
+  const { config, status, updateConfig } = useServiceConfiguration('stable_diffusion');
+  const [selectedModel, setSelectedModel] = useState(config?.model || 'sd-v1.5');
+
+  const handleModelChange = async (model: string) => {
+    setSelectedModel(model);
+    try {
+      await updateConfig({ model });
+      if (onSave) onSave();
+    } catch (error) {
+      console.error('Error updating model:', error);
+    }
+  };
+
   return (
     <Card className="p-6">
       <div className="flex items-start justify-between mb-4">
-        <h2 className="text-xl font-semibold">Configuration Stable Diffusion</h2>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <Info className="h-5 w-5 text-gray-400" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="max-w-xs">
-                Configurez Stable Diffusion pour la génération d'images basée sur l'IA.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div>
+          <h2 className="text-xl font-semibold">Configuration Stable Diffusion</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Sélectionnez le modèle à utiliser pour la génération d'images
+          </p>
+        </div>
+        
+        {status === 'configured' && (
+          <Alert className="max-w-xs">
+            <AlertDescription className="text-green-600">
+              Modèle actuel : {selectedModel}
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -48,8 +64,8 @@ export const ImageConfig = ({ model, onModelChange }: ImageConfigProps) => {
           <div className="space-y-2">
             <Label>Modèle Stable Diffusion</Label>
             <Select
-              value={model}
-              onValueChange={onModelChange}
+              value={selectedModel}
+              onValueChange={handleModelChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionnez une version" />
@@ -70,7 +86,7 @@ export const ImageConfig = ({ model, onModelChange }: ImageConfigProps) => {
             </h3>
             <p className="text-sm text-gray-600 mb-3">
               Stable Diffusion est un modèle de génération d'images gratuit et open source.
-              Vous pouvez l'utiliser localement ou via une API hébergée.
+              La configuration actuelle sera utilisée pour toutes les générations d'images.
             </p>
             <Button 
               variant="outline" 

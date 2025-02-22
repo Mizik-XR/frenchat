@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { LLMConfig as LLMConfigType, ServiceType } from "@/types/config";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,38 +13,58 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import { LLM_PROVIDERS } from "./llm/constants";
 import { ProviderSelector } from "./llm/ProviderSelector";
 import { ModelSelector } from "./llm/ModelSelector";
 import { ProviderDocs } from "./llm/ProviderDocs";
+import { useServiceConfiguration } from '@/hooks/useServiceConfiguration';
 
 interface LLMConfigProps {
-  config: LLMConfigType;
-  onConfigChange: (config: LLMConfigType) => void;
-  onSave: () => void;
+  onSave?: () => void;
 }
 
-export const LLMConfigComponent = ({ config, onConfigChange, onSave }: LLMConfigProps) => {
-  const selectedProvider = LLM_PROVIDERS.find(p => p.id === config.provider);
+export const LLMConfigComponent = ({ onSave }: LLMConfigProps) => {
+  const { config, status, updateConfig } = useServiceConfiguration('llm' as ServiceType);
+  const [localConfig, setLocalConfig] = useState<LLMConfigType>({
+    provider: config?.provider || 'huggingface',
+    model: config?.model || '',
+    apiKey: config?.apiKey || '',
+    rateLimit: config?.rateLimit || 10,
+    useLocal: config?.useLocal || false,
+    batchSize: config?.batchSize || 10,
+    cacheEnabled: config?.cacheEnabled || true
+  });
+
+  const selectedProvider = LLM_PROVIDERS.find(p => p.id === localConfig.provider);
 
   const handleProviderChange = (value: ServiceType) => {
     const newProvider = LLM_PROVIDERS.find(p => p.id === value);
     
-    if (newProvider && !newProvider.requiresApiKey && config.apiKey) {
+    if (newProvider && !newProvider.requiresApiKey && localConfig.apiKey) {
       toast({
         title: "Information",
         description: `${newProvider.name} ne nécessite pas de clé API pour les modèles open source.`,
       });
     }
 
-    onConfigChange({
-      ...config,
+    setLocalConfig(prev => ({
+      ...prev,
       provider: value,
       model: '',
-      apiKey: newProvider?.requiresApiKey ? config.apiKey : '',
+      apiKey: newProvider?.requiresApiKey ? prev.apiKey : '',
       useLocal: newProvider?.isLocal || false
-    });
+    }));
+  };
+
+  const handleSave = async () => {
+    try {
+      await updateConfig(localConfig);
+      if (onSave) onSave();
+    } catch (error) {
+      console.error('Error saving config:', error);
+    }
   };
 
   return (
@@ -55,33 +76,27 @@ export const LLMConfigComponent = ({ config, onConfigChange, onSave }: LLMConfig
             Sélectionnez et configurez le modèle de langage pour l'analyse de vos documents.
           </p>
         </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <Info className="h-5 w-5 text-primary/60" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p>
-                Vous pouvez utiliser des modèles locaux ou distants. Les modèles locaux nécessitent
-                l'installation d'Ollama sur votre machine.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        {status === 'configured' && (
+          <Alert className="max-w-xs">
+            <AlertDescription className="text-green-600">
+              Configuration actuelle : {selectedProvider?.name}
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
 
       <div className="space-y-6">
         <ProviderSelector 
-          value={config.provider} 
+          value={localConfig.provider} 
           onValueChange={handleProviderChange}
         />
 
         {selectedProvider && (
           <>
             <ModelSelector
-              value={config.model}
+              value={localConfig.model}
               models={selectedProvider.models}
-              onValueChange={(value) => onConfigChange({ ...config, model: value })}
+              onValueChange={(value) => setLocalConfig(prev => ({ ...prev, model: value }))}
             />
 
             {selectedProvider.requiresApiKey && (
@@ -90,9 +105,9 @@ export const LLMConfigComponent = ({ config, onConfigChange, onSave }: LLMConfig
                 <Input
                   type="password"
                   placeholder="Votre clé API"
-                  value={config.apiKey}
+                  value={localConfig.apiKey}
                   onChange={(e) => 
-                    onConfigChange({ ...config, apiKey: e.target.value })
+                    setLocalConfig(prev => ({ ...prev, apiKey: e.target.value }))
                   }
                   className="mt-1"
                 />
@@ -108,9 +123,9 @@ export const LLMConfigComponent = ({ config, onConfigChange, onSave }: LLMConfig
                   </p>
                 </div>
                 <Switch
-                  checked={config.cacheEnabled}
+                  checked={localConfig.cacheEnabled}
                   onCheckedChange={(checked) =>
-                    onConfigChange({ ...config, cacheEnabled: checked })
+                    setLocalConfig(prev => ({ ...prev, cacheEnabled: checked }))
                   }
                 />
               </div>
@@ -121,12 +136,12 @@ export const LLMConfigComponent = ({ config, onConfigChange, onSave }: LLMConfig
                   type="number"
                   min="1"
                   max="50"
-                  value={config.batchSize || 10}
+                  value={localConfig.batchSize}
                   onChange={(e) =>
-                    onConfigChange({
-                      ...config,
+                    setLocalConfig(prev => ({
+                      ...prev,
                       batchSize: parseInt(e.target.value) || 10,
-                    })
+                    }))
                   }
                   className="mt-1"
                 />
@@ -139,11 +154,11 @@ export const LLMConfigComponent = ({ config, onConfigChange, onSave }: LLMConfig
             <div className="pt-4">
               <Button 
                 className="w-full"
-                onClick={onSave}
+                onClick={handleSave}
                 disabled={
-                  !config.provider || 
-                  !config.model || 
-                  (selectedProvider.requiresApiKey && !config.apiKey)
+                  !localConfig.provider || 
+                  !localConfig.model || 
+                  (selectedProvider.requiresApiKey && !localConfig.apiKey)
                 }
               >
                 Sauvegarder la configuration

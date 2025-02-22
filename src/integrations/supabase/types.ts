@@ -612,30 +612,39 @@ export type Database = {
           client_id: string | null
           config: Json
           created_at: string
+          error_message: string | null
           id: string
           is_active: boolean | null
+          last_tested_at: string | null
           oauth_connected: boolean | null
           service_type: string
+          status: string | null
           updated_at: string
         }
         Insert: {
           client_id?: string | null
           config?: Json
           created_at?: string
+          error_message?: string | null
           id?: string
           is_active?: boolean | null
+          last_tested_at?: string | null
           oauth_connected?: boolean | null
           service_type: string
+          status?: string | null
           updated_at?: string
         }
         Update: {
           client_id?: string | null
           config?: Json
           created_at?: string
+          error_message?: string | null
           id?: string
           is_active?: boolean | null
+          last_tested_at?: string | null
           oauth_connected?: boolean | null
           service_type?: string
+          status?: string | null
           updated_at?: string
         }
         Relationships: [
