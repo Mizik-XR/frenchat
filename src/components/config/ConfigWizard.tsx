@@ -44,7 +44,7 @@ export const ConfigWizard = () => {
 
   const handleSkip = () => handleNext();
 
-  const handleGoogleDriveComplete = (config: any) => {
+  const handleGoogleDriveComplete = () => {
     setConfigStatus(prev => ({ ...prev, googleDrive: true }));
     handleNext();
     toast({

@@ -3,10 +3,11 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ExternalLink, AlertCircle, CheckCircle2, HelpCircle } from "lucide-react";
+import { ExternalLink, AlertCircle } from "lucide-react";
 import { Steps } from "@/components/ui/steps";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface WizardStep {
   title: string;
@@ -24,7 +25,7 @@ const wizardSteps: WizardStep[] = [
   }
 ];
 
-const GOOGLE_OAUTH_CLIENT_ID = "YOUR_CLIENT_ID"; // À configurer dans la console Google Cloud
+const GOOGLE_OAUTH_CLIENT_ID = "YOUR_CLIENT_ID";
 const REDIRECT_URI = `${window.location.origin}/auth/callback/google`;
 
 export const GoogleDriveWizard = ({
@@ -38,8 +39,15 @@ export const GoogleDriveWizard = ({
   const { user } = useAuth();
   const [isConnecting, setIsConnecting] = useState(false);
 
-  const initiateGoogleAuth = () => {
-    if (!user) return;
+  const initiateGoogleAuth = async () => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour utiliser cette fonctionnalité",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsConnecting(true);
     const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
@@ -48,17 +56,12 @@ export const GoogleDriveWizard = ({
     window.location.href = authUrl;
   };
 
-  const checkConnection = async () => {
-    if (!user) return false;
-
-    const { data, error } = await supabase
-      .from('oauth_tokens')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('provider', 'google_drive')
-      .single();
-
-    return !error && data;
+  const handleSuccess = () => {
+    onConfigSave();
+    toast({
+      title: "Succès",
+      description: "Google Drive a été connecté avec succès",
+    });
   };
 
   return (
