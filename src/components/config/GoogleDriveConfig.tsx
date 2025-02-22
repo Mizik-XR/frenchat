@@ -1,55 +1,83 @@
 
 import { useState } from "react";
-import { GoogleConfig } from "@/types/config";
-import { useGoogleDriveConfig } from "@/hooks/useGoogleDriveConfig";
-import { GoogleDriveWizard } from "./GoogleDriveWizard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2 } from "lucide-react";
+import { GoogleConfig } from "@/types/config";
 
-export const GoogleDriveConfig = () => {
-  const { config, isLoading, saveConfig } = useGoogleDriveConfig();
-  const [showWizard, setShowWizard] = useState(!config.clientId || !config.apiKey);
+export const GoogleDriveConfig = ({
+  config,
+  onConfigChange,
+  onSave
+}: {
+  config: GoogleConfig;
+  onConfigChange: (config: GoogleConfig) => void;
+  onSave: () => void;
+}) => {
+  const [localConfig, setLocalConfig] = useState<GoogleConfig>(config);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleConfigSave = async (newConfig: GoogleConfig) => {
-    await saveConfig(newConfig);
-    setShowWizard(false);
-    toast({
-      title: "Configuration réussie !",
-      description: "Vos identifiants Google Drive ont été enregistrés avec succès.",
-      duration: 5000,
-    });
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      // Validation basique
+      if (!localConfig.clientId.trim()) {
+        toast({
+          title: "Erreur",
+          description: "L'ID client est requis",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      onConfigChange(localConfig);
+      onSave();
+      
+      toast({
+        title: "Succès",
+        description: "Configuration Google Drive sauvegardée",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder la configuration",
+        variant: "destructive",
+      });
+      console.error("Erreur lors de la sauvegarde:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
-
-  const handleSkip = () => {
-    setShowWizard(false);
-    toast({
-      title: "Configuration reportée",
-      description: "Vous pourrez configurer Google Drive plus tard depuis les paramètres.",
-      duration: 5000,
-    });
-  };
-
-  if (isLoading) {
-    return null;
-  }
-
-  if (!showWizard && config.clientId && config.apiKey) {
-    return (
-      <Alert className="bg-green-50 border-green-200">
-        <CheckCircle2 className="h-4 w-4 text-green-600" />
-        <AlertTitle>Google Drive configuré</AlertTitle>
-        <AlertDescription>
-          Votre compte Google Drive est correctement configuré et prêt à être utilisé.
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   return (
-    <GoogleDriveWizard
-      onConfigSave={handleConfigSave}
-      onSkip={handleSkip}
-    />
+    <Card>
+      <CardHeader>
+        <CardTitle>Configuration Google Drive</CardTitle>
+        <CardDescription>
+          Configurez l'accès à Google Drive pour permettre l'intégration avec vos documents
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="clientId">ID Client</Label>
+          <Input 
+            id="clientId"
+            value={localConfig.clientId}
+            onChange={(e) => setLocalConfig(prev => ({ ...prev, clientId: e.target.value }))}
+            placeholder="Votre ID client Google"
+          />
+        </div>
+
+        <Button 
+          onClick={handleSave}
+          disabled={isSaving}
+          className="w-full"
+        >
+          {isSaving ? "Sauvegarde en cours..." : "Sauvegarder"}
+        </Button>
+      </CardContent>
+    </Card>
   );
 };
