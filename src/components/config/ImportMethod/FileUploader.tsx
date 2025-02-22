@@ -15,6 +15,10 @@ export const FileUploader = ({ onFilesSelected, loading }: FileUploaderProps) =>
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       onFilesSelected(acceptedFiles);
+      toast({
+        title: "Fichiers sélectionnés",
+        description: `${acceptedFiles.length} fichier(s) prêt(s) à être traité(s)`,
+      });
     }
   }, [onFilesSelected]);
 
