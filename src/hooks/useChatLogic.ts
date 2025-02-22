@@ -15,6 +15,14 @@ export function useChatLogic(selectedConversationId: string | null) {
       return model;
     }
 
+    if (message.startsWith('🔍')) {
+      return 'internet-search';
+    }
+
+    if (message.startsWith('🧠')) {
+      return 'deepthink';
+    }
+
     if (message.toLowerCase().includes('génère une image') || 
         message.toLowerCase().includes('créer une image') ||
         message.toLowerCase().includes('visualiser')) {
@@ -65,7 +73,42 @@ export function useChatLogic(selectedConversationId: string | null) {
           content: "Voici l'image générée selon votre demande :",
           metadata: { imageUrl }
         };
-      } else {
+      } 
+      else if (provider === 'internet-search') {
+        const searchQuery = message.replace('🔍', '').trim();
+        const { data: searchData, error } = await supabase.functions.invoke('web-search', {
+          body: { query: searchQuery }
+        });
+
+        if (error) throw error;
+
+        await chatService.sendAssistantMessage(
+          searchData.result,
+          selectedConversationId
+        );
+
+        return { content: searchData.result };
+      }
+      else if (provider === 'deepthink') {
+        const deepthinkQuery = message.replace('🧠', '').trim();
+        const response = await textGeneration({
+          model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
+          inputs: `[INST] Analysez en profondeur et avec un esprit critique : ${deepthinkQuery} [/INST]`,
+          parameters: {
+            max_length: 2000,
+            temperature: 0.3,
+            top_p: 0.95,
+          }
+        });
+
+        await chatService.sendAssistantMessage(
+          response[0].generated_text,
+          selectedConversationId
+        );
+
+        return { content: response[0].generated_text };
+      }
+      else {
         const prompt = `[INST] ${message} [/INST]`;
         const response = await textGeneration({
           model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
