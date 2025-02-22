@@ -32,7 +32,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (_event === 'SIGNED_IN') {
         setUser(session?.user ?? null);
         setIsLoading(false);
-        navigate('/chat');
         return;
       }
 
@@ -52,15 +51,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Vérification initiale de la session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log("Initial session check:", session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-      isFirstLoad = false;
+      
+      if (session?.user) {
+        // Vérifier si c'est la première connexion
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_first_login')
+          .eq('id', session.user.id)
+          .single();
 
-      if (!session?.user && location.pathname !== "/auth") {
-        console.log("No initial session, redirecting to /auth");
-        navigate("/auth");
+        setUser(session.user);
+        setIsLoading(false);
+        isFirstLoad = false;
+
+        if (location.pathname === '/auth') {
+          if (profile?.is_first_login) {
+            navigate('/config');
+          } else {
+            navigate('/chat');
+          }
+        }
+      } else {
+        setUser(null);
+        setIsLoading(false);
+        isFirstLoad = false;
+        
+        if (location.pathname !== '/auth') {
+          navigate('/auth');
+        }
       }
     });
 
