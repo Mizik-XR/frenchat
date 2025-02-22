@@ -10,6 +10,7 @@ import { ChatInput } from "./chat/ChatInput";
 import { SettingsPanel } from "./chat/SettingsPanel";
 import { MessageList } from "./chat/MessageList";
 import { ConversationList } from "./chat/ConversationList";
+import { ConversationExport } from "./chat/ConversationExport";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Chat = () => {
@@ -75,11 +76,19 @@ export const Chat = () => {
         
         <div className="flex-1 p-4">
           <Card className="flex flex-col h-full p-4 relative bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 shadow-lg">
-            <ChatHeader 
-              mode={webUIConfig.mode}
-              onModeChange={(mode) => handleWebUIConfigChange({ mode })}
-              onToggleSettings={() => setShowSettings(!showSettings)} 
-            />
+            <div className="flex justify-between items-center">
+              <ChatHeader 
+                mode={webUIConfig.mode}
+                onModeChange={(mode) => handleWebUIConfigChange({ mode })}
+                onToggleSettings={() => setShowSettings(!showSettings)} 
+              />
+              {messages.length > 0 && (
+                <ConversationExport
+                  messages={messages}
+                  title={conversations?.find(c => c.id === selectedConversationId)?.title || ""}
+                />
+              )}
+            </div>
 
             {showSettings && (
               <SettingsPanel

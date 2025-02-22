@@ -24,9 +24,24 @@ export const FileUploader = ({ onFilesSelected, loading }: FileUploaderProps) =>
       'application/pdf': ['.pdf'],
       'text/plain': ['.txt'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/msword': ['.doc'],
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-powerpoint': ['.ppt'],
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+      'text/markdown': ['.md'],
+      'text/csv': ['.csv'],
+      'application/rtf': ['.rtf'],
+      'text/html': ['.html', '.htm'],
+      'application/epub+zip': ['.epub']
     },
     multiple: true,
   });
+
+  const supportedFormats = [
+    'PDF', 'TXT', 'DOCX', 'DOC', 'XLS', 'XLSX',
+    'PPT', 'PPTX', 'MD', 'CSV', 'RTF', 'HTML', 'EPUB'
+  ].join(', ');
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -52,7 +67,7 @@ export const FileUploader = ({ onFilesSelected, loading }: FileUploaderProps) =>
             ou cliquez pour sélectionner des fichiers
           </p>
           <p className="text-xs text-muted-foreground mt-2">
-            Formats acceptés: PDF, TXT, DOCX
+            Formats acceptés: {supportedFormats}
           </p>
         </div>
       </Card>
