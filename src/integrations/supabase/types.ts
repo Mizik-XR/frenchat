@@ -725,6 +725,51 @@ export type Database = {
         }
         Relationships: []
       }
+      uploaded_documents: {
+        Row: {
+          content: string | null
+          created_at: string
+          file_path: string
+          file_type: string
+          id: string
+          metadata: Json | null
+          mime_type: string
+          preview_url: string | null
+          size: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          file_path: string
+          file_type: string
+          id?: string
+          metadata?: Json | null
+          mime_type: string
+          preview_url?: string | null
+          size: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          file_path?: string
+          file_type?: string
+          id?: string
+          metadata?: Json | null
+          mime_type?: string
+          preview_url?: string | null
+          size?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
