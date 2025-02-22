@@ -1,12 +1,11 @@
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/components/AuthProvider";
+import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
 
 interface SummaryStepProps {
   configStatus: {
@@ -19,34 +18,15 @@ interface SummaryStepProps {
 }
 
 export const SummaryStep = ({ configStatus: initialConfigStatus, onFinish }: SummaryStepProps) => {
-  const { user } = useAuth();
   const [configStatus, setConfigStatus] = useState(initialConfigStatus);
+  const isGoogleDriveConnected = useGoogleDriveStatus();
 
   useEffect(() => {
-    const checkGoogleDriveStatus = async () => {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('oauth_tokens')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('provider', 'google')
-          .single();
-
-        if (!error && data) {
-          setConfigStatus(prev => ({
-            ...prev,
-            googleDrive: true
-          }));
-        }
-      } catch (err) {
-        console.error("Erreur lors de la vérification du statut Google Drive:", err);
-      }
-    };
-
-    checkGoogleDriveStatus();
-  }, [user]);
+    setConfigStatus(prev => ({
+      ...prev,
+      googleDrive: isGoogleDriveConnected
+    }));
+  }, [isGoogleDriveConnected]);
 
   return (
     <Card className="p-6 animate-fade-in">
