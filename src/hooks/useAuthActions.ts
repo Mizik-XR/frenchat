@@ -88,7 +88,7 @@ export function useAuthActions() {
   const handleSignIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -135,6 +135,9 @@ export function useAuthActions() {
       setLoading(true);
       const { error } = await supabase.auth.signInWithOtp({
         email,
+        options: {
+          emailRedirectTo: window.location.origin + "/config"
+        }
       });
 
       if (error) throw error;
