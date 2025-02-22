@@ -2,6 +2,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/components/AuthProvider";
+import { NavBar } from "@/components/navigation/NavBar";
 import Auth from "@/pages/Auth";
 import Chat from "@/pages/Chat";
 import { Config } from "@/pages/Config";
@@ -21,7 +22,12 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <NavBar />
+      {children}
+    </>
+  );
 }
 
 export default function App() {
