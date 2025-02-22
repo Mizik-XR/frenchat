@@ -11,6 +11,12 @@ export function useServiceConfiguration(serviceType: ServiceType) {
   const [status, setStatus] = useState<ServiceStatus>('not_configured');
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fonction utilitaire pour déterminer le statut basé sur la configuration
+  const determineStatus = (config: any): ServiceStatus => {
+    if (!config || Object.keys(config).length === 0) return 'not_configured';
+    return 'configured';
+  };
+
   useEffect(() => {
     fetchConfig();
   }, [serviceType]);
@@ -27,10 +33,11 @@ export function useServiceConfiguration(serviceType: ServiceType) {
 
       if (data) {
         setConfig(data.config);
-        setStatus(data.status as ServiceStatus);
+        setStatus(determineStatus(data.config));
       }
     } catch (error) {
       console.error('Error fetching config:', error);
+      setStatus('error');
       toast({
         title: "Erreur",
         description: "Impossible de charger la configuration",
@@ -56,7 +63,7 @@ export function useServiceConfiguration(serviceType: ServiceType) {
       if (error) throw error;
 
       setConfig(data.config);
-      setStatus(data.status as ServiceStatus);
+      setStatus(determineStatus(data.config));
 
       toast({
         title: "Configuration mise à jour",
@@ -66,6 +73,7 @@ export function useServiceConfiguration(serviceType: ServiceType) {
       return data;
     } catch (error) {
       console.error('Error updating config:', error);
+      setStatus('error');
       toast({
         title: "Erreur",
         description: "Impossible de sauvegarder la configuration",
