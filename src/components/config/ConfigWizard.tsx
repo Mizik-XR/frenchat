@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Steps } from "@/components/ui/steps";
 import { Button } from "@/components/ui/button";
@@ -6,14 +5,18 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { WelcomeStep } from "./steps/WelcomeStep";
 import { SummaryStep } from "./steps/SummaryStep";
+import { ImportMethodSelector, ImportMethod } from "./ImportMethod/ImportMethodSelector";
+import { FileUploader } from "./ImportMethod/FileUploader";
 import { GoogleDriveConfig } from "./GoogleDrive/GoogleDriveConfig";
 import { MicrosoftTeamsConfig } from "./MicrosoftTeamsConfig";
 import { LLMConfigComponent } from "./LLMConfig";
 import { ImageConfig } from "./ImageConfig";
+import { supabase } from "@/integrations/supabase/client";
 
 const STEPS = [
   { title: "Bienvenue", description: "Configuration initiale de l'application" },
-  { title: "Google Drive", description: "Connexion à vos documents Google" },
+  { title: "Méthode d'Import", description: "Choisissez comment importer vos documents" },
+  { title: "Google Drive", description: "Configuration de la synchronisation" },
   { title: "Microsoft Teams", description: "Intégration avec Teams" },
   { title: "LLM", description: "Configuration du modèle de langage" },
   { title: "Image", description: "Paramètres de génération d'images" },
@@ -29,20 +32,32 @@ export const ConfigWizard = () => {
     llm: false,
     image: false
   });
+  const [importMethod, setImportMethod] = useState<ImportMethod>("drive");
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleNext = () => {
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else {
-      navigate("/chat");
-      toast({
-        title: "Configuration terminée",
-        description: "Vous pouvez maintenant utiliser l'application.",
+  const handleFilesSelected = async (files: File[]) => {
+    setIsProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('process-uploaded-files', {
+        body: { files }
       });
+
+      if (error) throw error;
+
+      toast({
+        title: "Traitement terminé",
+        description: `${files.length} fichiers ont été traités avec succès.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors du traitement des fichiers.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
-
-  const handleSkip = () => handleNext();
 
   const renderCurrentStep = () => {
     switch (currentStep) {
@@ -51,12 +66,28 @@ export const ConfigWizard = () => {
 
       case 1:
         return (
-          <div className="animate-fade-in">
-            <GoogleDriveConfig />
+          <div className="animate-fade-in space-y-8">
+            <ImportMethodSelector
+              selectedMethod={importMethod}
+              onMethodChange={setImportMethod}
+            />
+            {importMethod === "upload" && (
+              <FileUploader
+                onFilesSelected={handleFilesSelected}
+                loading={isProcessing}
+              />
+            )}
           </div>
         );
 
       case 2:
+        return importMethod === "drive" ? (
+          <div className="animate-fade-in">
+            <GoogleDriveConfig />
+          </div>
+        ) : handleNext();
+
+      case 3:
         return (
           <div className="animate-fade-in">
             <MicrosoftTeamsConfig
@@ -72,7 +103,7 @@ export const ConfigWizard = () => {
           </div>
         );
 
-      case 3:
+      case 4:
         return (
           <div className="animate-fade-in">
             <LLMConfigComponent
@@ -88,7 +119,7 @@ export const ConfigWizard = () => {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="animate-fade-in">
             <ImageConfig
@@ -104,13 +135,27 @@ export const ConfigWizard = () => {
           </div>
         );
 
-      case 5:
+      case 6:
         return <SummaryStep configStatus={configStatus} onFinish={handleNext} />;
 
       default:
         return null;
     }
   };
+
+  const handleNext = () => {
+    if (currentStep < STEPS.length - 1) {
+      setCurrentStep(prev => prev + 1);
+    } else {
+      navigate("/chat");
+      toast({
+        title: "Configuration terminée",
+        description: "Vous pouvez maintenant utiliser l'application.",
+      });
+    }
+  };
+
+  const handleSkip = () => handleNext();
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
