@@ -3,10 +3,12 @@ import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function GoogleAuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -36,10 +38,13 @@ export default function GoogleAuthCallback() {
       }
 
       try {
-        // Appeler notre Edge Function pour gérer l'échange de code
-        const { error: functionError } = await supabase.functions.invoke('google-oauth', {
-          body: JSON.stringify({ code }),
-        });
+        const { error: functionError } = await supabase.functions.invoke(
+          'google-oauth',
+          {
+            body: { code },
+            headers: { 'x-user-id': user?.id }
+          }
+        );
 
         if (functionError) throw functionError;
 
@@ -61,7 +66,7 @@ export default function GoogleAuthCallback() {
     };
 
     handleCallback();
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, user]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
