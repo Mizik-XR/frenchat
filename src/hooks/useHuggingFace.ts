@@ -1,4 +1,6 @@
 
+import { supabase } from "@/integrations/supabase/client";
+
 export function useHuggingFace(provider: string = 'huggingface') {
   const textGeneration = async (options: any) => {
     try {
