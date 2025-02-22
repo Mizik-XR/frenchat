@@ -20,6 +20,10 @@ export const SettingsPanel = ({
 }: SettingsPanelProps) => {
   const navigate = useNavigate();
 
+  const handleConfigClick = () => {
+    navigate('/config');
+  };
+
   return (
     <Card className="absolute top-16 right-4 z-10 p-4 w-80 bg-white/95 backdrop-blur-sm shadow-xl border border-blue-100 rounded-xl">
       <div className="space-y-6">
@@ -72,7 +76,7 @@ export const SettingsPanel = ({
             <Button 
               variant="outline" 
               className="w-full justify-start" 
-              onClick={() => navigate('/config')}
+              onClick={handleConfigClick}
             >
               <Settings className="h-4 w-4 mr-2" />
               Configurer les APIs
