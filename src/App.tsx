@@ -7,6 +7,7 @@ import Auth from "@/pages/Auth";
 import Chat from "@/pages/Chat";
 import { Config } from "@/pages/Config";
 import { AdvancedConfig } from "@/pages/AdvancedConfig";
+import GoogleAuthCallback from "@/pages/GoogleAuthCallback";
 import { useAuth } from "@/components/AuthProvider";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -44,6 +45,14 @@ export default function App() {
                 <Config />
               </PrivateRoute>
             } 
+          />
+          <Route
+            path="/auth/callback/google"
+            element={
+              <PrivateRoute>
+                <GoogleAuthCallback />
+              </PrivateRoute>
+            }
           />
           <Route 
             path="/advanced-config" 
