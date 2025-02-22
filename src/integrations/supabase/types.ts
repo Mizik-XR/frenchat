@@ -399,6 +399,7 @@ export type Database = {
       }
       embeddings_cache: {
         Row: {
+          access_count: number | null
           compression_enabled: boolean | null
           created_at: string | null
           expires_at: string
@@ -407,6 +408,7 @@ export type Database = {
           value: Json
         }
         Insert: {
+          access_count?: number | null
           compression_enabled?: boolean | null
           created_at?: string | null
           expires_at: string
@@ -415,6 +417,7 @@ export type Database = {
           value: Json
         }
         Update: {
+          access_count?: number | null
           compression_enabled?: boolean | null
           created_at?: string | null
           expires_at?: string
@@ -884,6 +887,12 @@ export type Database = {
           "": unknown
         }
         Returns: unknown
+      }
+      increment_cache_access_count: {
+        Args: {
+          cache_key: string
+        }
+        Returns: undefined
       }
       ivfflat_bit_support: {
         Args: {

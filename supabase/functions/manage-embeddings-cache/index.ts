@@ -37,6 +37,12 @@ Deno.serve(async (req) => {
           .single();
 
         if (getError) throw getError;
+
+        // Incrémenter le compteur d'accès si on trouve une valeur
+        if (cachedData) {
+          await supabaseClient.rpc('increment_cache_access_count', { cache_key: key });
+        }
+
         return new Response(
           JSON.stringify({ value: cachedData?.value }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -49,7 +55,8 @@ Deno.serve(async (req) => {
           .upsert({
             key,
             value,
-            expires_at: expiresAt
+            expires_at: expiresAt,
+            access_count: 1 // Initialiser le compteur d'accès
           });
 
         if (setError) throw setError;
