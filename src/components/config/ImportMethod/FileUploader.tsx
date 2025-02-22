@@ -21,6 +21,7 @@ export const FileUploader = ({ onFilesSelected, loading }: FileUploaderProps) =>
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
+      // Documents
       'application/pdf': ['.pdf'],
       'text/plain': ['.txt'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
@@ -33,20 +34,35 @@ export const FileUploader = ({ onFilesSelected, loading }: FileUploaderProps) =>
       'text/csv': ['.csv'],
       'application/rtf': ['.rtf'],
       'text/html': ['.html', '.htm'],
-      'application/epub+zip': ['.epub']
+      'application/epub+zip': ['.epub'],
+      // Images
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/png': ['.png'],
+      'image/gif': ['.gif'],
+      'image/webp': ['.webp'],
+      'image/svg+xml': ['.svg'],
+      'image/tiff': ['.tiff', '.tif'],
+      'image/bmp': ['.bmp']
     },
     multiple: true,
   });
 
   const supportedFormats = [
     'PDF', 'TXT', 'DOCX', 'DOC', 'XLS', 'XLSX',
-    'PPT', 'PPTX', 'MD', 'CSV', 'RTF', 'HTML', 'EPUB'
+    'PPT', 'PPTX', 'MD', 'CSV', 'RTF', 'HTML', 'EPUB',
+    'JPG/JPEG', 'PNG', 'GIF', 'WEBP', 'SVG', 'TIFF', 'BMP'
   ].join(', ');
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
   return (
     <div className="w-full max-w-2xl mx-auto">
       <Card
         {...getRootProps()}
+        onDragEnter={handleDragEnter}
         className={`
           p-8 border-2 border-dashed
           ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-200'}

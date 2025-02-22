@@ -17,6 +17,13 @@ interface ConversationExportProps {
   title: string;
 }
 
+interface SharedConversation {
+  id?: string;
+  title: string;
+  messages: Message[];
+  expires_at: string;
+}
+
 export const ConversationExport = ({ messages, title }: ConversationExportProps) => {
   const exportAsMarkdown = () => {
     const content = messages
@@ -80,13 +87,15 @@ export const ConversationExport = ({ messages, title }: ConversationExportProps)
   };
 
   const generateShareLink = async (messages: Message[]) => {
+    const sharedConversation: SharedConversation = {
+      title,
+      messages,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    };
+
     const { data, error } = await supabase
       .from('shared_conversations')
-      .insert({
-        messages,
-        title,
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours
-      })
+      .insert(sharedConversation)
       .select()
       .single();
 
