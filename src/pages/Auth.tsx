@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -30,7 +29,27 @@ export default function Auth() {
     try {
       setLoading(true);
       
-      // 1. D'abord on crée l'utilisateur
+      // 1. On vérifie d'abord si l'email existe déjà
+      const { data: existingUsers, error: getUserError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (getUserError && getUserError.code !== 'PGRST116') {
+        throw getUserError;
+      }
+
+      if (existingUsers) {
+        toast({
+          title: "Erreur",
+          description: "Cette adresse email est déjà utilisée",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 2. On crée l'utilisateur
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -43,24 +62,22 @@ export default function Auth() {
 
       if (signUpError) throw signUpError;
 
-      // 2. Si l'utilisateur est créé, on crée son profil
-      if (authData.user) {
-        // Vérifions que nous avons bien une session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert([
-              {
-                id: authData.user.id,
-                email: email,
-                full_name: fullName,
-              }
-            ]);
+      // 3. Si l'utilisateur est créé, on crée son profil
+      if (authData?.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: authData.user.id,
+              email: email,
+              full_name: fullName,
+            }
+          ]);
 
-          if (profileError) throw profileError;
+        if (profileError) throw profileError;
 
+        // 4. On vérifie si une confirmation par email est requise
+        if (authData.session) {
           navigate("/chat");
           toast({
             title: "Inscription réussie",
@@ -74,9 +91,10 @@ export default function Auth() {
         }
       }
     } catch (error: any) {
+      console.error('Signup error:', error);
       toast({
-        title: "Erreur",
-        description: error.message,
+        title: "Erreur lors de l'inscription",
+        description: error.message || "Une erreur est survenue lors de l'inscription",
         variant: "destructive",
       });
     } finally {
