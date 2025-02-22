@@ -8,16 +8,25 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('Function invoked with method:', req.method);
+  
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     console.log('Starting Google OAuth flow...');
-    const { code } = await req.json();
+    const requestData = await req.json();
+    console.log('Request data:', requestData);
+    
+    const { code } = requestData;
     const userId = req.headers.get('x-user-id');
 
+    console.log('Extracted code and userId:', { userId, hasCode: !!code });
+
     if (!code || !userId) {
+      console.error('Missing required data:', { code: !!code, userId: !!userId });
       throw new Error('Authorization code or user ID missing');
     }
 
@@ -26,7 +35,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Récupérer la configuration Google OAuth
+    console.log('Fetching Google OAuth configuration...');
     const { data: configData, error: configError } = await supabase
       .from('service_configurations')
       .select('config')
@@ -52,6 +61,7 @@ serve(async (req) => {
     });
 
     const tokens = await tokenResponse.json();
+    console.log('Token exchange response status:', tokenResponse.status);
 
     if (!tokenResponse.ok) {
       console.error('Token exchange error:', tokens);
