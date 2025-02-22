@@ -13,16 +13,8 @@ if %ERRORLEVEL% NEQ 0 (
     exit
 )
 
-REM Installation des dépendances si node_modules n'existe pas
-if not exist "node_modules\" (
-    echo Installation des dépendances...
-    call npm install
-    if %ERRORLEVEL% NEQ 0 (
-        echo Erreur lors de l'installation des dépendances
-        pause
-        exit
-    )
-)
+echo Installation des dépendances...
+call npm install
 
 echo Lancement de l'application...
 start http://localhost:8080
