@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (_event === 'SIGNED_IN') {
         setUser(session?.user ?? null);
         setIsLoading(false);
-        navigate('/config');
+        navigate('/chat');
         return;
       }
 
@@ -46,14 +46,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       setIsLoading(false);
 
-      // Ne redirigez vers /auth que si nous ne sommes pas déjà sur /auth
       if (!session?.user && location.pathname !== "/auth" && !isFirstLoad) {
         console.log("No user found, redirecting to /auth");
         navigate("/auth");
       }
     });
 
-    // Vérification initiale de la session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("Initial session check:", session);
       setUser(session?.user ?? null);
