@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { ConfigHeader } from "@/components/config/ConfigHeader";
-import { google, MessageSquare, Image, AlertCircle } from "lucide-react";
+import { FileJson, MessageSquare, Image, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,7 +35,7 @@ export function AdvancedConfig() {
     {
       title: "Google Drive",
       description: "Gérez l'accès à vos documents Google Drive",
-      icon: google,
+      icon: FileJson,
       component: (
         <GoogleDriveWizard
           onConfigSave={() => {
