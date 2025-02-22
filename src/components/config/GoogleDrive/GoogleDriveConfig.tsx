@@ -66,9 +66,9 @@ export const GoogleDriveConfig = () => {
   };
 
   return (
-    <Card>
+    <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Google Drive</CardTitle>
+        <CardTitle>Configuration Google Drive</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {isConnected ? (
@@ -80,7 +80,7 @@ export const GoogleDriveConfig = () => {
             <GoogleDriveButton />
 
             <div className="text-sm text-muted-foreground">
-              Autorisez l'accès à vos documents Google Drive en un clic.
+              Autorisez l'accès à vos documents Google Drive pour permettre la synchronisation automatique.
             </div>
 
             <Dialog open={showAdvanced} onOpenChange={setShowAdvanced}>
