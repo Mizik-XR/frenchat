@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -25,7 +25,6 @@ const wizardSteps: WizardStep[] = [
   }
 ];
 
-const GOOGLE_OAUTH_CLIENT_ID = "YOUR_CLIENT_ID";
 const REDIRECT_URI = `${window.location.origin}/auth/callback/google`;
 
 export const GoogleDriveWizard = ({
@@ -38,6 +37,33 @@ export const GoogleDriveWizard = ({
   const [currentStep, setCurrentStep] = useState(0);
   const { user } = useAuth();
   const [isConnecting, setIsConnecting] = useState(false);
+  const [clientId, setClientId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchClientId = async () => {
+      const { data: { setting }, error } = await supabase
+        .from('service_configurations')
+        .select('setting')
+        .eq('name', 'GOOGLE_OAUTH_CLIENT_ID')
+        .single();
+
+      if (error) {
+        console.error("Erreur lors de la récupération du client ID:", error);
+        toast({
+          title: "Erreur de configuration",
+          description: "Impossible de récupérer la configuration Google Drive",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (setting) {
+        setClientId(setting);
+      }
+    };
+
+    fetchClientId();
+  }, []);
 
   const initiateGoogleAuth = async () => {
     if (!user) {
@@ -48,20 +74,21 @@ export const GoogleDriveWizard = ({
       });
       return;
     }
+
+    if (!clientId) {
+      toast({
+        title: "Erreur",
+        description: "La configuration Google Drive n'est pas complète",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsConnecting(true);
     const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_OAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent&state=${user.id}`;
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent&state=${user.id}`;
     
     window.location.href = authUrl;
-  };
-
-  const handleSuccess = () => {
-    onConfigSave();
-    toast({
-      title: "Succès",
-      description: "Google Drive a été connecté avec succès",
-    });
   };
 
   return (
@@ -88,11 +115,21 @@ export const GoogleDriveWizard = ({
           <Button
             onClick={initiateGoogleAuth}
             className="w-full"
-            disabled={isConnecting}
+            disabled={isConnecting || !clientId}
           >
             <ExternalLink className="mr-2 h-4 w-4" />
             {isConnecting ? 'Connexion en cours...' : 'Se connecter avec Google Drive'}
           </Button>
+
+          {!clientId && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Configuration manquante</AlertTitle>
+              <AlertDescription>
+                La configuration Google Drive n'est pas complète. Veuillez configurer l'ID client dans les paramètres.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="text-sm text-muted-foreground bg-secondary/20 p-4 rounded-md">
             En cliquant sur le bouton ci-dessus, vous serez redirigé vers Google pour autoriser l'accès à vos documents.
