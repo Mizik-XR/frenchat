@@ -61,10 +61,12 @@ export const GoogleDriveWizard = ({
         return;
       }
 
-      // Type guard pour s'assurer que config est un objet avec client_id
-      if (data?.config && typeof data.config === 'object' && 'client_id' in data.config) {
-        const config = data.config as GoogleOAuthConfig;
-        setClientId(config.client_id);
+      // Type guard plus strict pour vérifier la structure de l'objet
+      if (data?.config && 
+          typeof data.config === 'object' && 
+          'client_id' in data.config && 
+          typeof data.config.client_id === 'string') {
+        setClientId(data.config.client_id);
       }
     };
 
