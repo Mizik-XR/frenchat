@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -6,6 +7,11 @@ import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
+
+// Définition du type en local plutôt que dans types.ts
+type ProfileWithFirstLogin = {
+  is_first_login: boolean;
+};
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -55,7 +61,7 @@ export default function Auth() {
               id: authData.user.id,
               email: email,
               full_name: fullName,
-              is_first_login: true, // Ajout d'un flag pour détecter la première connexion
+              is_first_login: true,
             }
           ]);
 
@@ -73,7 +79,7 @@ export default function Auth() {
           navigate("/config");
         } else {
           toast({
-            title: "Inscription r��ussie",
+            title: "Inscription réussie",
             description: "Veuillez vérifier votre email pour confirmer votre compte",
           });
         }
@@ -106,7 +112,7 @@ export default function Auth() {
         .from('profiles')
         .select('is_first_login')
         .eq('email', email)
-        .single();
+        .single() as { data: ProfileWithFirstLogin | null };
 
       if (profile?.is_first_login) {
         // Met à jour le flag is_first_login
