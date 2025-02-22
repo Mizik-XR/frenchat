@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ExternalLink, AlertCircle } from "lucide-react";
+import { ExternalLink, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Steps } from "@/components/ui/steps";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +42,30 @@ export const GoogleDriveWizard = ({
   const { user } = useAuth();
   const [isConnecting, setIsConnecting] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  // Vérifier la connexion Google Drive
+  const checkGoogleDriveConnection = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('oauth_tokens')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('provider', 'google')
+        .single();
+
+      if (error) {
+        console.error("Erreur lors de la vérification de la connexion:", error);
+        return;
+      }
+
+      setIsConnected(!!data);
+    } catch (err) {
+      console.error("Erreur lors de la vérification de la connexion:", err);
+    }
+  };
 
   useEffect(() => {
     const fetchClientId = async () => {
@@ -61,7 +85,6 @@ export const GoogleDriveWizard = ({
         return;
       }
 
-      // Type guard plus strict pour vérifier la structure de l'objet
       if (data?.config && 
           typeof data.config === 'object' && 
           'client_id' in data.config && 
@@ -71,7 +94,8 @@ export const GoogleDriveWizard = ({
     };
 
     fetchClientId();
-  }, []);
+    checkGoogleDriveConnection();
+  }, [user]);
 
   const initiateGoogleAuth = async () => {
     if (!user) {
@@ -103,9 +127,16 @@ export const GoogleDriveWizard = ({
     <div className="space-y-6">
       <Alert className="mb-6">
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Configuration simplifiée</AlertTitle>
+        <AlertTitle>Configuration Google Drive</AlertTitle>
         <AlertDescription>
-          Connectez votre Google Drive en un clic ! Plus besoin de saisir des clés API, autorisez simplement l'accès à vos documents.
+          {isConnected ? (
+            <div className="flex items-center gap-2 text-green-600">
+              <CheckCircle2 className="h-4 w-4" />
+              Votre compte Google Drive est connecté
+            </div>
+          ) : (
+            "Connectez votre Google Drive en un clic ! Plus besoin de saisir des clés API, autorisez simplement l'accès à vos documents."
+          )}
         </AlertDescription>
       </Alert>
 
@@ -120,14 +151,24 @@ export const GoogleDriveWizard = ({
           <CardDescription>{wizardSteps[currentStep].description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            onClick={initiateGoogleAuth}
-            className="w-full"
-            disabled={isConnecting || !clientId}
-          >
-            <ExternalLink className="mr-2 h-4 w-4" />
-            {isConnecting ? 'Connexion en cours...' : 'Se connecter avec Google Drive'}
-          </Button>
+          {isConnected ? (
+            <Alert className="bg-green-50 border-green-200">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertTitle>Connexion établie</AlertTitle>
+              <AlertDescription>
+                Votre compte Google Drive est correctement configuré et prêt à être utilisé.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Button
+              onClick={initiateGoogleAuth}
+              className="w-full"
+              disabled={isConnecting || !clientId}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              {isConnecting ? 'Connexion en cours...' : 'Se connecter avec Google Drive'}
+            </Button>
+          )}
 
           {!clientId && (
             <Alert variant="destructive">
