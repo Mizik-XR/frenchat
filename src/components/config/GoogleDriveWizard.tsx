@@ -41,11 +41,11 @@ export const GoogleDriveWizard = ({
 
   useEffect(() => {
     const fetchClientId = async () => {
-      const { data: { setting }, error } = await supabase
+      const { data, error } = await supabase
         .from('service_configurations')
-        .select('setting')
-        .eq('name', 'GOOGLE_OAUTH_CLIENT_ID')
-        .single();
+        .select('config')
+        .eq('service_type', 'GOOGLE_OAUTH')
+        .maybeSingle();
 
       if (error) {
         console.error("Erreur lors de la récupération du client ID:", error);
@@ -57,8 +57,8 @@ export const GoogleDriveWizard = ({
         return;
       }
 
-      if (setting) {
-        setClientId(setting);
+      if (data?.config?.client_id) {
+        setClientId(data.config.client_id);
       }
     };
 
