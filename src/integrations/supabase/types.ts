@@ -473,6 +473,33 @@ export type Database = {
           },
         ]
       }
+      google_drive_configs: {
+        Row: {
+          api_key: string
+          client_id: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          client_id: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       performance_metrics: {
         Row: {
           cache_hit: boolean | null

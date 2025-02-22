@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ConfigHeader } from "@/components/config/ConfigHeader";
@@ -91,11 +90,7 @@ export function Config() {
         <ConfigIntro />
         
         <div className="space-y-8">
-          <GoogleDriveConfig
-            config={googleConfig}
-            onConfigChange={setGoogleConfig}
-            onSave={handleSaveGoogle}
-          />
+          <GoogleDriveConfig />
 
           <MicrosoftTeamsConfig
             config={teamsConfig}

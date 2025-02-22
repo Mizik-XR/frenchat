@@ -12,14 +12,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
+import { useGoogleDriveConfig } from "@/hooks/useGoogleDriveConfig";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface GoogleDriveConfigProps {
-  config: GoogleConfig;
-  onConfigChange: (config: GoogleConfig) => void;
-  onSave: () => void;
-}
+export const GoogleDriveConfig = () => {
+  const { config, isLoading, saveConfig } = useGoogleDriveConfig();
+  const [localConfig, setLocalConfig] = useState<GoogleConfig>(config);
 
-export const GoogleDriveConfig = ({ config, onConfigChange, onSave }: GoogleDriveConfigProps) => {
+  useEffect(() => {
+    setLocalConfig(config);
+  }, [config]);
+
   const handleGoogleConsoleOpen = () => {
     window.open('https://console.cloud.google.com/apis/credentials', '_blank');
   };
@@ -27,6 +30,24 @@ export const GoogleDriveConfig = ({ config, onConfigChange, onSave }: GoogleDriv
   const handleDocsOpen = () => {
     window.open('https://docs.google.com/document/create', '_blank');
   };
+
+  const handleSave = () => {
+    saveConfig(localConfig);
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <Skeleton className="h-8 w-[300px]" />
+          <Skeleton className="h-4 w-[250px]" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <Skeleton className="h-[200px] w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full">
@@ -79,8 +100,8 @@ export const GoogleDriveConfig = ({ config, onConfigChange, onSave }: GoogleDriv
             </div>
             <Input
               id="googleClientId"
-              value={config.clientId}
-              onChange={(e) => onConfigChange({ ...config, clientId: e.target.value })}
+              value={localConfig.clientId}
+              onChange={(e) => setLocalConfig({ ...localConfig, clientId: e.target.value })}
               className="w-full"
               placeholder="xxx.apps.googleusercontent.com"
             />
@@ -109,8 +130,8 @@ export const GoogleDriveConfig = ({ config, onConfigChange, onSave }: GoogleDriv
             </div>
             <Input
               id="googleApiKey"
-              value={config.apiKey}
-              onChange={(e) => onConfigChange({ ...config, apiKey: e.target.value })}
+              value={localConfig.apiKey}
+              onChange={(e) => setLocalConfig({ ...localConfig, apiKey: e.target.value })}
               className="w-full"
               placeholder="AIza..."
               type="password"
@@ -142,7 +163,11 @@ export const GoogleDriveConfig = ({ config, onConfigChange, onSave }: GoogleDriv
           </div>
         </div>
 
-        <Button onClick={onSave} className="w-full" disabled={!config.clientId || !config.apiKey}>
+        <Button 
+          onClick={handleSave} 
+          className="w-full" 
+          disabled={!localConfig.clientId || !localConfig.apiKey}
+        >
           Sauvegarder la configuration
         </Button>
       </CardContent>
