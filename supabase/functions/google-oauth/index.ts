@@ -94,10 +94,17 @@ serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + tokens.expires_in);
 
-    console.log('💾 Sauvegarde des tokens dans Supabase...');
+    // D'abord, supprimons l'ancien token s'il existe
+    console.log('🗑️ Suppression de l\'ancien token si existant...');
+    await supabaseClient
+      .from('oauth_tokens')
+      .delete()
+      .match({ user_id: userId, provider: 'google' });
+
+    console.log('💾 Sauvegarde du nouveau token...');
     const { error: saveError } = await supabaseClient
       .from('oauth_tokens')
-      .upsert({
+      .insert({
         user_id: userId,
         provider: 'google',
         access_token: tokens.access_token,
