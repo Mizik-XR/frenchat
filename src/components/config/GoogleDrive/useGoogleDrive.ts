@@ -4,6 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
 
+interface GoogleOAuthConfig {
+  client_id: string;
+  client_secret: string;
+}
+
 const REDIRECT_URI = `${window.location.origin}/auth/callback/google`;
 
 export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
@@ -60,13 +65,15 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
         throw new Error("Impossible de récupérer la configuration");
       }
 
-      if (!configData?.config?.client_id) {
+      const config = configData.config as GoogleOAuthConfig;
+
+      if (!config?.client_id) {
         throw new Error("Client ID manquant dans la configuration");
       }
 
       const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
       const redirectUri = encodeURIComponent(REDIRECT_URI);
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${configData.config.client_id}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${config.client_id}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
       
       console.log('Redirection vers Google OAuth:', authUrl);
       window.location.href = authUrl;
