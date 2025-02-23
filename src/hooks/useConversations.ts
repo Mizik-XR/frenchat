@@ -84,12 +84,27 @@ export function useConversations() {
         .eq('id', params.id);
 
       if (error) throw error;
+
+      // Afficher un toast de confirmation approprié
+      const message = params.isArchived !== undefined
+        ? params.isArchived
+          ? "Conversation archivée"
+          : "Conversation restaurée"
+        : "Conversation mise à jour";
+
+      toast({
+        title: "Succès",
+        description: message
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+    onError: () => {
       toast({
-        title: "Conversation mise à jour",
-        description: "La conversation a été mise à jour avec succès"
+        title: "Erreur",
+        description: "Impossible de mettre à jour la conversation",
+        variant: "destructive"
       });
     }
   });
