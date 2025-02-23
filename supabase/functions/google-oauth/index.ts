@@ -8,7 +8,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -22,10 +21,7 @@ serve(async (req) => {
       console.error('Code d\'autorisation manquant');
       return new Response(
         JSON.stringify({ error: 'Code d\'autorisation manquant' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -33,52 +29,38 @@ serve(async (req) => {
       console.error('User ID manquant');
       return new Response(
         JSON.stringify({ error: 'User ID manquant' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Initialisation du client Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    console.log('Récupération de la configuration OAuth...');
-    const { data: configData, error: configError } = await supabase
-      .from('service_configurations')
-      .select('config')
-      .eq('service_type', 'GOOGLE_OAUTH')
-      .single();
+    // Utilisation des secrets pour les identifiants OAuth
+    const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID');
+    const clientSecret = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET');
 
-    if (configError || !configData?.config) {
-      console.error('Erreur de configuration:', configError);
+    if (!clientId || !clientSecret) {
+      console.error('Identifiants OAuth manquants dans les variables d\'environnement');
       return new Response(
-        JSON.stringify({ error: 'Configuration OAuth non trouvée' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Configuration OAuth incomplète' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const config = configData.config;
-    console.log('Configuration récupérée avec succès');
-
-    // Construction de l'URI de redirection en utilisant l'origine de la requête
     const redirectUri = `${origin}/auth/callback/google`;
     console.log('Redirect URI:', redirectUri);
 
-    // Échange du code contre des tokens
     console.log('Échange du code d\'autorisation...');
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         code,
-        client_id: config.client_id,
-        client_secret: config.client_secret,
+        client_id: clientId,
+        client_secret: clientSecret,
         redirect_uri: redirectUri,
         grant_type: 'authorization_code'
       })
@@ -93,22 +75,17 @@ serve(async (req) => {
           error: 'Erreur lors de l\'échange du code d\'autorisation',
           details: tokens.error_description || tokens.error
         }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('Tokens obtenus avec succès');
 
-    // Calcul de la date d'expiration
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + tokens.expires_in);
 
-    // Sauvegarde des tokens
     console.log('Sauvegarde des tokens...');
-    const { error: saveError } = await supabase
+    const { error: saveError } = await supabaseClient
       .from('oauth_tokens')
       .upsert({
         user_id: userId,
@@ -126,20 +103,14 @@ serve(async (req) => {
       console.error('Erreur lors de la sauvegarde des tokens:', saveError);
       return new Response(
         JSON.stringify({ error: 'Erreur lors de la sauvegarde des tokens' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('Configuration OAuth terminée avec succès');
     return new Response(
       JSON.stringify({ success: true }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
@@ -149,10 +120,7 @@ serve(async (req) => {
         error: 'Erreur inattendue lors du traitement de la requête',
         details: error.message
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
