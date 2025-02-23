@@ -107,12 +107,14 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
         .single();
 
       if (configError) {
-        throw new Error("Impossible de récupérer la configuration");
+        console.error("Erreur de configuration:", configError);
+        throw new Error("Impossible de récupérer la configuration OAuth");
       }
 
       const config = parseConfig(configData?.config);
       if (!config) {
-        throw new Error("Configuration Google OAuth invalide ou mal formatée");
+        console.error("Configuration invalide:", configData?.config);
+        throw new Error("Configuration Google OAuth invalide ou manquante");
       }
 
       const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
@@ -125,8 +127,8 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
     } catch (error) {
       console.error('Erreur lors de l\'initialisation de l\'auth Google:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible d'initialiser la connexion à Google Drive. Veuillez réessayer.",
+        title: "Erreur de configuration",
+        description: error instanceof Error ? error.message : "Impossible d'initialiser la connexion à Google Drive",
         variant: "destructive",
       });
       setIsConnecting(false);

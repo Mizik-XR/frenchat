@@ -37,17 +37,31 @@ export default function GoogleAuthCallback() {
         return;
       }
 
+      if (!user) {
+        console.error("Utilisateur non connecté");
+        toast({
+          title: "Erreur",
+          description: "Vous devez être connecté pour utiliser cette fonctionnalité",
+          variant: "destructive",
+        });
+        navigate('/config');
+        return;
+      }
+
       try {
         console.log("Démarrage de l'échange du code d'autorisation...");
         const { error: functionError } = await supabase.functions.invoke(
           'google-oauth',
           {
             body: { code },
-            headers: { 'x-user-id': user?.id }
+            headers: { 'x-user-id': user.id }
           }
         );
 
-        if (functionError) throw functionError;
+        if (functionError) {
+          console.error("Erreur fonction Edge:", functionError);
+          throw functionError;
+        }
 
         console.log('Configuration Google Drive réussie');
         toast({
