@@ -78,12 +78,15 @@ export function useAuthActions() {
     }
   };
 
-  const handleSignIn = async (email: string, password: string) => {
+  const handleSignIn = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
       setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: {
+          persistSession: rememberMe // Cette option permet de contrôler la persistance de la session
+        }
       });
 
       if (error) throw error;

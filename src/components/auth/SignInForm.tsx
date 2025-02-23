@@ -2,12 +2,15 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Key, LogIn } from "lucide-react";
 import { AuthFormProps } from "./types";
 
 interface SignInFormProps extends AuthFormProps {
   handleSignIn: (e: React.FormEvent) => Promise<void>;
   handleMagicLink: (e: React.FormEvent) => Promise<void>;
+  rememberMe: boolean;
+  setRememberMe: (value: boolean) => void;
 }
 
 export function SignInForm({ 
@@ -17,7 +20,9 @@ export function SignInForm({
   password, 
   setPassword, 
   handleSignIn,
-  handleMagicLink 
+  handleMagicLink,
+  rememberMe,
+  setRememberMe
 }: SignInFormProps) {
   return (
     <form onSubmit={handleSignIn} className="space-y-4">
@@ -50,6 +55,20 @@ export function SignInForm({
             required
           />
         </div>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox 
+          id="remember"
+          checked={rememberMe}
+          onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+        />
+        <Label 
+          htmlFor="remember" 
+          className="text-sm font-normal cursor-pointer"
+        >
+          Se souvenir de moi
+        </Label>
       </div>
 
       <Button
