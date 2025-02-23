@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
@@ -18,6 +18,7 @@ serve(async (req) => {
     const userId = req.headers.get('x-user-id');
 
     if (!code) {
+      console.error('Code d\'autorisation manquant');
       return new Response(
         JSON.stringify({ error: 'Code d\'autorisation manquant' }),
         { 
@@ -28,6 +29,7 @@ serve(async (req) => {
     }
 
     if (!userId) {
+      console.error('User ID manquant');
       return new Response(
         JSON.stringify({ error: 'User ID manquant' }),
         { 
@@ -43,6 +45,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    console.log('Récupération de la configuration OAuth...');
     const { data: configData, error: configError } = await supabase
       .from('service_configurations')
       .select('config')
@@ -61,9 +64,13 @@ serve(async (req) => {
     }
 
     const config = configData.config;
-    const redirectUri = Deno.env.get('REDIRECT_URI') || 'http://localhost:5173/auth/callback/google';
+    console.log('Configuration récupérée avec succès');
+
+    const redirectUri = `${req.headers.get('origin')}/auth/callback/google`;
+    console.log('Redirect URI:', redirectUri);
 
     // Échange du code contre des tokens
+    console.log('Échange du code d\'autorisation...');
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -81,7 +88,10 @@ serve(async (req) => {
     if (!tokenResponse.ok) {
       console.error('Erreur lors de l\'échange du code:', tokens);
       return new Response(
-        JSON.stringify({ error: 'Erreur lors de l\'échange du code d\'autorisation' }),
+        JSON.stringify({ 
+          error: 'Erreur lors de l\'échange du code d\'autorisation',
+          details: tokens.error_description || tokens.error
+        }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -89,11 +99,14 @@ serve(async (req) => {
       );
     }
 
+    console.log('Tokens obtenus avec succès');
+
     // Calcul de la date d'expiration
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + tokens.expires_in);
 
     // Sauvegarde des tokens
+    console.log('Sauvegarde des tokens...');
     const { error: saveError } = await supabase
       .from('oauth_tokens')
       .upsert({
@@ -115,6 +128,7 @@ serve(async (req) => {
       );
     }
 
+    console.log('Configuration OAuth terminée avec succès');
     return new Response(
       JSON.stringify({ success: true }),
       { 
@@ -126,7 +140,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Erreur inattendue:', error);
     return new Response(
-      JSON.stringify({ error: 'Erreur inattendue lors du traitement de la requête' }),
+      JSON.stringify({ 
+        error: 'Erreur inattendue lors du traitement de la requête',
+        details: error.message
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
