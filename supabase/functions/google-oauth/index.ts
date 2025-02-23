@@ -1,12 +1,8 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.fresh.runtime.dev";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
-const REDIRECT_URI = `${SUPABASE_URL}/auth/callback/google`;
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const REDIRECT_URI = Deno.env.get('REDIRECT_URI') || 'http://localhost:5173/auth/callback/google';
 
 serve(async (req) => {
   try {
@@ -15,19 +11,24 @@ serve(async (req) => {
 
     if (!code) {
       return new Response(
-        JSON.stringify({ error: 'Code manquant' }),
+        JSON.stringify({ error: 'Code d\'autorisation manquant' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
     if (!userId) {
       return new Response(
-        JSON.stringify({ error: 'Utilisateur non authentifié' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'User ID manquant' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
     // Récupération de la configuration OAuth
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     const { data: configData, error: configError } = await supabase
       .from('service_configurations')
       .select('config')
@@ -42,21 +43,19 @@ serve(async (req) => {
       );
     }
 
-    const { client_id, client_secret } = configData.config;
+    const config = configData.config;
 
     // Échange du code contre des tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         code,
-        client_id,
-        client_secret,
+        client_id: config.client_id,
+        client_secret: config.client_secret,
         redirect_uri: REDIRECT_URI,
-        grant_type: 'authorization_code',
-      }),
+        grant_type: 'authorization_code'
+      })
     });
 
     const tokens = await tokenResponse.json();
@@ -64,28 +63,28 @@ serve(async (req) => {
     if (!tokenResponse.ok) {
       console.error('Erreur lors de l\'échange du code:', tokens);
       return new Response(
-        JSON.stringify({ error: 'Erreur lors de l\'échange du code' }),
+        JSON.stringify({ error: 'Erreur lors de l\'échange du code d\'autorisation' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
+    // Calcul de la date d'expiration
+    const expiresAt = new Date();
+    expiresAt.setSeconds(expiresAt.getSeconds() + tokens.expires_in);
+
     // Sauvegarde des tokens
-    const { error: tokenError } = await supabase
+    const { error: saveError } = await supabase
       .from('oauth_tokens')
       .upsert({
         user_id: userId,
         provider: 'google',
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
-        expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-        metadata: {
-          token_type: tokens.token_type,
-          scope: tokens.scope,
-        }
+        expires_at: expiresAt.toISOString()
       });
 
-    if (tokenError) {
-      console.error('Erreur lors de la sauvegarde des tokens:', tokenError);
+    if (saveError) {
+      console.error('Erreur lors de la sauvegarde des tokens:', saveError);
       return new Response(
         JSON.stringify({ error: 'Erreur lors de la sauvegarde des tokens' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
@@ -94,12 +93,19 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: true }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { 
+        status: 200, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        } 
+      }
     );
-  } catch (err) {
-    console.error('Erreur inattendue:', err);
+
+  } catch (error) {
+    console.error('Erreur inattendue:', error);
     return new Response(
-      JSON.stringify({ error: 'Erreur serveur interne' }),
+      JSON.stringify({ error: 'Erreur inattendue lors du traitement de la requête' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
