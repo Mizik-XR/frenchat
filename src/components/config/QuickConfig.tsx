@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Cloud, BrainCircuit, MicrosoftTeams } from "lucide-react";
+import { Cloud, BrainCircuit, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGoogleDrive } from "./GoogleDrive/useGoogleDrive";
 import { useAuth } from "@/components/AuthProvider";
@@ -60,7 +60,7 @@ export const QuickConfig = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <MicrosoftTeams className="h-5 w-5 text-purple-500" />
+              <MessageSquare className="h-5 w-5 text-purple-500" />
               <span>Microsoft Teams</span>
             </CardTitle>
           </CardHeader>
