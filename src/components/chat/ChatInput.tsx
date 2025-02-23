@@ -47,31 +47,19 @@ export const ChatInput = ({ input, setInput, isLoading, selectedDocumentId, onSu
 
         if (error) throw error;
 
-        // Insert the file link into the chat input
-        const fileUrl = data.publicUrl;
-        const fileName = data.fileName;
-        setInput(input + `\n[${fileName}](${fileUrl})`);
+        toast({
+          title: "Fichier téléversé",
+          description: `${file.name} a été ajouté à votre base de documents`,
+        });
       }
       setShowUploader(false);
-      toast({
-        title: "Fichiers téléversés avec succès",
-        description: "Vous pouvez maintenant les utiliser dans votre message",
-      });
     } catch (error) {
       console.error('Upload error:', error);
-      if (error.message?.includes('Google Drive not connected')) {
-        toast({
-          title: "Google Drive non connecté",
-          description: "Veuillez connecter votre compte Google Drive dans les paramètres",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Erreur lors du téléversement",
-          description: "Une erreur est survenue lors du téléversement des fichiers",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Erreur lors du téléversement",
+        description: "Une erreur est survenue lors du téléversement des fichiers",
+        variant: "destructive"
+      });
     } finally {
       setUploadLoading(false);
     }
@@ -80,6 +68,7 @@ export const ChatInput = ({ input, setInput, isLoading, selectedDocumentId, onSu
   const toggleMode = (newMode: 'chat' | 'search' | 'deepthink') => {
     if (mode === newMode) {
       setMode('chat');
+      setInput('');
     } else {
       setMode(newMode);
       setInput(newMode === 'search' ? '🔍 ' : mode === 'deepthink' ? '🧠 ' : '');
@@ -90,7 +79,11 @@ export const ChatInput = ({ input, setInput, isLoading, selectedDocumentId, onSu
     <div className="space-y-4">
       {showUploader && (
         <div className="p-4 bg-white rounded-lg shadow-sm border border-blue-100">
-          <FileUploader onFilesSelected={handleFilesSelected} loading={uploadLoading} />
+          <FileUploader 
+            onFilesSelected={handleFilesSelected} 
+            loading={uploadLoading}
+            description="Les fichiers seront automatiquement indexés et ajoutés à votre base de documents"
+          />
         </div>
       )}
       
@@ -98,17 +91,17 @@ export const ChatInput = ({ input, setInput, isLoading, selectedDocumentId, onSu
         <div className="flex gap-2">
           <Button
             type="button"
-            variant="ghost"
+            variant={showUploader ? "default" : "ghost"}
             size="icon"
             onClick={() => setShowUploader(!showUploader)}
-            className={`hover:bg-blue-50 ${showUploader ? 'bg-blue-100' : ''}`}
             disabled={uploadLoading}
+            className={`hover:bg-blue-50 ${showUploader ? 'bg-blue-100' : ''}`}
           >
             <Paperclip className="h-4 w-4" />
           </Button>
           <Button
             type="button"
-            variant="ghost"
+            variant={mode === 'search' ? "default" : "ghost"}
             size="icon"
             onClick={() => toggleMode('search')}
             className={`hover:bg-blue-50 ${mode === 'search' ? 'bg-blue-100' : ''}`}
@@ -117,7 +110,7 @@ export const ChatInput = ({ input, setInput, isLoading, selectedDocumentId, onSu
           </Button>
           <Button
             type="button"
-            variant="ghost"
+            variant={mode === 'deepthink' ? "default" : "ghost"}
             size="icon"
             onClick={() => toggleMode('deepthink')}
             className={`hover:bg-blue-50 ${mode === 'deepthink' ? 'bg-blue-100' : ''}`}
@@ -131,7 +124,7 @@ export const ChatInput = ({ input, setInput, isLoading, selectedDocumentId, onSu
           onChange={(e) => setInput(e.target.value)}
           placeholder={
             mode === 'search' 
-              ? "Rechercher sur internet..." 
+              ? "Rechercher dans vos documents..." 
               : mode === 'deepthink'
               ? "Mode réflexion approfondie..."
               : selectedDocumentId 

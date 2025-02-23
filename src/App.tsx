@@ -10,18 +10,18 @@ import { AdvancedConfig } from "@/pages/AdvancedConfig";
 import Documents from "@/pages/Documents";
 import GoogleAuthCallback from "@/pages/GoogleAuthCallback";
 import { useAuth } from "@/components/AuthProvider";
+import { CloudAIConfig } from "@/components/config/CloudAIConfig";
+import { LocalAIConfig } from "@/components/config/LocalAIConfig";
+import { QuickConfig } from "@/components/config/QuickConfig";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   
-  console.log("PrivateRoute - user:", user, "isLoading:", isLoading);
-
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
   if (!user) {
-    console.log("PrivateRoute - redirecting to /auth");
     return <Navigate to="/auth" />;
   }
 
@@ -43,9 +43,25 @@ export default function App() {
             path="/config" 
             element={
               <PrivateRoute>
-                <Config />
+                <QuickConfig />
               </PrivateRoute>
             } 
+          />
+          <Route
+            path="/config/cloud-ai"
+            element={
+              <PrivateRoute>
+                <CloudAIConfig />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/config/local-ai"
+            element={
+              <PrivateRoute>
+                <LocalAIConfig />
+              </PrivateRoute>
+            }
           />
           <Route
             path="/auth/callback/google"
