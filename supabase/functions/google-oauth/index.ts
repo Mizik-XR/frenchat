@@ -8,8 +8,11 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('🚀 Fonction Google OAuth démarrée');
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('👍 Requête OPTIONS CORS reçue');
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -18,25 +21,28 @@ serve(async (req) => {
     
     // Gestion de la demande de client_id
     if (action === 'get_client_id') {
+      console.log('📝 Demande de client_id reçue');
       const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID');
       if (!clientId) {
+        console.error('❌ GOOGLE_OAUTH_CLIENT_ID manquant');
         throw new Error('Client ID non configuré');
       }
+      console.log('✅ Client ID récupéré avec succès');
       return new Response(
         JSON.stringify({ client_id: clientId }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Échange du code d'autorisation
+    // Vérification des paramètres requis
     const userId = req.headers.get('x-user-id');
     if (!code) {
-      console.error('Code d\'autorisation manquant');
+      console.error('❌ Code d\'autorisation manquant');
       throw new Error('Code d\'autorisation manquant');
     }
 
     if (!userId) {
-      console.error('User ID manquant');
+      console.error('❌ User ID manquant');
       throw new Error('User ID manquant');
     }
 
@@ -44,14 +50,17 @@ serve(async (req) => {
     const clientSecret = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET');
 
     if (!clientId || !clientSecret) {
-      console.error('Identifiants OAuth manquants');
+      console.error('❌ Identifiants OAuth manquants', {
+        hasClientId: !!clientId,
+        hasClientSecret: !!clientSecret
+      });
       throw new Error('Configuration OAuth incomplète');
     }
 
     const redirectUri = `${req.headers.get('origin')}/auth/callback/google`;
-    console.log('Redirect URI:', redirectUri);
+    console.log('🔄 Redirect URI:', redirectUri);
 
-    console.log('Échange du code d\'autorisation...');
+    console.log('🔄 Échange du code d\'autorisation...');
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -67,11 +76,15 @@ serve(async (req) => {
     const tokens = await tokenResponse.json();
 
     if (!tokenResponse.ok) {
-      console.error('Erreur lors de l\'échange du code:', tokens);
+      console.error('❌ Erreur lors de l\'échange du code:', {
+        status: tokenResponse.status,
+        error: tokens.error,
+        error_description: tokens.error_description
+      });
       throw new Error(tokens.error_description || tokens.error || 'Erreur lors de l\'échange du code');
     }
 
-    console.log('Tokens obtenus avec succès');
+    console.log('✅ Tokens obtenus avec succès');
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -81,6 +94,7 @@ serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + tokens.expires_in);
 
+    console.log('💾 Sauvegarde des tokens dans Supabase...');
     const { error: saveError } = await supabaseClient
       .from('oauth_tokens')
       .upsert({
@@ -96,18 +110,18 @@ serve(async (req) => {
       });
 
     if (saveError) {
-      console.error('Erreur lors de la sauvegarde des tokens:', saveError);
+      console.error('❌ Erreur lors de la sauvegarde des tokens:', saveError);
       throw saveError;
     }
 
-    console.log('Configuration OAuth terminée avec succès');
+    console.log('✅ Configuration OAuth terminée avec succès');
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('❌ Erreur:', error);
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Erreur inattendue',
