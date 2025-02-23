@@ -11,16 +11,49 @@ interface GoogleOAuthConfig {
 
 const REDIRECT_URI = `${window.location.origin}/auth/callback/google`;
 
-// Fonction utilitaire pour vérifier la structure de la configuration
-const isGoogleOAuthConfig = (config: unknown): config is GoogleOAuthConfig => {
-  return (
-    typeof config === 'object' &&
-    config !== null &&
-    'client_id' in config &&
-    'client_secret' in config &&
-    typeof (config as GoogleOAuthConfig).client_id === 'string' &&
-    typeof (config as GoogleOAuthConfig).client_secret === 'string'
-  );
+// Type guard plus robuste avec messages d'erreur détaillés
+const isGoogleOAuthConfig = (obj: unknown): obj is GoogleOAuthConfig => {
+  if (typeof obj !== 'object' || obj === null) {
+    console.error("La configuration n'est pas un objet valide");
+    return false;
+  }
+
+  const candidate = obj as Record<string, unknown>;
+
+  if (typeof candidate.client_id !== 'string') {
+    console.error("client_id manquant ou invalide");
+    return false;
+  }
+
+  if (typeof candidate.client_secret !== 'string') {
+    console.error("client_secret manquant ou invalide");
+    return false;
+  }
+
+  return true;
+};
+
+// Fonction utilitaire pour parser la configuration
+const parseConfig = (rawConfig: unknown): GoogleOAuthConfig | null => {
+  // Si c'est une chaîne, essayer de la parser
+  if (typeof rawConfig === 'string') {
+    try {
+      const parsed = JSON.parse(rawConfig);
+      if (isGoogleOAuthConfig(parsed)) {
+        return parsed;
+      }
+    } catch (e) {
+      console.error("Impossible de parser la configuration:", e);
+      return null;
+    }
+  }
+  
+  // Si c'est déjà un objet, vérifier sa structure
+  if (isGoogleOAuthConfig(rawConfig)) {
+    return rawConfig;
+  }
+
+  return null;
 };
 
 export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
@@ -77,13 +110,14 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
         throw new Error("Impossible de récupérer la configuration");
       }
 
-      if (!isGoogleOAuthConfig(configData.config)) {
-        throw new Error("Configuration Google OAuth invalide");
+      const config = parseConfig(configData?.config);
+      if (!config) {
+        throw new Error("Configuration Google OAuth invalide ou mal formatée");
       }
 
       const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
       const redirectUri = encodeURIComponent(REDIRECT_URI);
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${configData.config.client_id}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${config.client_id}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
       
       console.log('Redirection vers Google OAuth:', authUrl);
       window.location.href = authUrl;
