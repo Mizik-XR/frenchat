@@ -5,8 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
 
 interface GoogleOAuthConfig {
-  client_id: string;
-  client_secret: string;
+  configured: boolean;
 }
 
 const REDIRECT_URI = `${window.location.origin}/auth/callback/google`;
@@ -20,40 +19,12 @@ const isGoogleOAuthConfig = (obj: unknown): obj is GoogleOAuthConfig => {
 
   const candidate = obj as Record<string, unknown>;
 
-  if (typeof candidate.client_id !== 'string') {
-    console.error("client_id manquant ou invalide");
-    return false;
-  }
-
-  if (typeof candidate.client_secret !== 'string') {
-    console.error("client_secret manquant ou invalide");
+  if (typeof candidate.configured !== 'boolean') {
+    console.error("Status 'configured' manquant ou invalide");
     return false;
   }
 
   return true;
-};
-
-// Fonction utilitaire pour parser la configuration
-const parseConfig = (rawConfig: unknown): GoogleOAuthConfig | null => {
-  // Si c'est une chaîne, essayer de la parser
-  if (typeof rawConfig === 'string') {
-    try {
-      const parsed = JSON.parse(rawConfig);
-      if (isGoogleOAuthConfig(parsed)) {
-        return parsed;
-      }
-    } catch (e) {
-      console.error("Impossible de parser la configuration:", e);
-      return null;
-    }
-  }
-  
-  // Si c'est déjà un objet, vérifier sa structure
-  if (isGoogleOAuthConfig(rawConfig)) {
-    return rawConfig;
-  }
-
-  return null;
 };
 
 export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
@@ -108,18 +79,31 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
 
       if (configError) {
         console.error("Erreur de configuration:", configError);
-        throw new Error("Impossible de récupérer la configuration OAuth");
+        throw new Error("Configuration Google OAuth manquante");
       }
 
-      const config = parseConfig(configData?.config);
-      if (!config) {
+      if (!configData?.config || !isGoogleOAuthConfig(configData.config) || !configData.config.configured) {
         console.error("Configuration invalide:", configData?.config);
         throw new Error("Configuration Google OAuth invalide ou manquante");
       }
 
+      // Configuration validée, on peut procéder à l'authentification
       const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
       const redirectUri = encodeURIComponent(REDIRECT_URI);
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${config.client_id}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
+      
+      // Récupération du client_id depuis la fonction Edge
+      const { data: authData, error: authError } = await supabase.functions.invoke(
+        'google-oauth',
+        {
+          body: { action: 'get_client_id' }
+        }
+      );
+
+      if (authError || !authData?.client_id) {
+        throw new Error("Impossible de récupérer les informations d'authentification");
+      }
+
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${authData.client_id}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
       
       console.log('Redirection vers Google OAuth:', authUrl);
       window.location.href = authUrl;
