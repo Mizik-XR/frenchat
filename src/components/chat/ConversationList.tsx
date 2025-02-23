@@ -15,6 +15,8 @@ interface ConversationListProps {
   onSelect: (id: string) => void;
   onNew: () => void;
   onUpdateConversation: (params: { id: string; title?: string; folderId?: string | null; isPinned?: boolean; isArchived?: boolean }) => void;
+  onExportToDoc?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const ConversationList = ({
@@ -22,7 +24,9 @@ export const ConversationList = ({
   selectedId,
   onSelect,
   onNew,
-  onUpdateConversation
+  onUpdateConversation,
+  onExportToDoc,
+  onDelete
 }: ConversationListProps) => {
   const { folders, createFolder } = useConversationFolders();
   const [activeTab, setActiveTab] = useState("active");
@@ -61,6 +65,8 @@ export const ConversationList = ({
                   selectedId={selectedId}
                   onSelect={onSelect}
                   onUpdateConversation={onUpdateConversation}
+                  onExportToDoc={onExportToDoc}
+                  onDelete={onDelete}
                 />
 
                 {folders.map((folder) => {
@@ -76,16 +82,22 @@ export const ConversationList = ({
                       selectedId={selectedId}
                       onSelect={onSelect}
                       onUpdateConversation={onUpdateConversation}
+                      onExportToDoc={onExportToDoc}
+                      onDelete={onDelete}
+                      folderId={folder.id}
                     />
                   );
                 })}
 
                 <ConversationGroup
-                  title="Sans dossier"
+                  title="Non classées"
                   conversations={unpinnedConversations.filter(conv => !conv.folderId)}
                   selectedId={selectedId}
                   onSelect={onSelect}
                   onUpdateConversation={onUpdateConversation}
+                  onExportToDoc={onExportToDoc}
+                  onDelete={onDelete}
+                  folderId={null}
                 />
               </div>
             </ScrollArea>
@@ -99,6 +111,8 @@ export const ConversationList = ({
                 selectedId={selectedId}
                 onSelect={onSelect}
                 onUpdateConversation={onUpdateConversation}
+                onExportToDoc={onExportToDoc}
+                onDelete={onDelete}
                 isArchived
               />
             </ScrollArea>
