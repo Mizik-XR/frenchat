@@ -81,15 +81,29 @@ export function useAuthActions() {
   const handleSignIn = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
       setLoading(true);
+      
+      // Configure la session avant la connexion
+      await supabase.auth.setSession({
+        access_token: '',
+        refresh_token: ''
+      });
+
+      // Effectue la connexion avec les options de session
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          persistSession: rememberMe // Cette option permet de contrôler la persistance de la session
-        }
       });
 
       if (error) throw error;
+
+      // Configure la persistance de la session après la connexion réussie
+      if (!rememberMe) {
+        // Si "Se souvenir de moi" n'est pas coché, on configure la session pour expirer à la fermeture du navigateur
+        await supabase.auth.setSession({
+          access_token: data.session?.access_token || '',
+          refresh_token: '',
+        });
+      }
 
       const { data: profile } = await supabase
         .from('profiles')
