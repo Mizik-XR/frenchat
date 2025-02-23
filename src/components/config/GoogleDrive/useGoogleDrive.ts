@@ -11,6 +11,18 @@ interface GoogleOAuthConfig {
 
 const REDIRECT_URI = `${window.location.origin}/auth/callback/google`;
 
+// Fonction utilitaire pour vérifier la structure de la configuration
+const isGoogleOAuthConfig = (config: unknown): config is GoogleOAuthConfig => {
+  return (
+    typeof config === 'object' &&
+    config !== null &&
+    'client_id' in config &&
+    'client_secret' in config &&
+    typeof (config as GoogleOAuthConfig).client_id === 'string' &&
+    typeof (config as GoogleOAuthConfig).client_secret === 'string'
+  );
+};
+
 export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -65,15 +77,13 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
         throw new Error("Impossible de récupérer la configuration");
       }
 
-      const config = configData.config as GoogleOAuthConfig;
-
-      if (!config?.client_id) {
-        throw new Error("Client ID manquant dans la configuration");
+      if (!isGoogleOAuthConfig(configData.config)) {
+        throw new Error("Configuration Google OAuth invalide");
       }
 
       const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
       const redirectUri = encodeURIComponent(REDIRECT_URI);
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${config.client_id}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${configData.config.client_id}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
       
       console.log('Redirection vers Google OAuth:', authUrl);
       window.location.href = authUrl;
