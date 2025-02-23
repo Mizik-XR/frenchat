@@ -1,10 +1,10 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-user-id',
 };
 
 serve(async (req) => {
@@ -16,6 +16,7 @@ serve(async (req) => {
   try {
     const { code } = await req.json();
     const userId = req.headers.get('x-user-id');
+    const origin = req.headers.get('origin');
 
     if (!code) {
       console.error('Code d\'autorisation manquant');
@@ -39,11 +40,10 @@ serve(async (req) => {
       );
     }
 
-    // Récupération de la configuration OAuth
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Initialisation du client Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log('Récupération de la configuration OAuth...');
     const { data: configData, error: configError } = await supabase
@@ -53,7 +53,7 @@ serve(async (req) => {
       .single();
 
     if (configError || !configData?.config) {
-      console.error('Erreur lors de la récupération de la configuration:', configError);
+      console.error('Erreur de configuration:', configError);
       return new Response(
         JSON.stringify({ error: 'Configuration OAuth non trouvée' }),
         { 
@@ -66,7 +66,8 @@ serve(async (req) => {
     const config = configData.config;
     console.log('Configuration récupérée avec succès');
 
-    const redirectUri = `${req.headers.get('origin')}/auth/callback/google`;
+    // Construction de l'URI de redirection en utilisant l'origine de la requête
+    const redirectUri = `${origin}/auth/callback/google`;
     console.log('Redirect URI:', redirectUri);
 
     // Échange du code contre des tokens
@@ -114,7 +115,11 @@ serve(async (req) => {
         provider: 'google',
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
-        expires_at: expiresAt.toISOString()
+        expires_at: expiresAt.toISOString(),
+        metadata: {
+          token_type: tokens.token_type,
+          scope: tokens.scope
+        }
       });
 
     if (saveError) {
