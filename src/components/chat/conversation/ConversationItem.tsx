@@ -26,11 +26,11 @@ export const ConversationItem = ({
   onArchive,
   onRestore,
   onEdit,
+  onMoveToFolder,
   isArchived = false
 }: ConversationItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(conversation.title);
-  const { folders } = useConversationFolders();
 
   return (
     <div
