@@ -1,4 +1,3 @@
-
 .message-enter {
   opacity: 0;
   transform: translateY(20px);
@@ -36,4 +35,20 @@
 @keyframes typing {
   0%, 100% { opacity: 0.3; }
   50% { opacity: 1; }
+}
+
+.highlight-message {
+  animation: highlightFade 2s ease-in-out;
+}
+
+@keyframes highlightFade {
+  0% {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+  100% {
+    background-color: transparent;
+  }
 }

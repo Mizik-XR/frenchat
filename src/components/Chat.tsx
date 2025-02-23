@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { AIProvider, WebUIConfig } from "@/types/chat";
 import { useChatMessages } from '@/hooks/useChatMessages';
@@ -11,13 +11,17 @@ import { SettingsPanel } from "./chat/SettingsPanel";
 import { MessageList } from "./chat/MessageList";
 import { ConversationList } from "./chat/ConversationList";
 import { ConversationExport } from "./chat/ConversationExport";
-import { supabase } from "@/integrations/supabase/client";
+import { PriorityTopicsPanel } from "./chat/PriorityTopicsPanel";
+import { Button } from "./ui/button";
+import { AlertTriangle } from "lucide-react";
 
 export const Chat = () => {
   const [input, setInput] = useState('');
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showPriorityTopics, setShowPriorityTopics] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
 
   const [webUIConfig, setWebUIConfig] = useState<WebUIConfig>({
     mode: 'auto',
@@ -57,6 +61,15 @@ export const Chat = () => {
     }
   };
 
+  const scrollToMessage = (messageId: string) => {
+    const messageElement = document.getElementById(messageId);
+    if (messageElement && messageListRef.current) {
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      messageElement.classList.add('highlight-message');
+      setTimeout(() => messageElement.classList.remove('highlight-message'), 2000);
+    }
+  };
+
   useEffect(() => {
     if (conversations?.length) {
       setSelectedConversationId(conversations[0].id);
@@ -74,20 +87,31 @@ export const Chat = () => {
           onUpdateConversation={updateConversation}
         />
         
-        <div className="flex-1 p-4">
-          <Card className="flex flex-col h-full p-4 relative bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 shadow-lg">
+        <div className="flex-1 p-4 flex">
+          <Card className="flex flex-col h-full p-4 relative bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 shadow-lg flex-1">
             <div className="flex justify-between items-center">
               <ChatHeader 
                 mode={webUIConfig.mode}
                 onModeChange={(mode) => handleWebUIConfigChange({ mode })}
                 onToggleSettings={() => setShowSettings(!showSettings)} 
               />
-              {messages.length > 0 && (
-                <ConversationExport
-                  messages={messages}
-                  title={conversations?.find(c => c.id === selectedConversationId)?.title || ""}
-                />
-              )}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPriorityTopics(!showPriorityTopics)}
+                  className="flex items-center gap-2"
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  Sujets Prioritaires
+                </Button>
+                {messages.length > 0 && (
+                  <ConversationExport
+                    messages={messages}
+                    title={conversations?.find(c => c.id === selectedConversationId)?.title || ""}
+                  />
+                )}
+              </div>
             </div>
 
             {showSettings && (
@@ -98,7 +122,7 @@ export const Chat = () => {
               />
             )}
 
-            <div className="flex-1 overflow-y-auto mb-4 bg-white/60 rounded-lg p-4">
+            <div className="flex-1 overflow-y-auto mb-4 bg-white/60 rounded-lg p-4" ref={messageListRef}>
               <MessageList 
                 messages={messages} 
                 isLoading={isLoading}
@@ -113,8 +137,16 @@ export const Chat = () => {
               onSubmit={handleSubmit}
             />
           </Card>
+
+          {showPriorityTopics && (
+            <PriorityTopicsPanel
+              messages={messages}
+              onTopicSelect={scrollToMessage}
+              onClose={() => setShowPriorityTopics(false)}
+            />
+          )}
         </div>
       </div>
     </div>
   );
-};
+}
