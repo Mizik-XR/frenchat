@@ -159,7 +159,7 @@ export const ConversationItem = ({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Archiver sur Drive</p>
+                    <p>Archiver</p>
                   </TooltipContent>
                 </Tooltip>
               )}
