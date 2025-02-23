@@ -1,10 +1,18 @@
 
-import { serve } from "https://deno.fresh.runtime.dev";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
 
-const REDIRECT_URI = Deno.env.get('REDIRECT_URI') || 'http://localhost:5173/auth/callback/google';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+};
 
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
     const { code } = await req.json();
     const userId = req.headers.get('x-user-id');
@@ -12,14 +20,20 @@ serve(async (req) => {
     if (!code) {
       return new Response(
         JSON.stringify({ error: 'Code d\'autorisation manquant' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
     if (!userId) {
       return new Response(
         JSON.stringify({ error: 'User ID manquant' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
@@ -39,11 +53,15 @@ serve(async (req) => {
       console.error('Erreur lors de la récupération de la configuration:', configError);
       return new Response(
         JSON.stringify({ error: 'Configuration OAuth non trouvée' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
     const config = configData.config;
+    const redirectUri = Deno.env.get('REDIRECT_URI') || 'http://localhost:5173/auth/callback/google';
 
     // Échange du code contre des tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -53,7 +71,7 @@ serve(async (req) => {
         code,
         client_id: config.client_id,
         client_secret: config.client_secret,
-        redirect_uri: REDIRECT_URI,
+        redirect_uri: redirectUri,
         grant_type: 'authorization_code'
       })
     });
@@ -64,7 +82,10 @@ serve(async (req) => {
       console.error('Erreur lors de l\'échange du code:', tokens);
       return new Response(
         JSON.stringify({ error: 'Erreur lors de l\'échange du code d\'autorisation' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
@@ -87,7 +108,10 @@ serve(async (req) => {
       console.error('Erreur lors de la sauvegarde des tokens:', saveError);
       return new Response(
         JSON.stringify({ error: 'Erreur lors de la sauvegarde des tokens' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
@@ -95,10 +119,7 @@ serve(async (req) => {
       JSON.stringify({ success: true }),
       { 
         status: 200, 
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
 
@@ -106,7 +127,10 @@ serve(async (req) => {
     console.error('Erreur inattendue:', error);
     return new Response(
       JSON.stringify({ error: 'Erreur inattendue lors du traitement de la requête' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });
