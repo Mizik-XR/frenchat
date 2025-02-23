@@ -46,7 +46,13 @@ export const SettingsPanel = ({
                 <Button 
                   variant="link" 
                   className="text-xs text-muted-foreground"
-                  onClick={() => navigate("/config/cloud-ai")}
+                  onClick={() => {
+                    if (webUIConfig.model === 'local') {
+                      navigate("/config/local-ai");
+                    } else {
+                      navigate("/config/cloud-ai");
+                    }
+                  }}
                 >
                   Configurer le modèle d'IA
                 </Button>
