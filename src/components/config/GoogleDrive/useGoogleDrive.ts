@@ -8,45 +8,9 @@ const REDIRECT_URI = `${window.location.origin}/auth/callback/google`;
 
 export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
   const [isConnecting, setIsConnecting] = useState(false);
-  const [clientId, setClientId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  const fetchClientId = async () => {
-    try {
-      console.log('Récupération de la configuration Google OAuth...');
-      const { data, error } = await supabase
-        .from('service_configurations')
-        .select('config')
-        .eq('service_type', 'GOOGLE_OAUTH')
-        .maybeSingle();
-
-      if (error) {
-        console.error("Erreur lors de la récupération du client ID:", error);
-        toast({
-          title: "Erreur de configuration",
-          description: "Impossible de récupérer la configuration Google Drive",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data?.config && 
-          typeof data.config === 'object' && 
-          'client_id' in data.config && 
-          typeof data.config.client_id === 'string') {
-        console.log('Client ID trouvé:', data.config.client_id);
-        setClientId(data.config.client_id);
-      } else {
-        console.log('Aucun client ID trouvé dans la configuration');
-      }
-    } catch (err) {
-      console.error('Erreur lors de la récupération de la configuration:', err);
-    }
-  };
-
   useEffect(() => {
-    fetchClientId();
-
     const checkGoogleDriveConnection = async () => {
       if (!user) return;
 
@@ -83,29 +47,44 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
       return;
     }
 
-    if (!clientId) {
+    try {
+      setIsConnecting(true);
+      console.log('Récupération de la configuration Google OAuth...');
+      const { data: configData, error: configError } = await supabase
+        .from('service_configurations')
+        .select('config')
+        .eq('service_type', 'GOOGLE_OAUTH')
+        .single();
+
+      if (configError) {
+        throw new Error("Impossible de récupérer la configuration");
+      }
+
+      if (!configData?.config?.client_id) {
+        throw new Error("Client ID manquant dans la configuration");
+      }
+
+      const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
+      const redirectUri = encodeURIComponent(REDIRECT_URI);
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${configData.config.client_id}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
+      
+      console.log('Redirection vers Google OAuth:', authUrl);
+      window.location.href = authUrl;
+
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation de l\'auth Google:', error);
       toast({
         title: "Erreur",
-        description: "La configuration Google Drive n'est pas complète",
+        description: "Impossible d'initialiser la connexion à Google Drive. Veuillez réessayer.",
         variant: "destructive",
       });
-      return;
+      setIsConnecting(false);
     }
-    
-    setIsConnecting(true);
-    const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
-    const redirectUri = encodeURIComponent(REDIRECT_URI);
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
-    
-    console.log('Redirection vers Google OAuth:', authUrl);
-    window.location.href = authUrl;
   };
 
   return {
     isConnecting,
-    clientId,
     isConnected,
-    initiateGoogleAuth,
-    fetchClientId
+    initiateGoogleAuth
   };
 };
