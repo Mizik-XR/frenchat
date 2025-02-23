@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 interface FileUploaderProps {
   onFilesSelected: (files: File[]) => void;
   loading?: boolean;
+  description?: string;
 }
 
-export const FileUploader = ({ onFilesSelected, loading }: FileUploaderProps) => {
+export const FileUploader = ({ onFilesSelected, loading, description }: FileUploaderProps) => {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       onFilesSelected(acceptedFiles);
@@ -124,6 +125,11 @@ export const FileUploader = ({ onFilesSelected, loading }: FileUploaderProps) =>
           <p className="text-sm text-muted-foreground mt-1">
             ou utilisez le bouton ci-dessous
           </p>
+          {description && (
+            <p className="text-sm text-muted-foreground mt-2">
+              {description}
+            </p>
+          )}
           <p className="text-xs text-muted-foreground mt-2">
             Formats acceptés: {supportedFormats}
           </p>
