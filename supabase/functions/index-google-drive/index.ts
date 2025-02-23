@@ -53,7 +53,7 @@ serve(async (req) => {
 
     const drive = google.drive({ version: 'v3', auth: oauth2Client })
 
-    // Lister les fichiers
+    // Lister tous les fichiers
     const response = await drive.files.list({
       pageSize: 100,
       fields: 'files(id, name, mimeType, createdTime, modifiedTime, size)',
