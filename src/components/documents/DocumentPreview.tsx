@@ -12,12 +12,18 @@ interface DocumentPreviewProps {
   documentId: string;
   content?: string;
   onExport?: (format: 'google_drive' | 'microsoft_teams') => void;
+  previewMode?: 'document' | 'presentation' | 'canvas';
 }
 
-export const DocumentPreview = ({ documentId, content: initialContent, onExport }: DocumentPreviewProps) => {
+export const DocumentPreview = ({ 
+  documentId, 
+  content: initialContent, 
+  onExport,
+  previewMode: initialPreviewMode = 'document'
+}: DocumentPreviewProps) => {
   const { summary, isLoading, isGenerating, generateSummary } = useDocumentSummary(documentId);
   const [content, setContent] = useState<string>("");
-  const [previewMode, setPreviewMode] = useState<'document' | 'presentation'>('document');
+  const [previewMode, setPreviewMode] = useState<'document' | 'presentation' | 'canvas'>(initialPreviewMode);
 
   useEffect(() => {
     if (initialContent) {
@@ -70,6 +76,13 @@ export const DocumentPreview = ({ documentId, content: initialContent, onExport 
           >
             Présentation
           </Button>
+          <Button
+            variant={previewMode === 'canvas' ? 'default' : 'outline'}
+            onClick={() => setPreviewMode('canvas')}
+            size="sm"
+          >
+            Canvas
+          </Button>
         </div>
         <div className="flex gap-2">
           <Button
@@ -92,20 +105,24 @@ export const DocumentPreview = ({ documentId, content: initialContent, onExport 
       </div>
 
       <ScrollArea className="h-[500px] w-full rounded-md border">
-        <div className={`p-4 ${previewMode === 'presentation' ? 'bg-gray-50' : ''}`}>
-          <div className={`prose prose-sm max-w-none ${
-            previewMode === 'presentation' ? 'text-xl space-y-8' : ''
-          }`}>
-            {previewMode === 'presentation' ? (
-              content.split('\n\n').map((slide, index) => (
-                <div key={index} className="bg-white p-6 rounded-lg shadow-sm mb-4">
-                  {slide}
-                </div>
-              ))
-            ) : (
-              <div className="whitespace-pre-wrap">{content}</div>
-            )}
-          </div>
+        <div className={`p-4 ${previewMode !== 'document' ? 'bg-gray-50' : ''}`}>
+          {previewMode === 'canvas' ? (
+            <div className="bg-white p-6 rounded-lg shadow-sm mb-4">
+              <div className="prose max-w-none">
+                <div dangerouslySetInnerHTML={{ __html: content }} />
+              </div>
+            </div>
+          ) : previewMode === 'presentation' ? (
+            content.split('\n\n').map((slide, index) => (
+              <div key={index} className="bg-white p-6 rounded-lg shadow-sm mb-4">
+                {slide}
+              </div>
+            ))
+          ) : (
+            <div className="prose max-w-none whitespace-pre-wrap">
+              {content}
+            </div>
+          )}
         </div>
       </ScrollArea>
     </Card>

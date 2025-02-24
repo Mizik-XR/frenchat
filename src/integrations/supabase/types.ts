@@ -83,6 +83,39 @@ export type Database = {
           },
         ]
       }
+      ai_model_configurations: {
+        Row: {
+          configuration: Json | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          model_name: string | null
+          provider_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          configuration?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          model_name?: string | null
+          provider_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          configuration?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          model_name?: string | null
+          provider_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       archived_documents: {
         Row: {
           archived_at: string | null

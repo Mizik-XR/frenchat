@@ -1,107 +1,96 @@
 
 import { useState } from 'react';
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { useDocumentSynthesis, OutputFormat, Destination } from '@/hooks/useDocumentSynthesis';
-import { Loader2, FileDown, Upload } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AIProvider } from "@/types/chat";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface DocumentGeneratorProps {
   selectedDocuments: string[];
-  onComplete?: (content: string) => void;
+  onDocumentGenerated: (content: string) => void;
 }
 
-export function DocumentGenerator({ selectedDocuments, onComplete }: DocumentGeneratorProps) {
-  const [query, setQuery] = useState('');
-  const [outputFormat, setOutputFormat] = useState<OutputFormat>('document');
-  const [destination, setDestination] = useState<Destination>('preview');
-  const { generateDocument, isGenerating, generatedContent } = useDocumentSynthesis();
+export function DocumentGenerator({ selectedDocuments, onDocumentGenerated }: DocumentGeneratorProps) {
+  const [prompt, setPrompt] = useState('');
+  const [provider, setProvider] = useState<AIProvider>('huggingface');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
+    if (!prompt) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez entrer une consigne pour la génération",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsGenerating(true);
     try {
-      const result = await generateDocument({
-        query,
-        sourceDocuments: selectedDocuments,
-        outputFormat,
-        destination
+      const { data, error } = await supabase.functions.invoke('rag-generation', {
+        body: {
+          prompt,
+          provider,
+          documentIds: selectedDocuments
+        }
       });
 
-      if (onComplete) {
-        onComplete(result.content);
-      }
+      if (error) throw error;
+
+      onDocumentGenerated(data.result);
+      toast({
+        title: "Succès",
+        description: "Document généré avec succès"
+      });
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('Erreur lors de la génération:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de générer le document",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
   return (
     <Card className="p-4 space-y-4">
       <div className="space-y-2">
-        <Label>Votre demande</Label>
-        <Textarea
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Décrivez le document que vous souhaitez générer..."
-          className="min-h-[100px]"
-        />
+        <h3 className="text-lg font-medium">Générer un document</h3>
+        <p className="text-sm text-gray-500">
+          Sélectionnez un modèle et entrez vos instructions pour générer un document
+          à partir des documents sélectionnés.
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Format de sortie</Label>
-          <Select value={outputFormat} onValueChange={(value: OutputFormat) => setOutputFormat(value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choisir un format" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="document">Document</SelectItem>
-              <SelectItem value="presentation">Présentation</SelectItem>
-              <SelectItem value="spreadsheet">Feuille de calcul</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <Select value={provider} onValueChange={(value) => setProvider(value as AIProvider)}>
+        <SelectTrigger>
+          <SelectValue placeholder="Sélectionner un modèle" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="huggingface">Hugging Face</SelectItem>
+          <SelectItem value="openai">OpenAI</SelectItem>
+          <SelectItem value="perplexity">Perplexity</SelectItem>
+        </SelectContent>
+      </Select>
 
-        <div className="space-y-2">
-          <Label>Destination</Label>
-          <Select value={destination} onValueChange={(value: Destination) => setDestination(value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choisir une destination" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="preview">Prévisualisation</SelectItem>
-              <SelectItem value="google_drive">Google Drive</SelectItem>
-              <SelectItem value="microsoft_teams">Microsoft Teams</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <Input
+        placeholder="Entrez vos instructions ici..."
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+      />
 
       <Button 
         onClick={handleGenerate} 
-        disabled={isGenerating || !query || selectedDocuments.length === 0}
+        disabled={isGenerating || !prompt || selectedDocuments.length === 0}
         className="w-full"
       >
-        {isGenerating ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Génération en cours...
-          </>
-        ) : (
-          <>
-            {destination === 'preview' ? <FileDown className="mr-2 h-4 w-4" /> : <Upload className="mr-2 h-4 w-4" />}
-            Générer
-          </>
-        )}
+        {isGenerating ? 'Génération en cours...' : 'Générer le document'}
       </Button>
-
-      {generatedContent && destination === 'preview' && (
-        <div className="mt-4 p-4 border rounded-md bg-gray-50">
-          <pre className="whitespace-pre-wrap text-sm">{generatedContent}</pre>
-        </div>
-      )}
     </Card>
   );
 }
