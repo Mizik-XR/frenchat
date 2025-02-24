@@ -1,3 +1,4 @@
+
 import React from "react";
 
 interface DocsSectionProps {
@@ -89,7 +90,7 @@ EXPOSE 8000
 CMD ["python", "serve_model.py"]`}
                 </pre>
               </li>
-              <li>Construisez l'image :
+              <li>Construisez l&apos;image :
                 <pre className="bg-gray-100 p-2 mt-1 rounded font-mono text-xs">
                   docker build -t transformers-api .
                 </pre>
@@ -105,11 +106,11 @@ CMD ["python", "serve_model.py"]`}
           <div>
             <h4 className="font-medium mb-2">Notes importantes</h4>
             <ul className="list-disc list-inside space-y-1 text-gray-600">
-              <li>Assurez-vous d'avoir au moins 8 Go de RAM disponible</li>
+              <li>Assurez-vous d&apos;avoir au moins 8 Go de RAM disponible</li>
               <li>La première exécution téléchargera le modèle (~500 Mo - 2 Go)</li>
               <li>Pour les modèles plus grands, augmentez la RAM Docker à 16 Go</li>
-              <li>L'API sera accessible sur <code>http://localhost:8000</code></li>
-              <li>Testez avec <code>curl -X POST http://localhost:8000/generate -H "Content-Type: application/json" -d '{"prompt": "Hello"}'</code></li>
+              <li>L&apos;API sera accessible sur <code>http://localhost:8000</code></li>
+              <li>Testez avec <code>curl -X POST http://localhost:8000/generate -H &quot;Content-Type: application/json&quot; -d &apos;{`{"prompt": "Hello"}`}&apos;</code></li>
             </ul>
           </div>
         </div>
