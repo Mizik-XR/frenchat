@@ -20,6 +20,12 @@ export const UserAvatar = () => {
     ? user.email.substring(0, 2).toUpperCase()
     : "??";
 
+  const handleSignOut = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsOpen(false);
+    await signOut();
+  };
+
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger className="focus:outline-none">
@@ -35,10 +41,7 @@ export const UserAvatar = () => {
           <p className="text-sm font-medium">{user.email}</p>
         </div>
         <DropdownMenuItem
-          onClick={() => {
-            signOut();
-            setIsOpen(false);
-          }}
+          onClick={handleSignOut}
           className="text-red-600 cursor-pointer"
         >
           <LogOut className="h-4 w-4 mr-2" />

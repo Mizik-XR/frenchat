@@ -33,7 +33,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         setIsLoading(false);
         
-        // Vérification immédiate après la connexion
         if (session?.user) {
           const { data: profile } = await supabase
             .from('profiles')
@@ -98,18 +97,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate, location]);
 
   const signOut = async () => {
     try {
+      // Supprimer la session locale
       await supabase.auth.signOut();
+      
+      // Forcer la suppression du token de session
+      await supabase.auth.setSession({
+        access_token: '',
+        refresh_token: ''
+      });
+      
+      // Forcer la redirection vers la page d'authentification
+      setUser(null);
       navigate("/auth");
+      
       toast({
         title: "Déconnexion réussie",
         description: "À bientôt !",
       });
     } catch (error: any) {
+      console.error("Erreur lors de la déconnexion:", error);
       toast({
         title: "Erreur",
         description: error.message,
