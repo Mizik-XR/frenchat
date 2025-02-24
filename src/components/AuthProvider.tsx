@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let isFirstLoad = true;
 
+    // Configurer l'écouteur d'événements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("Auth state changed:", _event, "session:", session);
       
@@ -33,6 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         setIsLoading(false);
         
+        // Vérification immédiate après la connexion
         if (session?.user) {
           const { data: profile } = await supabase
             .from('profiles')
@@ -40,12 +42,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             .eq('id', session.user.id)
             .single();
 
-          if (profile?.is_first_login) {
+          // Vérifier les configurations nécessaires
+          const { data: configs } = await supabase
+            .from('service_configurations')
+            .select('service_type, status')
+            .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
+
+          if (profile?.is_first_login || !configs?.length) {
             navigate('/config');
             toast({
-              title: "Première connexion",
-              description: "Bienvenue ! Configurons votre espace.",
+              title: "Configuration requise",
+              description: "Configurons votre espace de travail.",
             });
+          } else {
+            navigate('/chat');
           }
         }
         return;
@@ -77,11 +87,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .eq('id', session.user.id)
           .single();
 
+        const { data: configs } = await supabase
+          .from('service_configurations')
+          .select('service_type, status')
+          .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
+
         setUser(session.user);
         setIsLoading(false);
         isFirstLoad = false;
 
-        if (profile?.is_first_login && location.pathname !== '/config') {
+        if ((profile?.is_first_login || !configs?.length) && location.pathname !== '/config') {
           navigate('/config');
         } else if (location.pathname === '/' || location.pathname === '/auth') {
           navigate('/chat');
@@ -104,7 +119,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // Supprimer la session locale
+      // Supprimer toutes les données de session
       await supabase.auth.signOut();
       
       // Forcer la suppression du token de session
@@ -113,7 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         refresh_token: ''
       });
       
-      // Forcer la redirection vers la page d'authentification
+      // Effacer les données locales et rediriger
       setUser(null);
       navigate("/auth");
       

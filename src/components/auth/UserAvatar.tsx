@@ -8,11 +8,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { UserRound, LogOut } from "lucide-react";
+import { UserRound, LogOut, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const UserAvatar = () => {
   const { user, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   if (!user) return null;
 
@@ -24,6 +26,11 @@ export const UserAvatar = () => {
     e.preventDefault();
     setIsOpen(false);
     await signOut();
+  };
+
+  const handleConfigClick = () => {
+    setIsOpen(false);
+    navigate('/config');
   };
 
   return (
@@ -40,6 +47,13 @@ export const UserAvatar = () => {
           <UserRound className="h-4 w-4" />
           <p className="text-sm font-medium">{user.email}</p>
         </div>
+        <DropdownMenuItem
+          onClick={handleConfigClick}
+          className="cursor-pointer"
+        >
+          <Settings className="h-4 w-4 mr-2" />
+          Configuration
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={handleSignOut}
           className="text-red-600 cursor-pointer"
