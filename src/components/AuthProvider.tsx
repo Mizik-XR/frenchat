@@ -131,16 +131,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // Supprimer toutes les données de session
       await supabase.auth.signOut();
-      
-      // Forcer la suppression du token de session
-      await supabase.auth.setSession({
-        access_token: '',
-        refresh_token: ''
-      });
-      
-      // Effacer les données locales et rediriger
       setUser(null);
       navigate("/auth");
       
