@@ -1,6 +1,7 @@
 
 import { Bot, FileText, Image, Loader } from "lucide-react";
 import { Message } from "@/types/chat";
+import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import { 
   Tooltip,
   TooltipContent,
@@ -67,6 +68,15 @@ export const MessageList = ({ messages, isLoading, conversationContext }: Messag
               </div>
             )}
             <div className="whitespace-pre-wrap">{message.content}</div>
+            
+            {message.type === 'document' && message.context && (
+              <div className="mt-4">
+                <DocumentPreview 
+                  documentId={message.context} 
+                  content={message.content}
+                />
+              </div>
+            )}
           </div>
         </div>
       ))}
@@ -79,4 +89,4 @@ export const MessageList = ({ messages, isLoading, conversationContext }: Messag
       )}
     </div>
   );
-};
+}
