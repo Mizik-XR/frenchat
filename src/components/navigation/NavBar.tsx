@@ -3,13 +3,14 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { UserAvatar } from "@/components/auth/UserAvatar";
 import { Button } from "@/components/ui/button";
-import { BrainCircuit, FileText, Cloud, Settings } from "lucide-react";
+import { BrainCircuit, FileText, Cloud, Settings, ArrowLeft } from "lucide-react";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetFooter,
 } from "@/components/ui/sheet";
 import {
   Tooltip,
@@ -18,11 +19,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { QuickConfig } from "@/components/config/QuickConfig";
-import AIConfig from "@/pages/AIConfig";
 import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export function NavBar() {
   const [currentSheet, setCurrentSheet] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const navItems = [
     {
@@ -30,30 +33,31 @@ export function NavBar() {
       label: "Google Drive",
       id: "drive",
       tooltip: "Configuration Google Drive",
-      content: <QuickConfig />
+      content: <QuickConfig />,
+      fullConfigPath: "/config"
     },
     {
       icon: FileText,
       label: "Documents",
       id: "docs",
       tooltip: "Gestion des documents",
-      content: <QuickConfig />
+      content: <QuickConfig />,
+      fullConfigPath: "/config"
     },
     {
       icon: BrainCircuit,
       label: "IA",
       id: "ai",
       tooltip: "Configuration de l'IA",
-      content: <AIConfig />
-    },
-    {
-      icon: Settings,
-      label: "Paramètres",
-      id: "settings",
-      tooltip: "Paramètres généraux",
-      content: <LocalAIConfig />
+      content: <LocalAIConfig />,
+      fullConfigPath: "/config/local-ai"
     }
   ];
+
+  const handleFullConfig = (path: string) => {
+    setCurrentSheet(null);
+    navigate(path);
+  };
 
   return (
     <nav className="w-full bg-background border-b">
@@ -90,11 +94,31 @@ export function NavBar() {
                 </Tooltip>
                 <SheetContent side="right" className="w-[400px] sm:w-[540px] overflow-y-auto">
                   <SheetHeader>
-                    <SheetTitle>{item.label}</SheetTitle>
+                    <SheetTitle className="flex items-center gap-2">
+                      {location.pathname.startsWith('/config') && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => navigate(-1)}
+                        >
+                          <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {item.label}
+                    </SheetTitle>
                   </SheetHeader>
                   <div className="py-6">
                     {item.content}
                   </div>
+                  <SheetFooter>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => handleFullConfig(item.fullConfigPath)}
+                    >
+                      Configuration avancée
+                    </Button>
+                  </SheetFooter>
                 </SheetContent>
               </Sheet>
             ))}
