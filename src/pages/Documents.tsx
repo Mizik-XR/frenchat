@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { DocumentProviderSelector } from "@/components/documents/DocumentProviderSelector";
+import { FolderIndexingSelector } from "@/components/documents/FolderIndexingSelector";
 
 export default function Documents() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function Documents() {
           <div className="space-y-6">
             <h2 className="text-lg font-semibold">Sources de documents</h2>
             <DocumentProviderSelector />
+            <FolderIndexingSelector />
           </div>
         </CardContent>
       </Card>
