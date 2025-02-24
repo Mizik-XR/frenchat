@@ -1,53 +1,40 @@
 
-import { useEffect, useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { DocumentSummaryPanel } from './DocumentSummaryPanel';
+import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useDocumentSummary } from "@/hooks/useDocumentSummary";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DocumentPreviewProps {
-  documentId?: string;
-  content?: string;
-  title?: string;
-  file?: File;
+  documentId: string;
 }
 
-export const DocumentPreview = ({ documentId, content, title, file }: DocumentPreviewProps) => {
-  const [fileContent, setFileContent] = useState<string>("");
-  const [fileName, setFileName] = useState<string>("");
+export const DocumentPreview = ({ documentId }: DocumentPreviewProps) => {
+  const { summary, isLoading } = useDocumentSummary(documentId);
+  const [content, setContent] = useState<string>("");
 
   useEffect(() => {
-    if (file) {
-      setFileName(file.name);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        setFileContent(text);
-      };
-      reader.readAsText(file);
+    if (summary) {
+      setContent(summary.content || "Aucun contenu disponible");
     }
-  }, [file]);
+  }, [summary]);
 
-  const displayContent = content || fileContent;
-  const displayTitle = title || fileName;
-  
-  if (!displayContent && !file) {
-    return null;
+  if (isLoading) {
+    return (
+      <Card className="p-4">
+        <Skeleton className="h-4 w-3/4 mb-2" />
+        <Skeleton className="h-4 w-1/2" />
+      </Card>
+    );
   }
 
   return (
-    <div className="space-y-4">
-      <Card className="p-4">
-        <h2 className="text-lg font-semibold mb-2">{displayTitle}</h2>
-        <div className="prose max-w-none">
-          {displayContent}
+    <Card className="p-4">
+      <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+        <div className="prose prose-sm max-w-none">
+          <div className="whitespace-pre-wrap">{content}</div>
         </div>
-      </Card>
-      
-      {documentId && (
-        <DocumentSummaryPanel 
-          documentId={documentId}
-          title={displayTitle}
-        />
-      )}
-    </div>
+      </ScrollArea>
+    </Card>
   );
 };
