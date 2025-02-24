@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LOCAL_MODELS, CLOUD_MODELS, type AIModel } from "./types";
 import { ModelSelector } from "./ModelSelector";
 
-export function LocalAIConfig() {
+interface LocalAIConfigProps {
+  onSave?: () => void;
+}
+
+export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
   const navigate = useNavigate();
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [deploymentType, setDeploymentType] = useState<"local" | "cloud">("local");
@@ -97,6 +100,8 @@ export function LocalAIConfig() {
         title: "Configuration sauvegardée",
         description: "La configuration du modèle a été mise à jour avec succès",
       });
+
+      onSave?.();
     } catch (error) {
       console.error('Erreur de configuration:', error);
       toast({

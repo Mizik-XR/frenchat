@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Steps } from "@/components/ui/steps";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { ImportMethodSelector, ImportMethod } from "./ImportMethod/ImportMethodS
 import { FileUploader } from "./ImportMethod/FileUploader";
 import { GoogleDriveConfig } from "./GoogleDrive/GoogleDriveConfig";
 import { MicrosoftTeamsConfig } from "./MicrosoftTeamsConfig";
-import { LLMConfig } from "./llm/LLMConfig";
+import { LocalAIConfig } from "./llm/LocalAIConfig";
 import { ImageConfig } from "./ImageConfig";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -111,7 +112,7 @@ export const ConfigWizard = () => {
       case 4:
         return (
           <div className="animate-fade-in">
-            <LLMConfig onSave={handleLLMSave} />
+            <LocalAIConfig onSave={handleLLMSave} />
           </div>
         );
       case 5:
@@ -173,4 +174,4 @@ export const ConfigWizard = () => {
       )}
     </div>
   );
-};
+}
