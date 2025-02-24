@@ -1,129 +1,162 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import { google } from "https://deno.land/x/google_auth@v0.8.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 interface IndexingProgress {
-  totalFiles: number;
-  processedFiles: number;
-  currentFolder: string;
+  id: string;
+  user_id: string;
+  total_files: number;
+  processed_files: number;
+  current_folder: string | null;
   status: 'running' | 'completed' | 'error';
   error?: string;
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { folderId, pageToken, userId } = await req.json();
-
+    const { folderId } = await req.json()
+    const authHeader = req.headers.get('Authorization')!
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    )
 
-    // Récupérer le token d'accès Google Drive
+    // Récupérer le token Google Drive
+    const { data: { user } } = await supabase.auth.getUser(authHeader.split(' ')[1])
+    if (!user) throw new Error('User not authenticated')
+
     const { data: tokenData, error: tokenError } = await supabase
       .from('oauth_tokens')
-      .select('*')
-      .eq('user_id', userId)
+      .select('access_token, refresh_token')
+      .eq('user_id', user.id)
       .eq('provider', 'google')
-      .single();
+      .single()
 
     if (tokenError || !tokenData) {
-      throw new Error('Token Google Drive non trouvé');
+      throw new Error('Google Drive token not found')
     }
 
-    // Initialiser le client Google Drive
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: tokenData.access_token });
-    const drive = google.drive({ version: 'v3', auth });
+    // Initialiser ou mettre à jour l'état de l'indexation
+    const { data: progress, error: progressError } = await supabase
+      .from('indexing_progress')
+      .upsert({
+        user_id: user.id,
+        total_files: 0,
+        processed_files: 0,
+        current_folder: folderId,
+        status: 'running'
+      })
+      .select()
+      .single()
 
-    // Mettre à jour la progression
-    const updateProgress = async (progress: Partial<IndexingProgress>) => {
-      await supabase
-        .from('indexing_progress')
-        .upsert({ 
-          user_id: userId,
-          ...progress,
-          updated_at: new Date().toISOString()
-        });
-    };
+    if (progressError) throw progressError
 
-    // Fonction pour traiter un lot de fichiers
-    const processFiles = async (folderIds: string[], pageToken?: string) => {
-      const results = await drive.files.list({
-        q: `'${folderIds[0]}' in parents and trashed = false`,
-        pageSize: 100,
-        fields: 'nextPageToken, files(id, name, mimeType, createdTime, modifiedTime)',
-        pageToken: pageToken
-      });
+    // Fonction récursive pour parcourir les dossiers
+    async function processFolder(folderId: string, pageToken?: string): Promise<void> {
+      try {
+        const queryParams = new URLSearchParams({
+          q: `'${folderId}' in parents`,
+          pageSize: '100',
+          fields: 'nextPageToken,files(id,name,mimeType)',
+        })
+        if (pageToken) {
+          queryParams.append('pageToken', pageToken)
+        }
 
-      const files = results.data.files || [];
-      
-      // Indexer les fichiers trouvés
-      for (const file of files) {
-        try {
+        const response = await fetch(
+          `https://www.googleapis.com/drive/v3/files?${queryParams}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${tokenData.access_token}`,
+            },
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error(`Google API error: ${response.statusText}`)
+        }
+
+        const data = await response.json()
+
+        // Mettre à jour le comptage total
+        const { error: updateError } = await supabase
+          .from('indexing_progress')
+          .update({
+            total_files: progress.total_files + data.files.length,
+            current_folder: folderId
+          })
+          .eq('user_id', user.id)
+
+        if (updateError) throw updateError
+
+        // Traiter chaque fichier/dossier
+        for (const file of data.files) {
           if (file.mimeType === 'application/vnd.google-apps.folder') {
-            folderIds.push(file.id);
+            // Récursivement traiter les sous-dossiers
+            await processFolder(file.id)
           }
 
-          await supabase.from('documents').upsert({
-            external_id: file.id,
-            title: file.name,
-            document_type: 'google_drive',
-            metadata: {
-              mime_type: file.mimeType,
-              created_time: file.createdTime,
-              modified_time: file.modifiedTime
-            },
-            user_id: userId
-          });
+          // Incrémenter le compteur de fichiers traités
+          const { error: incrementError } = await supabase
+            .from('indexing_progress')
+            .update({
+              processed_files: progress.processed_files + 1,
+            })
+            .eq('user_id', user.id)
 
-          // Mettre à jour la progression
-          await updateProgress({
-            processedFiles: files.indexOf(file) + 1,
-            currentFolder: folderIds[0],
-            status: 'running'
-          });
-
-        } catch (error) {
-          console.error(`Erreur lors de l'indexation du fichier ${file.name}:`, error);
+          if (incrementError) throw incrementError
         }
+
+        // S'il y a une page suivante, continuer
+        if (data.nextPageToken) {
+          await processFolder(folderId, data.nextPageToken)
+        }
+      } catch (error) {
+        console.error('Error processing folder:', error)
+        await supabase
+          .from('indexing_progress')
+          .update({
+            status: 'error',
+            error: error.message
+          })
+          .eq('user_id', user.id)
+        throw error
       }
+    }
 
-      return {
-        nextPageToken: results.data.nextPageToken,
-        newFolders: folderIds.slice(1)
-      };
-    };
+    // Démarrer le traitement
+    await processFolder(folderId)
 
-    // Commencer ou continuer l'indexation
-    const result = await processFiles([folderId], pageToken);
+    // Marquer comme terminé
+    await supabase
+      .from('indexing_progress')
+      .update({
+        status: 'completed'
+      })
+      .eq('user_id', user.id)
 
     return new Response(
-      JSON.stringify(result),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
-    );
+      JSON.stringify({ status: 'success' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
 
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('Error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
       }
-    );
+    )
   }
-});
+})
