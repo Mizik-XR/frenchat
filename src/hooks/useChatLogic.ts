@@ -22,21 +22,49 @@ export function useChatLogic(selectedConversationId: string | null) {
     setIsLoading(true);
 
     try {
+      // Envoyer le message de l'utilisateur
       await chatService.sendUserMessage(message, selectedConversationId);
 
-      const response = await textGeneration({
-        model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
-        inputs: `[INST] ${message} [/INST]`,
-        parameters: {
-          max_length: webUIConfig.maxTokens,
-          temperature: webUIConfig.temperature,
-          top_p: 0.95,
-        }
-      });
+      // Sélectionner le modèle en fonction de la configuration
+      let response;
+      switch (webUIConfig.model) {
+        case 'huggingface':
+          response = await textGeneration({
+            model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
+            inputs: `[INST] ${message} [/INST]`,
+            parameters: {
+              max_length: webUIConfig.maxTokens,
+              temperature: webUIConfig.temperature,
+              top_p: 0.95,
+            }
+          });
+          break;
 
+        case 'internet-search':
+          const { data: searchData, error: searchError } = await supabase.functions.invoke('web-search', {
+            body: { query: message }
+          });
+          if (searchError) throw searchError;
+          response = [{ generated_text: searchData.results }];
+          break;
+
+        default:
+          response = await textGeneration({
+            model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
+            inputs: message,
+            parameters: {
+              max_length: webUIConfig.maxTokens,
+              temperature: webUIConfig.temperature
+            }
+          });
+      }
+
+      // Envoyer la réponse de l'assistant
       await chatService.sendAssistantMessage(
         response[0].generated_text,
-        selectedConversationId
+        selectedConversationId,
+        'text',
+        { provider: webUIConfig.model }
       );
 
       return { content: response[0].generated_text };

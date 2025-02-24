@@ -22,7 +22,7 @@ interface MessageListProps {
 
 export const MessageList = ({ messages, isLoading, conversationContext }: MessageListProps) => {
   return (
-    <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+    <div className="flex-1 overflow-y-auto space-y-4 p-4">
       {conversationContext && (
         <div className="bg-blue-50 p-4 rounded-lg mb-4 text-sm text-blue-700">
           <div className="font-medium mb-1">
@@ -41,71 +41,32 @@ export const MessageList = ({ messages, isLoading, conversationContext }: Messag
         </div>
       )}
 
-      {messages.map((message, index) => (
+      {messages.map((message) => (
         <div
-          key={index}
+          key={message.id}
           className={`flex ${
             message.role === 'user' ? 'justify-end' : 'justify-start'
           }`}
         >
           <div
-            className={`max-w-[80%] p-3 rounded-lg ${
+            className={`max-w-[80%] p-4 rounded-lg ${
               message.role === 'user'
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-800'
             }`}
           >
             {message.role === 'assistant' && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Bot className="h-4 w-4 mb-1 inline-block mr-2" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Réponse générée par l'assistant</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <div className="flex items-center gap-2 mb-2 text-gray-600">
+                <Bot className="h-4 w-4" />
+                <span className="text-xs">Assistant IA</span>
+              </div>
             )}
-            {message.context && (
+            {message.metadata?.provider && (
               <div className="text-xs text-gray-500 mb-1">
-                {message.type === 'document' ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger className="flex items-center">
-                        <FileText className="h-3 w-3 inline-block mr-1" />
-                        Analyse basée sur le document sélectionné
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>L'assistant analyse le contenu du document pour répondre</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : message.type === 'image' ? (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger className="flex items-center">
-                        <Image className="h-3 w-3 inline-block mr-1" />
-                        Image générée à partir du contexte
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Image créée par l'IA en fonction du contexte</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : null}
+                via {message.metadata.provider}
               </div>
             )}
-            {message.content}
-            {message.type === 'image' && message.metadata?.imageUrl && (
-              <div className="mt-2">
-                <img
-                  src={message.metadata.imageUrl}
-                  alt={message.content}
-                  className="max-w-full rounded-lg shadow-sm"
-                />
-              </div>
-            )}
+            <div className="whitespace-pre-wrap">{message.content}</div>
           </div>
         </div>
       ))}
@@ -113,7 +74,7 @@ export const MessageList = ({ messages, isLoading, conversationContext }: Messag
       {isLoading && (
         <div className="flex justify-center items-center gap-2 p-4 text-gray-500">
           <Loader className="h-5 w-5 animate-spin" />
-          <span>Génération en cours...</span>
+          <span>L'IA réfléchit...</span>
         </div>
       )}
     </div>
