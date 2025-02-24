@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -52,8 +51,12 @@ const API_MODELS: ModelConfig[] = [
   }
 ];
 
-export function ModelSelector() {
-  const [selectedType, setSelectedType] = useState<'local' | 'api'>('api');
+interface ModelSelectorProps {
+  selectedType: 'local' | 'api';
+  onTypeChange: (type: 'local' | 'api') => void;
+}
+
+export function ModelSelector({ selectedType, onTypeChange }: ModelSelectorProps) {
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -69,7 +72,7 @@ export function ModelSelector() {
       .single();
 
     if (data?.config) {
-      setSelectedType(data.config.type);
+      onTypeChange(data.config.type);
       setSelectedModel(data.config.modelId);
     }
   };
@@ -99,7 +102,7 @@ export function ModelSelector() {
         description: `Le modèle ${modelConfig.name} a été configuré avec succès`
       });
 
-      setSelectedType(modelConfig.type);
+      onTypeChange(modelConfig.type);
       setSelectedModel(modelConfig.id);
     } catch (error) {
       console.error('Erreur de configuration:', error);
@@ -126,7 +129,7 @@ export function ModelSelector() {
         <div className="space-y-6">
           <RadioGroup
             value={selectedType}
-            onValueChange={(value) => setSelectedType(value as 'local' | 'api')}
+            onValueChange={(value) => onTypeChange(value as 'local' | 'api')}
             className="grid grid-cols-2 gap-4"
           >
             <div className="flex items-center space-x-2">

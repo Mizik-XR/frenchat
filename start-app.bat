@@ -22,7 +22,6 @@ REM Création d'un environnement virtuel
 if not exist "venv\" (
     echo Création de l'environnement virtuel...
     python -m venv venv
-    REM Pause pour s'assurer que l'environnement est bien créé
     timeout /t 2 /nobreak >nul
 )
 
@@ -30,17 +29,17 @@ REM Activation de l'environnement virtuel
 echo Activation de l'environnement virtuel...
 call venv\Scripts\activate.bat
 
-REM Installation des dépendances Python avec indicateur de progression
+REM Installation des dépendances Python avec version spécifique de torch
 echo Installation des dépendances Python...
 pip install -q --no-cache-dir --disable-pip-version-check ^
     transformers==4.36.2 ^
-    torch==2.1.0 ^
+    torch==2.0.0 ^
     accelerate==0.26.1 ^
     datasets==2.16.1 ^
     fastapi==0.109.0 ^
     uvicorn==0.27.0
 
-REM Création du script Python avec gestion des erreurs améliorée
+REM Création du script Python
 echo Création du script du serveur...
 (
 echo from transformers import pipeline
@@ -50,7 +49,6 @@ echo import uvicorn
 echo import logging
 echo from typing import Optional
 echo.
-echo # Configuration des logs
 echo logging.basicConfig^(level=logging.INFO^)
 echo logger = logging.getLogger^("serve_model"^)
 echo.
@@ -81,7 +79,6 @@ echo if __name__ == "__main__":
 echo     uvicorn.run^(app, host="0.0.0.0", port=8000, log_level="info"^)
 ) > serve_model.py
 
-REM Lancement du serveur avec gestion des erreurs
 echo.
 echo ================================
 echo Démarrage du serveur IA local...
