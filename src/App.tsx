@@ -9,6 +9,8 @@ import Documents from "@/pages/Documents";
 import { QuickConfig } from "@/components/config/QuickConfig";
 import GoogleAuthCallback from "@/pages/GoogleAuthCallback";
 import { useAuth } from "@/components/AuthProvider";
+import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
+import { CloudAIConfig } from "@/components/config/llm/CloudAIConfig";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -48,6 +50,22 @@ export default function App() {
             element={
               <PrivateRoute>
                 <QuickConfig />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/config/local-ai" 
+            element={
+              <PrivateRoute>
+                <LocalAIConfig />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/config/cloud-ai" 
+            element={
+              <PrivateRoute>
+                <CloudAIConfig />
               </PrivateRoute>
             } 
           />
