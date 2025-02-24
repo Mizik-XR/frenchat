@@ -41,30 +41,36 @@ export type Database = {
           action: string
           client_id: string | null
           created_at: string | null
+          details: Json | null
           entity_id: string | null
           entity_type: string
           id: string
           metadata: Json | null
+          severity: string | null
           user_id: string | null
         }
         Insert: {
           action: string
           client_id?: string | null
           created_at?: string | null
+          details?: Json | null
           entity_id?: string | null
           entity_type: string
           id?: string
           metadata?: Json | null
+          severity?: string | null
           user_id?: string | null
         }
         Update: {
           action?: string
           client_id?: string | null
           created_at?: string | null
+          details?: Json | null
           entity_id?: string | null
           entity_type?: string
           id?: string
           metadata?: Json | null
+          severity?: string | null
           user_id?: string | null
         }
         Relationships: [
