@@ -10,6 +10,12 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useServiceConfiguration } from "@/hooks/useServiceConfiguration";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const LocalAIConfig = () => {
   const navigate = useNavigate();
@@ -19,7 +25,11 @@ export const LocalAIConfig = () => {
   const [localEndpoint, setLocalEndpoint] = React.useState(config?.endpoint || "http://localhost:11434");
   const [isTesting, setIsTesting] = React.useState(false);
 
-  const models = ["llama2", "mistral", "phi"];
+  const models = [
+    { id: "llama2", name: "Llama 2", description: "Modèle polyvalent adapté à la plupart des tâches" },
+    { id: "mistral", name: "Mistral", description: "Excellent pour l'analyse et la génération de texte" },
+    { id: "phi", name: "Phi", description: "Optimisé pour des réponses concises et précises" }
+  ];
 
   const testConnection = async () => {
     setIsTesting(true);
@@ -97,7 +107,17 @@ export const LocalAIConfig = () => {
           </Alert>
 
           <div className="space-y-2">
-            <Label>Point d'accès Ollama</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Label className="cursor-help">Point d'accès Ollama</Label>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>L'URL où votre instance Ollama est accessible.<br />
+                  Par défaut : http://localhost:11434</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <div className="flex gap-2">
               <Input 
                 value={localEndpoint}
@@ -113,16 +133,27 @@ export const LocalAIConfig = () => {
                 Tester
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground">
-              L'URL de votre instance Ollama locale
-            </p>
           </div>
 
-          <ModelSelector
-            value={selectedModel}
-            models={models}
-            onValueChange={setSelectedModel}
-          />
+          <div className="space-y-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Label className="cursor-help">Modèle</Label>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Choisissez le modèle d'IA à utiliser localement.<br/>
+                  Chaque modèle a ses forces spécifiques.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <ModelSelector
+              value={selectedModel}
+              models={models.map(m => m.id)}
+              onValueChange={setSelectedModel}
+              descriptions={models.reduce((acc, m) => ({ ...acc, [m.id]: m.description }), {})}
+            />
+          </div>
 
           <Button 
             onClick={handleSave} 

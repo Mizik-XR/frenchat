@@ -7,26 +7,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ModelSelectorProps {
   value: string;
   models: string[];
   onValueChange: (value: string) => void;
+  descriptions?: Record<string, string>;
 }
 
-export const ModelSelector = ({ value, models, onValueChange }: ModelSelectorProps) => {
+export const ModelSelector = ({ value, models, onValueChange, descriptions = {} }: ModelSelectorProps) => {
   return (
     <div>
-      <Label className="text-gray-700">Modèle</Label>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className="mt-1">
+        <SelectTrigger>
           <SelectValue placeholder="Sélectionnez un modèle" />
         </SelectTrigger>
         <SelectContent>
           {models.map((model) => (
-            <SelectItem key={model} value={model}>
-              {model}
-            </SelectItem>
+            <TooltipProvider key={model}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SelectItem value={model} className="cursor-help">
+                    {model}
+                  </SelectItem>
+                </TooltipTrigger>
+                {descriptions[model] && (
+                  <TooltipContent>
+                    <p>{descriptions[model]}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           ))}
         </SelectContent>
       </Select>
