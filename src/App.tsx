@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/components/AuthProvider";
@@ -53,6 +54,22 @@ export default function App() {
             } 
           />
           <Route 
+            path="/config/google-drive" 
+            element={
+              <PrivateRoute>
+                <QuickConfig />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/config/documents" 
+            element={
+              <PrivateRoute>
+                <QuickConfig />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
             path="/config/local-ai" 
             element={
               <PrivateRoute>
@@ -84,14 +101,7 @@ export default function App() {
               </PrivateRoute>
             } 
           />
-          <Route 
-            path="/" 
-            element={
-              <PrivateRoute>
-                <Chat />
-              </PrivateRoute>
-            } 
-          />
+          <Route path="/" element={<Navigate to="/chat" replace />} />
         </Routes>
         <Toaster />
       </AuthProvider>
