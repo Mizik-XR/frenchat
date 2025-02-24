@@ -125,7 +125,7 @@ export function ModelSelector() {
       <Card className="p-6">
         <div className="space-y-6">
           <RadioGroup
-            defaultValue={selectedType}
+            value={selectedType}
             onValueChange={(value) => setSelectedType(value as 'local' | 'api')}
             className="grid grid-cols-2 gap-4"
           >
