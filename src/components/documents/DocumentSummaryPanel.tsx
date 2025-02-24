@@ -12,12 +12,14 @@ interface DocumentSummaryPanelProps {
 
 export const DocumentSummaryPanel = ({ documentId, title }: DocumentSummaryPanelProps) => {
   const [summary, setSummary] = useState<string | null>(null);
+  const [model, setModel] = useState<string | null>(null);
   const { isGenerating, generateSummary } = useDocumentSummary();
 
   const handleGenerateSummary = async () => {
     try {
       const data = await generateSummary(documentId);
       setSummary(data.summary);
+      setModel(data.model);
     } catch (error) {
       console.error('Erreur lors de la génération du résumé:', error);
     }
@@ -27,7 +29,7 @@ export const DocumentSummaryPanel = ({ documentId, title }: DocumentSummaryPanel
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">
-          Résumé du document
+          Résumé du document via Hugging Face
         </CardTitle>
         <Button
           onClick={handleGenerateSummary}
@@ -50,12 +52,19 @@ export const DocumentSummaryPanel = ({ documentId, title }: DocumentSummaryPanel
       </CardHeader>
       <CardContent>
         {summary ? (
-          <div className="text-sm text-gray-600 whitespace-pre-wrap">
-            {summary}
+          <div className="space-y-2">
+            <div className="text-sm text-gray-600 whitespace-pre-wrap">
+              {summary}
+            </div>
+            {model && (
+              <p className="text-xs text-muted-foreground">
+                Généré avec le modèle : {model}
+              </p>
+            )}
           </div>
         ) : (
           <div className="text-sm text-gray-500 italic">
-            Cliquez sur le bouton pour générer un résumé du document.
+            Cliquez sur le bouton pour générer un résumé du document avec Hugging Face Transformers.
           </div>
         )}
       </CardContent>

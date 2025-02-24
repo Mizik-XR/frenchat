@@ -16,8 +16,8 @@ export const useDocumentSummary = () => {
       if (error) throw error;
 
       toast({
-        title: "Résumé généré",
-        description: "Le résumé du document a été généré avec succès.",
+        title: "Résumé généré avec Hugging Face",
+        description: `Résumé généré avec succès en utilisant le modèle ${data.model}`,
       });
 
       return data;
@@ -25,7 +25,7 @@ export const useDocumentSummary = () => {
       console.error('Erreur lors de la génération du résumé:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de générer le résumé du document",
+        description: "Impossible de générer le résumé du document avec Hugging Face Transformers",
         variant: "destructive"
       });
       throw error;

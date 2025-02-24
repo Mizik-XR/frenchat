@@ -1,6 +1,8 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,32 +33,20 @@ serve(async (req) => {
       throw new Error('Document non trouvé');
     }
 
-    // Utiliser l'API Perplexity pour générer le résumé
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('PERPLEXITY_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
-        messages: [
-          {
-            role: 'system',
-            content: 'Tu es un assistant spécialisé dans la création de résumés concis et structurés. Identifie les 5 points clés et crée un résumé en bullet points.'
-          },
-          {
-            role: 'user',
-            content: `Résume ce document de manière concise avec les points clés : ${document.content}`
-          }
-        ],
-        temperature: 0.2,
-        max_tokens: 1000
-      }),
+    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'));
+
+    // Utiliser le modèle BART fine-tuné pour le résumé
+    const response = await hf.summarization({
+      model: 'facebook/bart-large-cnn',
+      inputs: document.content,
+      parameters: {
+        max_length: 300,
+        min_length: 100,
+        do_sample: false
+      }
     });
 
-    const result = await response.json();
-    const summary = result.choices[0].message.content;
+    const summary = response.summary_text;
 
     // Sauvegarder le résumé dans les métadonnées du document
     await supabaseClient
@@ -64,7 +54,9 @@ serve(async (req) => {
       .update({
         metadata: {
           summary,
-          generated_at: new Date().toISOString()
+          model: 'facebook/bart-large-cnn',
+          generated_at: new Date().toISOString(),
+          type: 'huggingface_transformers'
         }
       })
       .eq('id', documentId);
@@ -72,11 +64,13 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         summary,
-        title: document.title 
+        title: document.title,
+        model: 'facebook/bart-large-cnn'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    console.error('Error in generate-summary:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
