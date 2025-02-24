@@ -7,18 +7,16 @@ import type { IndexingProgress as IndexingProgressType } from "@/types/google-dr
 import { toast } from "@/hooks/use-toast";
 
 export const IndexingProgress = ({ userId }: { userId: string }) => {
-  const { data: progress, error } = useQuery<IndexingProgressType>({
+  const { data: progress, error } = useQuery({
     queryKey: ['indexing-progress', userId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('indexing_progress')
-        .select('*')
+        .select()
         .eq('user_id', userId)
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
-      if (!data) throw new Error('Aucune donnée de progression trouvée');
-      
       return data as IndexingProgressType;
     },
     refetchInterval: 1000,

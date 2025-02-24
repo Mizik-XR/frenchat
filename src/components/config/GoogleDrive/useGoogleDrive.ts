@@ -7,7 +7,6 @@ import { GoogleOAuthConfig } from "@/types/google-drive";
 
 const REDIRECT_URI = `${window.location.origin}/auth/callback/google`;
 
-// Type guard plus robuste avec messages d'erreur détaillés
 const isGoogleOAuthConfig = (obj: unknown): obj is GoogleOAuthConfig => {
   if (!obj || typeof obj !== 'object') {
     console.error("La configuration n'est pas un objet valide");
@@ -44,7 +43,7 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
           return;
         }
 
-        const { data: configData, error: configError } = await supabase
+        const { data, error: configError } = await supabase
           .from('service_configurations')
           .select('config')
           .eq('service_type', 'GOOGLE_OAUTH')
@@ -55,12 +54,11 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
           return;
         }
 
-        const isValidConfig = configData?.config && isGoogleOAuthConfig(configData.config) && configData.config.configured;
+        const config = data?.config as unknown as GoogleOAuthConfig;
+        const isValidConfig = config && isGoogleOAuthConfig(config) && config.configured;
         const hasValidToken = !!tokenData;
 
         setIsConnected(isValidConfig && hasValidToken);
-        console.log('État de la connexion:', isValidConfig && hasValidToken);
-        
         if (isValidConfig && hasValidToken) {
           onConfigSave();
         }
@@ -84,22 +82,16 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
 
     try {
       setIsConnecting(true);
-      console.log('Récupération de la configuration Google OAuth...');
-      
-      // Récupération du client_id via la fonction Edge
-      const { data: authData, error: authError } = await supabase.functions.invoke(
-        'google-oauth',
-        {
-          body: { action: 'get_client_id' }
-        }
-      );
+      const { data: authData, error: authError } = await supabase.functions.invoke<{
+        client_id: string;
+      }>('google-oauth', {
+        body: { action: 'get_client_id' }
+      });
 
       if (authError || !authData?.client_id) {
-        console.error("Erreur lors de la récupération du client_id:", authError);
         throw new Error("Impossible de récupérer les informations d'authentification");
       }
 
-      // Construction de l'URL d'authentification
       const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
       const redirectUri = encodeURIComponent(REDIRECT_URI);
       
@@ -111,9 +103,7 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
         `access_type=offline&` +
         `prompt=consent`;
 
-      console.log('Redirection vers Google OAuth...');
       window.location.href = authUrl;
-
     } catch (error) {
       console.error('Erreur lors de l\'initialisation de l\'auth Google:', error);
       toast({
