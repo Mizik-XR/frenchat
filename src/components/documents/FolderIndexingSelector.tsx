@@ -64,10 +64,16 @@ export function FolderIndexingSelector() {
   useEffect(() => {
     if (!user || !indexingProgress) return;
 
-    const subscription = supabase
-      .from('indexing_progress')
-      .on('UPDATE', payload => {
-        if (payload.new.user_id === user.id) {
+    const channel = supabase.channel('indexing-progress')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'indexing_progress',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
           setIndexingProgress({
             status: payload.new.status,
             processed: payload.new.processed_files,
@@ -87,11 +93,11 @@ export function FolderIndexingSelector() {
             });
           }
         }
-      })
+      )
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [user, indexingProgress]);
 
