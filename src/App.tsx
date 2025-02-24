@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/components/AuthProvider";
@@ -10,6 +9,7 @@ import GoogleAuthCallback from "@/pages/GoogleAuthCallback";
 import { useAuth } from "@/components/AuthProvider";
 import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
 import { CloudAIConfig } from "@/components/config/llm/CloudAIConfig";
+import AIConfig from "@/pages/AIConfig";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -65,6 +65,14 @@ export default function App() {
             element={
               <PrivateRoute>
                 <CloudAIConfig />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/config/ai" 
+            element={
+              <PrivateRoute>
+                <AIConfig />
               </PrivateRoute>
             } 
           />
