@@ -1,15 +1,20 @@
 
-import { Cloud, Settings } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { useState } from "react";
+import { AIProvider } from "@/types/chat";
 import { Button } from "@/components/ui/button";
-import { AIProvider, WebUIConfig } from "@/types/chat";
-import { AIProviderSelect } from "./AIProviderSelect";
-import { useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 interface SettingsPanelProps {
-  webUIConfig: WebUIConfig;
-  onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
+  webUIConfig: {
+    mode: 'auto' | 'manual';
+    model: AIProvider;
+    maxTokens: number;
+    temperature: number;
+    streamResponse: boolean;
+  };
+  onWebUIConfigChange: (config: Partial<typeof webUIConfig>) => void;
   onProviderChange: (provider: AIProvider) => void;
 }
 
@@ -18,62 +23,73 @@ export const SettingsPanel = ({
   onWebUIConfigChange,
   onProviderChange,
 }: SettingsPanelProps) => {
-  const navigate = useNavigate();
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const handleLocalModeChange = (enabled: boolean) => {
+    if (enabled) {
+      onProviderChange('huggingface');
+    }
+  };
 
   return (
-    <Card className="absolute top-16 right-4 z-10 p-4 w-[500px] bg-white/95 backdrop-blur-sm shadow-xl border border-gray-200">
-      <Tabs defaultValue="ia" className="w-full">
-        <div className="space-y-4">
+    <div className="p-4 bg-white/80 rounded-lg mb-4 border border-gray-200 space-y-4">
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Configuration du modèle</Label>
+        <div className="grid gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Configuration</h2>
-            <Button variant="outline" size="sm" onClick={() => navigate("/config")}>
-              Configuration avancée
-            </Button>
+            <div>
+              <Label className="font-medium">Mode Local</Label>
+              <p className="text-sm text-gray-500">Utiliser les modèles en local</p>
+            </div>
+            <Switch 
+              checked={webUIConfig.model === 'huggingface'}
+              onCheckedChange={handleLocalModeChange}
+            />
           </div>
-          
-          <TabsList className="w-full">
-            <TabsTrigger value="ia" className="flex-1">IA</TabsTrigger>
-            <TabsTrigger value="sources" className="flex-1">Sources</TabsTrigger>
-          </TabsList>
 
-          <TabsContent value="ia" className="space-y-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <AIProviderSelect 
-                  aiProvider={webUIConfig.model} 
-                  onProviderChange={onProviderChange}
-                />
-                <Button 
-                  variant="link" 
-                  className="text-xs text-muted-foreground"
-                  onClick={() => {
-                    if (webUIConfig.model === 'local') {
-                      navigate("/config/local-ai");
-                    } else {
-                      navigate("/config/cloud-ai");
-                    }
-                  }}
-                >
-                  Configurer le modèle d'IA
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
+          <div>
+            <Label>Nombre maximum de tokens</Label>
+            <Input
+              type="number"
+              value={webUIConfig.maxTokens}
+              onChange={(e) => onWebUIConfigChange({ maxTokens: parseInt(e.target.value) })}
+              min={1}
+              max={4096}
+            />
+          </div>
 
-          <TabsContent value="sources" className="space-y-4">
-            <div className="space-y-4">
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => navigate("/config")}
-              >
-                <Cloud className="h-4 w-4 mr-2" />
-                Configurer les sources de données
-              </Button>
+          <div>
+            <Label>Température</Label>
+            <Input
+              type="number"
+              value={webUIConfig.temperature}
+              onChange={(e) => onWebUIConfigChange({ temperature: parseFloat(e.target.value) })}
+              min={0}
+              max={2}
+              step={0.1}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="font-medium">Streaming</Label>
+              <p className="text-sm text-gray-500">Afficher la réponse en temps réel</p>
             </div>
-          </TabsContent>
+            <Switch
+              checked={webUIConfig.streamResponse}
+              onCheckedChange={(checked) => onWebUIConfigChange({ streamResponse: checked })}
+            />
+          </div>
         </div>
-      </Tabs>
-    </Card>
+      </div>
+
+      <Button
+        variant="ghost"
+        className="w-full"
+        onClick={() => setShowAdvanced(!showAdvanced)}
+      >
+        {showAdvanced ? "Masquer les options avancées" : "Afficher les options avancées"}
+      </Button>
+    </div>
   );
 };

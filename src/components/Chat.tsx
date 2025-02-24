@@ -139,7 +139,7 @@ export const Chat = () => {
         <div className="flex-1 p-4 flex">
           <Card className="flex flex-col h-full p-4 relative bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 shadow-lg flex-1">
             {llmStatus !== 'configured' && (
-              <Alert variant="warning" className="mb-4">
+              <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   Veuillez configurer un modèle de langage dans les paramètres pour pouvoir utiliser le chat.
