@@ -20,7 +20,6 @@ export default function Auth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Si l'utilisateur est déjà connecté, rediriger vers /chat
     if (user) {
       navigate("/chat");
     }
