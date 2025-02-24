@@ -7,12 +7,12 @@ import { IndexingProgress as IndexingProgressType } from "@/types/google-drive";
 import { toast } from "@/hooks/use-toast";
 
 export const IndexingProgress = ({ userId }: { userId: string }) => {
-  const { data: progress, error } = useQuery({
+  const { data: progress, error } = useQuery<IndexingProgressType>({
     queryKey: ['indexing-progress', userId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('indexing_progress')
-        .select()
+        .select('id, user_id, total_files, processed_files, current_folder, status, error, created_at, updated_at')
         .eq('user_id', userId)
         .single();
 
