@@ -71,7 +71,7 @@ export function LocalAIConfig() {
         title: "Configuration sauvegardée",
         description: "La configuration Hugging Face a été mise à jour avec succès",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erreur de configuration:', error);
       toast({
         title: "Erreur",
@@ -92,7 +92,7 @@ export function LocalAIConfig() {
         </AlertDescription>
       </Alert>
 
-      <Card className="p-6">
+      <Card className="p-6 glass-panel">
         <h3 className="text-lg font-medium mb-4">Configuration du modèle</h3>
         
         <div className="space-y-6">
@@ -120,7 +120,7 @@ export function LocalAIConfig() {
           <Button
             onClick={handleSaveConfig}
             disabled={!selectedModel || isConfiguring}
-            className="w-full"
+            className="w-full hover-scale"
           >
             {isConfiguring ? "Configuration..." : "Sauvegarder la configuration"}
           </Button>
