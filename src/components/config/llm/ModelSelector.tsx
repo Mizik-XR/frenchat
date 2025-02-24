@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -118,14 +119,14 @@ export function ModelSelector({ selectedType, onTypeChange }: ModelSelectorProps
 
   return (
     <div className="space-y-6">
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
+      <Alert className="bg-blue-50 border-blue-200">
+        <AlertCircle className="h-4 w-4 text-blue-500" />
+        <AlertDescription className="text-blue-700">
           Choisissez entre les modèles locaux ou les API cloud.
         </AlertDescription>
       </Alert>
 
-      <Card className="p-6">
+      <Card className="p-6 glass-panel">
         <div className="space-y-6">
           <RadioGroup
             value={selectedType}
@@ -134,11 +135,11 @@ export function ModelSelector({ selectedType, onTypeChange }: ModelSelectorProps
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="local" id="local" />
-              <Label htmlFor="local">Modèles Locaux</Label>
+              <Label htmlFor="local" className="font-medium">Modèles Locaux</Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="api" id="api" />
-              <Label htmlFor="api">API Cloud</Label>
+              <Label htmlFor="api" className="font-medium">API Cloud</Label>
             </div>
           </RadioGroup>
 
@@ -147,13 +148,15 @@ export function ModelSelector({ selectedType, onTypeChange }: ModelSelectorProps
               <Button
                 key={model.id}
                 variant={selectedModel === model.id ? "default" : "outline"}
-                className="justify-start"
+                className={`justify-start hover-scale ${
+                  selectedModel === model.id ? 'bg-primary text-white' : ''
+                }`}
                 onClick={() => handleModelSelect(model)}
                 disabled={isLoading}
               >
                 <div className="text-left">
                   <div className="font-medium">{model.name}</div>
-                  <div className="text-sm text-gray-500">{model.description}</div>
+                  <div className="text-sm opacity-80">{model.description}</div>
                 </div>
               </Button>
             ))}
