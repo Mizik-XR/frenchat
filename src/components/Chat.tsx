@@ -61,6 +61,10 @@ export const Chat = () => {
     }
   };
 
+  const handleQuote = (content: string) => {
+    setInput(content);
+  };
+
   const scrollToMessage = (messageId: string) => {
     const messageElement = document.getElementById(messageId);
     if (messageElement && messageListRef.current) {
@@ -143,6 +147,7 @@ export const Chat = () => {
               messages={messages}
               onTopicSelect={scrollToMessage}
               onClose={() => setShowPriorityTopics(false)}
+              onQuote={handleQuote}
             />
           )}
         </div>
