@@ -114,7 +114,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       {!isLoading && children}
     </AuthContext.Provider>
   );
-}
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
