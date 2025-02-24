@@ -5,20 +5,20 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { NavBar } from "@/components/navigation/NavBar";
 import Auth from "@/pages/Auth";
 import Chat from "@/pages/Chat";
-import { Config } from "@/pages/Config";
-import { AdvancedConfig } from "@/pages/AdvancedConfig";
 import Documents from "@/pages/Documents";
+import { QuickConfig } from "@/components/config/QuickConfig";
 import GoogleAuthCallback from "@/pages/GoogleAuthCallback";
 import { useAuth } from "@/components/AuthProvider";
-import { CloudAIConfig } from "@/components/config/CloudAIConfig";
-import { LocalAIConfig } from "@/components/config/LocalAIConfig";
-import { QuickConfig } from "@/components/config/QuickConfig";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse">Chargement...</div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -39,43 +39,15 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route
+            path="/auth/callback/google"
+            element={<GoogleAuthCallback />}
+          />
           <Route 
             path="/config" 
             element={
               <PrivateRoute>
                 <QuickConfig />
-              </PrivateRoute>
-            } 
-          />
-          <Route
-            path="/config/cloud-ai"
-            element={
-              <PrivateRoute>
-                <CloudAIConfig />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/config/local-ai"
-            element={
-              <PrivateRoute>
-                <LocalAIConfig />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/auth/callback/google"
-            element={
-              <PrivateRoute>
-                <GoogleAuthCallback />
-              </PrivateRoute>
-            }
-          />
-          <Route 
-            path="/advanced-config" 
-            element={
-              <PrivateRoute>
-                <AdvancedConfig />
               </PrivateRoute>
             } 
           />
