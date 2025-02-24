@@ -3,21 +3,23 @@ import React from 'react';
 import { Progress } from "@/components/ui/progress";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
-import { IndexingProgress as IndexingProgressType } from "@/types/google-drive";
+import type { Database } from '@/types/database';
 import { toast } from "@/hooks/use-toast";
 
+type IndexingProgress = Database['public']['Tables']['indexing_progress']['Row'];
+
 export const IndexingProgress = ({ userId }: { userId: string }) => {
-  const { data: progress, error } = useQuery<IndexingProgressType>({
+  const { data: progress, error } = useQuery<IndexingProgress>({
     queryKey: ['indexing-progress', userId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('indexing_progress')
-        .select('id, user_id, total_files, processed_files, current_folder, status, error, created_at, updated_at')
+        .select('*')
         .eq('user_id', userId)
         .single();
 
       if (error) throw error;
-      return data as IndexingProgressType;
+      return data;
     },
     refetchInterval: 1000,
     retry: 3
