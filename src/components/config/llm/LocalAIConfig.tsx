@@ -4,25 +4,43 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, BrainCircuit } from "lucide-react";
+import { AlertCircle, BrainCircuit, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const API_MODELS = [
+const LOCAL_MODELS = [
   {
-    id: "bigscience/bloom",
-    name: "BLOOM",
-    description: "Modèle multilingue pour la génération de texte",
+    id: "deepseek-local",
+    name: "DeepSeek",
+    description: "Modèle local DeepSeek optimisé"
   },
   {
-    id: "facebook/opt-350m",
-    name: "OPT 350M",
-    description: "Modèle compact et rapide",
+    id: "qwen-local",
+    name: "Qwen 2.5",
+    description: "Version locale de Qwen"
+  }
+];
+
+const CLOUD_MODELS = [
+  {
+    id: "huggingface/mistral",
+    name: "Mistral AI",
+    description: "Modèle performant via Hugging Face"
+  },
+  {
+    id: "anthropic/claude",
+    name: "Claude (Anthropic)",
+    description: "Assistant IA avancé (optionnel)",
+    requiresKey: true
   }
 ];
 
 export function LocalAIConfig() {
+  const navigate = useNavigate();
   const [selectedModel, setSelectedModel] = useState<string>("");
+  const [deploymentType, setDeploymentType] = useState<"local" | "cloud">("local");
   const [isConfiguring, setIsConfiguring] = useState(false);
 
   useEffect(() => {
@@ -33,34 +51,36 @@ export function LocalAIConfig() {
     const { data, error } = await supabase
       .from('service_configurations')
       .select('config')
-      .eq('service_type', 'huggingface')
+      .eq('service_type', 'llm')
       .single();
 
     if (data?.config?.model) {
       setSelectedModel(data.config.model);
+      setDeploymentType(data.config.type || "local");
     }
   };
 
   const handleSaveConfig = async () => {
     setIsConfiguring(true);
     try {
-      // Test de connexion à l'API Hugging Face
       const response = await supabase.functions.invoke('check-model-availability', {
-        body: { modelType: 'api', modelId: selectedModel }
+        body: { 
+          modelType: deploymentType,
+          modelId: selectedModel 
+        }
       });
 
       if (!response.data) {
         throw new Error("Erreur lors de la vérification du modèle");
       }
 
-      // Sauvegarde de la configuration
       const { error } = await supabase
         .from('service_configurations')
         .upsert({
-          service_type: 'huggingface',
+          service_type: 'llm',
           config: { 
             model: selectedModel,
-            useApi: true
+            type: deploymentType
           },
           status: 'configured'
         });
@@ -69,7 +89,7 @@ export function LocalAIConfig() {
 
       toast({
         title: "Configuration sauvegardée",
-        description: "La configuration Hugging Face a été mise à jour avec succès",
+        description: "La configuration du modèle a été mise à jour avec succès",
       });
     } catch (error) {
       console.error('Erreur de configuration:', error);
@@ -85,15 +105,25 @@ export function LocalAIConfig() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-6">
-      <div className="flex items-center gap-2 mb-6">
-        <BrainCircuit className="h-6 w-6 text-purple-500" />
-        <h2 className="text-2xl font-bold">Configuration de l'IA</h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <BrainCircuit className="h-6 w-6 text-purple-500" />
+          <h2 className="text-2xl font-bold">Configuration de l'IA</h2>
+        </div>
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate("/config")}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Retour
+        </Button>
       </div>
 
       <Alert className="bg-blue-50 border-blue-200">
         <AlertCircle className="h-4 w-4 text-blue-500" />
         <AlertDescription className="text-blue-700">
-          Sélectionnez le modèle Hugging Face à utiliser. La clé API est déjà configurée.
+          Choisissez entre un déploiement local ou cloud. Les modèles cloud nécessitent parfois une clé API.
         </AlertDescription>
       </Alert>
 
@@ -102,31 +132,68 @@ export function LocalAIConfig() {
           <CardTitle>Configuration du modèle</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Sélectionner un modèle
-            </label>
-            <Select
-              value={selectedModel}
-              onValueChange={setSelectedModel}
-            >
-              <SelectTrigger className="w-full bg-white">
-                <SelectValue placeholder="Sélectionner un modèle" />
-              </SelectTrigger>
-              <SelectContent>
-                {API_MODELS.map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{model.name}</span>
-                      <span className="text-sm text-gray-500">
-                        {model.description}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Tabs defaultValue={deploymentType} onValueChange={(v) => setDeploymentType(v as "local" | "cloud")}>
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="local">Local</TabsTrigger>
+              <TabsTrigger value="cloud">Cloud</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="local" className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Sélectionner un modèle local
+                </label>
+                <Select
+                  value={selectedModel}
+                  onValueChange={setSelectedModel}
+                >
+                  <SelectTrigger className="w-full bg-white">
+                    <SelectValue placeholder="Sélectionner un modèle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LOCAL_MODELS.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{model.name}</span>
+                          <span className="text-sm text-gray-500">
+                            {model.description}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="cloud" className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Sélectionner un modèle cloud
+                </label>
+                <Select
+                  value={selectedModel}
+                  onValueChange={setSelectedModel}
+                >
+                  <SelectTrigger className="w-full bg-white">
+                    <SelectValue placeholder="Sélectionner un modèle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CLOUD_MODELS.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{model.name}</span>
+                          <span className="text-sm text-gray-500">
+                            {model.description}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <Button
             onClick={handleSaveConfig}
