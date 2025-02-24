@@ -3,8 +3,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   ChevronRight, 
-  MessageSquare, 
-  FileText, 
+  MessageSquare,
   Settings, 
   Cpu
 } from "lucide-react";
@@ -104,11 +103,6 @@ export function Sidebar() {
       icon: MessageSquare,
       label: "Chat",
       to: "/chat"
-    },
-    {
-      icon: FileText,
-      label: "Documents",
-      to: "/documents"
     }
   ];
 

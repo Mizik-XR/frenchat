@@ -91,3 +91,25 @@
   opacity: 0;
   transition: transform 300ms ease-out, opacity 300ms ease-out;
 }
+
+/* Style pour le bouton flottant */
+.floating-button {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 50;
+  transition: transform 0.2s;
+}
+
+.floating-button:hover {
+  transform: scale(1.05);
+}
+
+/* Style pour le menu flottant */
+.floating-menu {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 0.5rem;
+  min-width: 200px;
+}

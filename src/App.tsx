@@ -5,7 +5,6 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { NavBar } from "@/components/navigation/NavBar";
 import Auth from "@/pages/Auth";
 import Chat from "@/pages/Chat";
-import Documents from "@/pages/Documents";
 import { QuickConfig } from "@/components/config/QuickConfig";
 import GoogleAuthCallback from "@/pages/GoogleAuthCallback";
 import { useAuth } from "@/components/AuthProvider";
@@ -66,14 +65,6 @@ export default function App() {
             element={
               <PrivateRoute>
                 <CloudAIConfig />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/documents" 
-            element={
-              <PrivateRoute>
-                <Documents />
               </PrivateRoute>
             } 
           />

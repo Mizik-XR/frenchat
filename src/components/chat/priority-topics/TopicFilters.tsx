@@ -6,8 +6,8 @@ import { Search } from "lucide-react";
 interface TopicFiltersProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  activeFilter: 'all' | 'active' | 'completed' | 'archived';
-  onFilterChange: (filter: 'all' | 'active' | 'completed' | 'archived') => void;
+  activeFilter: 'all' | 'active' | 'archived' | 'unassigned';
+  onFilterChange: (filter: 'all' | 'active' | 'archived' | 'unassigned') => void;
 }
 
 export function TopicFilters({
@@ -21,7 +21,7 @@ export function TopicFilters({
       <div className="relative transition-all">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
         <Input
-          placeholder="Rechercher un sujet..."
+          placeholder="Rechercher..."
           className="pl-9 border-gray-200 focus:border-blue-200 focus:ring-blue-100 transition-all"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -29,19 +29,24 @@ export function TopicFilters({
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {(['all', 'active', 'completed', 'archived'] as const).map((status) => (
+        {[
+          { id: 'all', label: 'Tous' },
+          { id: 'active', label: 'Actifs' },
+          { id: 'archived', label: 'Archivés' },
+          { id: 'unassigned', label: 'Sans dossier' }
+        ].map((filter) => (
           <Button
-            key={status}
-            variant={activeFilter === status ? "default" : "outline"}
+            key={filter.id}
+            variant={activeFilter === filter.id ? "default" : "outline"}
             size="sm"
-            onClick={() => onFilterChange(status)}
-            className={`capitalize transition-all whitespace-nowrap ${
-              activeFilter === status 
+            onClick={() => onFilterChange(filter.id as TopicFiltersProps['activeFilter'])}
+            className={`transition-all whitespace-nowrap ${
+              activeFilter === filter.id 
                 ? 'bg-blue-600 hover:bg-blue-700' 
                 : 'hover:bg-gray-50 hover:text-blue-600 hover:border-blue-200'
             }`}
           >
-            {status}
+            {filter.label}
           </Button>
         ))}
       </div>
