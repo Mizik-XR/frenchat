@@ -32,6 +32,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (_event === 'SIGNED_IN') {
         setUser(session?.user ?? null);
         setIsLoading(false);
+        
+        // Vérification immédiate après la connexion
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_first_login')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile?.is_first_login) {
+            navigate('/config');
+            toast({
+              title: "Première connexion",
+              description: "Bienvenue ! Configurons votre espace.",
+            });
+          }
+        }
         return;
       }
 
@@ -45,8 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       setIsLoading(false);
 
-      if (!session?.user && !isFirstLoad) {
-        console.log("No user found, redirecting to /auth");
+      if (!session?.user && !isFirstLoad && location.pathname !== '/auth') {
         navigate("/auth");
       }
     });
@@ -56,7 +72,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Initial session check:", session);
       
       if (session?.user) {
-        // Vérifier si c'est la première connexion
         const { data: profile } = await supabase
           .from('profiles')
           .select('is_first_login')
@@ -67,20 +82,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
         isFirstLoad = false;
 
-        // Si l'utilisateur est sur la racine ou sur /auth, rediriger
-        if (location.pathname === '/' || location.pathname === '/auth') {
-          if (profile?.is_first_login) {
-            navigate('/config');
-          } else {
-            navigate('/chat');
-          }
+        if (profile?.is_first_login && location.pathname !== '/config') {
+          navigate('/config');
+        } else if (location.pathname === '/' || location.pathname === '/auth') {
+          navigate('/chat');
         }
       } else {
         setUser(null);
         setIsLoading(false);
         isFirstLoad = false;
         
-        // Rediriger vers /auth si l'utilisateur n'est pas sur /auth
         if (location.pathname !== '/auth') {
           navigate('/auth');
         }
@@ -106,8 +117,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-
-  console.log("AuthProvider rendering, user:", user, "isLoading:", isLoading);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, signOut }}>

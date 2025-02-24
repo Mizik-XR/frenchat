@@ -42,14 +42,18 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-6 space-y-6 shadow-xl">
+      <Card className="w-full max-w-md p-6 space-y-6 shadow-xl bg-white">
         <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="signin">Connexion</TabsTrigger>
-            <TabsTrigger value="signup">Inscription</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-4 bg-gray-100">
+            <TabsTrigger value="signin" className="text-gray-700 data-[state=active]:bg-white data-[state=active]:text-primary">
+              Connexion
+            </TabsTrigger>
+            <TabsTrigger value="signup" className="text-gray-700 data-[state=active]:bg-white data-[state=active]:text-primary">
+              Inscription
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="signin">
+          <TabsContent value="signin" className="mt-4 space-y-4">
             <SignInForm
               loading={loading}
               email={email}
@@ -63,7 +67,7 @@ export default function Auth() {
             />
           </TabsContent>
 
-          <TabsContent value="signup">
+          <TabsContent value="signup" className="mt-4 space-y-4">
             <SignUpForm
               loading={loading}
               email={email}
