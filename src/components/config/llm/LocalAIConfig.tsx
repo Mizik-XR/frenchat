@@ -2,69 +2,14 @@
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, BrainCircuit, ArrowLeft, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-interface AIModel {
-  id: string;
-  name: string;
-  description: string;
-  requiresKey?: boolean;
-  docsUrl?: string;
-}
-
-const LOCAL_MODELS: AIModel[] = [
-  {
-    id: "deepseek-local",
-    name: "DeepSeek",
-    description: "Modèle local DeepSeek optimisé"
-  },
-  {
-    id: "qwen-local",
-    name: "Qwen 2.5",
-    description: "Version locale de Qwen (léger et rapide)"
-  },
-  {
-    id: "ollama-local",
-    name: "Ollama",
-    description: "Modèles locaux via Ollama"
-  }
-];
-
-const CLOUD_MODELS: AIModel[] = [
-  {
-    id: "huggingface/mistral",
-    name: "Mistral AI",
-    description: "Modèle performant via Hugging Face",
-    requiresKey: false
-  },
-  {
-    id: "anthropic/claude",
-    name: "Claude (Anthropic)",
-    description: "Assistant IA avancé (optionnel)",
-    requiresKey: true,
-    docsUrl: "https://console.anthropic.com/account/keys"
-  },
-  {
-    id: "openai/gpt4",
-    name: "GPT-4 (OpenAI)",
-    description: "Modèle avancé OpenAI (optionnel)",
-    requiresKey: true,
-    docsUrl: "https://platform.openai.com/api-keys"
-  },
-  {
-    id: "perplexity/pplx",
-    name: "Perplexity AI",
-    description: "API Perplexity (optionnel)",
-    requiresKey: true,
-    docsUrl: "https://docs.perplexity.ai/docs/getting-started"
-  }
-];
+import { LOCAL_MODELS, CLOUD_MODELS } from "./types";
+import { ModelSelector } from "./ModelSelector";
 
 export function LocalAIConfig() {
   const navigate = useNavigate();
@@ -190,64 +135,21 @@ export function LocalAIConfig() {
             </TabsList>
 
             <TabsContent value="local" className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Sélectionner un modèle local
-                </label>
-                <Select
-                  value={selectedModel}
-                  onValueChange={setSelectedModel}
-                >
-                  <SelectTrigger className="w-full bg-white">
-                    <SelectValue placeholder="Sélectionner un modèle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LOCAL_MODELS.map((model) => (
-                      <SelectItem key={model.id} value={model.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{model.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {model.description}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <ModelSelector
+                models={LOCAL_MODELS}
+                selectedModel={selectedModel}
+                onModelSelect={setSelectedModel}
+                label="Sélectionner un modèle local"
+              />
             </TabsContent>
 
             <TabsContent value="cloud" className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Sélectionner un modèle cloud
-                </label>
-                <Select
-                  value={selectedModel}
-                  onValueChange={setSelectedModel}
-                >
-                  <SelectTrigger className="w-full bg-white">
-                    <SelectValue placeholder="Sélectionner un modèle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CLOUD_MODELS.map((model) => (
-                      <SelectItem key={model.id} value={model.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{model.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {model.description}
-                          </span>
-                          {model.requiresKey && (
-                            <span className="text-xs text-amber-600 mt-1">
-                              Requiert une clé API
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <ModelSelector
+                models={CLOUD_MODELS}
+                selectedModel={selectedModel}
+                onModelSelect={setSelectedModel}
+                label="Sélectionner un modèle cloud"
+              />
 
               {selectedModelConfig?.requiresKey && selectedModelConfig?.docsUrl && (
                 <div className="flex items-center gap-2 text-sm text-blue-600">
