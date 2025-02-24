@@ -114,12 +114,17 @@ export function PriorityTopicsPanel({
   });
 
   return (
-    <div className="w-80 bg-white border-l border-gray-200 h-full flex flex-col shadow-lg">
-      <div className="p-4 border-b border-gray-200 flex items-center gap-2 bg-white">
-        <Button variant="ghost" size="icon" onClick={onClose}>
+    <div className="w-80 bg-white/95 backdrop-blur-sm border-l border-gray-100 h-full flex flex-col shadow-lg animate-slide-in-right">
+      <div className="p-4 border-b border-gray-100 flex items-center gap-3 bg-white/95 backdrop-blur-sm sticky top-0 z-20">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onClose}
+          className="hover:bg-gray-100 transition-colors"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h2 className="font-semibold text-lg">Sujets Prioritaires</h2>
+        <h2 className="font-semibold text-lg text-gray-900">Sujets Prioritaires</h2>
       </div>
 
       <TopicFilters
@@ -130,7 +135,7 @@ export function PriorityTopicsPanel({
       />
 
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-4">
           {filteredTopics.map((topic) => (
             <TopicItem
               key={topic.id}
@@ -142,6 +147,11 @@ export function PriorityTopicsPanel({
               onDelete={handleTopicDelete}
             />
           ))}
+          {filteredTopics.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              Aucun sujet ne correspond à votre recherche
+            </div>
+          )}
         </div>
       </ScrollArea>
     </div>

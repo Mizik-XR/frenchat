@@ -37,44 +37,53 @@ export function TopicItem({
 }: TopicItemProps) {
   return (
     <div
-      className={`p-3 rounded-lg border transition-all hover:bg-gray-50 ${
-        topic.isArchived 
-          ? 'bg-gray-50 border-gray-200' 
+      className={`p-4 rounded-lg border transition-all duration-200 ease-in-out hover:bg-gray-50 hover:shadow-sm 
+        ${topic.isArchived 
+          ? 'bg-gray-50/80 border-gray-200' 
           : topic.isCompleted
-            ? 'bg-green-50 border-green-100'
-            : 'bg-white border-blue-100'
-      }`}
+            ? 'bg-green-50/80 border-green-100'
+            : 'bg-white border-gray-100'
+        }
+        animate-fade-in`}
     >
-      <div className="flex items-start gap-3 mb-2">
-        <div 
-          className="cursor-pointer flex-1"
-          onClick={() => onSelect(topic.messageId)}
-        >
-          <div className="flex items-center gap-2 mb-1">
+      <div 
+        className="flex items-start gap-3 mb-3 cursor-pointer group"
+        onClick={() => onSelect(topic.messageId)}
+      >
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
             {topic.isCompleted ? (
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-green-500 transition-colors" />
             ) : topic.isArchived ? (
-              <Archive className="h-4 w-4 text-gray-400" />
+              <Archive className="h-4 w-4 text-gray-400 transition-colors" />
             ) : (
-              <AlertTriangle className={`h-4 w-4 ${getPriorityColor(topic.priority)}`} />
+              <AlertTriangle className={`h-4 w-4 transition-colors ${getPriorityColor(topic.priority)}`} />
             )}
-            <span className="font-medium line-clamp-1">{topic.title}</span>
+            <h3 className="font-medium line-clamp-1 group-hover:text-blue-600 transition-colors">
+              {topic.title}
+            </h3>
           </div>
-          <p className="text-sm text-gray-500 line-clamp-2">{topic.content}</p>
+          <p className="text-sm text-gray-600 line-clamp-2 group-hover:text-gray-900 transition-colors">
+            {topic.content}
+          </p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <Badge variant="secondary" className="text-xs">
+      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+        <Badge 
+          variant="secondary" 
+          className="text-xs bg-gray-100/80 hover:bg-gray-200 transition-colors"
+        >
           {formatTimestamp(topic.timestamp)}
         </Badge>
-        <div className="flex gap-1">
+        <div className="flex gap-1 opacity-80 hover:opacity-100 transition-opacity">
           {!topic.isArchived && !topic.isCompleted && (
             <>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onQuote(topic.content)}
+                className="hover:bg-blue-50 hover:text-blue-600 transition-colors"
               >
                 <MessageSquare className="h-4 w-4" />
               </Button>
@@ -82,6 +91,7 @@ export function TopicItem({
                 variant="ghost"
                 size="icon"
                 onClick={() => onArchive(topic.id)}
+                className="hover:bg-gray-100 hover:text-gray-600 transition-colors"
               >
                 <Archive className="h-4 w-4" />
               </Button>
@@ -89,6 +99,7 @@ export function TopicItem({
                 variant="ghost"
                 size="icon"
                 onClick={() => onComplete(topic.id)}
+                className="hover:bg-green-50 hover:text-green-600 transition-colors"
               >
                 <CheckCircle className="h-4 w-4" />
               </Button>
@@ -98,7 +109,7 @@ export function TopicItem({
             variant="ghost"
             size="icon"
             onClick={() => onDelete(topic.id)}
-            className="text-red-500 hover:text-red-600"
+            className="hover:bg-red-50 hover:text-red-600 transition-all"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
