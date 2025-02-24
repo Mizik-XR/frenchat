@@ -34,7 +34,7 @@ REM Installation des dépendances Python avec indicateur de progression
 echo Installation des dépendances Python...
 pip install -q --no-cache-dir --disable-pip-version-check ^
     transformers==4.36.2 ^
-    torch==2.0.1 ^
+    torch==2.1.0 ^
     accelerate==0.26.1 ^
     datasets==2.16.1 ^
     fastapi==0.109.0 ^
