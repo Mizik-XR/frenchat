@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { AIProvider, WebUIConfig } from "@/types/chat";
@@ -13,10 +12,12 @@ import { ConversationList } from "./chat/ConversationList";
 import { ConversationExport } from "./chat/ConversationExport";
 import { PriorityTopicsPanel } from "./chat/PriorityTopicsPanel";
 import { Button } from "./ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, AlertCircle, Bot, FileUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useServiceConfiguration } from '@/hooks/useServiceConfiguration';
 import { FileUploader } from "@/components/config/ImportMethod/FileUploader";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Chat = () => {
   const [input, setInput] = useState('');
