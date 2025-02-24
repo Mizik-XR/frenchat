@@ -12,6 +12,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
 import { useAIConfig } from "@/hooks/useAIConfig";
+import { TransformersInstallDocs } from "./ProviderDocs";
 
 const TRANSFORMER_MODELS = [
   {
