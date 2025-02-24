@@ -258,6 +258,44 @@ export type Database = {
         }
         Relationships: []
       }
+      document_chunks: {
+        Row: {
+          content: string
+          created_at: string | null
+          document_id: string | null
+          embedding: string | null
+          id: string
+          metadata: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          document_id?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          document_id?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_embeddings: {
         Row: {
           chunk_index: number
@@ -430,6 +468,7 @@ export type Database = {
           metadata: Json | null
           title: string
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           client_id?: string | null
@@ -441,6 +480,7 @@ export type Database = {
           metadata?: Json | null
           title: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           client_id?: string | null
@@ -452,6 +492,7 @@ export type Database = {
           metadata?: Json | null
           title?: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1268,6 +1309,19 @@ export type Database = {
           p_version: number
         }
         Returns: boolean
+      }
+      search_documents: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+        }
+        Returns: {
+          id: string
+          content: string
+          similarity: number
+          metadata: Json
+        }[]
       }
       sparsevec_out: {
         Args: {
