@@ -13,14 +13,25 @@ if %ERRORLEVEL% NEQ 0 (
     exit
 )
 
-REM Nettoyage des anciens fichiers de build
-echo Nettoyage des anciens fichiers...
-if exist "dist" rd /s /q "dist"
-if exist "node_modules" rd /s /q "node_modules"
+REM Vérification des modifications Git
+git fetch
+git status | findstr "behind" > nul
+if %ERRORLEVEL% EQU 0 (
+    echo Des mises à jour sont disponibles. Application des mises à jour...
+    git pull
+    echo Mises à jour appliquées avec succès.
+)
 
-echo Installation des dépendances...
-call npm install
+REM Installation des dépendances si node_modules n'existe pas ou si package.json a été modifié
+if not exist "node_modules\" (
+    echo Installation des dépendances...
+    call npm install
+) else (
+    echo Vérification des dépendances...
+    call npm install
+)
 
+REM Construction de l'application
 echo Construction de l'application...
 call npm run build
 
