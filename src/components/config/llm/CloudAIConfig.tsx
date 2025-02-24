@@ -10,26 +10,40 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { ServiceType } from "@/types/config";
 import { toast } from "@/hooks/use-toast";
+import { useServiceConfiguration } from "@/hooks/useServiceConfiguration";
 
 export const CloudAIConfig = () => {
   const navigate = useNavigate();
-  const [provider, setProvider] = React.useState<ServiceType>("openai");
-  const [apiKey, setApiKey] = React.useState("");
-  const [selectedModel, setSelectedModel] = React.useState("");
+  const { config, updateConfig, isLoading } = useServiceConfiguration("llm");
+
+  const [provider, setProvider] = React.useState<ServiceType>(config?.provider || "openai");
+  const [apiKey, setApiKey] = React.useState(config?.apiKey || "");
+  const [selectedModel, setSelectedModel] = React.useState(config?.model || "");
 
   const models = provider === "openai" 
     ? ["gpt-4-turbo", "gpt-3.5-turbo"] 
     : ["deepseek-coder", "deepseek-chat"];
 
+  React.useEffect(() => {
+    if (provider === "openai" && !selectedModel) {
+      setSelectedModel("gpt-3.5-turbo");
+    } else if (provider === "deepseek" && !selectedModel) {
+      setSelectedModel("deepseek-chat");
+    }
+  }, [provider]);
+
   const handleSave = async () => {
     try {
-      // TODO: Implémenter la sauvegarde de la configuration
-      toast({
-        title: "Configuration sauvegardée",
-        description: "La configuration du modèle cloud a été mise à jour",
+      await updateConfig({
+        provider,
+        apiKey,
+        model: selectedModel,
+        isLocal: false
       });
+      
       navigate("/config");
     } catch (error) {
+      console.error("Error saving config:", error);
       toast({
         title: "Erreur",
         description: "Impossible de sauvegarder la configuration",
@@ -37,6 +51,10 @@ export const CloudAIConfig = () => {
       });
     }
   };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-8">Chargement...</div>;
+  }
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -75,7 +93,11 @@ export const CloudAIConfig = () => {
             onValueChange={setSelectedModel}
           />
 
-          <Button onClick={handleSave} className="w-full">
+          <Button 
+            onClick={handleSave} 
+            className="w-full"
+            disabled={isLoading}
+          >
             Sauvegarder la configuration
           </Button>
         </CardContent>

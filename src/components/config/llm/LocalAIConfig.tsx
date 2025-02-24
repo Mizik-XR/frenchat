@@ -8,23 +8,29 @@ import { ModelSelector } from "./ModelSelector";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useServiceConfiguration } from "@/hooks/useServiceConfiguration";
 
 export const LocalAIConfig = () => {
   const navigate = useNavigate();
-  const [selectedModel, setSelectedModel] = React.useState("llama2");
-  const [localEndpoint, setLocalEndpoint] = React.useState("http://localhost:11434");
+  const { config, updateConfig, isLoading } = useServiceConfiguration("local");
+  
+  const [selectedModel, setSelectedModel] = React.useState(config?.model || "llama2");
+  const [localEndpoint, setLocalEndpoint] = React.useState(config?.endpoint || "http://localhost:11434");
 
   const models = ["llama2", "mistral", "phi"];
 
   const handleSave = async () => {
     try {
-      // TODO: Implémenter la sauvegarde de la configuration
-      toast({
-        title: "Configuration sauvegardée",
-        description: "La configuration du modèle local a été mise à jour",
+      await updateConfig({
+        model: selectedModel,
+        endpoint: localEndpoint,
+        provider: "ollama",
+        isLocal: true
       });
+      
       navigate("/config");
     } catch (error) {
+      console.error("Error saving config:", error);
       toast({
         title: "Erreur",
         description: "Impossible de sauvegarder la configuration",
@@ -32,6 +38,10 @@ export const LocalAIConfig = () => {
       });
     }
   };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-8">Chargement...</div>;
+  }
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -67,7 +77,11 @@ export const LocalAIConfig = () => {
             onValueChange={setSelectedModel}
           />
 
-          <Button onClick={handleSave} className="w-full">
+          <Button 
+            onClick={handleSave} 
+            className="w-full"
+            disabled={isLoading}
+          >
             Sauvegarder la configuration
           </Button>
         </CardContent>
