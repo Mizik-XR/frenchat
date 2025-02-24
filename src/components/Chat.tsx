@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AIProvider, WebUIConfig } from "@/types/chat";
 import { useChatMessages } from '@/hooks/useChatMessages';
@@ -92,6 +91,10 @@ export const Chat = () => {
     setSelectedConversationId(newConv.id);
   };
 
+  const handleTopicSelect = (messageId: string) => {
+    console.log('Topic selected:', messageId);
+  };
+
   return (
     <MainLayout
       conversations={conversations || []}
@@ -117,7 +120,7 @@ export const Chat = () => {
       setShowPriorityTopics={setShowPriorityTopics}
       onSubmit={handleSubmit}
       onFilesSelected={handleFilesSelected}
-      onTopicSelect={(messageId) => console.log('Topic selected:', messageId)}
+      onTopicSelect={handleTopicSelect}
     />
   );
 };
