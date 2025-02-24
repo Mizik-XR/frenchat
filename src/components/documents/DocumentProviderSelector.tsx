@@ -3,9 +3,8 @@ import React from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useDocumentProviders } from "@/hooks/useDocumentProviders";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Icons } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
-import { FileText, Cloud, Upload } from "lucide-react";
+import { FileText, Cloud, Upload, Check, Loader2 } from "lucide-react";
 
 const providerIcons: Record<string, React.ComponentType> = {
   google_drive: Cloud,
@@ -22,7 +21,7 @@ export function DocumentProviderSelector() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-6">
-        <Icons.spinner className="h-6 w-6 animate-spin" />
+        <Loader2 className="h-6 w-6 animate-spin" />
       </div>
     );
   }
@@ -37,7 +36,7 @@ export function DocumentProviderSelector() {
           <Card key={provider.provider_code} className="relative">
             {isConnected && (
               <div className="absolute top-2 right-2">
-                <Icons.check className="h-5 w-5 text-green-500" />
+                <Check className="h-5 w-5 text-green-500" />
               </div>
             )}
             <CardHeader>
