@@ -9,19 +9,17 @@ import { toast } from "@/hooks/use-toast";
 type IndexingProgress = Database['public']['Tables']['indexing_progress']['Row'];
 
 export const IndexingProgress = ({ userId }: { userId: string }) => {
-  const { data: progress, error } = useQuery<IndexingProgress>({
+  const { data: progress, error } = useQuery({
     queryKey: ['indexing-progress', userId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('indexing_progress')
         .select()
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      if (!data) throw new Error('No indexing progress found');
-      
-      return data as IndexingProgress;
+      return data as IndexingProgress | null;
     },
     refetchInterval: 1000,
     retry: 3
