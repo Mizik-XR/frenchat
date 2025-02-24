@@ -1,11 +1,13 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { pipeline } from "https://esm.sh/@huggingface/transformers@latest";
+import { pipeline, Pipeline } from "https://esm.sh/@huggingface/transformers@latest";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+let summarizer: Pipeline | null = null;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -13,25 +15,34 @@ serve(async (req) => {
   }
 
   try {
-    const { text } = await req.json();
+    const { text, maxLength = 150, minLength = 40 } = await req.json();
 
-    // Initialiser le pipeline de résumé avec T5
-    const summarizer = await pipeline('summarization', 't5-small');
+    if (!text) {
+      throw new Error("Le texte à résumer est requis");
+    }
 
-    // Générer le résumé
+    if (!summarizer) {
+      console.log('Initialisation du modèle de résumé...');
+      summarizer = await pipeline('summarization', 't5-small');
+      console.log('Modèle chargé avec succès');
+    }
+
+    console.log('Génération du résumé pour un texte de', text.length, 'caractères');
+    
     const summary = await summarizer(text, {
-      max_length: 150,
-      min_length: 40,
+      max_length: maxLength,
+      min_length: minLength,
       do_sample: false
     });
 
-    // Log pour le suivi
-    console.log('Résumé généré avec succès:', summary);
+    console.log('Résumé généré avec succès');
 
     return new Response(
       JSON.stringify({ 
         summary: summary[0].summary_text,
-        model: 't5-small'
+        model: 't5-small',
+        originalLength: text.length,
+        summaryLength: summary[0].summary_text.length
       }),
       { 
         headers: { 
