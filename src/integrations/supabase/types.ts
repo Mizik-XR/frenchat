@@ -885,6 +885,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_ai_configs: {
+        Row: {
+          api_endpoint: string | null
+          api_key: string | null
+          config: Json | null
+          created_at: string
+          id: string
+          model_name: string | null
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_endpoint?: string | null
+          api_key?: string | null
+          config?: Json | null
+          created_at?: string
+          id?: string
+          model_name?: string | null
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_endpoint?: string | null
+          api_key?: string | null
+          config?: Json | null
+          created_at?: string
+          id?: string
+          model_name?: string | null
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null

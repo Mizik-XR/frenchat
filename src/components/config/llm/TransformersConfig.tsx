@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
+import { useAIConfig } from "@/hooks/useAIConfig";
 
 const TRANSFORMER_MODELS = [
   {
@@ -36,6 +37,24 @@ const TRANSFORMER_MODELS = [
   }
 ];
 
+const HF_MODELS = [
+  {
+    id: "facebook/bart-large-cnn",
+    name: "BART Large CNN",
+    description: "Spécialisé en résumé de texte"
+  },
+  {
+    id: "t5-base",
+    name: "T5 Base",
+    description: "Modèle polyvalent pour diverses tâches"
+  },
+  {
+    id: "google/flan-t5-base",
+    name: "Flan-T5",
+    description: "Version améliorée de T5 avec instructions"
+  }
+];
+
 interface TransformersConfigProps {
   onConfigSave?: (config: any) => void;
 }
@@ -44,8 +63,10 @@ export function TransformersConfig({ onConfigSave }: TransformersConfigProps) {
   const [selectedModel, setSelectedModel] = useState("");
   const [apiEndpoint, setApiEndpoint] = useState("http://localhost:8000");
   const [isLoading, setIsLoading] = useState(false);
+  const [modelType, setModelType] = useState<"local" | "huggingface">("local");
   
   const { textGeneration } = useHuggingFace('transformers');
+  const { saveConfig } = useAIConfig();
 
   const handleTestConnection = async () => {
     setIsLoading(true);
@@ -57,17 +78,25 @@ export function TransformersConfig({ onConfigSave }: TransformersConfigProps) {
       });
 
       if (response) {
+        const config = {
+          provider: 'transformers',
+          model_name: selectedModel,
+          api_endpoint: apiEndpoint,
+          config: {
+            type: modelType,
+            last_tested: new Date().toISOString()
+          }
+        };
+
+        await saveConfig(config);
+
         toast({
           title: "Connexion réussie",
           description: "Le modèle est correctement configuré",
         });
 
         if (onConfigSave) {
-          onConfigSave({
-            model: selectedModel,
-            endpoint: apiEndpoint,
-            provider: 'transformers'
-          });
+          onConfigSave(config);
         }
       }
     } catch (error: any) {
@@ -81,8 +110,23 @@ export function TransformersConfig({ onConfigSave }: TransformersConfigProps) {
     }
   };
 
+  const models = modelType === "local" ? TRANSFORMER_MODELS : HF_MODELS;
+
   return (
     <div className="space-y-6">
+      <div className="space-y-2">
+        <Label>Type de modèle</Label>
+        <Select value={modelType} onValueChange={(value: "local" | "huggingface") => setModelType(value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Sélectionner le type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="local">Modèles locaux</SelectItem>
+            <SelectItem value="huggingface">Modèles Hugging Face</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="space-y-2">
         <Label>Modèle Transformer</Label>
         <Select value={selectedModel} onValueChange={setSelectedModel}>
@@ -90,7 +134,7 @@ export function TransformersConfig({ onConfigSave }: TransformersConfigProps) {
             <SelectValue placeholder="Sélectionner un modèle" />
           </SelectTrigger>
           <SelectContent>
-            {TRANSFORMER_MODELS.map((model) => (
+            {models.map((model) => (
               <SelectItem key={model.id} value={model.id}>
                 <div className="flex flex-col">
                   <span className="font-medium">{model.name}</span>
@@ -111,7 +155,7 @@ export function TransformersConfig({ onConfigSave }: TransformersConfigProps) {
           className="font-mono text-sm"
         />
         <p className="text-xs text-gray-500">
-          URL du serveur local hébergeant le modèle (ex: serveur Transformers ou Ollama)
+          URL du serveur {modelType === "local" ? "local" : "API"} hébergeant le modèle
         </p>
       </div>
 
@@ -125,16 +169,18 @@ export function TransformersConfig({ onConfigSave }: TransformersConfigProps) {
         </Button>
       </div>
 
-      <div className="text-sm space-y-2 bg-gray-50 p-4 rounded-lg">
-        <h4 className="font-medium">Guide d'installation</h4>
-        <ol className="list-decimal list-inside space-y-1 text-gray-600">
-          <li>Installez Python et pip sur votre machine</li>
-          <li>Installez transformers : <code className="bg-gray-100 px-1">pip install transformers</code></li>
-          <li>Installez torch : <code className="bg-gray-100 px-1">pip install torch</code></li>
-          <li>Lancez le serveur local avec l'API du modèle choisi</li>
-          <li>Configurez l'URL du serveur ci-dessus</li>
-        </ol>
-      </div>
+      {modelType === "local" && (
+        <div className="text-sm space-y-2 bg-gray-50 p-4 rounded-lg">
+          <h4 className="font-medium">Guide d'installation</h4>
+          <ol className="list-decimal list-inside space-y-1 text-gray-600">
+            <li>Installez Python et pip sur votre machine</li>
+            <li>Installez transformers : <code className="bg-gray-100 px-1">pip install transformers</code></li>
+            <li>Installez torch : <code className="bg-gray-100 px-1">pip install torch</code></li>
+            <li>Lancez le serveur local avec l'API du modèle choisi</li>
+            <li>Configurez l'URL du serveur ci-dessus</li>
+          </ol>
+        </div>
+      )}
     </div>
   );
 }
