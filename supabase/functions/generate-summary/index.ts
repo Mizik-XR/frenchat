@@ -1,6 +1,6 @@
 
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,13 +15,13 @@ serve(async (req) => {
   try {
     const { documentId } = await req.json();
 
-    const supabase = createClient(
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     // Récupérer le contenu du document
-    const { data: document, error: docError } = await supabase
+    const { data: document, error: docError } = await supabaseClient
       .from('documents')
       .select('content, title')
       .eq('id', documentId)
@@ -31,6 +31,7 @@ serve(async (req) => {
       throw new Error('Document non trouvé');
     }
 
+    // Utiliser l'API Perplexity pour générer le résumé
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -58,7 +59,7 @@ serve(async (req) => {
     const summary = result.choices[0].message.content;
 
     // Sauvegarder le résumé dans les métadonnées du document
-    await supabase
+    await supabaseClient
       .from('documents')
       .update({
         metadata: {
