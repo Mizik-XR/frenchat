@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useGoogleDrive } from '@/components/config/GoogleDrive/useGoogleDrive';
 
 export interface IndexingProgress {
   status: string;
@@ -27,10 +28,13 @@ interface StartIndexingOptions {
 export function useIndexingProgress() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { initiateGoogleAuth } = useGoogleDrive(user, () => {});
   const [indexingProgress, setIndexingProgress] = useState<IndexingProgress | null>(null);
 
   useEffect(() => {
     if (!user || !indexingProgress) return;
+
+    console.log('Setting up indexing progress subscription for user:', user.id);
 
     const channel = supabase.channel('indexing-progress')
       .on(
@@ -42,7 +46,7 @@ export function useIndexingProgress() {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Indexing progress update:', payload.new);
+          console.log('Received indexing progress update:', payload.new);
           
           setIndexingProgress({
             status: payload.new.status,
@@ -52,36 +56,67 @@ export function useIndexingProgress() {
             depth: payload.new.depth
           });
 
+          // Gestion des différents états
           if (payload.new.status === 'completed') {
+            console.log('Indexation completed successfully');
             toast({
               title: "Indexation terminée",
-              description: "Tous les fichiers ont été indexés avec succès",
+              description: `${payload.new.processed_files} fichiers ont été indexés avec succès`,
+              variant: "default",
             });
           } else if (payload.new.status === 'error') {
-            console.error('Indexing error:', {
+            console.error('Indexing error details:', {
               error: payload.new.error,
               folder: payload.new.current_folder,
-              progress: `${payload.new.processed_files}/${payload.new.total_files}`
+              progress: `${payload.new.processed_files}/${payload.new.total_files}`,
+              lastProcessedFile: payload.new.last_processed_file
             });
 
             let errorMessage = "Une erreur est survenue pendant l'indexation";
+            let action = null;
+
             if (payload.new.error) {
               const error: IndexingError = JSON.parse(payload.new.error);
+              console.log('Parsed error:', error);
+
               switch(error.code) {
                 case 'QUOTA_EXCEEDED':
                   errorMessage = "Quota Google Drive dépassé. Veuillez réessayer plus tard.";
                   break;
                 case 'TOKEN_EXPIRED':
-                  errorMessage = "Session Google Drive expirée. Veuillez vous reconnecter.";
+                  errorMessage = "Session Google Drive expirée. Cliquez ici pour vous reconnecter.";
+                  action = async () => {
+                    try {
+                      await initiateGoogleAuth();
+                    } catch (e) {
+                      console.error('Error during Google re-authentication:', e);
+                      toast({
+                        title: "Erreur de reconnexion",
+                        description: "Impossible de relancer l'authentification Google",
+                        variant: "destructive",
+                      });
+                    }
+                  };
                   break;
                 case 'PERMISSION_DENIED':
-                  errorMessage = "Accès refusé au dossier. Vérifiez vos permissions.";
+                  errorMessage = "Accès refusé au dossier. Vérifiez vos permissions Google Drive.";
                   break;
                 case 'MAX_DEPTH_REACHED':
                   errorMessage = "Profondeur maximale atteinte. Certains sous-dossiers n'ont pas été indexés.";
                   break;
+                case 'RATE_LIMIT_EXCEEDED':
+                  errorMessage = "Trop de requêtes. L'indexation reprendra automatiquement dans quelques minutes.";
+                  break;
+                case 'NETWORK_ERROR':
+                  errorMessage = "Erreur réseau. Vérifiez votre connexion internet.";
+                  break;
+                case 'API_ERROR':
+                  errorMessage = `Erreur API Google Drive: ${error.message}`;
+                  console.error('API Error details:', error.details);
+                  break;
                 default:
                   errorMessage = error.message || errorMessage;
+                  console.error('Unknown error:', error);
               }
             }
 
@@ -89,6 +124,10 @@ export function useIndexingProgress() {
               title: "Erreur d'indexation",
               description: errorMessage,
               variant: "destructive",
+              action: action ? {
+                label: "Reconnecter",
+                onClick: action
+              } : undefined
             });
           }
         }
@@ -96,15 +135,23 @@ export function useIndexingProgress() {
       .subscribe();
 
     return () => {
+      console.log('Cleaning up indexing progress subscription');
       supabase.removeChannel(channel);
     };
   }, [user, indexingProgress]);
 
   const startIndexing = async (folderId: string, options?: StartIndexingOptions) => {
-    if (!user) return;
+    if (!user) {
+      console.error('Cannot start indexing: No user logged in');
+      return;
+    }
     
     try {
-      console.log('Starting indexation for folder:', folderId, 'with options:', options);
+      console.log('Starting indexation with options:', {
+        folderId,
+        options,
+        userId: user.id
+      });
 
       const { data, error } = await supabase.functions.invoke('batch-index-google-drive', {
         body: { 
@@ -117,7 +164,7 @@ export function useIndexingProgress() {
       });
 
       if (error) {
-        console.error('Error starting indexation:', error);
+        console.error('Error invoking batch-index-google-drive function:', error);
         throw error;
       }
 
@@ -125,7 +172,7 @@ export function useIndexingProgress() {
 
       toast({
         title: "Indexation démarrée",
-        description: "L'indexation du dossier a commencé",
+        description: "L'indexation du dossier a commencé. Vous pouvez suivre la progression ici.",
       });
 
       setIndexingProgress({
@@ -137,17 +184,31 @@ export function useIndexingProgress() {
       });
 
     } catch (error) {
-      console.error('Error details:', {
+      console.error('Failed to start indexation:', {
         error,
         userId: user.id,
         folderId
       });
 
-      toast({
-        title: "Erreur",
-        description: "Impossible de démarrer l'indexation. Vérifiez votre connexion Google Drive.",
-        variant: "destructive",
-      });
+      let errorMessage = "Impossible de démarrer l'indexation";
+      if (error.message.includes('token')) {
+        errorMessage = "Session Google Drive expirée. Veuillez vous reconnecter.";
+        toast({
+          title: "Erreur de connexion",
+          description: errorMessage,
+          variant: "destructive",
+          action: {
+            label: "Reconnecter",
+            onClick: initiateGoogleAuth
+          }
+        });
+      } else {
+        toast({
+          title: "Erreur",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     }
   };
 
