@@ -594,6 +594,60 @@ export type Database = {
         }
         Relationships: []
       }
+      indexed_documents: {
+        Row: {
+          content_text: string | null
+          created_at: string
+          external_id: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          last_indexed: string | null
+          metadata: Json | null
+          mime_type: string
+          parent_folder_id: string | null
+          provider_type: string
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content_text?: string | null
+          created_at?: string
+          external_id?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          last_indexed?: string | null
+          metadata?: Json | null
+          mime_type: string
+          parent_folder_id?: string | null
+          provider_type: string
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content_text?: string | null
+          created_at?: string
+          external_id?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          last_indexed?: string | null
+          metadata?: Json | null
+          mime_type?: string
+          parent_folder_id?: string | null
+          provider_type?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       indexing_progress: {
         Row: {
           created_at: string
@@ -796,6 +850,42 @@ export type Database = {
           },
         ]
       }
+      service_providers: {
+        Row: {
+          config: Json | null
+          created_at: string
+          error_message: string | null
+          id: string
+          last_sync: string | null
+          provider_type: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_sync?: string | null
+          provider_type: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_sync?: string | null
+          provider_type?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           client_id: string | null
@@ -858,6 +948,48 @@ export type Database = {
           id?: string
           messages?: Json
           title?: string
+        }
+        Relationships: []
+      }
+      supported_mime_types: {
+        Row: {
+          category: string
+          description: string | null
+          enabled: boolean | null
+          mime_type: string
+        }
+        Insert: {
+          category: string
+          description?: string | null
+          enabled?: boolean | null
+          mime_type: string
+        }
+        Update: {
+          category?: string
+          description?: string | null
+          enabled?: boolean | null
+          mime_type?: string
+        }
+        Relationships: []
+      }
+      supported_providers: {
+        Row: {
+          description: string | null
+          enabled: boolean | null
+          name: string
+          provider_code: string
+        }
+        Insert: {
+          description?: string | null
+          enabled?: boolean | null
+          name: string
+          provider_code: string
+        }
+        Update: {
+          description?: string | null
+          enabled?: boolean | null
+          name?: string
+          provider_code?: string
         }
         Relationships: []
       }

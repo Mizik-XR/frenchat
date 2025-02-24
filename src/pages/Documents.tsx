@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { DocumentProviderSelector } from "@/components/documents/DocumentProviderSelector";
 
 export default function Documents() {
   const navigate = useNavigate();
@@ -24,9 +25,9 @@ export default function Documents() {
           <CardTitle>Gestionnaire de Documents</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {/* Contenu à implémenter */}
-            <p>Gestionnaire de documents en cours de développement...</p>
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold">Sources de documents</h2>
+            <DocumentProviderSelector />
           </div>
         </CardContent>
       </Card>
