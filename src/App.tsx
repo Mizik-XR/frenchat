@@ -5,12 +5,8 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { NavBar } from "@/components/navigation/NavBar";
 import Auth from "@/pages/Auth";
 import Chat from "@/pages/Chat";
-import { QuickConfig } from "@/components/config/QuickConfig";
 import GoogleAuthCallback from "@/pages/GoogleAuthCallback";
 import { useAuth } from "@/components/AuthProvider";
-import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
-import { CloudAIConfig } from "@/components/config/llm/CloudAIConfig";
-import AIConfig from "@/pages/AIConfig";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -41,58 +37,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/auth" element={<Auth />} />
-          <Route
-            path="/auth/callback/google"
-            element={<GoogleAuthCallback />}
-          />
-          <Route 
-            path="/config" 
-            element={
-              <PrivateRoute>
-                <QuickConfig />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/config/google-drive" 
-            element={
-              <PrivateRoute>
-                <QuickConfig />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/config/documents" 
-            element={
-              <PrivateRoute>
-                <QuickConfig />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/config/local-ai" 
-            element={
-              <PrivateRoute>
-                <LocalAIConfig />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/config/cloud-ai" 
-            element={
-              <PrivateRoute>
-                <CloudAIConfig />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/config/ai" 
-            element={
-              <PrivateRoute>
-                <AIConfig />
-              </PrivateRoute>
-            } 
-          />
+          <Route path="/auth/callback/google" element={<GoogleAuthCallback />} />
           <Route 
             path="/chat" 
             element={
