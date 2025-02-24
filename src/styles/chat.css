@@ -52,3 +52,22 @@
     background-color: transparent;
   }
 }
+
+/* Animations pour le panneau des sujets prioritaires */
+.priority-panel-enter {
+  transform: translateX(100%);
+}
+
+.priority-panel-enter-active {
+  transform: translateX(0);
+  transition: transform 300ms ease-out;
+}
+
+.priority-panel-exit {
+  transform: translateX(0);
+}
+
+.priority-panel-exit-active {
+  transform: translateX(100%);
+  transition: transform 300ms ease-out;
+}
