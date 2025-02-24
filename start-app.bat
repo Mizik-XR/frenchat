@@ -13,30 +13,27 @@ if %ERRORLEVEL% NEQ 0 (
     exit
 )
 
-REM Vérification des modifications Git
+REM Installation des dépendances si node_modules n'existe pas
+if not exist "node_modules\" (
+    echo Installation des dépendances...
+    call npm install
+)
+
+REM Vérification des modifications Git et mise à jour des dépendances si nécessaire
 git fetch
 git status | findstr "behind" > nul
 if %ERRORLEVEL% EQU 0 (
     echo Des mises à jour sont disponibles. Application des mises à jour...
     git pull
     echo Mises à jour appliquées avec succès.
-)
-
-REM Installation des dépendances si node_modules n'existe pas ou si package.json a été modifié
-if not exist "node_modules\" (
-    echo Installation des dépendances...
-    call npm install
-) else (
-    echo Vérification des dépendances...
+    echo Mise à jour des dépendances...
     call npm install
 )
 
-REM Construction de l'application
-echo Construction de l'application...
-call npm run build
-
-echo Lancement de l'application...
+echo Lancement du serveur de développement...
 start http://localhost:8080
-call npm run dev
+
+REM Lancement en mode développement avec surveillance des fichiers
+call npm run dev -- --host
 
 pause
