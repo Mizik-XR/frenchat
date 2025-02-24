@@ -28,3 +28,27 @@ export type Message = {
   conversationId: string;
   timestamp: Date;
 };
+
+export type ConversationFolder = {
+  id: string;
+  name: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Conversation = {
+  id: string;
+  title: string;
+  updatedAt: Date;
+  folderId?: string;
+  isPinned: boolean;
+  isArchived: boolean;
+  archiveDate?: Date;
+  settings: {
+    model: AIProvider;
+    maxTokens: number;
+    temperature: number;
+    streamResponse: boolean;
+  };
+};
