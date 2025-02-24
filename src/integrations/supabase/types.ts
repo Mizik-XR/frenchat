@@ -353,6 +353,39 @@ export type Database = {
         }
         Relationships: []
       }
+      document_summaries: {
+        Row: {
+          created_at: string | null
+          document_id: string
+          id: string
+          model_name: string
+          original_text: string
+          summary_text: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          document_id: string
+          id?: string
+          model_name?: string
+          original_text: string
+          summary_text: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          document_id?: string
+          id?: string
+          model_name?: string
+          original_text?: string
+          summary_text?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       document_versions: {
         Row: {
           content: string | null
