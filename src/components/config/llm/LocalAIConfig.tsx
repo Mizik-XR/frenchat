@@ -53,15 +53,19 @@ export function LocalAIConfig() {
     try {
       if (type === 'embedding') {
         await pipeline('feature-extraction', modelId, {
-          progress_callback: (progress) => {
-            setDownloadProgress(Math.round(progress * 100));
+          progress_callback: (progress: any) => {
+            // Assurons-nous que progress est converti en nombre
+            const progressValue = typeof progress === 'number' ? progress : 0;
+            setDownloadProgress(Math.round(progressValue * 100));
           }
         });
         setModelStatus(prev => ({ ...prev, embedding: true }));
       } else {
         await pipeline('text-generation', modelId, {
-          progress_callback: (progress) => {
-            setDownloadProgress(Math.round(progress * 100));
+          progress_callback: (progress: any) => {
+            // Assurons-nous que progress est converti en nombre
+            const progressValue = typeof progress === 'number' ? progress : 0;
+            setDownloadProgress(Math.round(progressValue * 100));
           }
         });
         setModelStatus(prev => ({ ...prev, generation: true }));
