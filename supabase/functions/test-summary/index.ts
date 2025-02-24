@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { pipeline } from "@huggingface/transformers";
+import { pipeline } from "https://esm.sh/@huggingface/transformers@latest";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
