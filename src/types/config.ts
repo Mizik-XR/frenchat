@@ -1,5 +1,5 @@
 
-export type ServiceType = 'huggingface' | 'openai' | 'deepseek' | 'google_drive' | 'microsoft_teams' | 'ollama' | 'phi' | 'local' | 'stable_diffusion' | 'llm';
+export type ServiceType = 'huggingface' | 'openai' | 'deepseek' | 'google_drive' | 'microsoft_teams' | 'ollama' | 'phi' | 'local' | 'stable_diffusion' | 'llm' | 'perplexity' | 'anthropic';
 
 export type LLMProvider = {
   id: ServiceType;
