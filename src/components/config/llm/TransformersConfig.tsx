@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -170,16 +169,19 @@ export function TransformersConfig({ onConfigSave }: TransformersConfigProps) {
       </div>
 
       {modelType === "local" && (
-        <div className="text-sm space-y-2 bg-gray-50 p-4 rounded-lg">
-          <h4 className="font-medium">Guide d'installation</h4>
-          <ol className="list-decimal list-inside space-y-1 text-gray-600">
-            <li>Installez Python et pip sur votre machine</li>
-            <li>Installez transformers : <code className="bg-gray-100 px-1">pip install transformers</code></li>
-            <li>Installez torch : <code className="bg-gray-100 px-1">pip install torch</code></li>
-            <li>Lancez le serveur local avec l'API du modèle choisi</li>
-            <li>Configurez l'URL du serveur ci-dessus</li>
-          </ol>
-        </div>
+        <>
+          <div className="text-sm space-y-2 bg-gray-50 p-4 rounded-lg">
+            <h4 className="font-medium">Installation rapide</h4>
+            <ol className="list-decimal list-inside space-y-1 text-gray-600">
+              <li>Installez Python et pip sur votre machine</li>
+              <li>Installez transformers : <code className="bg-gray-100 px-1">pip install transformers torch</code></li>
+              <li>Lancez le serveur local avec l'API du modèle choisi</li>
+              <li>Configurez l'URL du serveur ci-dessus</li>
+            </ol>
+          </div>
+          
+          <TransformersInstallDocs />
+        </>
       )}
     </div>
   );
