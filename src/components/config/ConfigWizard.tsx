@@ -10,7 +10,7 @@ import { ImportMethodSelector, ImportMethod } from "./ImportMethod/ImportMethodS
 import { FileUploader } from "./ImportMethod/FileUploader";
 import { GoogleDriveConfig } from "./GoogleDrive/GoogleDriveConfig";
 import { MicrosoftTeamsConfig } from "./MicrosoftTeamsConfig";
-import { LLMConfigComponent } from "./LLMConfig";
+import { LLMConfig } from "./LLMConfig";
 import { ImageConfig } from "./ImageConfig";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -112,7 +112,7 @@ export const ConfigWizard = () => {
       case 4:
         return (
           <div className="animate-fade-in">
-            <LLMConfigComponent
+            <LLMConfig 
               onSave={() => {
                 setConfigStatus(prev => ({ ...prev, llm: true }));
                 handleNext();
