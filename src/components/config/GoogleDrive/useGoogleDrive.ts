@@ -3,10 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
-
-interface GoogleOAuthConfig {
-  configured: boolean;
-}
+import { GoogleOAuthConfig } from "@/types/google-drive";
 
 const REDIRECT_URI = `${window.location.origin}/auth/callback/google`;
 
@@ -89,19 +86,7 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
       setIsConnecting(true);
       console.log('Récupération de la configuration Google OAuth...');
       
-      // Récupération de la configuration depuis Supabase
-      const { data: configData, error: configError } = await supabase
-        .from('service_configurations')
-        .select('config')
-        .eq('service_type', 'GOOGLE_OAUTH')
-        .single();
-
-      if (configError || !configData?.config || !isGoogleOAuthConfig(configData.config)) {
-        console.error("Configuration invalide ou manquante");
-        throw new Error("La configuration Google OAuth est invalide ou manquante");
-      }
-
-      // Récupération du client_id depuis la fonction Edge
+      // Récupération du client_id via la fonction Edge
       const { data: authData, error: authError } = await supabase.functions.invoke(
         'google-oauth',
         {

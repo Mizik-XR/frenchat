@@ -1,4 +1,9 @@
 
+export interface GoogleOAuthConfig {
+  configured: boolean;
+  client_id?: string;
+}
+
 export interface IndexingProgress {
   id: string;
   user_id: string;
