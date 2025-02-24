@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -16,6 +17,9 @@ export interface Database {
           total_files: number
           processed_files: number
           current_folder: string | null
+          parent_folder: string | null
+          depth: number
+          last_processed_file: string | null
           status: 'running' | 'completed' | 'error'
           error: string | null
           created_at: string
@@ -27,6 +31,9 @@ export interface Database {
           total_files?: number
           processed_files?: number
           current_folder?: string | null
+          parent_folder?: string | null
+          depth?: number
+          last_processed_file?: string | null
           status?: 'running' | 'completed' | 'error'
           error?: string | null
           created_at?: string
@@ -38,10 +45,51 @@ export interface Database {
           total_files?: number
           processed_files?: number
           current_folder?: string | null
+          parent_folder?: string | null
+          depth?: number
+          last_processed_file?: string | null
           status?: 'running' | 'completed' | 'error'
           error?: string | null
           created_at?: string
           updated_at?: string
+        }
+      }
+      google_drive_folders: {
+        Row: {
+          id: string
+          folder_id: string
+          parent_folder_id: string | null
+          name: string
+          user_id: string
+          path: string | null
+          created_at: string
+          updated_at: string
+          last_synced: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          id?: string
+          folder_id: string
+          parent_folder_id?: string | null
+          name: string
+          user_id: string
+          path?: string | null
+          created_at?: string
+          updated_at?: string
+          last_synced?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          id?: string
+          folder_id?: string
+          parent_folder_id?: string | null
+          name?: string
+          user_id?: string
+          path?: string | null
+          created_at?: string
+          updated_at?: string
+          last_synced?: string | null
+          metadata?: Json | null
         }
       }
       profiles: {

@@ -555,12 +555,54 @@ export type Database = {
         }
         Relationships: []
       }
+      google_drive_folders: {
+        Row: {
+          created_at: string
+          folder_id: string
+          id: string
+          last_synced: string | null
+          metadata: Json | null
+          name: string
+          parent_folder_id: string | null
+          path: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          folder_id: string
+          id?: string
+          last_synced?: string | null
+          metadata?: Json | null
+          name: string
+          parent_folder_id?: string | null
+          path?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          folder_id?: string
+          id?: string
+          last_synced?: string | null
+          metadata?: Json | null
+          name?: string
+          parent_folder_id?: string | null
+          path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       indexing_progress: {
         Row: {
           created_at: string
           current_folder: string | null
+          depth: number | null
           error: string | null
           id: string
+          last_processed_file: string | null
+          parent_folder: string | null
           processed_files: number | null
           status: string
           total_files: number | null
@@ -570,8 +612,11 @@ export type Database = {
         Insert: {
           created_at?: string
           current_folder?: string | null
+          depth?: number | null
           error?: string | null
           id?: string
+          last_processed_file?: string | null
+          parent_folder?: string | null
           processed_files?: number | null
           status?: string
           total_files?: number | null
@@ -581,8 +626,11 @@ export type Database = {
         Update: {
           created_at?: string
           current_folder?: string | null
+          depth?: number | null
           error?: string | null
           id?: string
+          last_processed_file?: string | null
+          parent_folder?: string | null
           processed_files?: number | null
           status?: string
           total_files?: number | null

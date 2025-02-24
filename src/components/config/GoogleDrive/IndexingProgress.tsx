@@ -5,11 +5,12 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from '@/types/database';
 import { toast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 type IndexingProgress = Database['public']['Tables']['indexing_progress']['Row'];
 
 export const IndexingProgress = ({ userId }: { userId: string }) => {
-  const { data: progress, error } = useQuery({
+  const { data: progress, error, isLoading } = useQuery({
     queryKey: ['indexing-progress', userId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -35,6 +36,14 @@ export const IndexingProgress = ({ userId }: { userId: string }) => {
     }
   }, [error]);
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
   if (!progress || progress.status === 'completed') {
     return null;
   }
@@ -54,14 +63,22 @@ export const IndexingProgress = ({ userId }: { userId: string }) => {
       </div>
       
       {progress.current_folder && (
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground space-y-1">
           <p>Dossier actuel : {progress.current_folder}</p>
+          {progress.parent_folder && (
+            <p className="text-xs">Dans : {progress.parent_folder}</p>
+          )}
           <p>{progress.processed_files} fichiers traités sur {progress.total_files}</p>
+          {progress.last_processed_file && (
+            <p className="text-xs truncate">
+              Dernier fichier : {progress.last_processed_file}
+            </p>
+          )}
         </div>
       )}
 
       {progress.status === 'error' && progress.error && (
-        <div className="text-sm text-red-500 bg-red-50 p-2 rounded">
+        <div className="text-sm text-destructive bg-destructive/10 p-2 rounded">
           <p>Une erreur est survenue : {progress.error}</p>
         </div>
       )}
