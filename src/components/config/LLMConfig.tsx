@@ -61,6 +61,10 @@ export const LLMConfigComponent = ({ onSave }: LLMConfigProps) => {
   const handleSave = async () => {
     try {
       await updateConfig(localConfig);
+      toast({
+        title: "Configuration sauvegardée",
+        description: "Le modèle de langage a été configuré avec succès.",
+      });
       if (onSave) onSave();
     } catch (error) {
       console.error('Error saving config:', error);
@@ -86,10 +90,29 @@ export const LLMConfigComponent = ({ onSave }: LLMConfigProps) => {
       </div>
 
       <div className="space-y-6">
-        <ProviderSelector 
-          value={localConfig.provider} 
-          onValueChange={handleProviderChange}
-        />
+        <div className="space-y-2">
+          <ProviderSelector 
+            value={localConfig.provider} 
+            onValueChange={handleProviderChange}
+          />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" className="mt-1">
+                  <Info className="h-4 w-4 mr-2" />
+                  Comment choisir un modèle ?
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="p-4 max-w-xs">
+                <p className="text-sm">
+                  • Hugging Face : Gratuit, modèles open source<br />
+                  • OpenAI : Performances élevées, nécessite une clé API<br />
+                  • Ollama : Modèles locaux, pas de connexion internet requise
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
 
         {selectedProvider && (
           <>
