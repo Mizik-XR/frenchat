@@ -115,9 +115,46 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
     }
   };
 
+  const startFolderIndexing = async (folderId: string) => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour indexer des dossiers",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('batch-index-google-drive', {
+        body: { 
+          userId: user.id,
+          folderId
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Indexation démarrée",
+        description: "L'indexation de votre dossier Google Drive a démarré",
+      });
+
+      return data.progressId;
+    } catch (error) {
+      console.error('Erreur lors du démarrage de l\'indexation:', error);
+      toast({
+        title: "Erreur d'indexation",
+        description: error instanceof Error ? error.message : "Impossible de démarrer l'indexation",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     isConnecting,
     isConnected,
-    initiateGoogleAuth
+    initiateGoogleAuth,
+    startFolderIndexing
   };
 };
