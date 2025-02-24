@@ -7,6 +7,8 @@ import Auth from "@/pages/Auth";
 import Chat from "@/pages/Chat";
 import GoogleAuthCallback from "@/pages/GoogleAuthCallback";
 import { useAuth } from "@/components/AuthProvider";
+import { QuickConfig } from "@/components/config/QuickConfig";
+import { MicrosoftTeamsConfig } from "@/components/config/MicrosoftTeamsConfig";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -45,6 +47,22 @@ export default function App() {
                 <Chat />
               </PrivateRoute>
             } 
+          />
+          <Route
+            path="/config"
+            element={
+              <PrivateRoute>
+                <QuickConfig />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/config/microsoft-teams"
+            element={
+              <PrivateRoute>
+                <MicrosoftTeamsConfig />
+              </PrivateRoute>
+            }
           />
           <Route path="/" element={<Navigate to="/chat" replace />} />
         </Routes>
