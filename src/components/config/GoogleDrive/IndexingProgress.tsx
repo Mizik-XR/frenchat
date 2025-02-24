@@ -14,12 +14,14 @@ export const IndexingProgress = ({ userId }: { userId: string }) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('indexing_progress')
-        .select('*')
+        .select()
         .eq('user_id', userId)
         .single();
 
       if (error) throw error;
-      return data;
+      if (!data) throw new Error('No indexing progress found');
+      
+      return data as IndexingProgress;
     },
     refetchInterval: 1000,
     retry: 3
