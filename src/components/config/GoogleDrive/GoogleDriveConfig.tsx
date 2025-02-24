@@ -20,15 +20,12 @@ export const GoogleDriveConfig = () => {
         throw new Error("Utilisateur non connecté");
       }
 
-      // Réinitialiser la progression
-      await supabase
-        .from('indexing_progress')
-        .upsert({
-          user_id: user.id,
-          total_files: 0,
-          processed_files: 0,
-          status: 'running'
-        });
+      await supabase.from('indexing_progress').upsert({
+        user_id: user.id,
+        total_files: 0,
+        processed_files: 0,
+        status: 'running'
+      });
 
       const { error } = await supabase.functions.invoke('batch-index-google-drive', {
         body: { 

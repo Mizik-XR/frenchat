@@ -9,16 +9,13 @@ interface GoogleDriveConnectionProps {
   onFolderSelect: (folderId: string) => void;
 }
 
-export const GoogleDriveConnection: React.FC<GoogleDriveConnectionProps> = ({ 
-  onFolderSelect 
-}) => {
+export const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) => {
   const { user } = useAuth();
   const { isConnecting, isConnected, initiateGoogleAuth } = useGoogleDrive(
     user,
     () => console.log("Configuration sauvegardée")
   );
 
-  // Le composant ne devrait pas être rendu si l'utilisateur n'est pas connecté
   if (!user) return null;
 
   return (

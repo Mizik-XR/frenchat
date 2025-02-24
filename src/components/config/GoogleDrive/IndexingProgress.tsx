@@ -3,21 +3,22 @@ import React from 'react';
 import { Progress } from "@/components/ui/progress";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
 import type { IndexingProgress as IndexingProgressType } from "@/types/google-drive";
 import { toast } from "@/hooks/use-toast";
 
 export const IndexingProgress = ({ userId }: { userId: string }) => {
-  const { data: progress, error } = useQuery({
+  const { data: progress, error } = useQuery<IndexingProgressType>({
     queryKey: ['indexing-progress', userId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('indexing_progress')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error('Aucune donnée de progression trouvée');
+      
       return data as IndexingProgressType;
     },
     refetchInterval: 1000,
