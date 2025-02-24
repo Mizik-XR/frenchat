@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useServiceConfiguration } from '@/hooks/useServiceConfiguration';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,11 @@ export const MicrosoftTeamsConfig = ({ onSave }: MicrosoftTeamsConfigProps) => {
   const [clientId, setClientId] = useState(config?.clientId || '');
   const [tenantId, setTenantId] = useState(config?.tenantId || '');
 
+  useEffect(() => {
+    // Log pour debug
+    console.log('MicrosoftTeamsConfig mounted', { config });
+  }, [config]);
+
   const handleSave = async () => {
     try {
       if (!clientId || !tenantId) {
@@ -26,6 +31,8 @@ export const MicrosoftTeamsConfig = ({ onSave }: MicrosoftTeamsConfigProps) => {
         });
         return;
       }
+
+      console.log('Saving Teams config:', { clientId, tenantId });
 
       await updateConfig({
         clientId,
@@ -39,6 +46,7 @@ export const MicrosoftTeamsConfig = ({ onSave }: MicrosoftTeamsConfigProps) => {
 
       onSave?.();
     } catch (error) {
+      console.error('Error saving Teams config:', error);
       toast({
         title: "Erreur",
         description: "Impossible de sauvegarder la configuration",
