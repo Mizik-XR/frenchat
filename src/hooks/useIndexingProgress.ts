@@ -4,6 +4,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useGoogleDrive } from '@/components/config/GoogleDrive/useGoogleDrive';
+import { Button } from '@/components/ui/button';
 
 export interface IndexingProgress {
   status: string;
@@ -84,19 +85,16 @@ export function useIndexingProgress() {
                   errorMessage = "Quota Google Drive dépassé. Veuillez réessayer plus tard.";
                   break;
                 case 'TOKEN_EXPIRED':
-                  errorMessage = "Session Google Drive expirée. Cliquez ici pour vous reconnecter.";
-                  action = async () => {
-                    try {
-                      await initiateGoogleAuth();
-                    } catch (e) {
-                      console.error('Error during Google re-authentication:', e);
-                      toast({
-                        title: "Erreur de reconnexion",
-                        description: "Impossible de relancer l'authentification Google",
-                        variant: "destructive",
-                      });
-                    }
-                  };
+                  errorMessage = "Session Google Drive expirée. Cliquez pour vous reconnecter.";
+                  action = (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={initiateGoogleAuth}
+                    >
+                      Reconnecter
+                    </Button>
+                  );
                   break;
                 case 'PERMISSION_DENIED':
                   errorMessage = "Accès refusé au dossier. Vérifiez vos permissions Google Drive.";
@@ -124,10 +122,7 @@ export function useIndexingProgress() {
               title: "Erreur d'indexation",
               description: errorMessage,
               variant: "destructive",
-              action: action ? {
-                label: "Reconnecter",
-                onClick: action
-              } : undefined
+              action: action
             });
           }
         }
@@ -197,10 +192,15 @@ export function useIndexingProgress() {
           title: "Erreur de connexion",
           description: errorMessage,
           variant: "destructive",
-          action: {
-            label: "Reconnecter",
-            onClick: initiateGoogleAuth
-          }
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={initiateGoogleAuth}
+            >
+              Reconnecter
+            </Button>
+          )
         });
       } else {
         toast({
