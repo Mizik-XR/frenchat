@@ -1,12 +1,48 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
-export const useDocumentSummary = () => {
+interface DocumentSummary {
+  content: string | null;
+}
+
+export const useDocumentSummary = (documentId: string) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [summary, setSummary] = useState<DocumentSummary | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const generateSummary = async (documentId: string) => {
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('documents')
+          .select('content')
+          .eq('id', documentId)
+          .single();
+
+        if (error) throw error;
+
+        setSummary({ content: data?.content || null });
+      } catch (error: any) {
+        console.error('Error fetching document:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger le document",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (documentId) {
+      fetchSummary();
+    }
+  }, [documentId]);
+
+  const generateSummary = async () => {
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-summary', {
@@ -15,9 +51,11 @@ export const useDocumentSummary = () => {
 
       if (error) throw error;
 
+      setSummary({ content: data.summary });
+      
       toast({
-        title: "Résumé généré avec Hugging Face",
-        description: `Résumé généré avec succès en utilisant le modèle ${data.model}`,
+        title: "Résumé généré",
+        description: "Le résumé du document a été généré avec succès",
       });
 
       return data;
@@ -25,7 +63,7 @@ export const useDocumentSummary = () => {
       console.error('Erreur lors de la génération du résumé:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de générer le résumé du document avec Hugging Face Transformers",
+        description: "Impossible de générer le résumé du document",
         variant: "destructive"
       });
       throw error;
@@ -35,6 +73,8 @@ export const useDocumentSummary = () => {
   };
 
   return {
+    summary,
+    isLoading,
     isGenerating,
     generateSummary
   };

@@ -4,13 +4,14 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDocumentSummary } from "@/hooks/useDocumentSummary";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 interface DocumentPreviewProps {
   documentId: string;
 }
 
 export const DocumentPreview = ({ documentId }: DocumentPreviewProps) => {
-  const { summary, isLoading } = useDocumentSummary(documentId);
+  const { summary, isLoading, isGenerating, generateSummary } = useDocumentSummary(documentId);
   const [content, setContent] = useState<string>("");
 
   useEffect(() => {
@@ -35,6 +36,15 @@ export const DocumentPreview = ({ documentId }: DocumentPreviewProps) => {
           <div className="whitespace-pre-wrap">{content}</div>
         </div>
       </ScrollArea>
+      {!content && !isGenerating && (
+        <Button 
+          onClick={() => generateSummary()}
+          className="mt-4"
+          disabled={isGenerating}
+        >
+          Générer un résumé
+        </Button>
+      )}
     </Card>
   );
 };
