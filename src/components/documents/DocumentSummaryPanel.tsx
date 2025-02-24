@@ -11,15 +11,12 @@ interface DocumentSummaryPanelProps {
 }
 
 export const DocumentSummaryPanel = ({ documentId, title }: DocumentSummaryPanelProps) => {
-  const [summary, setSummary] = useState<string | null>(null);
-  const [model, setModel] = useState<string | null>(null);
-  const { isGenerating, generateSummary } = useDocumentSummary();
+  const { summary, isGenerating, generateSummary } = useDocumentSummary(documentId);
+  const [summaryContent, setSummaryContent] = useState<string | null>(summary?.content || null);
 
   const handleGenerateSummary = async () => {
     try {
-      const data = await generateSummary(documentId);
-      setSummary(data.summary);
-      setModel(data.model);
+      await generateSummary();
     } catch (error) {
       console.error('Erreur lors de la génération du résumé:', error);
     }
@@ -51,16 +48,11 @@ export const DocumentSummaryPanel = ({ documentId, title }: DocumentSummaryPanel
         </Button>
       </CardHeader>
       <CardContent>
-        {summary ? (
+        {summaryContent ? (
           <div className="space-y-2">
             <div className="text-sm text-gray-600 whitespace-pre-wrap">
-              {summary}
+              {summaryContent}
             </div>
-            {model && (
-              <p className="text-xs text-muted-foreground">
-                Généré avec le modèle : {model}
-              </p>
-            )}
           </div>
         ) : (
           <div className="text-sm text-gray-500 italic">
