@@ -26,7 +26,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let isFirstLoad = true;
 
-    // Configurer l'écouteur d'événements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("Auth state changed:", _event, "session:", session);
       
@@ -34,16 +33,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         setIsLoading(false);
         
-        // Vérification immédiate après la connexion
         if (session?.user) {
-          // Vérifier si l'utilisateur est nouveau
           const { data: profile } = await supabase
             .from('profiles')
             .select('is_first_login')
             .eq('id', session.user.id)
             .single();
 
-          // Vérifier les configurations nécessaires
           const { data: configs, error: configError } = await supabase
             .from('service_configurations')
             .select('service_type, status')
@@ -85,7 +81,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     });
 
-    // Vérification initiale de la session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log("Initial session check:", session);
       
