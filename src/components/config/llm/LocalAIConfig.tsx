@@ -4,87 +4,74 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Download, Check } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { pipeline } from "@huggingface/transformers";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
 
-const EMBEDDING_MODELS = [
+const API_MODELS = [
   {
-    id: "mxbai-embed-small",
-    name: "MixedBread AI Small",
-    description: "Modèle léger optimisé pour l'embarquement de texte",
-    size: "85MB"
+    id: "bigscience/bloom",
+    name: "BLOOM",
+    description: "Modèle multilingue pour la génération de texte",
+    apiOnly: true
   },
   {
-    id: "all-mpnet-base-v2",
-    name: "MPNet Base",
-    description: "Modèle équilibré pour l'indexation de documents",
-    size: "420MB"
-  }
-];
-
-const GENERATION_MODELS = [
-  {
-    id: "mistral-7b-instruct",
-    name: "Mistral 7B Instruct",
-    description: "Modèle performant pour la génération de texte",
-    size: "4.1GB"
-  },
-  {
-    id: "phi-2",
-    name: "Microsoft Phi-2",
-    description: "Modèle compact avec de bonnes performances",
-    size: "2.7GB"
+    id: "facebook/opt-350m",
+    name: "OPT 350M",
+    description: "Modèle compact et rapide",
+    apiOnly: true
   }
 ];
 
 export function LocalAIConfig() {
-  const [selectedEmbeddingModel, setSelectedEmbeddingModel] = useState<string>("");
-  const [selectedGenerationModel, setSelectedGenerationModel] = useState<string>("");
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
-  const [modelStatus, setModelStatus] = useState<{
-    embedding: boolean;
-    generation: boolean;
-  }>({ embedding: false, generation: false });
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [apiKey, setApiKey] = useState<string>("");
+  const [isConfiguring, setIsConfiguring] = useState(false);
 
-  const handleModelDownload = async (modelId: string, type: 'embedding' | 'generation') => {
-    setIsDownloading(true);
+  const handleSaveConfig = async () => {
+    setIsConfiguring(true);
     try {
-      if (type === 'embedding') {
-        await pipeline('feature-extraction', modelId, {
-          progress_callback: (progress: any) => {
-            // Assurons-nous que progress est converti en nombre
-            const progressValue = typeof progress === 'number' ? progress : 0;
-            setDownloadProgress(Math.round(progressValue * 100));
-          }
-        });
-        setModelStatus(prev => ({ ...prev, embedding: true }));
-      } else {
-        await pipeline('text-generation', modelId, {
-          progress_callback: (progress: any) => {
-            // Assurons-nous que progress est converti en nombre
-            const progressValue = typeof progress === 'number' ? progress : 0;
-            setDownloadProgress(Math.round(progressValue * 100));
-          }
-        });
-        setModelStatus(prev => ({ ...prev, generation: true }));
+      // Test de l'API avec la clé fournie
+      const response = await fetch("https://api-inference.huggingface.co/models/" + selectedModel, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        method: "POST",
+        body: JSON.stringify({ inputs: "Test" }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur de configuration de l'API");
       }
 
+      // Sauvegarde de la configuration
+      const { error } = await supabase
+        .from('service_configurations')
+        .upsert({
+          service_type: 'huggingface',
+          config: { 
+            apiKey,
+            model: selectedModel,
+            useApi: true
+          },
+          status: 'configured'
+        });
+
+      if (error) throw error;
+
       toast({
-        title: "Modèle téléchargé",
-        description: "Le modèle a été téléchargé et configuré avec succès",
+        title: "Configuration sauvegardée",
+        description: "L'API Hugging Face a été configurée avec succès",
       });
-    } catch (error) {
-      console.error('Erreur lors du téléchargement du modèle:', error);
+    } catch (error: any) {
+      console.error('Erreur de configuration:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de télécharger le modèle",
+        description: "Impossible de configurer l'API Hugging Face. Vérifiez votre clé API.",
         variant: "destructive"
       });
     } finally {
-      setIsDownloading(false);
-      setDownloadProgress(0);
+      setIsConfiguring(false);
     }
   };
 
@@ -93,104 +80,59 @@ export function LocalAIConfig() {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Les modèles sont téléchargés et exécutés localement dans votre navigateur.
-          Assurez-vous d'avoir une connexion stable pour le téléchargement initial.
+          Configurez votre accès à l'API Hugging Face pour utiliser les modèles d'IA.
+          Vous aurez besoin d'une clé API disponible sur votre compte Hugging Face.
         </AlertDescription>
       </Alert>
 
       <Card className="p-6">
-        <h3 className="text-lg font-medium mb-4">Configuration des Modèles</h3>
+        <h3 className="text-lg font-medium mb-4">Configuration de l'API</h3>
         
         <div className="space-y-6">
-          {/* Modèle d'Embedding */}
           <div className="space-y-4">
-            <h4 className="font-medium">Modèle d'Indexation</h4>
+            <Label>Clé API Hugging Face</Label>
+            <Input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="hf_..."
+            />
+            <p className="text-sm text-gray-500">
+              Obtenir une clé API sur huggingface.co/settings/tokens
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <Label>Modèle</Label>
             <Select
-              value={selectedEmbeddingModel}
-              onValueChange={setSelectedEmbeddingModel}
+              value={selectedModel}
+              onValueChange={setSelectedModel}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un modèle d'embedding" />
+                <SelectValue placeholder="Sélectionner un modèle" />
               </SelectTrigger>
               <SelectContent>
-                {EMBEDDING_MODELS.map((model) => (
+                {API_MODELS.map((model) => (
                   <SelectItem key={model.id} value={model.id}>
                     <div className="flex flex-col">
                       <span className="font-medium">{model.name}</span>
                       <span className="text-sm text-gray-500">
-                        {model.description} ({model.size})
+                        {model.description}
                       </span>
                     </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-
-            <Button
-              onClick={() => handleModelDownload(selectedEmbeddingModel, 'embedding')}
-              disabled={!selectedEmbeddingModel || isDownloading || modelStatus.embedding}
-              className="w-full"
-            >
-              {modelStatus.embedding ? (
-                <Check className="mr-2 h-4 w-4" />
-              ) : (
-                <Download className="mr-2 h-4 w-4" />
-              )}
-              {modelStatus.embedding ? "Modèle Configuré" : "Télécharger le Modèle"}
-            </Button>
           </div>
 
-          {/* Modèle de Génération */}
-          <div className="space-y-4">
-            <h4 className="font-medium">Modèle de Génération</h4>
-            <Select
-              value={selectedGenerationModel}
-              onValueChange={setSelectedGenerationModel}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un modèle de génération" />
-              </SelectTrigger>
-              <SelectContent>
-                {GENERATION_MODELS.map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{model.name}</span>
-                      <span className="text-sm text-gray-500">
-                        {model.description} ({model.size})
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              onClick={() => handleModelDownload(selectedGenerationModel, 'generation')}
-              disabled={!selectedGenerationModel || isDownloading || modelStatus.generation}
-              className="w-full"
-            >
-              {modelStatus.generation ? (
-                <Check className="mr-2 h-4 w-4" />
-              ) : (
-                <Download className="mr-2 h-4 w-4" />
-              )}
-              {modelStatus.generation ? "Modèle Configuré" : "Télécharger le Modèle"}
-            </Button>
-          </div>
-
-          {isDownloading && (
-            <div className="mt-4">
-              <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-blue-500 transition-all duration-300"
-                  style={{ width: `${downloadProgress}%` }}
-                />
-              </div>
-              <p className="text-sm text-center mt-2">
-                Téléchargement en cours : {downloadProgress}%
-              </p>
-            </div>
-          )}
+          <Button
+            onClick={handleSaveConfig}
+            disabled={!selectedModel || !apiKey || isConfiguring}
+            className="w-full"
+          >
+            {isConfiguring ? "Configuration..." : "Sauvegarder la configuration"}
+          </Button>
         </div>
       </Card>
     </div>
