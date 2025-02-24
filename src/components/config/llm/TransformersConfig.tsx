@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
 import { useAIConfig } from "@/hooks/useAIConfig";
-import { TransformersInstallDocs } from "./ProviderDocs";
+import { Download } from "lucide-react";
 
 const TRANSFORMER_MODELS = [
   {
@@ -67,6 +68,20 @@ export function TransformersConfig({ onConfigSave }: TransformersConfigProps) {
   
   const { textGeneration } = useHuggingFace('transformers');
   const { saveConfig } = useAIConfig();
+
+  const handleDownloadScript = () => {
+    const link = document.createElement('a');
+    link.href = '/start-app.bat';
+    link.download = 'start-app.bat';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Script téléchargé",
+      description: "Exécutez start-app.bat pour installer et démarrer le serveur local",
+    });
+  };
 
   const handleTestConnection = async () => {
     setIsLoading(true);
@@ -159,6 +174,31 @@ export function TransformersConfig({ onConfigSave }: TransformersConfigProps) {
         </p>
       </div>
 
+      {modelType === "local" && (
+        <div className="space-y-4">
+          <div className="bg-slate-50 p-4 rounded-lg border space-y-4">
+            <h4 className="font-medium">Installation automatique (Windows)</h4>
+            <p className="text-sm text-gray-600">
+              Téléchargez et exécutez le script d'installation automatique qui s'occupera de :
+            </p>
+            <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+              <li>Installer Python si nécessaire</li>
+              <li>Configurer l'environnement virtuel</li>
+              <li>Installer toutes les dépendances</li>
+              <li>Démarrer le serveur local</li>
+            </ul>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={handleDownloadScript}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Télécharger le script d'installation
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
         <Button 
           onClick={handleTestConnection}
@@ -168,22 +208,6 @@ export function TransformersConfig({ onConfigSave }: TransformersConfigProps) {
           {isLoading ? "Test en cours..." : "Tester la connexion"}
         </Button>
       </div>
-
-      {modelType === "local" && (
-        <>
-          <div className="text-sm space-y-2 bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium">Installation rapide</h4>
-            <ol className="list-decimal list-inside space-y-1 text-gray-600">
-              <li>Installez Python et pip sur votre machine</li>
-              <li>Installez transformers : <code className="bg-gray-100 px-1">pip install transformers torch</code></li>
-              <li>Lancez le serveur local avec l'API du modèle choisi</li>
-              <li>Configurez l'URL du serveur ci-dessus</li>
-            </ol>
-          </div>
-          
-          <TransformersInstallDocs />
-        </>
-      )}
     </div>
   );
 }
