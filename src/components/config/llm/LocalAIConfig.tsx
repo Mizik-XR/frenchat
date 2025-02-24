@@ -1,169 +1,194 @@
 
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ModelSelector } from "./ModelSelector";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { useServiceConfiguration } from "@/hooks/useServiceConfiguration";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { AlertCircle, Download, Check } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { pipeline } from "@huggingface/transformers";
 
-export const LocalAIConfig = () => {
-  const navigate = useNavigate();
-  const { config, updateConfig, isLoading } = useServiceConfiguration("local");
-  
-  const [selectedModel, setSelectedModel] = React.useState(config?.model || "llama2");
-  const [localEndpoint, setLocalEndpoint] = React.useState(config?.endpoint || "http://localhost:11434");
-  const [isTesting, setIsTesting] = React.useState(false);
+const EMBEDDING_MODELS = [
+  {
+    id: "mxbai-embed-small",
+    name: "MixedBread AI Small",
+    description: "Modèle léger optimisé pour l'embarquement de texte",
+    size: "85MB"
+  },
+  {
+    id: "all-mpnet-base-v2",
+    name: "MPNet Base",
+    description: "Modèle équilibré pour l'indexation de documents",
+    size: "420MB"
+  }
+];
 
-  const models = [
-    { id: "llama2", name: "Llama 2", description: "Modèle polyvalent adapté à la plupart des tâches" },
-    { id: "mistral", name: "Mistral", description: "Excellent pour l'analyse et la génération de texte" },
-    { id: "phi", name: "Phi", description: "Optimisé pour des réponses concises et précises" }
-  ];
+const GENERATION_MODELS = [
+  {
+    id: "mistral-7b-instruct",
+    name: "Mistral 7B Instruct",
+    description: "Modèle performant pour la génération de texte",
+    size: "4.1GB"
+  },
+  {
+    id: "phi-2",
+    name: "Microsoft Phi-2",
+    description: "Modèle compact avec de bonnes performances",
+    size: "2.7GB"
+  }
+];
 
-  const testConnection = async () => {
-    setIsTesting(true);
+export function LocalAIConfig() {
+  const [selectedEmbeddingModel, setSelectedEmbeddingModel] = useState<string>("");
+  const [selectedGenerationModel, setSelectedGenerationModel] = useState<string>("");
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [modelStatus, setModelStatus] = useState<{
+    embedding: boolean;
+    generation: boolean;
+  }>({ embedding: false, generation: false });
+
+  const handleModelDownload = async (modelId: string, type: 'embedding' | 'generation') => {
+    setIsDownloading(true);
     try {
-      const response = await fetch(localEndpoint);
-      if (response.ok) {
-        toast({
-          title: "Connexion réussie",
-          description: "L'instance Ollama est accessible",
+      if (type === 'embedding') {
+        await pipeline('feature-extraction', modelId, {
+          progress_callback: (progress) => {
+            setDownloadProgress(Math.round(progress * 100));
+          }
         });
+        setModelStatus(prev => ({ ...prev, embedding: true }));
       } else {
-        throw new Error("Erreur de connexion");
+        await pipeline('text-generation', modelId, {
+          progress_callback: (progress) => {
+            setDownloadProgress(Math.round(progress * 100));
+          }
+        });
+        setModelStatus(prev => ({ ...prev, generation: true }));
       }
-    } catch (error) {
-      toast({
-        title: "Erreur de connexion",
-        description: "Impossible de se connecter à l'instance Ollama",
-        variant: "destructive",
-      });
-    } finally {
-      setIsTesting(false);
-    }
-  };
 
-  const handleSave = async () => {
-    try {
-      await updateConfig({
-        model: selectedModel,
-        endpoint: localEndpoint,
-        provider: "ollama",
-        isLocal: true
-      });
-      
       toast({
-        title: "Configuration sauvegardée",
-        description: "Les paramètres ont été mis à jour avec succès.",
+        title: "Modèle téléchargé",
+        description: "Le modèle a été téléchargé et configuré avec succès",
       });
-      
-      navigate("/config");
     } catch (error) {
-      console.error("Error saving config:", error);
+      console.error('Erreur lors du téléchargement du modèle:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de sauvegarder la configuration",
-        variant: "destructive",
+        description: "Impossible de télécharger le modèle",
+        variant: "destructive"
       });
+    } finally {
+      setIsDownloading(false);
+      setDownloadProgress(0);
     }
   };
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center p-8">Chargement...</div>;
-  }
-
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <Button 
-        variant="ghost" 
-        onClick={() => navigate("/config")}
-        className="mb-4"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Retour
-      </Button>
+    <div className="space-y-6">
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Les modèles sont téléchargés et exécutés localement dans votre navigateur.
+          Assurez-vous d'avoir une connexion stable pour le téléchargement initial.
+        </AlertDescription>
+      </Alert>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Configuration Local AI (Ollama)</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert>
-            <AlertDescription>
-              Assurez-vous qu'Ollama est installé et en cours d'exécution sur votre machine.
-              Les modèles seront automatiquement téléchargés lors de la première utilisation.
-            </AlertDescription>
-          </Alert>
+      <Card className="p-6">
+        <h3 className="text-lg font-medium mb-4">Configuration des Modèles</h3>
+        
+        <div className="space-y-6">
+          {/* Modèle d'Embedding */}
+          <div className="space-y-4">
+            <h4 className="font-medium">Modèle d'Indexation</h4>
+            <Select
+              value={selectedEmbeddingModel}
+              onValueChange={setSelectedEmbeddingModel}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un modèle d'embedding" />
+              </SelectTrigger>
+              <SelectContent>
+                {EMBEDDING_MODELS.map((model) => (
+                  <SelectItem key={model.id} value={model.id}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{model.name}</span>
+                      <span className="text-sm text-gray-500">
+                        {model.description} ({model.size})
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <div className="space-y-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Label className="cursor-help">Point d'accès Ollama</Label>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>L'URL où votre instance Ollama est accessible.<br />
-                  Par défaut : http://localhost:11434</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <div className="flex gap-2">
-              <Input 
-                value={localEndpoint}
-                onChange={(e) => setLocalEndpoint(e.target.value)}
-                placeholder="http://localhost:11434"
-                className="flex-1"
-              />
-              <Button 
-                onClick={testConnection}
-                variant="outline"
-                disabled={isTesting}
-              >
-                Tester
-              </Button>
+            <Button
+              onClick={() => handleModelDownload(selectedEmbeddingModel, 'embedding')}
+              disabled={!selectedEmbeddingModel || isDownloading || modelStatus.embedding}
+              className="w-full"
+            >
+              {modelStatus.embedding ? (
+                <Check className="mr-2 h-4 w-4" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              {modelStatus.embedding ? "Modèle Configuré" : "Télécharger le Modèle"}
+            </Button>
+          </div>
+
+          {/* Modèle de Génération */}
+          <div className="space-y-4">
+            <h4 className="font-medium">Modèle de Génération</h4>
+            <Select
+              value={selectedGenerationModel}
+              onValueChange={setSelectedGenerationModel}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un modèle de génération" />
+              </SelectTrigger>
+              <SelectContent>
+                {GENERATION_MODELS.map((model) => (
+                  <SelectItem key={model.id} value={model.id}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{model.name}</span>
+                      <span className="text-sm text-gray-500">
+                        {model.description} ({model.size})
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              onClick={() => handleModelDownload(selectedGenerationModel, 'generation')}
+              disabled={!selectedGenerationModel || isDownloading || modelStatus.generation}
+              className="w-full"
+            >
+              {modelStatus.generation ? (
+                <Check className="mr-2 h-4 w-4" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              {modelStatus.generation ? "Modèle Configuré" : "Télécharger le Modèle"}
+            </Button>
+          </div>
+
+          {isDownloading && (
+            <div className="mt-4">
+              <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-500 transition-all duration-300"
+                  style={{ width: `${downloadProgress}%` }}
+                />
+              </div>
+              <p className="text-sm text-center mt-2">
+                Téléchargement en cours : {downloadProgress}%
+              </p>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Label className="cursor-help">Modèle</Label>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Choisissez le modèle d'IA à utiliser localement.<br/>
-                  Chaque modèle a ses forces spécifiques.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <ModelSelector
-              value={selectedModel}
-              models={models.map(m => m.id)}
-              onValueChange={setSelectedModel}
-              descriptions={models.reduce((acc, m) => ({ ...acc, [m.id]: m.description }), {})}
-            />
-          </div>
-
-          <Button 
-            onClick={handleSave} 
-            className="w-full"
-            disabled={isLoading}
-          >
-            Sauvegarder la configuration
-          </Button>
-        </CardContent>
+          )}
+        </div>
       </Card>
     </div>
   );
-};
+}
