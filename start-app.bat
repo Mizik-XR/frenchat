@@ -18,7 +18,7 @@ if %ERRORLEVEL% NEQ 0 (
     del python-installer.exe
 )
 
-REM Création d'un environnement virtuel
+REM Création d'un environnement virtuel s'il n'existe pas
 if not exist "venv\" (
     echo Création de l'environnement virtuel...
     python -m venv venv
@@ -26,18 +26,22 @@ if not exist "venv\" (
 )
 
 REM Activation de l'environnement virtuel
-echo Activation de l'environnement virtuel...
 call venv\Scripts\activate.bat
 
-REM Installation des dépendances Python avec version spécifique de torch
+REM Suppression du cache pip pour éviter les conflits
+echo Nettoyage du cache pip...
+pip cache purge
+
+REM Installation des dépendances Python avec versions spécifiques
 echo Installation des dépendances Python...
-pip install -q --no-cache-dir --disable-pip-version-check ^
+pip install --no-cache-dir ^
     transformers==4.36.2 ^
-    torch==2.0.0 ^
+    torch==2.0.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu ^
     accelerate==0.26.1 ^
     datasets==2.16.1 ^
     fastapi==0.109.0 ^
-    uvicorn==0.27.0
+    uvicorn==0.27.0 ^
+    pydantic==2.6.1
 
 REM Création du script Python
 echo Création du script du serveur...
@@ -83,11 +87,14 @@ echo.
 echo ================================
 echo Démarrage du serveur IA local...
 echo ================================
-start "Serveur IA" cmd /c "python serve_model.py"
+
+REM Démarrage du serveur dans une nouvelle fenêtre
+start "Serveur IA Local" cmd /c "venv\Scripts\python.exe serve_model.py"
 
 echo.
 echo Le serveur démarre... 
 echo L'API sera disponible sur http://localhost:8000
-echo Pour arrêter le serveur, fermez cette fenêtre.
+echo Pour arrêter le serveur, fermez cette fenêtre ou la fenêtre du serveur.
 echo.
+echo Appuyez sur une touche pour quitter...
 pause
