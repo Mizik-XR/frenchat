@@ -5,6 +5,8 @@ export interface AIModel {
   description: string;
   requiresKey?: boolean;
   docsUrl?: string;
+  isCustom?: boolean;
+  modelId?: string; // Pour les modèles Hugging Face personnalisés
 }
 
 export const LOCAL_MODELS: AIModel[] = [
@@ -22,6 +24,12 @@ export const LOCAL_MODELS: AIModel[] = [
     id: "ollama-local",
     name: "Ollama",
     description: "Modèles locaux via Ollama"
+  },
+  {
+    id: "huggingface-custom",
+    name: "Modèle Hugging Face personnalisé",
+    description: "Utilisez n'importe quel modèle Hugging Face compatible",
+    isCustom: true
   }
 ];
 

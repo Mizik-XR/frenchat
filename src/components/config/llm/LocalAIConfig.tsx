@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LOCAL_MODELS, CLOUD_MODELS } from "./types";
+import { LOCAL_MODELS, CLOUD_MODELS, type AIModel } from "./types";
 import { ModelSelector } from "./ModelSelector";
 
 export function LocalAIConfig() {
@@ -16,6 +16,8 @@ export function LocalAIConfig() {
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [deploymentType, setDeploymentType] = useState<"local" | "cloud">("local");
   const [isConfiguring, setIsConfiguring] = useState(false);
+  const [localModels, setLocalModels] = useState<AIModel[]>(LOCAL_MODELS);
+  const [cloudModels, setCloudModels] = useState<AIModel[]>(CLOUD_MODELS);
 
   useEffect(() => {
     loadCurrentConfig();
@@ -34,10 +36,18 @@ export function LocalAIConfig() {
     }
   };
 
+  const handleModelAdd = (type: "local" | "cloud") => (newModel: AIModel) => {
+    if (type === "local") {
+      setLocalModels(prev => [...prev, newModel]);
+    } else {
+      setCloudModels(prev => [...prev, newModel]);
+    }
+  };
+
   const handleSaveConfig = async () => {
     setIsConfiguring(true);
     try {
-      const modelConfig = [...LOCAL_MODELS, ...CLOUD_MODELS].find(m => m.id === selectedModel);
+      const modelConfig = [...localModels, ...cloudModels].find(m => m.id === selectedModel);
       
       if (modelConfig?.requiresKey) {
         const { data: keyCheck } = await supabase
@@ -60,7 +70,8 @@ export function LocalAIConfig() {
       const response = await supabase.functions.invoke('check-model-availability', {
         body: { 
           modelType: deploymentType,
-          modelId: selectedModel 
+          modelId: selectedModel,
+          customModelId: modelConfig?.modelId
         }
       });
 
@@ -74,7 +85,8 @@ export function LocalAIConfig() {
           service_type: 'llm',
           config: { 
             model: selectedModel,
-            type: deploymentType
+            type: deploymentType,
+            customModelId: modelConfig?.modelId
           },
           status: 'configured'
         });
@@ -97,7 +109,7 @@ export function LocalAIConfig() {
     }
   };
 
-  const selectedModelConfig = [...LOCAL_MODELS, ...CLOUD_MODELS].find(m => m.id === selectedModel);
+  const selectedModelConfig = [...localModels, ...cloudModels].find(m => m.id === selectedModel);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-6">
@@ -136,19 +148,23 @@ export function LocalAIConfig() {
 
             <TabsContent value="local" className="space-y-4">
               <ModelSelector
-                models={LOCAL_MODELS}
+                models={localModels}
                 selectedModel={selectedModel}
                 onModelSelect={setSelectedModel}
+                onModelAdd={handleModelAdd("local")}
                 label="Sélectionner un modèle local"
+                type="local"
               />
             </TabsContent>
 
             <TabsContent value="cloud" className="space-y-4">
               <ModelSelector
-                models={CLOUD_MODELS}
+                models={cloudModels}
                 selectedModel={selectedModel}
                 onModelSelect={setSelectedModel}
+                onModelAdd={handleModelAdd("cloud")}
                 label="Sélectionner un modèle cloud"
+                type="cloud"
               />
 
               {selectedModelConfig?.requiresKey && selectedModelConfig?.docsUrl && (
