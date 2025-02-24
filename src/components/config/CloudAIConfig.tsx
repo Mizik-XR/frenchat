@@ -5,31 +5,31 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
-export default function Documents() {
+export const CloudAIConfig = () => {
   const navigate = useNavigate();
 
   return (
     <div className="container mx-auto py-8 space-y-6">
       <Button 
         variant="ghost" 
-        onClick={() => navigate("/chat")}
+        onClick={() => navigate("/config")}
         className="mb-4"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Retour au chat
+        Retour
       </Button>
 
       <Card>
         <CardHeader>
-          <CardTitle>Gestionnaire de Documents</CardTitle>
+          <CardTitle>Configuration IA Cloud</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {/* Contenu à implémenter */}
-            <p>Gestionnaire de documents en cours de développement...</p>
+            <p>Configuration des services IA cloud en cours de développement...</p>
           </div>
         </CardContent>
       </Card>
     </div>
   );
-}
+};

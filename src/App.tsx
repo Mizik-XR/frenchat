@@ -5,10 +5,14 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { NavBar } from "@/components/navigation/NavBar";
 import Auth from "@/pages/Auth";
 import Chat from "@/pages/Chat";
+import Documents from "@/pages/Documents";
+import AdvancedConfig from "@/pages/AdvancedConfig";
 import GoogleAuthCallback from "@/pages/GoogleAuthCallback";
 import { useAuth } from "@/components/AuthProvider";
 import { QuickConfig } from "@/components/config/QuickConfig";
 import { MicrosoftTeamsConfig } from "@/components/config/MicrosoftTeamsConfig";
+import { CloudAIConfig } from "@/components/config/CloudAIConfig";
+import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -49,6 +53,14 @@ export default function App() {
             } 
           />
           <Route
+            path="/documents"
+            element={
+              <PrivateRoute>
+                <Documents />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/config"
             element={
               <PrivateRoute>
@@ -61,6 +73,30 @@ export default function App() {
             element={
               <PrivateRoute>
                 <MicrosoftTeamsConfig />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/config/cloud-ai"
+            element={
+              <PrivateRoute>
+                <CloudAIConfig />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/config/local-ai"
+            element={
+              <PrivateRoute>
+                <LocalAIConfig />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/advanced-config"
+            element={
+              <PrivateRoute>
+                <AdvancedConfig />
               </PrivateRoute>
             }
           />
