@@ -10,6 +10,12 @@ export interface IndexingProgress {
   total: number;
 }
 
+interface IndexingError {
+  code: string;
+  message: string;
+  details?: string;
+}
+
 export function useIndexingProgress() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -28,6 +34,8 @@ export function useIndexingProgress() {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
+          console.log('Indexing progress update:', payload.new);
+          
           setIndexingProgress({
             status: payload.new.status,
             processed: payload.new.processed_files,
@@ -40,9 +48,35 @@ export function useIndexingProgress() {
               description: "Tous les fichiers ont été indexés avec succès",
             });
           } else if (payload.new.status === 'error') {
+            // Log détaillé de l'erreur
+            console.error('Indexing error:', {
+              error: payload.new.error,
+              folder: payload.new.current_folder,
+              progress: `${payload.new.processed_files}/${payload.new.total_files}`
+            });
+
+            // Message d'erreur plus détaillé pour l'utilisateur
+            let errorMessage = "Une erreur est survenue pendant l'indexation";
+            if (payload.new.error) {
+              const error: IndexingError = JSON.parse(payload.new.error);
+              switch(error.code) {
+                case 'QUOTA_EXCEEDED':
+                  errorMessage = "Quota Google Drive dépassé. Veuillez réessayer plus tard.";
+                  break;
+                case 'TOKEN_EXPIRED':
+                  errorMessage = "Session Google Drive expirée. Veuillez vous reconnecter.";
+                  break;
+                case 'PERMISSION_DENIED':
+                  errorMessage = "Accès refusé au dossier. Vérifiez vos permissions.";
+                  break;
+                default:
+                  errorMessage = error.message || errorMessage;
+              }
+            }
+
             toast({
               title: "Erreur d'indexation",
-              description: payload.new.error || "Une erreur est survenue pendant l'indexation",
+              description: errorMessage,
               variant: "destructive",
             });
           }
@@ -59,6 +93,8 @@ export function useIndexingProgress() {
     if (!user) return;
     
     try {
+      console.log('Starting indexation for folder:', folderId);
+
       const { data, error } = await supabase.functions.invoke('batch-index-google-drive', {
         body: { 
           userId: user.id,
@@ -67,7 +103,12 @@ export function useIndexingProgress() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error starting indexation:', error);
+        throw error;
+      }
+
+      console.log('Indexation started successfully:', data);
 
       toast({
         title: "Indexation démarrée",
@@ -81,10 +122,15 @@ export function useIndexingProgress() {
       });
 
     } catch (error) {
-      console.error('Erreur lors du démarrage de l\'indexation:', error);
+      console.error('Error details:', {
+        error,
+        userId: user.id,
+        folderId
+      });
+
       toast({
         title: "Erreur",
-        description: "Impossible de démarrer l'indexation",
+        description: "Impossible de démarrer l'indexation. Vérifiez votre connexion Google Drive.",
         variant: "destructive",
       });
     }
