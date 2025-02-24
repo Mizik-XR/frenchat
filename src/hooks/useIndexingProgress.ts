@@ -8,12 +8,20 @@ export interface IndexingProgress {
   status: string;
   processed: number;
   total: number;
+  current_folder?: string;
+  depth?: number;
 }
 
 interface IndexingError {
   code: string;
   message: string;
   details?: string;
+}
+
+interface StartIndexingOptions {
+  recursive?: boolean;
+  maxDepth?: number;
+  batchSize?: number;
 }
 
 export function useIndexingProgress() {
@@ -39,7 +47,9 @@ export function useIndexingProgress() {
           setIndexingProgress({
             status: payload.new.status,
             processed: payload.new.processed_files,
-            total: payload.new.total_files
+            total: payload.new.total_files,
+            current_folder: payload.new.current_folder,
+            depth: payload.new.depth
           });
 
           if (payload.new.status === 'completed') {
@@ -48,14 +58,12 @@ export function useIndexingProgress() {
               description: "Tous les fichiers ont été indexés avec succès",
             });
           } else if (payload.new.status === 'error') {
-            // Log détaillé de l'erreur
             console.error('Indexing error:', {
               error: payload.new.error,
               folder: payload.new.current_folder,
               progress: `${payload.new.processed_files}/${payload.new.total_files}`
             });
 
-            // Message d'erreur plus détaillé pour l'utilisateur
             let errorMessage = "Une erreur est survenue pendant l'indexation";
             if (payload.new.error) {
               const error: IndexingError = JSON.parse(payload.new.error);
@@ -68,6 +76,9 @@ export function useIndexingProgress() {
                   break;
                 case 'PERMISSION_DENIED':
                   errorMessage = "Accès refusé au dossier. Vérifiez vos permissions.";
+                  break;
+                case 'MAX_DEPTH_REACHED':
+                  errorMessage = "Profondeur maximale atteinte. Certains sous-dossiers n'ont pas été indexés.";
                   break;
                 default:
                   errorMessage = error.message || errorMessage;
@@ -89,17 +100,19 @@ export function useIndexingProgress() {
     };
   }, [user, indexingProgress]);
 
-  const startIndexing = async (folderId: string) => {
+  const startIndexing = async (folderId: string, options?: StartIndexingOptions) => {
     if (!user) return;
     
     try {
-      console.log('Starting indexation for folder:', folderId);
+      console.log('Starting indexation for folder:', folderId, 'with options:', options);
 
       const { data, error } = await supabase.functions.invoke('batch-index-google-drive', {
         body: { 
           userId: user.id,
           folderId,
-          batchSize: 100
+          recursive: options?.recursive ?? true,
+          maxDepth: options?.maxDepth ?? 10,
+          batchSize: options?.batchSize ?? 100
         }
       });
 
@@ -118,7 +131,9 @@ export function useIndexingProgress() {
       setIndexingProgress({
         status: 'running',
         processed: 0,
-        total: 0
+        total: 0,
+        current_folder: folderId,
+        depth: 0
       });
 
     } catch (error) {
