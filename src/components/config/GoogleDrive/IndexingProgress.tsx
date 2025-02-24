@@ -3,16 +3,16 @@ import React from 'react';
 import { Progress } from "@/components/ui/progress";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
-import type { IndexingProgress as IndexingProgressType } from "@/types/google-drive";
+import { IndexingProgress as IndexingProgressType } from "@/types/google-drive";
 import { toast } from "@/hooks/use-toast";
 
 export const IndexingProgress = ({ userId }: { userId: string }) => {
-  const { data: progress, error } = useQuery<IndexingProgressType>({
+  const { data: progress, error } = useQuery({
     queryKey: ['indexing-progress', userId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('indexing_progress')
-        .select('id, user_id, total_files, processed_files, current_folder, status, error, created_at, updated_at')
+        .select()
         .eq('user_id', userId)
         .single();
 
