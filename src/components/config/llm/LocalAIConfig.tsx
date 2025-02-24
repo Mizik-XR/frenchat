@@ -10,7 +10,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const LOCAL_MODELS = [
+interface AIModel {
+  id: string;
+  name: string;
+  description: string;
+  requiresKey?: boolean;
+  docsUrl?: string;
+}
+
+const LOCAL_MODELS: AIModel[] = [
   {
     id: "deepseek-local",
     name: "DeepSeek",
@@ -28,7 +36,7 @@ const LOCAL_MODELS = [
   }
 ];
 
-const CLOUD_MODELS = [
+const CLOUD_MODELS: AIModel[] = [
   {
     id: "huggingface/mistral",
     name: "Mistral AI",
@@ -97,7 +105,7 @@ export function LocalAIConfig() {
           toast({
             title: "Clé API requise",
             description: "Veuillez d'abord configurer la clé API pour ce fournisseur",
-            variant: "warning"
+            variant: "destructive"
           });
           setIsConfiguring(false);
           return;
