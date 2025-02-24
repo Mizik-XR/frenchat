@@ -4,9 +4,11 @@ import { Progress } from "@/components/ui/progress";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import type { IndexingProgress as IndexingProgressType } from "@/types/google-drive";
+import { toast } from "@/hooks/use-toast";
 
 export const IndexingProgress = ({ userId }: { userId: string }) => {
-  const { data: progress, isLoading } = useQuery({
+  const { data: progress, error } = useQuery({
     queryKey: ['indexing-progress', userId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -16,19 +18,21 @@ export const IndexingProgress = ({ userId }: { userId: string }) => {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as IndexingProgressType;
     },
-    refetchInterval: 1000 // Rafraîchir toutes les secondes
+    refetchInterval: 1000,
+    retry: 3
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Chargement de la progression...
-      </div>
-    );
-  }
+  React.useEffect(() => {
+    if (error) {
+      toast({
+        title: "Erreur de suivi",
+        description: "Impossible de récupérer la progression de l'indexation",
+        variant: "destructive"
+      });
+    }
+  }, [error]);
 
   if (!progress || progress.status === 'completed') {
     return null;
@@ -39,21 +43,26 @@ export const IndexingProgress = ({ userId }: { userId: string }) => {
     : 0;
 
   return (
-    <div className="space-y-2">
-      <div className="flex justify-between text-sm">
-        <span>Indexation en cours...</span>
-        <span>{percentage}%</span>
+    <div className="rounded-lg border p-4 space-y-4">
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="font-medium">Indexation en cours...</span>
+          <span>{percentage}%</span>
+        </div>
+        <Progress value={percentage} className="h-2" />
       </div>
-      <Progress value={percentage} />
+      
       {progress.current_folder && (
-        <p className="text-sm text-muted-foreground mt-1">
-          Dossier en cours : {progress.current_folder}
-        </p>
+        <div className="text-sm text-muted-foreground">
+          <p>Dossier actuel : {progress.current_folder}</p>
+          <p>{progress.processed_files} fichiers traités sur {progress.total_files}</p>
+        </div>
       )}
-      {progress.error && (
-        <p className="text-sm text-red-500 mt-1">
-          Erreur : {progress.error}
-        </p>
+
+      {progress.status === 'error' && progress.error && (
+        <div className="text-sm text-red-500 bg-red-50 p-2 rounded">
+          <p>Une erreur est survenue : {progress.error}</p>
+        </div>
       )}
     </div>
   );

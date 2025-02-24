@@ -495,6 +495,42 @@ export type Database = {
         }
         Relationships: []
       }
+      indexing_progress: {
+        Row: {
+          created_at: string
+          current_folder: string | null
+          error: string | null
+          id: string
+          processed_files: number | null
+          status: string
+          total_files: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_folder?: string | null
+          error?: string | null
+          id?: string
+          processed_files?: number | null
+          status?: string
+          total_files?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_folder?: string | null
+          error?: string | null
+          id?: string
+          processed_files?: number | null
+          status?: string
+          total_files?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       oauth_tokens: {
         Row: {
           access_token: string
