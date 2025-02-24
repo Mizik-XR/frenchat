@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import { ServiceType } from "@/types/config";
 import { toast } from "@/hooks/use-toast";
 import { useServiceConfiguration } from "@/hooks/useServiceConfiguration";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const CloudAIConfig = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export const CloudAIConfig = () => {
   const [provider, setProvider] = React.useState<ServiceType>(config?.provider || "openai");
   const [apiKey, setApiKey] = React.useState(config?.apiKey || "");
   const [selectedModel, setSelectedModel] = React.useState(config?.model || "");
+  const [isTesting, setIsTesting] = React.useState(false);
 
   const models = provider === "openai" 
     ? ["gpt-4-turbo", "gpt-3.5-turbo"] 
@@ -32,6 +34,29 @@ export const CloudAIConfig = () => {
     }
   }, [provider]);
 
+  const testApiKey = async () => {
+    setIsTesting(true);
+    try {
+      // Simple validation de la clé API basée sur le format
+      if (provider === "openai" && !apiKey.startsWith("sk-")) {
+        throw new Error("Format de clé API invalide");
+      }
+
+      toast({
+        title: "Validation réussie",
+        description: "Le format de la clé API est valide",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur de validation",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       await updateConfig({
@@ -39,6 +64,11 @@ export const CloudAIConfig = () => {
         apiKey,
         model: selectedModel,
         isLocal: false
+      });
+      
+      toast({
+        title: "Configuration sauvegardée",
+        description: "Les paramètres ont été mis à jour avec succès.",
       });
       
       navigate("/config");
@@ -72,6 +102,14 @@ export const CloudAIConfig = () => {
           <CardTitle>Configuration Cloud AI</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Alert>
+            <AlertDescription>
+              {provider === "openai" 
+                ? "Une clé API OpenAI est requise. Vous pouvez l'obtenir sur le site d'OpenAI." 
+                : "Une clé API DeepSeek est requise pour utiliser leurs modèles."}
+            </AlertDescription>
+          </Alert>
+
           <ProviderSelector 
             value={provider}
             onValueChange={(value) => setProvider(value as ServiceType)}
@@ -79,12 +117,22 @@ export const CloudAIConfig = () => {
 
           <div className="space-y-2">
             <Label>Clé API</Label>
-            <Input 
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-..."
-            />
+            <div className="flex gap-2">
+              <Input 
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-..."
+                className="flex-1"
+              />
+              <Button 
+                onClick={testApiKey}
+                variant="outline"
+                disabled={isTesting || !apiKey}
+              >
+                Valider
+              </Button>
+            </div>
           </div>
 
           <ModelSelector
@@ -96,7 +144,7 @@ export const CloudAIConfig = () => {
           <Button 
             onClick={handleSave} 
             className="w-full"
-            disabled={isLoading}
+            disabled={isLoading || !apiKey || !selectedModel}
           >
             Sauvegarder la configuration
           </Button>
