@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { QuickConfig } from "@/components/config/QuickConfig";
-import { AIConfig } from "@/pages/AIConfig";
+import AIConfig from "@/pages/AIConfig";
 import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
 
 export function NavBar() {
