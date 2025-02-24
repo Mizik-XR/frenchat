@@ -939,6 +939,7 @@ export type Database = {
           last_sync: string | null
           provider_type: string
           status: string | null
+          sync_status: Json | null
           updated_at: string
           user_id: string
         }
@@ -950,6 +951,7 @@ export type Database = {
           last_sync?: string | null
           provider_type: string
           status?: string | null
+          sync_status?: Json | null
           updated_at?: string
           user_id: string
         }
@@ -961,6 +963,7 @@ export type Database = {
           last_sync?: string | null
           provider_type?: string
           status?: string | null
+          sync_status?: Json | null
           updated_at?: string
           user_id?: string
         }
@@ -1099,6 +1102,41 @@ export type Database = {
           timestamp?: string
         }
         Relationships: []
+      }
+      teams_metadata: {
+        Row: {
+          channel_id: string | null
+          created_at: string | null
+          document_id: string | null
+          id: string
+          metadata: Json | null
+          team_id: string | null
+        }
+        Insert: {
+          channel_id?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          metadata?: Json | null
+          team_id?: string | null
+        }
+        Update: {
+          channel_id?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          metadata?: Json | null
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_metadata_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "indexed_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       uploaded_documents: {
         Row: {

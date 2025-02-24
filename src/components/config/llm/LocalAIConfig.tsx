@@ -13,13 +13,11 @@ const API_MODELS = [
     id: "bigscience/bloom",
     name: "BLOOM",
     description: "Modèle multilingue pour la génération de texte",
-    apiOnly: true
   },
   {
     id: "facebook/opt-350m",
     name: "OPT 350M",
     description: "Modèle compact et rapide",
-    apiOnly: true
   }
 ];
 
@@ -28,25 +26,33 @@ export function LocalAIConfig() {
   const [isConfiguring, setIsConfiguring] = useState(false);
 
   useEffect(() => {
-    // Charger la configuration existante
-    const loadConfig = async () => {
-      const { data, error } = await supabase
-        .from('service_configurations')
-        .select('config')
-        .eq('service_type', 'huggingface')
-        .single();
-
-      if (data?.config?.model) {
-        setSelectedModel(data.config.model);
-      }
-    };
-
-    loadConfig();
+    loadCurrentConfig();
   }, []);
+
+  const loadCurrentConfig = async () => {
+    const { data, error } = await supabase
+      .from('service_configurations')
+      .select('config')
+      .eq('service_type', 'huggingface')
+      .single();
+
+    if (data?.config?.model) {
+      setSelectedModel(data.config.model);
+    }
+  };
 
   const handleSaveConfig = async () => {
     setIsConfiguring(true);
     try {
+      // Test de connexion à l'API Hugging Face
+      const response = await supabase.functions.invoke('check-model-availability', {
+        body: { modelType: 'api', modelId: selectedModel }
+      });
+
+      if (!response.data) {
+        throw new Error("Erreur lors de la vérification du modèle");
+      }
+
       // Sauvegarde de la configuration
       const { error } = await supabase
         .from('service_configurations')
@@ -90,28 +96,26 @@ export function LocalAIConfig() {
         <h3 className="text-lg font-medium mb-4">Configuration du modèle</h3>
         
         <div className="space-y-6">
-          <div className="space-y-4">
-            <Select
-              value={selectedModel}
-              onValueChange={setSelectedModel}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un modèle" />
-              </SelectTrigger>
-              <SelectContent>
-                {API_MODELS.map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{model.name}</span>
-                      <span className="text-sm text-gray-500">
-                        {model.description}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select
+            value={selectedModel}
+            onValueChange={setSelectedModel}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Sélectionner un modèle" />
+            </SelectTrigger>
+            <SelectContent>
+              {API_MODELS.map((model) => (
+                <SelectItem key={model.id} value={model.id}>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{model.name}</span>
+                    <span className="text-sm text-gray-500">
+                      {model.description}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <Button
             onClick={handleSaveConfig}

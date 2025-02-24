@@ -125,18 +125,18 @@ export function ModelSelector() {
       <Card className="p-6">
         <div className="space-y-6">
           <RadioGroup
-            value={selectedType}
+            defaultValue={selectedType}
             onValueChange={(value) => setSelectedType(value as 'local' | 'api')}
             className="grid grid-cols-2 gap-4"
           >
-            <Label className="flex items-center space-x-2 cursor-pointer">
+            <div className="flex items-center space-x-2">
               <RadioGroupItem value="local" id="local" />
-              <span>Modèles Locaux</span>
-            </Label>
-            <Label className="flex items-center space-x-2 cursor-pointer">
+              <Label htmlFor="local">Modèles Locaux</Label>
+            </div>
+            <div className="flex items-center space-x-2">
               <RadioGroupItem value="api" id="api" />
-              <span>API Cloud</span>
-            </Label>
+              <Label htmlFor="api">API Cloud</Label>
+            </div>
           </RadioGroup>
 
           <div className="grid gap-4">
