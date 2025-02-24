@@ -1,20 +1,14 @@
 
 import { useState } from "react";
-import { AIProvider } from "@/types/chat";
+import { AIProvider, WebUIConfig } from "@/types/chat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
 interface SettingsPanelProps {
-  webUIConfig: {
-    mode: 'auto' | 'manual';
-    model: AIProvider;
-    maxTokens: number;
-    temperature: number;
-    streamResponse: boolean;
-  };
-  onWebUIConfigChange: (config: Partial<typeof webUIConfig>) => void;
+  webUIConfig: WebUIConfig;
+  onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
   onProviderChange: (provider: AIProvider) => void;
 }
 

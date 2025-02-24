@@ -146,7 +146,7 @@ export const Chat = () => {
                 </AlertDescription>
               </Alert>
             )}
-
+            
             <div className="flex justify-between items-center">
               <ChatHeader 
                 mode={webUIConfig.mode}
