@@ -1,196 +1,92 @@
+
 import { useState } from 'react';
-import { LLMConfig as LLMConfigType, ServiceType } from "@/types/config";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Info } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "@/hooks/use-toast";
-import { LLM_PROVIDERS } from "./llm/constants";
-import { ProviderSelector } from "./llm/ProviderSelector";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ModelSelector } from "./llm/ModelSelector";
-import { ProviderDocs } from "./llm/ProviderDocs";
-import { useServiceConfiguration } from '@/hooks/useServiceConfiguration';
+import { ProviderSelector } from "./llm/ProviderSelector";
+import { ServiceType } from "@/types/config";
+import { useServiceConfiguration } from "@/hooks/useServiceConfiguration";
+import { Button } from "@/components/ui/button";
+import { Loader2, Save } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-interface LLMConfigProps {
-  onSave?: () => void;
-}
-
-export const LLMConfigComponent = ({ onSave }: LLMConfigProps) => {
-  const { config, status, updateConfig } = useServiceConfiguration('llm' as ServiceType);
-  const [localConfig, setLocalConfig] = useState<LLMConfigType>({
-    provider: config?.provider || 'huggingface',
-    model: config?.model || '',
-    apiKey: config?.apiKey || '',
-    rateLimit: config?.rateLimit || 10,
-    useLocal: config?.useLocal || false,
-    batchSize: config?.batchSize || 10,
-    cacheEnabled: config?.cacheEnabled || true
-  });
-
-  const selectedProvider = LLM_PROVIDERS.find(p => p.id === localConfig.provider);
-
-  const handleProviderChange = (value: ServiceType) => {
-    const newProvider = LLM_PROVIDERS.find(p => p.id === value);
-    
-    if (newProvider && !newProvider.requiresApiKey && localConfig.apiKey) {
-      toast({
-        title: "Information",
-        description: `${newProvider.name} ne nécessite pas de clé API pour les modèles open source.`,
-      });
-    }
-
-    setLocalConfig(prev => ({
-      ...prev,
-      provider: value,
-      model: '',
-      apiKey: newProvider?.requiresApiKey ? prev.apiKey : '',
-      useLocal: newProvider?.isLocal || false
-    }));
-  };
+export const LLMConfig = () => {
+  const { config, status, updateConfig } = useServiceConfiguration('huggingface');
+  const [selectedProvider, setSelectedProvider] = useState<ServiceType>(config?.provider || 'huggingface');
+  const [selectedModel, setSelectedModel] = useState<string>(config?.model || '');
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
+    setIsSaving(true);
     try {
-      await updateConfig(localConfig);
+      await updateConfig({
+        provider: selectedProvider,
+        model: selectedModel,
+      });
+      
       toast({
         title: "Configuration sauvegardée",
-        description: "Le modèle de langage a été configuré avec succès.",
+        description: "Le modèle LLM a été mis à jour avec succès.",
       });
-      if (onSave) onSave();
     } catch (error) {
-      console.error('Error saving config:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder la configuration",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
+  const models = selectedProvider === 'huggingface' 
+    ? ['mistral-7b', 'llama-2', 'falcon-40b']
+    : selectedProvider === 'openai'
+    ? ['gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo']
+    : ['deepseek-coder', 'deepseek-chat'];
+
   return (
-    <Card className="p-6 bg-white shadow-sm">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Configuration du Modèle de Langage</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Sélectionnez et configurez le modèle de langage pour l'analyse de vos documents.
-          </p>
-        </div>
-        {status === 'configured' && (
-          <Alert className="max-w-xs">
-            <AlertDescription className="text-green-600">
-              Configuration actuelle : {selectedProvider?.name}
+    <Card>
+      <CardHeader>
+        <CardTitle>Configuration LLM</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <ProviderSelector 
+          value={selectedProvider} 
+          onValueChange={setSelectedProvider} 
+        />
+        
+        <ModelSelector
+          value={selectedModel}
+          models={models}
+          onValueChange={setSelectedModel}
+        />
+
+        {status === 'error' && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              Une erreur est survenue lors de la configuration du service LLM.
             </AlertDescription>
           </Alert>
         )}
-      </div>
 
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <ProviderSelector 
-            value={localConfig.provider} 
-            onValueChange={handleProviderChange}
-          />
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="mt-1">
-                  <Info className="h-4 w-4 mr-2" />
-                  Comment choisir un modèle ?
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="p-4 max-w-xs">
-                <p className="text-sm">
-                  • Hugging Face : Gratuit, modèles open source<br />
-                  • OpenAI : Performances élevées, nécessite une clé API<br />
-                  • Ollama : Modèles locaux, pas de connexion internet requise
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+        <Button 
+          onClick={handleSave} 
+          className="w-full"
+          disabled={isSaving || !selectedModel || !selectedProvider}
+        >
+          {isSaving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
+          {isSaving ? 'Enregistrement...' : 'Enregistrer la configuration'}
+        </Button>
 
-        {selectedProvider && (
-          <>
-            <ModelSelector
-              value={localConfig.model}
-              models={selectedProvider.models}
-              onValueChange={(value) => setLocalConfig(prev => ({ ...prev, model: value }))}
-            />
-
-            {selectedProvider.requiresApiKey && (
-              <div>
-                <Label className="text-gray-700">Clé API</Label>
-                <Input
-                  type="password"
-                  placeholder="Votre clé API"
-                  value={localConfig.apiKey}
-                  onChange={(e) => 
-                    setLocalConfig(prev => ({ ...prev, apiKey: e.target.value }))
-                  }
-                  className="mt-1"
-                />
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-gray-700">Activer le cache</Label>
-                  <p className="text-sm text-gray-500">
-                    Améliore les performances en mettant en cache les résultats
-                  </p>
-                </div>
-                <Switch
-                  checked={localConfig.cacheEnabled}
-                  onCheckedChange={(checked) =>
-                    setLocalConfig(prev => ({ ...prev, cacheEnabled: checked }))
-                  }
-                />
-              </div>
-
-              <div>
-                <Label className="text-gray-700">Taille des lots (batching)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={localConfig.batchSize}
-                  onChange={(e) =>
-                    setLocalConfig(prev => ({
-                      ...prev,
-                      batchSize: parseInt(e.target.value) || 10,
-                    }))
-                  }
-                  className="mt-1"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Nombre de documents traités simultanément pour l'indexation
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <Button 
-                className="w-full"
-                onClick={handleSave}
-                disabled={
-                  !localConfig.provider || 
-                  !localConfig.model || 
-                  (selectedProvider.requiresApiKey && !localConfig.apiKey)
-                }
-              >
-                Sauvegarder la configuration
-              </Button>
-            </div>
-
-            <ProviderDocs provider={selectedProvider} />
-          </>
-        )}
-      </div>
+        <p className="text-sm text-muted-foreground">
+          Sélectionnez le fournisseur LLM et le modèle à utiliser pour le traitement du langage naturel.
+        </p>
+      </CardContent>
     </Card>
   );
 };
