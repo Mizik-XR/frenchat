@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Steps } from "@/components/ui/steps";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { ImportMethodSelector, ImportMethod } from "./ImportMethod/ImportMethodS
 import { FileUploader } from "./ImportMethod/FileUploader";
 import { GoogleDriveConfig } from "./GoogleDrive/GoogleDriveConfig";
 import { MicrosoftTeamsConfig } from "./MicrosoftTeamsConfig";
-import { LLMConfig } from "./LLMConfig";
+import { LLMConfig } from "./llm/LLMConfig";
 import { ImageConfig } from "./ImageConfig";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -60,11 +59,19 @@ export const ConfigWizard = () => {
     }
   };
 
+  const handleLLMSave = () => {
+    setConfigStatus(prev => ({ ...prev, llm: true }));
+    handleNext();
+    toast({
+      title: "LLM configuré",
+      description: "Le modèle de langage a été configuré avec succès.",
+    });
+  };
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 0:
         return <WelcomeStep onNext={handleNext} />;
-
       case 1:
         return (
           <div className="animate-fade-in space-y-8">
@@ -80,7 +87,6 @@ export const ConfigWizard = () => {
             )}
           </div>
         );
-
       case 2:
         if (importMethod === "drive") {
           return (
@@ -89,10 +95,8 @@ export const ConfigWizard = () => {
             </div>
           );
         }
-        // Si ce n'est pas le mode drive, on passe à l'étape suivante
         setCurrentStep(prev => prev + 1);
         return null;
-
       case 3:
         return (
           <div className="animate-fade-in">
@@ -100,31 +104,16 @@ export const ConfigWizard = () => {
               onSave={() => {
                 setConfigStatus(prev => ({ ...prev, teams: true }));
                 handleNext();
-                toast({
-                  title: "Microsoft Teams configuré",
-                  description: "L'intégration avec Teams a été configurée avec succès.",
-                });
               }}
             />
           </div>
         );
-
       case 4:
         return (
           <div className="animate-fade-in">
-            <LLMConfig 
-              onSave={() => {
-                setConfigStatus(prev => ({ ...prev, llm: true }));
-                handleNext();
-                toast({
-                  title: "LLM configuré",
-                  description: "Le modèle de langage a été configuré avec succès.",
-                });
-              }}
-            />
+            <LLMConfig onSave={handleLLMSave} />
           </div>
         );
-
       case 5:
         return (
           <div className="animate-fade-in">
@@ -132,18 +121,12 @@ export const ConfigWizard = () => {
               onSave={() => {
                 setConfigStatus(prev => ({ ...prev, image: true }));
                 handleNext();
-                toast({
-                  title: "Configuration des images",
-                  description: "Les paramètres de génération d'images ont été sauvegardés.",
-                });
               }}
             />
           </div>
         );
-
       case 6:
         return <SummaryStep configStatus={configStatus} onFinish={handleNext} />;
-
       default:
         return null;
     }
