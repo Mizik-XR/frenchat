@@ -14,12 +14,19 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SidebarItemProps {
   icon: React.ElementType;
   label: string;
   to: string;
   isActive?: boolean;
+  tooltip?: string;
 }
 
 interface SidebarSectionProps {
@@ -28,24 +35,36 @@ interface SidebarSectionProps {
     icon: React.ElementType;
     label: string;
     to: string;
+    tooltip?: string;
   }[];
   defaultOpen?: boolean;
   maxVisibleItems?: number;
 }
 
-const SidebarItem = ({ icon: Icon, label, to, isActive }: SidebarItemProps) => (
-  <Link to={to}>
-    <Button
-      variant="ghost"
-      className={cn(
-        "w-full justify-start gap-2",
-        isActive && "bg-accent text-accent-foreground"
+const SidebarItem = ({ icon: Icon, label, to, isActive, tooltip }: SidebarItemProps) => (
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Link to={to}>
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start gap-2",
+              isActive && "bg-accent text-accent-foreground"
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </Button>
+        </Link>
+      </TooltipTrigger>
+      {tooltip && (
+        <TooltipContent side="right">
+          <p className="max-w-xs">{tooltip}</p>
+        </TooltipContent>
       )}
-    >
-      <Icon className="h-4 w-4" />
-      {label}
-    </Button>
-  </Link>
+    </Tooltip>
+  </TooltipProvider>
 );
 
 const SidebarSection = ({ 
@@ -102,7 +121,8 @@ export function Sidebar() {
     {
       icon: MessageSquare,
       label: "Chat",
-      to: "/chat"
+      to: "/chat",
+      tooltip: "Accédez à l'interface de chat pour interagir avec l'assistant et gérer vos documents"
     }
   ];
 
@@ -110,12 +130,14 @@ export function Sidebar() {
     {
       icon: Cpu,
       label: "IA en local",
-      to: "/config/local-ai"
+      to: "/config/local-ai",
+      tooltip: "Configurez et gérez les modèles d'IA en local pour plus de contrôle et de confidentialité"
     },
     {
       icon: Settings,
       label: "Configuration",
-      to: "/config"
+      to: "/config",
+      tooltip: "Paramètres généraux de l'application et configuration des services"
     }
   ];
 
