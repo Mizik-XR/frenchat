@@ -1,6 +1,5 @@
 
-import { Settings, Bot, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Bot, Info } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,50 +12,34 @@ import {
 interface ChatHeaderProps {
   mode: 'auto' | 'manual';
   onModeChange: (mode: 'auto' | 'manual') => void;
-  onToggleSettings: () => void;
 }
 
-export const ChatHeader = ({ mode, onModeChange, onToggleSettings }: ChatHeaderProps) => {
+export const ChatHeader = ({ mode, onModeChange }: ChatHeaderProps) => {
   return (
-    <div className="flex items-center justify-between mb-4 pb-4 border-b border-blue-100">
-      <div className="flex items-center space-x-2">
+    <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         <Bot className="h-6 w-6 text-blue-600" />
-        <h2 className="text-xl font-semibold text-gray-900">Files Chat</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Files Chat</h2>
       </div>
 
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
-          <Switch
-            checked={mode === 'auto'}
-            onCheckedChange={(checked) => onModeChange(checked ? 'auto' : 'manual')}
-          />
-          <Label>Mode Auto</Label>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-4 w-4 text-gray-500" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="max-w-xs">
-                  Le mode Auto sélectionne intelligemment le meilleur modèle selon votre demande :
-                  <br/>- Images : Utilise OpenAI DALL-E
-                  <br/>- Documents : Utilise Google Drive/Teams
-                  <br/>- Texte : Utilise Hugging Face
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onToggleSettings}
-          className="h-9 w-9"
-        >
-          <Settings className="h-5 w-5" />
-          <span className="sr-only">Paramètres</span>
-        </Button>
+      <div className="flex items-center gap-2">
+        <Switch
+          checked={mode === 'auto'}
+          onCheckedChange={(checked) => onModeChange(checked ? 'auto' : 'manual')}
+        />
+        <Label>Mode Auto</Label>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Info className="h-4 w-4 text-gray-500" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-xs">
+                Le mode Auto sélectionne intelligemment le meilleur modèle selon votre demande
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );

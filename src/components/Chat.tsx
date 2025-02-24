@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { AIProvider, WebUIConfig } from "@/types/chat";
@@ -9,11 +10,10 @@ import { ChatInput } from "./chat/ChatInput";
 import { SettingsPanel } from "./chat/SettingsPanel";
 import { MessageList } from "./chat/MessageList";
 import { ConversationList } from "./chat/ConversationList";
-import { ConversationExport } from "./chat/ConversationExport";
 import { PriorityTopicsPanel } from "./chat/PriorityTopicsPanel";
 import { Button } from "./ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, AlertCircle, Bot, FileUp } from "lucide-react";
+import { AlertCircle, AlertTriangle, Bot, FileUp, Settings } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useServiceConfiguration } from '@/hooks/useServiceConfiguration';
 import { FileUploader } from "@/components/config/ImportMethod/FileUploader";
@@ -41,14 +41,6 @@ export const Chat = () => {
   const { conversations, createNewConversation, updateConversation } = useConversations();
   const { isLoading, processMessage } = useChatLogic(selectedConversationId);
 
-  const handleProviderChange = (provider: AIProvider) => {
-    setWebUIConfig(prev => ({ ...prev, model: provider }));
-  };
-
-  const handleWebUIConfigChange = (config: Partial<WebUIConfig>) => {
-    setWebUIConfig(prev => ({ ...prev, ...config }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -56,7 +48,7 @@ export const Chat = () => {
     if (llmStatus !== 'configured') {
       toast({
         title: "Configuration requise",
-        description: "Veuillez configurer un modèle de langage avant de poser une question.",
+        description: "Veuillez configurer un modèle de langage dans les paramètres",
         variant: "destructive"
       });
       return;
@@ -79,25 +71,6 @@ export const Chat = () => {
       });
     }
   };
-
-  const handleQuote = (content: string) => {
-    setInput(content);
-  };
-
-  const scrollToMessage = (messageId: string) => {
-    const messageElement = document.getElementById(messageId);
-    if (messageElement && messageListRef.current) {
-      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      messageElement.classList.add('highlight-message');
-      setTimeout(() => messageElement.classList.remove('highlight-message'), 2000);
-    }
-  };
-
-  useEffect(() => {
-    if (conversations?.length) {
-      setSelectedConversationId(conversations[0].id);
-    }
-  }, [conversations]);
 
   const handleFilesSelected = async (files: File[]) => {
     try {
@@ -136,96 +109,107 @@ export const Chat = () => {
           onUpdateConversation={updateConversation}
         />
         
-        <div className="flex-1 p-4 flex">
-          <Card className="flex flex-col h-full p-4 relative bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 shadow-lg flex-1">
-            {llmStatus !== 'configured' && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Veuillez configurer un modèle de langage dans les paramètres pour pouvoir utiliser le chat.
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            <div className="flex justify-between items-center">
-              <ChatHeader 
-                mode={webUIConfig.mode}
-                onModeChange={(mode) => handleWebUIConfigChange({ mode })}
-                onToggleSettings={() => setShowSettings(!showSettings)} 
-              />
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowPriorityTopics(!showPriorityTopics)}
-                  className="flex items-center gap-2"
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  Sujets Prioritaires
-                </Button>
-                {messages.length > 0 && (
-                  <ConversationExport
-                    messages={messages}
-                    title={conversations?.find(c => c.id === selectedConversationId)?.title || ""}
-                  />
-                )}
+        <div className="flex-1 flex">
+          <div className="flex-1 relative">
+            <Card className="h-full flex flex-col bg-white shadow-sm">
+              <div className="flex justify-between items-center p-4 border-b">
+                <ChatHeader 
+                  mode={webUIConfig.mode}
+                  onModeChange={(mode) => setWebUIConfig(prev => ({ ...prev, mode }))}
+                />
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowSettings(!showSettings)}
+                    className="hover:bg-gray-100"
+                    title="Paramètres"
+                  >
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowPriorityTopics(!showPriorityTopics)}
+                    className={`hover:bg-gray-100 ${showPriorityTopics ? 'text-blue-600' : ''}`}
+                    title="Sujets Prioritaires"
+                  >
+                    <AlertTriangle className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            {showSettings && (
-              <SettingsPanel
-                webUIConfig={webUIConfig}
-                onWebUIConfigChange={handleWebUIConfigChange}
-                onProviderChange={handleProviderChange}
-              />
-            )}
+              {llmStatus !== 'configured' && (
+                <Alert variant="destructive" className="m-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Veuillez configurer un modèle de langage dans les paramètres pour utiliser le chat.
+                  </AlertDescription>
+                </Alert>
+              )}
 
-            <div className="flex-1 overflow-y-auto mb-4 bg-white/60 rounded-lg p-4" ref={messageListRef}>
-              <MessageList 
-                messages={messages} 
-                isLoading={isLoading}
-              />
-            </div>
+              {showSettings && (
+                <div className="absolute top-16 right-4 z-50 w-80">
+                  <SettingsPanel
+                    webUIConfig={webUIConfig}
+                    onWebUIConfigChange={(config) => setWebUIConfig(prev => ({ ...prev, ...config }))}
+                    onProviderChange={(provider) => setWebUIConfig(prev => ({ ...prev, model: provider }))}
+                  />
+                </div>
+              )}
 
-            {showUploader && (
-              <div className="p-4 bg-white rounded-lg shadow-sm mb-4 border border-gray-200">
-                <FileUploader 
-                  onFilesSelected={handleFilesSelected}
-                  description="Les fichiers seront automatiquement indexés et disponibles pour l'analyse"
+              <div className="flex-1 overflow-hidden">
+                <MessageList 
+                  messages={messages} 
+                  isLoading={isLoading}
                 />
               </div>
-            )}
 
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowUploader(!showUploader)}
-                className="hover:bg-blue-50"
-                title="Ajouter un fichier"
-              >
-                <FileUp className="h-4 w-4" />
-              </Button>
+              {showUploader && (
+                <div className="p-4 bg-white border-t">
+                  <FileUploader 
+                    onFilesSelected={handleFilesSelected}
+                    description="Les fichiers seront automatiquement indexés"
+                  />
+                </div>
+              )}
 
-              <ChatInput
-                input={input}
-                setInput={setInput}
-                isLoading={isLoading}
-                selectedDocumentId={selectedDocumentId}
-                onSubmit={handleSubmit}
-                mode={webUIConfig.mode}
-                model={webUIConfig.model}
-              />
-            </div>
-          </Card>
+              <div className="p-4 border-t">
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowUploader(!showUploader)}
+                    className="hover:bg-gray-100"
+                    title="Ajouter un fichier"
+                  >
+                    <FileUp className="h-4 w-4" />
+                  </Button>
+
+                  <ChatInput
+                    input={input}
+                    setInput={setInput}
+                    isLoading={isLoading}
+                    selectedDocumentId={selectedDocumentId}
+                    onSubmit={handleSubmit}
+                    mode={webUIConfig.mode}
+                    model={webUIConfig.model}
+                  />
+                </div>
+              </div>
+            </Card>
+          </div>
 
           {showPriorityTopics && (
-            <PriorityTopicsPanel
-              messages={messages}
-              onTopicSelect={scrollToMessage}
-              onClose={() => setShowPriorityTopics(false)}
-              onQuote={handleQuote}
-            />
+            <div className="w-80 border-l border-gray-200 bg-white animate-slide-in-right">
+              <PriorityTopicsPanel
+                messages={messages}
+                onClose={() => setShowPriorityTopics(false)}
+                onQuote={setInput}
+              />
+            </div>
           )}
         </div>
       </div>
