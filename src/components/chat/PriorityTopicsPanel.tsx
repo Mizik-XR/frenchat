@@ -35,7 +35,7 @@ export function PriorityTopicsPanel({
 }: PriorityTopicsPanelProps) {
   const [priorityTopics, setPriorityTopics] = useState<PriorityTopic[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'active' | 'completed' | 'archived'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'archived' | 'unassigned'>('all');
 
   useEffect(() => {
     const topics = messages.reduce<PriorityTopic[]>((acc, message) => {
@@ -61,7 +61,7 @@ export function PriorityTopicsPanel({
     setPriorityTopics(prev => 
       prev.map(topic => 
         topic.id === topicId 
-          ? { ...topic, isCompleted: true }
+          ? { ...topic, isCompleted: true, isArchived: true }
           : topic
       )
     );
@@ -108,8 +108,8 @@ export function PriorityTopicsPanel({
                          topic.content.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filter === 'all' ||
                          (filter === 'active' && !topic.isCompleted && !topic.isArchived) ||
-                         (filter === 'completed' && topic.isCompleted) ||
-                         (filter === 'archived' && topic.isArchived);
+                         (filter === 'archived' && topic.isArchived) ||
+                         (filter === 'unassigned' && !topic.isArchived && !topic.isCompleted);
     return matchesSearch && matchesFilter;
   });
 
