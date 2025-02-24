@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Vérification immédiate après la connexion
         if (session?.user) {
+          // Vérifier si l'utilisateur est nouveau
           const { data: profile } = await supabase
             .from('profiles')
             .select('is_first_login')
@@ -43,18 +44,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             .single();
 
           // Vérifier les configurations nécessaires
-          const { data: configs } = await supabase
+          const { data: configs, error: configError } = await supabase
             .from('service_configurations')
             .select('service_type, status')
             .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
 
-          if (profile?.is_first_login || !configs?.length) {
-            navigate('/config');
-            toast({
-              title: "Configuration requise",
-              description: "Configurons votre espace de travail.",
-            });
-          } else {
+          console.log("User configs:", configs);
+          console.log("Config error:", configError);
+
+          const hasAllConfigs = configs?.some(c => c.status === 'configured');
+          const needsConfiguration = !configs?.length || !hasAllConfigs;
+
+          if (profile?.is_first_login || needsConfiguration) {
+            if (location.pathname !== '/config') {
+              navigate('/config');
+              toast({
+                title: "Configuration requise",
+                description: "Configurons votre espace de travail.",
+              });
+            }
+          } else if (location.pathname === '/auth' || location.pathname === '/') {
             navigate('/chat');
           }
         }
@@ -96,7 +105,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
         isFirstLoad = false;
 
-        if ((profile?.is_first_login || !configs?.length) && location.pathname !== '/config') {
+        const hasAllConfigs = configs?.some(c => c.status === 'configured');
+        const needsConfiguration = !configs?.length || !hasAllConfigs;
+
+        if ((profile?.is_first_login || needsConfiguration) && location.pathname !== '/config') {
           navigate('/config');
         } else if (location.pathname === '/' || location.pathname === '/auth') {
           navigate('/chat');
