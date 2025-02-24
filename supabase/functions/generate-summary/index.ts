@@ -10,19 +10,28 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Gestion des requêtes CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { documentId } = await req.json();
+    console.log(`Processing document summary for document ID: ${documentId}`);
+
+    // Vérification du token Hugging Face
+    const hfToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
+    if (!hfToken) {
+      console.error('HUGGING_FACE_ACCESS_TOKEN is not configured');
+      throw new Error('Configuration Hugging Face manquante');
+    }
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Récupérer le contenu du document
+    // Récupération du document
     const { data: document, error: docError } = await supabaseClient
       .from('documents')
       .select('content, title')
@@ -30,12 +39,17 @@ serve(async (req) => {
       .single();
 
     if (docError || !document) {
+      console.error('Error fetching document:', docError);
       throw new Error('Document non trouvé');
     }
 
-    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'));
+    console.log(`Document "${document.title}" retrieved, content length: ${document.content.length}`);
 
-    // Utiliser le modèle BART fine-tuné pour le résumé
+    // Initialisation du client Hugging Face
+    const hf = new HfInference(hfToken);
+    console.log('Hugging Face client initialized, starting summarization...');
+
+    // Utilisation du modèle BART pour le résumé
     const response = await hf.summarization({
       model: 'facebook/bart-large-cnn',
       inputs: document.content,
@@ -46,14 +60,14 @@ serve(async (req) => {
       }
     });
 
-    const summary = response.summary_text;
+    console.log('Summary generated successfully');
 
-    // Sauvegarder le résumé dans les métadonnées du document
-    await supabaseClient
+    // Sauvegarde du résumé dans les métadonnées
+    const { error: updateError } = await supabaseClient
       .from('documents')
       .update({
         metadata: {
-          summary,
+          summary: response.summary_text,
           model: 'facebook/bart-large-cnn',
           generated_at: new Date().toISOString(),
           type: 'huggingface_transformers'
@@ -61,18 +75,32 @@ serve(async (req) => {
       })
       .eq('id', documentId);
 
+    if (updateError) {
+      console.error('Error updating document metadata:', updateError);
+      throw new Error('Erreur lors de la sauvegarde du résumé');
+    }
+
+    console.log('Document metadata updated with summary');
+
     return new Response(
       JSON.stringify({ 
-        summary,
+        summary: response.summary_text,
         title: document.title,
         model: 'facebook/bart-large-cnn'
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     );
   } catch (error) {
     console.error('Error in generate-summary:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Une erreur est survenue lors de la génération du résumé' 
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 
