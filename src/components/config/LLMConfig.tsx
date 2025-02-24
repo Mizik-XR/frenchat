@@ -10,7 +10,11 @@ import { Loader2, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export const LLMConfig = () => {
+interface LLMConfigProps {
+  onSave?: () => void;
+}
+
+export const LLMConfig = ({ onSave }: LLMConfigProps) => {
   const { config, status, updateConfig } = useServiceConfiguration('huggingface');
   const [selectedProvider, setSelectedProvider] = useState<ServiceType>(config?.provider || 'huggingface');
   const [selectedModel, setSelectedModel] = useState<string>(config?.model || '');
@@ -28,6 +32,8 @@ export const LLMConfig = () => {
         title: "Configuration sauvegardée",
         description: "Le modèle LLM a été mis à jour avec succès.",
       });
+      
+      onSave?.();
     } catch (error) {
       toast({
         title: "Erreur",
