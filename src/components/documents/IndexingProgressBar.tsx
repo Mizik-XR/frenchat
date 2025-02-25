@@ -22,19 +22,6 @@ export function IndexingProgressBar({ progress }: IndexingProgressBarProps) {
     }
   };
 
-  const getStatusColor = () => {
-    switch (progress.status) {
-      case 'running':
-        return 'bg-blue-500';
-      case 'completed':
-        return 'bg-green-500';
-      case 'error':
-        return 'bg-red-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
   const percentage = progress.total > 0 
     ? Math.round((progress.processed / progress.total) * 100)
     : 0;
@@ -50,6 +37,7 @@ export function IndexingProgressBar({ progress }: IndexingProgressBarProps) {
             {progress.status === 'running' && 'Indexation en cours...'}
             {progress.status === 'completed' && 'Indexation terminée'}
             {progress.status === 'error' && 'Erreur d\'indexation'}
+            {progress.status === 'idle' && 'En attente de démarrage...'}
           </AlertTitle>
           <AlertDescription className="space-y-2">
             <div className="flex justify-between items-center mt-2">
@@ -68,11 +56,22 @@ export function IndexingProgressBar({ progress }: IndexingProgressBarProps) {
                 <div className="text-gray-500">
                   Dossier actuel : {progress.current_folder}
                 </div>
+                {progress.last_processed_file && (
+                  <div className="text-gray-500">
+                    Dernier fichier traité : {progress.last_processed_file}
+                  </div>
+                )}
                 {progress.depth !== undefined && (
                   <div className="text-gray-500">
                     Niveau de profondeur : {progress.depth}
                   </div>
                 )}
+              </div>
+            )}
+
+            {progress.error && (
+              <div className="mt-2 text-sm text-red-500">
+                {progress.error}
               </div>
             )}
           </AlertDescription>
