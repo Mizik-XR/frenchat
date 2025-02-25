@@ -2,6 +2,7 @@
 import { Bot, FileText, Image, Loader } from "lucide-react";
 import { Message } from "@/types/chat";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
+import { MessageContextMenu } from "./message/MessageContextMenu";
 import { 
   Tooltip,
   TooltipContent,
@@ -19,9 +20,19 @@ interface MessageListProps {
     documentDate?: Date;
     type?: string;
   };
+  onReplyToMessage?: (message: Message) => void;
+  onDeleteMessage?: (messageId: string) => void;
+  onArchiveMessage?: (messageId: string) => void;
 }
 
-export const MessageList = ({ messages, isLoading, conversationContext }: MessageListProps) => {
+export const MessageList = ({ 
+  messages, 
+  isLoading, 
+  conversationContext,
+  onReplyToMessage,
+  onDeleteMessage,
+  onArchiveMessage
+}: MessageListProps) => {
   return (
     <div className="flex-1 overflow-y-auto space-y-4 p-4">
       {conversationContext && (
@@ -45,12 +56,12 @@ export const MessageList = ({ messages, isLoading, conversationContext }: Messag
       {messages.map((message) => (
         <div
           key={message.id}
-          className={`flex ${
+          className={`group flex ${
             message.role === 'user' ? 'justify-end' : 'justify-start'
           }`}
         >
           <div
-            className={`max-w-[80%] p-4 rounded-lg ${
+            className={`relative max-w-[80%] p-4 rounded-lg ${
               message.role === 'user'
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-800'
@@ -77,6 +88,15 @@ export const MessageList = ({ messages, isLoading, conversationContext }: Messag
                 />
               </div>
             )}
+
+            <div className="absolute top-2 right-2">
+              <MessageContextMenu
+                message={message}
+                onReply={onReplyToMessage || (() => {})}
+                onDelete={onDeleteMessage || (() => {})}
+                onArchive={onArchiveMessage || (() => {})}
+              />
+            </div>
           </div>
         </div>
       ))}
