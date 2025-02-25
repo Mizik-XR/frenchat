@@ -6,7 +6,7 @@ export interface AIModel {
   requiresKey?: boolean;
   docsUrl?: string;
   isCustom?: boolean;
-  modelId?: string; // Pour les modèles Hugging Face personnalisés
+  modelId?: string;
 }
 
 export const LOCAL_MODELS: AIModel[] = [

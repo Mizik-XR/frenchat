@@ -69,7 +69,6 @@ export function ModelSelector({
           placeholder="ID du modèle Hugging Face (ex: facebook/opt-350m)"
           className="mt-2"
           onChange={(e) => {
-            // Mise à jour du modelId dans la configuration
             onModelAdd({
               ...selectedModelConfig,
               modelId: e.target.value
