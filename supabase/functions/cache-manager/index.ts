@@ -9,11 +9,74 @@ const corsHeaders = {
 }
 
 const CACHE_EXPIRATION = 3600 // 1 heure en secondes
-const redis = await connect({
-  hostname: Deno.env.get('REDIS_HOST') || "localhost",
-  port: parseInt(Deno.env.get('REDIS_PORT') || "6379"),
-  password: Deno.env.get('REDIS_PASSWORD'),
-})
+let redis = null;
+let useRedis = false;
+
+// Initialisation de Redis si les variables d'environnement sont présentes
+try {
+  if (Deno.env.get('REDIS_HOST') && Deno.env.get('REDIS_PASSWORD')) {
+    redis = await connect({
+      hostname: Deno.env.get('REDIS_HOST') || "localhost",
+      port: parseInt(Deno.env.get('REDIS_PORT') || "6379"),
+      password: Deno.env.get('REDIS_PASSWORD'),
+    });
+    useRedis = true;
+    console.log('✅ Cache Redis initialisé avec succès');
+  } else {
+    console.warn('⚠️ Variables Redis non configurées, utilisation du cache alternatif');
+  }
+} catch (error) {
+  console.warn('⚠️ Erreur de connexion Redis:', error.message);
+}
+
+// Cache alternatif en mémoire
+const memoryCache = new Map();
+const memoryCacheExpiry = new Map();
+
+const handleCacheOperation = async (action: string, fileId: string, hash?: string) => {
+  const cacheKey = `file:${fileId}:hash`;
+  
+  if (useRedis && redis) {
+    switch (action) {
+      case 'check':
+        const cachedHash = await redis.get(cacheKey);
+        return { isIndexed: cachedHash === hash, cachedHash };
+      case 'set':
+        await redis.set(cacheKey, hash, { ex: CACHE_EXPIRATION });
+        return { success: true };
+      case 'invalidate':
+        await redis.del(cacheKey);
+        return { success: true };
+      default:
+        throw new Error(`Action non supportée: ${action}`);
+    }
+  } else {
+    // Cache en mémoire
+    switch (action) {
+      case 'check': {
+        const now = Date.now();
+        if (memoryCacheExpiry.has(cacheKey) && memoryCacheExpiry.get(cacheKey) < now) {
+          memoryCache.delete(cacheKey);
+          memoryCacheExpiry.delete(cacheKey);
+        }
+        const cachedHash = memoryCache.get(cacheKey);
+        return { isIndexed: cachedHash === hash, cachedHash };
+      }
+      case 'set': {
+        memoryCache.set(cacheKey, hash);
+        memoryCacheExpiry.set(cacheKey, Date.now() + (CACHE_EXPIRATION * 1000));
+        return { success: true };
+      }
+      case 'invalidate': {
+        memoryCache.delete(cacheKey);
+        memoryCacheExpiry.delete(cacheKey);
+        return { success: true };
+      }
+      default:
+        throw new Error(`Action non supportée: ${action}`);
+    }
+  }
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -22,45 +85,20 @@ serve(async (req) => {
 
   try {
     const { action, fileId, hash } = await req.json()
-    console.log(`🔄 Action: ${action}, FileID: ${fileId}`);
+    console.log(`🔄 Action: ${action}, FileID: ${fileId}, Mode: ${useRedis ? 'Redis' : 'Mémoire'}`);
 
-    const cacheKey = `file:${fileId}:hash`
+    const result = await handleCacheOperation(action, fileId, hash);
     
-    switch (action) {
-      case 'check': {
-        const cachedHash = await redis.get(cacheKey)
-        const isIndexed = cachedHash === hash
-        console.log(`📋 Vérification du cache - FileID: ${fileId}, Hash: ${hash}, Cached: ${cachedHash}`);
-        
-        return new Response(
-          JSON.stringify({ isIndexed, cachedHash }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-      
-      case 'set': {
-        await redis.set(cacheKey, hash, { ex: CACHE_EXPIRATION })
-        console.log(`✅ Mise en cache - FileID: ${fileId}, Hash: ${hash}`);
-        
-        return new Response(
-          JSON.stringify({ success: true }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-      
-      case 'invalidate': {
-        await redis.del(cacheKey)
-        console.log(`🗑️ Cache invalidé - FileID: ${fileId}`);
-        
-        return new Response(
-          JSON.stringify({ success: true }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-      
-      default:
-        throw new Error(`Action non supportée: ${action}`)
+    if (action === 'check') {
+      console.log(`📋 Vérification du cache - FileID: ${fileId}, Hash: ${hash}, Cached: ${result.cachedHash}`);
+    } else {
+      console.log(`✅ Opération cache réussie - Action: ${action}, FileID: ${fileId}`);
     }
+
+    return new Response(
+      JSON.stringify(result),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
 
   } catch (error) {
     console.error('❌ Erreur:', error.message);
