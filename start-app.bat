@@ -46,11 +46,11 @@ REM Suppression du cache pip pour éviter les conflits
 echo Nettoyage du cache pip...
 pip cache purge
 
-REM Installation des dépendances Python avec versions spécifiques
+REM Installation des dépendances Python dans un ordre spécifique
 echo Installation des dépendances Python...
+pip install --no-cache-dir torch==2.0.1+cpu --index-url https://download.pytorch.org/whl/cpu
+pip install --no-cache-dir transformers==4.36.2
 pip install --no-cache-dir ^
-    transformers==4.36.2 ^
-    torch==2.0.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu ^
     accelerate==0.26.1 ^
     datasets==2.16.1 ^
     fastapi==0.109.0 ^
@@ -60,10 +60,11 @@ pip install --no-cache-dir ^
 REM Création du script Python
 echo Création du script du serveur...
 (
-echo from transformers import pipeline
 echo from fastapi import FastAPI, HTTPException
 echo from pydantic import BaseModel
 echo import uvicorn
+echo import torch
+echo from transformers import pipeline
 echo import logging
 echo from typing import Optional
 echo.
