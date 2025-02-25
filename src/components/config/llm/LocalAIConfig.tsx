@@ -1,9 +1,9 @@
 
 import { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, BrainCircuit, ArrowLeft, ExternalLink } from "lucide-react";
+import { AlertCircle, BrainCircuit, ArrowLeft, ExternalLink, CheckCircle, Info } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -18,10 +18,11 @@ interface LocalAIConfigProps {
 export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
   const navigate = useNavigate();
   const [selectedModel, setSelectedModel] = useState<string>("");
-  const [deploymentType, setDeploymentType] = useState<"local" | "cloud">("local");
+  const [deploymentType, setDeploymentType] = useState<"local" | "cloud">("cloud");
   const [isConfiguring, setIsConfiguring] = useState(false);
   const [localModels, setLocalModels] = useState<AIModel[]>(LOCAL_MODELS);
   const [cloudModels, setCloudModels] = useState<AIModel[]>(CLOUD_MODELS);
+  const [hasConfiguration, setHasConfiguration] = useState(false);
 
   useEffect(() => {
     loadCurrentConfig();
@@ -36,7 +37,8 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
 
     if (data?.config?.model) {
       setSelectedModel(data.config.model);
-      setDeploymentType(data.config.type || "local");
+      setDeploymentType(data.config.type || "cloud");
+      setHasConfiguration(true);
     }
   };
 
@@ -48,41 +50,50 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
     }
   };
 
+  const activateDefaultModel = async () => {
+    setIsConfiguring(true);
+    try {
+      // Configuration par défaut avec Mistral via Hugging Face
+      const { error } = await supabase
+        .from('service_configurations')
+        .upsert({
+          service_type: 'llm',
+          config: { 
+            model: "huggingface/mistral",
+            type: "cloud",
+            customModelId: "mistralai/Mistral-7B-Instruct-v0.1"
+          },
+          status: 'configured'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Configuration par défaut activée",
+        description: "Le modèle Mistral a été configuré avec succès",
+      });
+
+      setHasConfiguration(true);
+      setSelectedModel("huggingface/mistral");
+      setDeploymentType("cloud");
+      onSave?.();
+    } catch (error) {
+      console.error('Erreur de configuration:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'activer la configuration par défaut",
+        variant: "destructive"
+      });
+    } finally {
+      setIsConfiguring(false);
+    }
+  };
+
   const handleSaveConfig = async () => {
     setIsConfiguring(true);
     try {
       const modelConfig = [...localModels, ...cloudModels].find(m => m.id === selectedModel);
       
-      if (modelConfig?.requiresKey) {
-        const { data: keyCheck } = await supabase
-          .from('service_configurations')
-          .select('config')
-          .eq('service_type', selectedModel.split('/')[0])
-          .single();
-
-        if (!keyCheck?.config?.apiKey) {
-          toast({
-            title: "Clé API requise",
-            description: "Veuillez d'abord configurer la clé API pour ce fournisseur",
-            variant: "destructive"
-          });
-          setIsConfiguring(false);
-          return;
-        }
-      }
-
-      const response = await supabase.functions.invoke('check-model-availability', {
-        body: { 
-          modelType: deploymentType,
-          modelId: selectedModel,
-          customModelId: modelConfig?.modelId
-        }
-      });
-
-      if (!response.data) {
-        throw new Error("Erreur lors de la vérification du modèle");
-      }
-
       const { error } = await supabase
         .from('service_configurations')
         .upsert({
@@ -102,12 +113,13 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
         description: "La configuration du modèle a été mise à jour avec succès",
       });
 
+      setHasConfiguration(true);
       onSave?.();
     } catch (error) {
       console.error('Erreur de configuration:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de sauvegarder la configuration.",
+        description: "Impossible de sauvegarder la configuration",
         variant: "destructive"
       });
     } finally {
@@ -134,16 +146,52 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
         </Button>
       </div>
 
-      <Alert className="bg-blue-50 border-blue-200">
-        <AlertCircle className="h-4 w-4 text-blue-500" />
-        <AlertDescription className="text-blue-700">
-          Choisissez entre un déploiement local (aucune clé API requise) ou cloud. Les modèles cloud nécessitent parfois une clé API que vous pouvez configurer de manière optionnelle.
+      {!hasConfiguration && (
+        <Card className="glass-panel border-2 border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-4">
+              <Info className="h-8 w-8 text-blue-500 mt-1" />
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-900">Première utilisation ?</h3>
+                  <p className="text-blue-700 mt-2">
+                    Pour commencer rapidement, nous recommandons d'utiliser notre configuration par défaut 
+                    basée sur le modèle Mistral via Hugging Face. Ce modèle offre un excellent équilibre 
+                    entre performances et facilité d'utilisation.
+                  </p>
+                </div>
+                <Button
+                  onClick={activateDefaultModel}
+                  disabled={isConfiguring}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  {isConfiguring ? "Configuration en cours..." : "Activer la configuration par défaut"}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Alert className="bg-purple-50 border-purple-200">
+        <AlertCircle className="h-4 w-4 text-purple-500" />
+        <AlertDescription className="text-purple-700">
+          <span className="font-semibold">Comment configurer votre modèle IA :</span>
+          <ul className="list-disc pl-6 mt-2 space-y-1">
+            <li>Choisissez entre un déploiement local (sans clé API) ou cloud</li>
+            <li>Sélectionnez un modèle dans la liste proposée</li>
+            <li>Pour les modèles cloud, vous pouvez optionnellement configurer une clé API</li>
+            <li>Sauvegardez votre configuration pour l'appliquer</li>
+          </ul>
         </AlertDescription>
       </Alert>
 
       <Card className="glass-panel">
         <CardHeader>
           <CardTitle>Configuration du modèle</CardTitle>
+          <CardDescription>
+            Choisissez le type de déploiement et le modèle que vous souhaitez utiliser.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <Tabs defaultValue={deploymentType} onValueChange={(v) => setDeploymentType(v as "local" | "cloud")}>
@@ -153,6 +201,13 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
             </TabsList>
 
             <TabsContent value="local" className="space-y-4">
+              <Alert className="bg-green-50 border-green-200 mb-4">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <AlertDescription className="text-green-700">
+                  Les modèles locaux s'exécutent directement sur votre machine et ne nécessitent pas de clé API.
+                </AlertDescription>
+              </Alert>
+
               <ModelSelector
                 models={localModels}
                 selectedModel={selectedModel}
@@ -164,6 +219,13 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
             </TabsContent>
 
             <TabsContent value="cloud" className="space-y-4">
+              <Alert className="bg-blue-50 border-blue-200 mb-4">
+                <Info className="h-4 w-4 text-blue-500" />
+                <AlertDescription className="text-blue-700">
+                  Les modèles cloud offrent de meilleures performances et sont hébergés sur des serveurs distants.
+                </AlertDescription>
+              </Alert>
+
               <ModelSelector
                 models={cloudModels}
                 selectedModel={selectedModel}
@@ -194,10 +256,11 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
             disabled={!selectedModel || isConfiguring}
             className="w-full transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
           >
-            {isConfiguring ? "Configuration..." : "Sauvegarder la configuration"}
+            {isConfiguring ? "Configuration en cours..." : "Sauvegarder la configuration"}
           </Button>
         </CardContent>
       </Card>
     </div>
   );
 }
+
