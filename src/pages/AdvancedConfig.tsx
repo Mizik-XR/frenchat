@@ -1,22 +1,26 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { CloudAIConfig } from "@/components/config/CloudAIConfig";
+import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
+import { MicrosoftTeamsConfig } from "@/components/config/MicrosoftTeamsConfig";
 
 export default function AdvancedConfig() {
   const navigate = useNavigate();
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="container mx-auto py-8">
       <Button 
         variant="ghost" 
         onClick={() => navigate("/config")}
         className="mb-4"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Retour
+        Retour à la configuration
       </Button>
 
       <Card>
@@ -24,10 +28,25 @@ export default function AdvancedConfig() {
           <CardTitle>Configuration Avancée</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {/* Contenu à implémenter */}
-            <p>Paramètres avancés en cours de développement...</p>
-          </div>
+          <Tabs defaultValue="ai" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="ai">Configuration IA</TabsTrigger>
+              <TabsTrigger value="teams">Microsoft Teams</TabsTrigger>
+              <TabsTrigger value="local">IA Locale</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="ai">
+              <CloudAIConfig />
+            </TabsContent>
+
+            <TabsContent value="teams">
+              <MicrosoftTeamsConfig />
+            </TabsContent>
+
+            <TabsContent value="local">
+              <LocalAIConfig />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
