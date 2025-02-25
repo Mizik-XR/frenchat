@@ -2,7 +2,7 @@
 import { ConversationList } from "../ConversationList";
 import { ChatContainer } from "./ChatContainer";
 import { PriorityTopicsPanel } from "../PriorityTopicsPanel";
-import { Conversation, Message, WebUIConfig, AIProvider } from "@/types/chat";
+import { Conversation, Message, WebUIConfig, AIProvider, AnalysisMode } from "@/types/chat";
 
 interface MainLayoutProps {
   conversations: Conversation[];
@@ -29,6 +29,8 @@ interface MainLayoutProps {
   onSubmit: (e: React.FormEvent) => void;
   onFilesSelected: (files: File[]) => Promise<void>;
   onTopicSelect: (messageId: string) => void;
+  onResetConversation: () => void;
+  onAnalysisModeChange: (mode: AnalysisMode) => void;
 }
 
 export const MainLayout = ({
@@ -55,7 +57,9 @@ export const MainLayout = ({
   setShowPriorityTopics,
   onSubmit,
   onFilesSelected,
-  onTopicSelect
+  onTopicSelect,
+  onResetConversation,
+  onAnalysisModeChange
 }: MainLayoutProps) => {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -87,6 +91,8 @@ export const MainLayout = ({
               setShowUploader={setShowUploader}
               onSubmit={onSubmit}
               onFilesSelected={onFilesSelected}
+              onResetConversation={onResetConversation}
+              onAnalysisModeChange={onAnalysisModeChange}
             />
           </div>
 

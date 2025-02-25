@@ -106,6 +106,10 @@ export function useChatMessages(conversationId: string | null) {
     setMessages((prev) => [...prev, message]);
   };
 
+  const clearMessages = () => {
+    setMessages([]);
+  };
+
   return {
     messages,
     isLoading,
@@ -113,5 +117,6 @@ export function useChatMessages(conversationId: string | null) {
     addUserMessage,
     updateLastMessage,
     setAssistantResponse,
+    clearMessages
   };
 }
