@@ -62,10 +62,7 @@ export const useFileManager = () => {
         .eq('mime_type', mimeType)
         .single();
 
-      if (error) {
-        console.error('Erreur lors de la vérification du type MIME:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       if (!data || !data.enabled) {
         const description = data?.description || mimeType;
@@ -125,6 +122,17 @@ export const useFileManager = () => {
   const updateFileIndex = async (fileId: string, newHash: string) => {
     try {
       console.log(`Mise à jour de l'index pour le fichier ${fileId}`);
+      
+      // Vérifier le cache avant de procéder à la mise à jour
+      const { data: cacheCheck } = await supabase.functions.invoke('cache-manager', {
+        body: { action: 'check', fileId, hash: newHash }
+      });
+
+      if (cacheCheck.isIndexed) {
+        console.log('Le fichier est déjà indexé et à jour');
+        return;
+      }
+
       const { data: file } = await supabase
         .from('uploaded_documents')
         .select('content_hash, path')
@@ -146,6 +154,11 @@ export const useFileManager = () => {
           .update({ content_hash: newHash })
           .eq('id', fileId);
 
+        // Mise à jour du cache
+        await supabase.functions.invoke('cache-manager', {
+          body: { action: 'set', fileId, hash: newHash }
+        });
+
         toast({
           title: "Mise à jour réussie",
           description: "Le fichier a été ré-indexé avec succès"
@@ -165,6 +178,11 @@ export const useFileManager = () => {
     try {
       console.log(`Suppression de l'index pour le fichier ${fileId}`);
       
+      // Invalider le cache
+      await supabase.functions.invoke('cache-manager', {
+        body: { action: 'invalidate', fileId }
+      });
+
       // Suppression des chunks de document
       await supabase
         .from('document_chunks')
