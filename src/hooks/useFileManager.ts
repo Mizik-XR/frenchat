@@ -14,6 +14,12 @@ interface FileLimits {
   maxTotalSize: number;
 }
 
+interface FileMetadata {
+  id: string;
+  content_hash: string;
+  path: string;
+}
+
 export const useFileManager = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState<FileStats | null>(null);
@@ -116,12 +122,89 @@ export const useFileManager = () => {
     return true;
   };
 
+  const updateFileIndex = async (fileId: string, newHash: string) => {
+    try {
+      console.log(`Mise à jour de l'index pour le fichier ${fileId}`);
+      const { data: file } = await supabase
+        .from('uploaded_documents')
+        .select('content_hash, path')
+        .eq('id', fileId)
+        .single();
+
+      if (!file) {
+        throw new Error('Fichier non trouvé');
+      }
+
+      if (file.content_hash !== newHash) {
+        console.log('Changement détecté, ré-indexation en cours...');
+        await supabase.functions.invoke('process-uploaded-files', {
+          body: { fileId, path: file.path }
+        });
+
+        await supabase
+          .from('uploaded_documents')
+          .update({ content_hash: newHash })
+          .eq('id', fileId);
+
+        toast({
+          title: "Mise à jour réussie",
+          description: "Le fichier a été ré-indexé avec succès"
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de l'index:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour l'index du fichier",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteFileIndex = async (fileId: string) => {
+    try {
+      console.log(`Suppression de l'index pour le fichier ${fileId}`);
+      
+      // Suppression des chunks de document
+      await supabase
+        .from('document_chunks')
+        .delete()
+        .match({ file_id: fileId });
+
+      // Suppression des embeddings
+      await supabase
+        .from('document_embeddings')
+        .delete()
+        .match({ file_id: fileId });
+
+      // Suppression du document
+      await supabase
+        .from('uploaded_documents')
+        .delete()
+        .match({ id: fileId });
+
+      toast({
+        title: "Suppression réussie",
+        description: "Le fichier et ses données associées ont été supprimés"
+      });
+    } catch (error) {
+      console.error("Erreur lors de la suppression de l'index:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer les données du fichier",
+        variant: "destructive"
+      });
+    }
+  };
+
   return {
     isLoading,
     stats,
     limits,
     checkFileLimits,
     validateFile,
-    checkMimeType
+    checkMimeType,
+    updateFileIndex,
+    deleteFileIndex
   };
 };
