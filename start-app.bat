@@ -14,6 +14,19 @@ if /i "%UPDATE_CHOICE%"=="O" (
     echo Cette opération peut prendre quelques minutes...
     echo.
 
+    REM Installation de date-fns et react-day-picker dans des versions compatibles
+    echo Installation des utilitaires de date...
+    call npm install date-fns@2.28.0 || (
+        echo Erreur lors de l'installation de date-fns
+        pause
+    )
+
+    echo Installation de react-day-picker...
+    call npm install react-day-picker@8.10.1 || (
+        echo Erreur lors de l'installation de react-day-picker
+        pause
+    )
+
     REM Essayer d'installer chaque dépendance avec gestion d'erreur
     echo Installation de @radix-ui/react-tooltip...
     call npm install @radix-ui/react-tooltip@latest || (
@@ -45,12 +58,6 @@ if /i "%UPDATE_CHOICE%"=="O" (
         pause
     )
 
-    echo Installation des utilitaires de date...
-    call npm install date-fns@latest || (
-        echo Erreur lors de l'installation de date-fns
-        pause
-    )
-
     echo Installation des composants UI...
     call npm install embla-carousel-react@latest input-otp@latest lucide-react@latest || (
         echo Erreur lors de l'installation des composants UI
@@ -69,9 +76,15 @@ if /i "%UPDATE_CHOICE%"=="O" (
         pause
     )
 
-    echo Installation de React et ses dépendances...
-    call npm install react@latest react-dom@latest react-day-picker@latest react-dropzone@latest react-hook-form@latest react-resizable-panels@latest react-router-dom@latest || (
-        echo Erreur lors de l'installation des dépendances React
+    echo Installation de React et ses dépendances principales...
+    call npm install react@latest react-dom@latest || (
+        echo Erreur lors de l'installation de React
+        pause
+    )
+
+    echo Installation des dépendances React additionnelles...
+    call npm install react-dropzone@latest react-hook-form@latest react-resizable-panels@latest react-router-dom@latest || (
+        echo Erreur lors de l'installation des dépendances React additionnelles
         pause
     )
 
@@ -97,6 +110,14 @@ if /i "%UPDATE_CHOICE%"=="O" (
     echo Mise à jour des dépendances terminée.
     echo.
     pause
+
+    REM Exécuter l'audit de sécurité et correction forcée
+    echo.
+    echo Correction des vulnérabilités...
+    call npm audit fix --force || (
+        echo Des vulnérabilités peuvent subsister. Vérifiez avec 'npm audit' pour plus de détails.
+        pause
+    )
 )
 
 echo ================================
