@@ -6,6 +6,7 @@ import { FileUploader } from "@/components/config/ImportMethod/FileUploader";
 import { ImageIcon, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { ChartGenerator } from "../visualization/ChartGenerator";
 
 interface ChatInputContainerProps {
   input: string;
@@ -33,6 +34,8 @@ export const ChatInputContainer = ({
   onFilesSelected
 }: ChatInputContainerProps) => {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [csvData, setCsvData] = useState<string | null>(null);
+  const [showChartGenerator, setShowChartGenerator] = useState(false);
 
   const handleGenerateImage = async (type: 'illustration' | 'chart') => {
     if (!input.trim()) {
@@ -55,7 +58,6 @@ export const ChatInputContainer = ({
 
       if (error) throw error;
 
-      // Ajouter l'image au chat
       setInput(input + `\n![${type === 'chart' ? 'Graphique' : 'Image'}](${data.image})`);
     } catch (error: any) {
       toast({
@@ -68,6 +70,24 @@ export const ChatInputContainer = ({
     }
   };
 
+  const handleFileUpload = async (files: File[]) => {
+    for (const file of files) {
+      if (file.type === 'text/csv') {
+        const text = await file.text();
+        setCsvData(text);
+        setShowChartGenerator(true);
+        return;
+      }
+    }
+    onFilesSelected(files);
+  };
+
+  const handleChartGenerated = (imageUrl: string) => {
+    setInput(input + `\n![Graphique généré](${imageUrl})`);
+    setShowChartGenerator(false);
+    setCsvData(null);
+  };
+
   return (
     <form onSubmit={onSubmit} className="p-4 border-t flex flex-col gap-4">
       <div className="flex gap-2">
@@ -78,6 +98,13 @@ export const ChatInputContainer = ({
           className="flex-1 min-h-[80px]"
         />
       </div>
+      
+      {showChartGenerator && csvData && (
+        <ChartGenerator 
+          data={csvData} 
+          onGenerate={handleChartGenerated}
+        />
+      )}
       
       <div className="flex justify-between items-center">
         <div className="flex gap-2">
@@ -120,7 +147,8 @@ export const ChatInputContainer = ({
 
       {showUploader && (
         <FileUploader
-          onFilesSelected={onFilesSelected}
+          onFilesSelected={handleFileUpload}
+          acceptedFileTypes={['.pdf', '.doc', '.docx', '.txt', '.csv']}
         />
       )}
     </form>
