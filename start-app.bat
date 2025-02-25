@@ -7,6 +7,10 @@ echo ================================
 echo Vérification de l'environnement
 echo ================================
 
+REM Nettoyage des processus existants sur les ports
+taskkill /F /IM "python.exe" /FI "WINDOWTITLE eq Serveur IA Local" 2>nul
+taskkill /F /IM "node.exe" /FI "WINDOWTITLE eq Application React" 2>nul
+
 REM Vérification de Node.js
 where node >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
@@ -19,24 +23,23 @@ echo Node.js détecté:
 node --version
 echo.
 
-REM Vérification de npm
-where npm >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo npm n'est pas installé correctement
-    pause
-    exit /b 1
-)
-
-echo npm détecté:
-npm --version
+REM Nettoyage du cache npm
+call npm cache clean --force
+echo Cache npm nettoyé
 echo.
 
-REM Vérification/Installation des dépendances NPM
+REM Suppression des modules node existants
+if exist "node_modules\" (
+    echo Suppression des node_modules existants...
+    rmdir /s /q node_modules
+)
+
+REM Installation des dépendances NPM
 echo ================================
 echo Installation des dépendances NPM
 echo ================================
 
-call npm install
+call npm install --legacy-peer-deps
 if errorlevel 1 (
     echo Erreur lors de l'installation des dépendances NPM
     pause
@@ -63,10 +66,19 @@ echo Python détecté:
 python --version
 echo.
 
+REM Suppression de l'environnement virtuel existant s'il existe
+if exist "venv\" (
+    echo Suppression de l'ancien environnement virtuel...
+    rmdir /s /q venv
+)
+
 REM Création et activation de l'environnement virtuel
-if not exist "venv\" (
-    echo Création de l'environnement virtuel Python...
-    python -m venv venv
+echo Création d'un nouvel environnement virtuel Python...
+python -m venv venv
+if errorlevel 1 (
+    echo Erreur lors de la création de l'environnement virtuel
+    pause
+    exit /b 1
 )
 
 call venv\Scripts\activate.bat
@@ -77,10 +89,13 @@ if errorlevel 1 (
 )
 
 REM Installation des dépendances Python
-pip install --upgrade pip
+echo Installation des dépendances Python...
+python -m pip install --upgrade pip
 pip install --no-cache-dir setuptools wheel
-pip install --no-cache-dir torch==2.0.1+cpu --index-url https://download.pytorch.org/whl/cpu
 pip install --no-cache-dir -r requirements.txt
+
+REM Installation spécifique de PyTorch CPU
+pip install --no-cache-dir torch==2.0.1+cpu --index-url https://download.pytorch.org/whl/cpu
 
 echo.
 echo ================================
@@ -89,6 +104,9 @@ echo ================================
 
 REM Démarrage du serveur IA dans une nouvelle fenêtre
 start "Serveur IA Local" cmd /c "venv\Scripts\python.exe serve_model.py"
+
+REM Attente pour laisser le temps au serveur de démarrer
+timeout /t 5 /nobreak
 
 REM Démarrage de l'application React
 echo.
