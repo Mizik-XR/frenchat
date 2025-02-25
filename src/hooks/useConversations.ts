@@ -21,7 +21,8 @@ export function useConversations() {
       return data.map((conv: any): Conversation => ({
         id: conv.id,
         title: conv.title,
-        updatedAt: new Date(conv.updated_at),
+        created_at: conv.created_at,
+        updated_at: conv.updated_at,
         folderId: conv.folder_id,
         isPinned: conv.is_pinned,
         isArchived: conv.is_archived,
