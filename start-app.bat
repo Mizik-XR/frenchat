@@ -13,37 +13,90 @@ if /i "%UPDATE_CHOICE%"=="O" (
     echo.
     echo Cette opération peut prendre quelques minutes...
     echo.
-    REM Mise à jour sécurisée des dépendances une par une
-    call npm install @radix-ui/react-tooltip@latest
-    call npm install @supabase/supabase-js@latest
-    call npm install @tanstack/react-query@latest
-    call npm install class-variance-authority@latest
-    call npm install clsx@latest
-    call npm install cmdk@latest
-    call npm install cypress@latest
-    call npm install date-fns@latest
-    call npm install embla-carousel-react@latest
-    call npm install input-otp@latest
-    call npm install lucide-react@latest
-    call npm install next-themes@latest
-    call npm install pptxgenjs@latest
-    call npm install react@latest react-dom@latest
-    call npm install react-day-picker@latest
-    call npm install react-dropzone@latest
-    call npm install react-hook-form@latest
-    call npm install react-resizable-panels@latest
-    call npm install react-router-dom@latest
-    call npm install recharts@latest
-    call npm install sonner@latest
-    call npm install tailwind-merge@latest
-    call npm install tailwindcss-animate@latest
-    call npm install vaul@latest
-    call npm install vitest@latest
-    call npm install zod@latest
+
+    REM Essayer d'installer chaque dépendance avec gestion d'erreur
+    echo Installation de @radix-ui/react-tooltip...
+    call npm install @radix-ui/react-tooltip@latest || (
+        echo Erreur lors de l'installation de @radix-ui/react-tooltip
+        pause
+    )
+
+    echo Installation de @supabase/supabase-js...
+    call npm install @supabase/supabase-js@latest || (
+        echo Erreur lors de l'installation de @supabase/supabase-js
+        pause
+    )
+
+    echo Installation de @tanstack/react-query...
+    call npm install @tanstack/react-query@latest || (
+        echo Erreur lors de l'installation de @tanstack/react-query
+        pause
+    )
+
+    echo Installation des bibliothèques UI...
+    call npm install class-variance-authority@latest clsx@latest cmdk@latest || (
+        echo Erreur lors de l'installation des bibliothèques UI
+        pause
+    )
+
+    echo Installation des outils de test...
+    call npm install cypress@latest || (
+        echo Erreur lors de l'installation de cypress
+        pause
+    )
+
+    echo Installation des utilitaires de date...
+    call npm install date-fns@latest || (
+        echo Erreur lors de l'installation de date-fns
+        pause
+    )
+
+    echo Installation des composants UI...
+    call npm install embla-carousel-react@latest input-otp@latest lucide-react@latest || (
+        echo Erreur lors de l'installation des composants UI
+        pause
+    )
+
+    echo Installation des thèmes...
+    call npm install next-themes@latest || (
+        echo Erreur lors de l'installation de next-themes
+        pause
+    )
+
+    echo Installation des outils de présentation...
+    call npm install pptxgenjs@latest || (
+        echo Erreur lors de l'installation de pptxgenjs
+        pause
+    )
+
+    echo Installation de React et ses dépendances...
+    call npm install react@latest react-dom@latest react-day-picker@latest react-dropzone@latest react-hook-form@latest react-resizable-panels@latest react-router-dom@latest || (
+        echo Erreur lors de l'installation des dépendances React
+        pause
+    )
+
+    echo Installation des bibliothèques de graphiques...
+    call npm install recharts@latest || (
+        echo Erreur lors de l'installation de recharts
+        pause
+    )
+
+    echo Installation des utilitaires UI...
+    call npm install sonner@latest tailwind-merge@latest tailwindcss-animate@latest vaul@latest || (
+        echo Erreur lors de l'installation des utilitaires UI
+        pause
+    )
+
+    echo Installation des outils de test et validation...
+    call npm install vitest@latest zod@latest || (
+        echo Erreur lors de l'installation des outils de test
+        pause
+    )
 
     echo.
     echo Mise à jour des dépendances terminée.
     echo.
+    pause
 )
 
 echo ================================
