@@ -1,6 +1,8 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { HelpCircle } from "lucide-react";
 import type { AIModel } from "./types";
 import { CustomModelForm } from "./CustomModelForm";
 
@@ -26,8 +28,23 @@ export function ModelSelector({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           {label}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <HelpCircle className="h-4 w-4 text-gray-400" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="max-w-xs">
+                  {type === "local" 
+                    ? "Les modèles locaux s'exécutent sur votre machine sans clé API" 
+                    : "Les modèles cloud offrent de meilleures performances via des API"
+                  }
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </label>
         <Select
           value={selectedModel}
@@ -36,7 +53,7 @@ export function ModelSelector({
           <SelectTrigger className="w-full bg-white">
             <SelectValue placeholder="Sélectionner un modèle" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white shadow-lg border">
             {models.map((model) => (
               <SelectItem key={model.id} value={model.id}>
                 <div className="flex flex-col">
@@ -65,16 +82,36 @@ export function ModelSelector({
       </div>
 
       {selectedModelConfig?.isCustom && (
-        <Input 
-          placeholder="ID du modèle Hugging Face (ex: facebook/opt-350m)"
-          className="mt-2"
-          onChange={(e) => {
-            onModelAdd({
-              ...selectedModelConfig,
-              modelId: e.target.value
-            });
-          }}
-        />
+        <div className="space-y-4 p-4 bg-gray-50 rounded-md border border-gray-200 animate-in fade-in-50 duration-200">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              ID du modèle Hugging Face
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-4 w-4 text-gray-400" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">
+                      Entrez l'ID complet du modèle tel qu'il apparaît sur Hugging Face
+                      (ex: facebook/opt-350m)
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </label>
+            <Input 
+              placeholder="Ex: facebook/opt-350m"
+              className="w-full"
+              onChange={(e) => {
+                onModelAdd({
+                  ...selectedModelConfig,
+                  modelId: e.target.value
+                });
+              }}
+            />
+          </div>
+        </div>
       )}
 
       <CustomModelForm 
