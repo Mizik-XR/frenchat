@@ -1,7 +1,8 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
+import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib'
+import * as XLSX from 'https://cdn.skypack.dev/xlsx'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,78 +15,88 @@ serve(async (req) => {
   }
 
   try {
-    const { files } = await req.json()
-    const userId = req.headers.get('x-user-id')
+    const { fileId, mimeType } = await req.json()
 
-    if (!files || !files.length) {
-      throw new Error('Aucun fichier fourni')
-    }
-
-    if (!userId) {
-      throw new Error('User ID manquant')
-    }
-
-    console.log(`Traitement de ${files.length} fichiers pour l'utilisateur ${userId}`)
-
-    const supabaseAdmin = createClient(
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const processedFiles = []
-    for (const file of files) {
-      try {
-        // Stockage du document
-        const { data: doc, error: docError } = await supabaseAdmin
-          .from('documents')
-          .insert({
-            title: file.name,
-            content: file.content, // Le contenu extrait du fichier
-            document_type: file.type,
-            user_id: userId,
-            metadata: {
-              size: file.size,
-              uploaded_at: new Date().toISOString(),
-              method: 'one-shot',
-            }
-          })
-          .select()
-          .single()
+    // Récupérer le fichier depuis la base de données
+    const { data: file, error: fetchError } = await supabase
+      .from('uploaded_documents')
+      .select('*')
+      .eq('id', fileId)
+      .single()
 
-        if (docError) throw docError
+    if (fetchError) throw fetchError
 
-        // Génération des embeddings via l'Edge Function existante
-        await supabaseAdmin.functions.invoke('generate-embeddings', {
-          body: {
-            documentId: doc.id,
-            content: file.content,
-            metadata: {
-              title: file.name,
-              type: file.type,
-            }
-          }
-        })
-
-        processedFiles.push(doc.id)
-      } catch (fileError) {
-        console.error(`Erreur lors du traitement du fichier ${file.name}:`, fileError)
-      }
+    let extractedText = ''
+    
+    // Extraction du contenu selon le type MIME
+    switch (mimeType) {
+      case 'application/pdf':
+        extractedText = await extractTextFromPDF(file.content)
+        break
+      case 'text/csv':
+      case 'application/vnd.ms-excel':
+      case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+        extractedText = await extractTextFromSpreadsheet(file.content)
+        break
+      case 'text/plain':
+      case 'application/json':
+        extractedText = file.content
+        break
+      default:
+        extractedText = await extractTextFromDocument(file.content)
     }
 
+    // Mise à jour du document avec le texte extrait
+    const { error: updateError } = await supabase
+      .from('uploaded_documents')
+      .update({ 
+        content_text: extractedText,
+        status: 'processed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', fileId)
+
+    if (updateError) throw updateError
+
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        processed: processedFiles.length,
-        message: `${processedFiles.length} fichiers traités avec succès` 
-      }),
+      JSON.stringify({ success: true, fileId }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('Erreur dans la fonction process-uploaded-files:', error)
+    console.error('Erreur lors du traitement du fichier:', error)
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }
 })
+
+async function extractTextFromPDF(content: string): Promise<string> {
+  // Implémentation basique pour l'exemple
+  // À améliorer avec une bibliothèque PDF plus robuste
+  const pdfDoc = await PDFDocument.load(content)
+  const pages = pdfDoc.getPages()
+  return pages.map(page => page.getText()).join('\n')
+}
+
+async function extractTextFromSpreadsheet(content: string): Promise<string> {
+  const workbook = XLSX.read(content, { type: 'string' })
+  let text = ''
+  workbook.SheetNames.forEach(sheetName => {
+    const sheet = workbook.Sheets[sheetName]
+    text += XLSX.utils.sheet_to_txt(sheet) + '\n'
+  })
+  return text
+}
+
+async function extractTextFromDocument(content: string): Promise<string> {
+  // Implémentation par défaut - à améliorer selon les besoins
+  return content
+}

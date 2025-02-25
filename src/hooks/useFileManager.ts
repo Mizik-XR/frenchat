@@ -47,8 +47,38 @@ export const useFileManager = () => {
     }
   };
 
+  const checkMimeType = async (mimeType: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('supported_mime_types')
+        .select('enabled, description')
+        .eq('mime_type', mimeType)
+        .single();
+
+      if (error) throw error;
+
+      if (!data || !data.enabled) {
+        toast({
+          title: "Format non supporté",
+          description: `Le format ${data?.description || mimeType} n'est pas supporté`,
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erreur lors de la vérification du type MIME:', error);
+      return false;
+    }
+  };
+
   const validateFile = async (file: File) => {
     const { data } = await supabase.functions.invoke('manage-file-limits');
+    
+    if (!await checkMimeType(file.type)) {
+      return false;
+    }
     
     if (file.size > data.limits.maxFileSize) {
       toast({
@@ -76,6 +106,7 @@ export const useFileManager = () => {
     stats,
     limits,
     checkFileLimits,
-    validateFile
+    validateFile,
+    checkMimeType
   };
 };
