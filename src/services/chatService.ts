@@ -1,6 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Message, MessageType, MessageMetadata } from "@/types/chat";
+import { apiConfig } from "./apiConfig";
 
 export const chatService = {
   async sendUserMessage(content: string, conversationId: string): Promise<Message> {
@@ -67,5 +67,21 @@ export const chatService = {
       conversationId: data.conversation_id,
       timestamp: new Date(data.created_at)
     };
+  },
+
+  async generateResponse(prompt: string): Promise<string> {
+    const headers = await apiConfig.getHeaders();
+    const response = await fetch(`${apiConfig.baseURL}${apiConfig.endpoints.textGeneration}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate response');
+    }
+
+    const data = await response.json();
+    return data.generated_text;
   }
 };
