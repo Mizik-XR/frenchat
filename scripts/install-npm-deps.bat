@@ -9,19 +9,23 @@ echo Nettoyage des dépendances conflictuelles...
 call npm uninstall date-fns react-day-picker
 call npm cache clean --force
 
+REM Nettoyage et préparation
+if exist "node_modules\" (
+    echo Suppression de node_modules...
+    rmdir /s /q "node_modules"
+)
+if exist "package-lock.json" (
+    echo Suppression de package-lock.json...
+    del "package-lock.json"
+)
+
 REM Installation des dépendances dans un ordre spécifique avec --legacy-peer-deps
 echo Installation des composants principaux...
-call npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0 || (
-    echo Erreur lors de l'installation de React
-    exit /b 1
-)
+call npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0 || exit /b 1
 
 REM Installation des dates et composants avec --legacy-peer-deps
 echo Installation des utilitaires de date...
-call npm install --legacy-peer-deps date-fns@2.28.0 react-day-picker@8.10.1 || (
-    echo Erreur lors de l'installation des utilitaires de date
-    exit /b 1
-)
+call npm install --legacy-peer-deps date-fns@2.28.0 react-day-picker@8.10.1 || exit /b 1
 
 REM Installation groupée des composants UI avec --legacy-peer-deps
 echo Installation des composants UI...
@@ -48,15 +52,12 @@ call npm install --legacy-peer-deps ^
     tailwindcss-animate@latest ^
     vaul@latest ^
     vitest@latest ^
-    zod@latest || (
-    echo Erreur lors de l'installation des composants UI
-    exit /b 1
-)
+    zod@latest || exit /b 1
 
 echo.
 echo Installation des dépendances NPM terminée.
 echo.
 
-REM Audit de sécurité
+REM Audit de sécurité (sans bloquer en cas d'erreur)
 call npm audit fix --force
 exit /b 0
