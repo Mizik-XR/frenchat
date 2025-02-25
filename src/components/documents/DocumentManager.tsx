@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileUploader } from '../config/ImportMethod/FileUploader';
@@ -12,9 +12,40 @@ import { Loader2 } from 'lucide-react';
 
 export const DocumentManager = () => {
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [documentContent, setDocumentContent] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const { user } = useAuth();
+
+  useEffect(() => {
+    if (selectedDocumentId) {
+      fetchDocumentContent(selectedDocumentId);
+    }
+  }, [selectedDocumentId]);
+
+  const fetchDocumentContent = async (docId: string) => {
+    if (!user) return;
+
+    try {
+      const { data: document, error } = await supabase
+        .from('documents')
+        .select('content_text')
+        .eq('id', docId)
+        .single();
+
+      if (error) throw error;
+
+      setDocumentContent(document?.content_text || "Ce document n'a pas de contenu");
+    } catch (error: any) {
+      console.error('Erreur lors de la récupération du contenu:', error);
+      setDocumentContent("Impossible de charger le contenu du document");
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger le contenu du document",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleFilesSelected = async (files: File[]) => {
     if (files.length > 0) {
@@ -42,7 +73,8 @@ export const DocumentManager = () => {
           file_path: filePath,
           mime_type: file.type,
           file_size: file.size,
-          user_id: user.id
+          user_id: user.id,
+          content_text: "Contenu en cours d'indexation..."
         })
         .select()
         .single();
@@ -80,7 +112,10 @@ export const DocumentManager = () => {
       {selectedDocumentId && (
         <Card className="p-6">
           <h3 className="text-xl font-semibold mb-4">Prévisualisation</h3>
-          <DocumentPreview documentId={selectedDocumentId} />
+          <DocumentPreview 
+            documentId={selectedDocumentId} 
+            content={documentContent}
+          />
         </Card>
       )}
 
