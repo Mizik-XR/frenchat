@@ -14,22 +14,27 @@ if /i "%UPDATE_CHOICE%"=="O" (
     echo Cette opération peut prendre quelques minutes...
     echo.
 
-    REM Installation de date-fns et react-day-picker dans des versions compatibles
+    REM Nettoyage des dépendances problématiques
+    echo Nettoyage des dépendances conflictuelles...
+    call npm uninstall date-fns react-day-picker
+    call npm cache clean --force
+
+    REM Installation des dépendances dans un ordre spécifique avec --legacy-peer-deps
     echo Installation des utilitaires de date...
-    call npm install date-fns@2.28.0 || (
+    call npm install --legacy-peer-deps date-fns@2.28.0 || (
         echo Erreur lors de l'installation de date-fns
         pause
     )
 
     echo Installation de react-day-picker...
-    call npm install react-day-picker@8.10.1 || (
+    call npm install --legacy-peer-deps react-day-picker@8.10.1 || (
         echo Erreur lors de l'installation de react-day-picker
         pause
     )
 
     REM Essayer d'installer chaque dépendance avec gestion d'erreur
     echo Installation de @radix-ui/react-tooltip...
-    call npm install @radix-ui/react-tooltip@latest || (
+    call npm install --legacy-peer-deps @radix-ui/react-tooltip@latest || (
         echo Erreur lors de l'installation de @radix-ui/react-tooltip
         pause
     )
