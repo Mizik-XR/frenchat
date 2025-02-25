@@ -7,6 +7,8 @@ export interface AIModel {
   docsUrl?: string;
   isCustom?: boolean;
   modelId?: string;
+  apiKey?: string;
+  temperature?: number;
   apiKeyRequired?: boolean;
   apiType?: "openai" | "huggingface" | "other";
   configFields?: {
