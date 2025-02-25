@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib'
 import * as XLSX from 'https://cdn.skypack.dev/xlsx'
+import * as pptxgen from 'https://esm.sh/pptxgenjs@3.12.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -71,7 +72,30 @@ serve(async (req) => {
           break;
           
         case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+          console.log('🎯 Traitement PPTX détecté');
           extractedText = await extractTextFromPPTX(content);
+          
+          // Chunking du texte pour document_chunks
+          const chunks = extractedText.split('\n--- Diapositive');
+          
+          // Stocker chaque diapositive comme un chunk séparé
+          for (let i = 0; i < chunks.length; i++) {
+            const chunkText = chunks[i].trim();
+            if (chunkText) {
+              await supabase
+                .from('document_chunks')
+                .insert({
+                  document_id: fileId,
+                  content: chunkText,
+                  chunk_index: i,
+                  metadata: {
+                    type: 'slide',
+                    slide_number: i,
+                    timestamp: new Date().toISOString()
+                  }
+                });
+            }
+          }
           break;
           
         default:
@@ -177,7 +201,52 @@ async function extractTextFromCSV(content: string): Promise<string> {
 }
 
 async function extractTextFromPPTX(content: string): Promise<string> {
-  // Note: Pour une implémentation complète, nous aurions besoin d'une bibliothèque
-  // spécialisée pour le traitement des présentations PPTX
-  return content;
+  console.log('📊 Début extraction PPTX');
+  const startTime = Date.now();
+  
+  try {
+    const pres = new pptxgen.Presentation();
+    await pres.load(Buffer.from(content, 'base64'));
+    
+    let extractedText = '';
+    let slideCount = 0;
+    let imageCount = 0;
+    
+    // Parcourir toutes les diapositives
+    pres.slides.forEach((slide, idx) => {
+      slideCount++;
+      extractedText += `\n--- Diapositive ${idx + 1} ---\n\n`;
+      
+      // Extraire le texte de tous les éléments
+      slide.shapes.forEach(shape => {
+        if (shape.text) {
+          extractedText += shape.text + '\n';
+        }
+        
+        // Si c'est une image et qu'elle a un alt text
+        if (shape.type === 'image' && shape.altText) {
+          imageCount++;
+          extractedText += `[Image: ${shape.altText}]\n`;
+        }
+      });
+      
+      // Extraire les notes de la diapositive
+      if (slide.notes) {
+        extractedText += `\nNotes: ${slide.notes}\n`;
+      }
+    });
+    
+    const processingTime = Date.now() - startTime;
+    console.log(`✅ PPTX traité en ${processingTime}ms:`, {
+      slides: slideCount,
+      images: imageCount,
+      chars: extractedText.length
+    });
+    
+    return extractedText;
+    
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'extraction PPTX:', error);
+    throw new Error(`Erreur d'extraction PPTX: ${error.message}`);
+  }
 }
