@@ -6,7 +6,7 @@ import { ChatInputContainer } from "./ChatInputContainer";
 import { SettingsPanel } from "../SettingsPanel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { AIProvider, Message, WebUIConfig } from "@/types/chat";
+import { AIProvider, Message, WebUIConfig, AnalysisMode } from "@/types/chat";
 
 interface ChatContainerProps {
   messages: Message[];
@@ -25,6 +25,8 @@ interface ChatContainerProps {
   setShowUploader: (show: boolean) => void;
   onSubmit: (e: React.FormEvent) => void;
   onFilesSelected: (files: File[]) => Promise<void>;
+  onResetConversation: () => void;
+  onAnalysisModeChange: (mode: AnalysisMode) => void;
 }
 
 export const ChatContainer = ({
@@ -43,7 +45,9 @@ export const ChatContainer = ({
   setShowSettings,
   setShowUploader,
   onSubmit,
-  onFilesSelected
+  onFilesSelected,
+  onResetConversation,
+  onAnalysisModeChange
 }: ChatContainerProps) => {
   return (
     <Card className="h-full flex flex-col bg-white shadow-sm">
@@ -52,6 +56,7 @@ export const ChatContainer = ({
         onModeChange={onModeChange}
         showSettings={showSettings}
         setShowSettings={setShowSettings}
+        onResetConversation={onResetConversation}
       />
 
       {llmStatus !== 'configured' && (
@@ -69,6 +74,7 @@ export const ChatContainer = ({
             webUIConfig={webUIConfig}
             onWebUIConfigChange={onWebUIConfigChange}
             onProviderChange={onProviderChange}
+            onAnalysisModeChange={onAnalysisModeChange}
           />
         </div>
       )}
