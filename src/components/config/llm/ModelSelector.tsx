@@ -3,12 +3,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { HelpCircle, AlertCircle } from "lucide-react";
+import { HelpCircle, AlertCircle, Check } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import type { AIModel } from "./types";
 import { CustomModelForm } from "./CustomModelForm";
 import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 interface ModelSelectorProps {
   models: AIModel[];
@@ -60,11 +61,16 @@ export function ModelSelector({
           <SelectTrigger className="w-full bg-white text-base">
             <SelectValue placeholder="Sélectionner un modèle" />
           </SelectTrigger>
-          <SelectContent className="bg-white shadow-lg border">
+          <SelectContent className="bg-white shadow-lg border max-h-[400px] overflow-y-auto">
             {models.map((model) => (
-              <SelectItem key={model.id} value={model.id} className="py-2">
+              <SelectItem key={model.id} value={model.id} className="py-3 hover:bg-gray-50">
                 <div className="flex flex-col gap-1">
-                  <span className="font-medium text-base">{model.name}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-base">{model.name}</span>
+                    {selectedModel === model.id && (
+                      <Check className="h-4 w-4 text-green-500" />
+                    )}
+                  </div>
                   <span className="text-sm text-gray-500">
                     {model.description}
                   </span>
@@ -97,6 +103,8 @@ export function ModelSelector({
             </AlertDescription>
           </Alert>
 
+          <Separator className="my-4" />
+
           {selectedModelConfig.configFields.apiKey && (
             <div className="space-y-2">
               <Label className="text-gray-700 flex items-center gap-2">
@@ -115,7 +123,7 @@ export function ModelSelector({
               <Input 
                 type="password"
                 placeholder="sk-..."
-                className="w-full font-mono text-base"
+                className="w-full font-mono text-base bg-white"
                 onChange={(e) => {
                   onModelAdd({
                     ...selectedModelConfig,
@@ -153,7 +161,7 @@ export function ModelSelector({
               </Label>
               <Input 
                 placeholder="gpt-4-turbo-preview"
-                className="w-full font-mono text-base"
+                className="w-full font-mono text-base bg-white"
                 onChange={(e) => {
                   onModelAdd({
                     ...selectedModelConfig,
@@ -179,18 +187,23 @@ export function ModelSelector({
                   </Tooltip>
                 </TooltipProvider>
               </Label>
-              <Slider
-                defaultValue={[0.7]}
-                max={1}
-                step={0.1}
-                className="w-full"
-                onValueChange={([value]) => {
-                  onModelAdd({
-                    ...selectedModelConfig,
-                    temperature: value
-                  });
-                }}
-              />
+              <div className="flex items-center gap-4">
+                <Slider
+                  defaultValue={[0.7]}
+                  max={1}
+                  step={0.1}
+                  className="flex-1"
+                  onValueChange={([value]) => {
+                    onModelAdd({
+                      ...selectedModelConfig,
+                      temperature: value
+                    });
+                  }}
+                />
+                <span className="text-sm text-gray-600 min-w-[40px]">
+                  {selectedModelConfig.temperature?.toFixed(1) || "0.7"}
+                </span>
+              </div>
             </div>
           )}
         </Card>
@@ -214,7 +227,7 @@ export function ModelSelector({
             </Label>
             <Input 
               placeholder="Ex: facebook/opt-350m"
-              className="w-full font-mono text-base"
+              className="w-full font-mono text-base bg-white"
               onChange={(e) => {
                 onModelAdd({
                   ...selectedModelConfig,
