@@ -32,7 +32,6 @@ if /i "%UPDATE_CHOICE%"=="O" (
         pause
     )
 
-    REM Essayer d'installer chaque dépendance avec gestion d'erreur
     echo Installation de @radix-ui/react-tooltip...
     call npm install --legacy-peer-deps @radix-ui/react-tooltip@latest || (
         echo Erreur lors de l'installation de @radix-ui/react-tooltip
