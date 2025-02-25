@@ -32,12 +32,15 @@ if %ERRORLEVEL% NEQ 0 (
     del python-installer.exe
 )
 
-REM Vérification de Rust
-where cargo >nul 2>nul
+REM Vérification de Rust avec rustup-init.exe
+where rustc >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo Installation de Rust...
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    curl -o rustup-init.exe https://win.rustup.rs/x86_64
+    rustup-init.exe -y --default-toolchain stable
+    del rustup-init.exe
     set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+    echo Rust installé avec succès
 )
 
 REM Création d'un environnement virtuel s'il n'existe pas
