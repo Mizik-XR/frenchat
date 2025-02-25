@@ -1,8 +1,9 @@
 
-import { Bot, Info, Settings } from "lucide-react";
+import { Bot, Info, Settings, LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/AuthProvider";
 import {
   Tooltip,
   TooltipContent,
@@ -25,6 +26,16 @@ export const ChatHeader = ({
   setShowSettings,
   onResetConversation
 }: ChatHeaderProps) => {
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+    }
+  };
+
   return (
     <div className="flex justify-between items-center p-4 border-b">
       <div className="flex items-center gap-4">
@@ -72,6 +83,15 @@ export const ChatHeader = ({
           title="Paramètres"
         >
           <Settings className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleSignOut}
+          className="hover:bg-gray-100 text-red-600"
+          title="Se déconnecter"
+        >
+          <LogOut className="h-5 w-5" />
         </Button>
       </div>
     </div>
