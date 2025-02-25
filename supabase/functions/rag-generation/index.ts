@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import { pipeline } from '@huggingface/transformers'
+import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,7 +45,7 @@ serve(async (req) => {
       .join('\n\n')
 
     // 4. Générer le contenu structuré
-    const generator = await pipeline('text-generation', 'Xenova/LaMini-Flan-T5-783M')
+    const hf = new HfInference(Deno.env.get('HUGGINGFACE_API_KEY'))
     const generatedContent: Record<string, any> = {}
 
     for (const [key, config] of Object.entries(template.content_structure)) {
@@ -58,12 +58,16 @@ serve(async (req) => {
         Générer le contenu pour la section "${key}" de type ${config.type}.
       `
 
-      const result = await generator(prompt, {
-        max_length: 512,
-        temperature: 0.7
+      const result = await hf.textGeneration({
+        model: 'tiiuae/falcon-7b-instruct',
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 512,
+          temperature: 0.7
+        }
       })
 
-      generatedContent[key] = result[0].generated_text
+      generatedContent[key] = result.generated_text
     }
 
     // 5. Sauvegarder le document généré
