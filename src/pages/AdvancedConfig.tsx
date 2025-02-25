@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { CloudAIConfig } from "@/components/config/CloudAIConfig";
 import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
 import { MicrosoftTeamsConfig } from "@/components/config/MicrosoftTeamsConfig";
+import { TemplateManager } from "@/components/documents/TemplateManager";
 
 export default function AdvancedConfig() {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ export default function AdvancedConfig() {
               <TabsTrigger value="ai">Configuration IA</TabsTrigger>
               <TabsTrigger value="teams">Microsoft Teams</TabsTrigger>
               <TabsTrigger value="local">IA Locale</TabsTrigger>
+              <TabsTrigger value="templates">Templates</TabsTrigger>
             </TabsList>
 
             <TabsContent value="ai">
@@ -45,6 +47,10 @@ export default function AdvancedConfig() {
 
             <TabsContent value="local">
               <LocalAIConfig />
+            </TabsContent>
+
+            <TabsContent value="templates">
+              <TemplateManager />
             </TabsContent>
           </Tabs>
         </CardContent>

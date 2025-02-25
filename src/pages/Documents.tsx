@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { DocumentProviderSelector } from "@/components/documents/DocumentProviderSelector";
 import { FolderIndexingSelector } from "@/components/documents/FolderIndexingSelector";
+import { DocumentPreview } from "@/components/documents/DocumentPreview";
 
 export default function Documents() {
   const navigate = useNavigate();
@@ -30,6 +31,19 @@ export default function Documents() {
             <h2 className="text-lg font-semibold">Sources de documents</h2>
             <DocumentProviderSelector />
             <FolderIndexingSelector />
+            
+            {/* Zone de prévisualisation et d'export qui sera développée dans la prochaine étape */}
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold mb-4">Documents Générés</h2>
+              <DocumentPreview
+                documentId=""
+                previewMode="document"
+                onExport={async (destination) => {
+                  console.log("Export vers:", destination);
+                  // TODO: Implémenter l'export
+                }}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
