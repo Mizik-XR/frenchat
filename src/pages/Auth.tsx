@@ -123,21 +123,21 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="max-w-md w-full p-6 space-y-6 bg-white/80 backdrop-blur-sm rounded-lg shadow-xl animate-fade-in">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
+      <div className="w-full max-w-md space-y-8 bg-white/90 backdrop-blur-lg rounded-xl shadow-2xl p-8 animate-fade-in">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-gray-900">Bienvenue sur FileChat</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Bienvenue sur FileChat</h1>
           <p className="text-sm text-gray-600">
             Connectez-vous ou créez un compte pour continuer
           </p>
         </div>
 
         <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="signin">Connexion</TabsTrigger>
-            <TabsTrigger value="signup">Inscription</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsTrigger value="signin" className="text-sm sm:text-base">Connexion</TabsTrigger>
+            <TabsTrigger value="signup" className="text-sm sm:text-base">Inscription</TabsTrigger>
           </TabsList>
-          <TabsContent value="signin" className="animate-fade-in">
+          <TabsContent value="signin" className="mt-0 animate-fade-in">
             <SignInForm 
               loading={loading}
               email={email}
@@ -150,7 +150,7 @@ export default function Auth() {
               setRememberMe={setRememberMe}
             />
           </TabsContent>
-          <TabsContent value="signup" className="animate-fade-in">
+          <TabsContent value="signup" className="mt-0 animate-fade-in">
             <SignUpForm 
               loading={loading}
               email={email}

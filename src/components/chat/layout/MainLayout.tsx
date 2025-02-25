@@ -62,17 +62,19 @@ export const MainLayout = ({
   onAnalysisModeChange
 }: MainLayoutProps) => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex h-screen">
-        <ConversationList
-          conversations={conversations}
-          selectedId={selectedConversationId}
-          onSelect={onConversationSelect}
-          onNew={onNewConversation}
-          onUpdateConversation={onUpdateConversation}
-        />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="flex h-screen overflow-hidden">
+        <div className="hidden sm:block">
+          <ConversationList
+            conversations={conversations}
+            selectedId={selectedConversationId}
+            onSelect={onConversationSelect}
+            onNew={onNewConversation}
+            onUpdateConversation={onUpdateConversation}
+          />
+        </div>
         
-        <div className="flex-1 flex">
+        <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 relative">
             <ChatContainer
               messages={messages}
@@ -97,7 +99,7 @@ export const MainLayout = ({
           </div>
 
           {showPriorityTopics && (
-            <div className="w-80 border-l border-gray-200 bg-white animate-slide-in-right">
+            <div className="w-80 border-l border-gray-200 bg-white/80 backdrop-blur-sm shadow-lg animate-slide-in-right">
               <PriorityTopicsPanel
                 messages={messages}
                 onClose={() => setShowPriorityTopics(false)}
