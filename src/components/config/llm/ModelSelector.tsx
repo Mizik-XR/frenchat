@@ -1,15 +1,11 @@
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { HelpCircle, AlertCircle, Check } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
+import { HelpCircle } from "lucide-react";
 import type { AIModel } from "./types";
 import { CustomModelForm } from "./CustomModelForm";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { ModelSelect } from "./components/ModelSelect";
+import { ModelConfigurationFields } from "./components/ModelConfigurationFields";
+import { CustomModelFields } from "./components/CustomModelFields";
 
 interface ModelSelectorProps {
   models: AIModel[];
@@ -54,189 +50,25 @@ export function ModelSelector({
           </label>
         </div>
 
-        <Select
-          value={selectedModel}
-          onValueChange={onModelSelect}
-        >
-          <SelectTrigger className="w-full bg-white text-base">
-            <SelectValue placeholder="Sélectionner un modèle" />
-          </SelectTrigger>
-          <SelectContent className="bg-white shadow-lg border max-h-[400px] overflow-y-auto">
-            {models.map((model) => (
-              <SelectItem key={model.id} value={model.id} className="py-3 hover:bg-gray-50">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-base">{model.name}</span>
-                    {selectedModel === model.id && (
-                      <Check className="h-4 w-4 text-green-500" />
-                    )}
-                  </div>
-                  <span className="text-sm text-gray-500">
-                    {model.description}
-                  </span>
-                  {type === "local" ? (
-                    <span className="text-sm text-green-600 mt-1 font-medium">
-                      Aucune clé API requise
-                    </span>
-                  ) : model.requiresKey ? (
-                    <span className="text-sm text-amber-600 mt-1 font-medium">
-                      Requiert une clé API
-                    </span>
-                  ) : (
-                    <span className="text-sm text-blue-600 mt-1 font-medium">
-                      Clé API optionnelle
-                    </span>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ModelSelect
+          models={models}
+          selectedModel={selectedModel}
+          onModelSelect={onModelSelect}
+          type={type}
+        />
       </div>
 
-      {selectedModelConfig && selectedModelConfig.configFields && (
-        <Card className="p-4 bg-gray-50 border-gray-200 space-y-6 animate-in fade-in-50 duration-200">
-          <Alert className="bg-blue-50 border-blue-200">
-            <AlertCircle className="h-4 w-4 text-blue-500" />
-            <AlertDescription className="text-blue-700">
-              Configuration requise pour {selectedModelConfig.name}
-            </AlertDescription>
-          </Alert>
-
-          <Separator className="my-4" />
-
-          {selectedModelConfig.configFields.apiKey && (
-            <div className="space-y-2">
-              <Label className="text-gray-700 flex items-center gap-2">
-                Clé API
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <HelpCircle className="h-4 w-4 text-gray-400" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Clé API requise pour utiliser ce modèle</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </Label>
-              <Input 
-                type="password"
-                placeholder="sk-..."
-                className="w-full font-mono text-base bg-white"
-                onChange={(e) => {
-                  onModelAdd({
-                    ...selectedModelConfig,
-                    apiKey: e.target.value
-                  });
-                }}
-              />
-              {selectedModelConfig.docsUrl && (
-                <a 
-                  href={selectedModelConfig.docsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:underline inline-block mt-1"
-                >
-                  Obtenir une clé API
-                </a>
-              )}
-            </div>
-          )}
-
-          {selectedModelConfig.configFields.modelName && (
-            <div className="space-y-2">
-              <Label className="text-gray-700 flex items-center gap-2">
-                Nom du modèle
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <HelpCircle className="h-4 w-4 text-gray-400" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Le modèle spécifique à utiliser (ex: gpt-4-turbo-preview)</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </Label>
-              <Input 
-                placeholder="gpt-4-turbo-preview"
-                className="w-full font-mono text-base bg-white"
-                onChange={(e) => {
-                  onModelAdd({
-                    ...selectedModelConfig,
-                    modelId: e.target.value
-                  });
-                }}
-              />
-            </div>
-          )}
-
-          {selectedModelConfig.configFields.temperature && (
-            <div className="space-y-4">
-              <Label className="text-gray-700 flex items-center gap-2">
-                Température
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <HelpCircle className="h-4 w-4 text-gray-400" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Contrôle la créativité du modèle (0 = précis, 1 = créatif)</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </Label>
-              <div className="flex items-center gap-4">
-                <Slider
-                  defaultValue={[0.7]}
-                  max={1}
-                  step={0.1}
-                  className="flex-1"
-                  onValueChange={([value]) => {
-                    onModelAdd({
-                      ...selectedModelConfig,
-                      temperature: value
-                    });
-                  }}
-                />
-                <span className="text-sm text-gray-600 min-w-[40px]">
-                  {selectedModelConfig.temperature?.toFixed(1) || "0.7"}
-                </span>
-              </div>
-            </div>
-          )}
-        </Card>
-      )}
-
-      {selectedModelConfig?.isCustom && (
-        <Card className="p-4 bg-gray-50 border-gray-200 space-y-4 animate-in fade-in-50 duration-200">
-          <div className="space-y-2">
-            <Label className="text-gray-700 flex items-center gap-2">
-              ID du modèle Hugging Face
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <HelpCircle className="h-4 w-4 text-gray-400" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Entrez l'ID complet du modèle tel qu'il apparaît sur Hugging Face</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </Label>
-            <Input 
-              placeholder="Ex: facebook/opt-350m"
-              className="w-full font-mono text-base bg-white"
-              onChange={(e) => {
-                onModelAdd({
-                  ...selectedModelConfig,
-                  modelId: e.target.value
-                });
-              }}
-            />
-          </div>
-        </Card>
+      {selectedModelConfig && (
+        <>
+          <ModelConfigurationFields
+            model={selectedModelConfig}
+            onModelUpdate={onModelAdd}
+          />
+          <CustomModelFields
+            model={selectedModelConfig}
+            onModelUpdate={onModelAdd}
+          />
+        </>
       )}
 
       <CustomModelForm 
