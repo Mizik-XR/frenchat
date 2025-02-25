@@ -1,7 +1,7 @@
 
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { AIProvider, WebUIConfig } from "@/types/chat";
+import { AIProvider, WebUIConfig, AnalysisMode } from "@/types/chat";
 import { ModelSelector } from "../config/llm/ModelSelector";
 import {
   Select,
@@ -16,12 +16,14 @@ interface SettingsPanelProps {
   webUIConfig: WebUIConfig;
   onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
   onProviderChange: (provider: AIProvider) => void;
+  onAnalysisModeChange: (mode: AnalysisMode) => void;
 }
 
 export const SettingsPanel = ({
   webUIConfig,
   onWebUIConfigChange,
   onProviderChange,
+  onAnalysisModeChange
 }: SettingsPanelProps) => {
   return (
     <Card className="p-4 space-y-6 shadow-lg">
@@ -38,6 +40,24 @@ export const SettingsPanel = ({
             <SelectItem value="huggingface">Hugging Face</SelectItem>
             <SelectItem value="internet-search">Recherche Internet</SelectItem>
             <SelectItem value="deepthink">DeepThink</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Mode d'analyse</Label>
+        <Select
+          value={webUIConfig.analysisMode}
+          onValueChange={(value) => onAnalysisModeChange(value as AnalysisMode)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sélectionnez un mode" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">Normal</SelectItem>
+            <SelectItem value="analysis">Analyse détaillée</SelectItem>
+            <SelectItem value="summary">Résumé</SelectItem>
+            <SelectItem value="action">Actions concrètes</SelectItem>
           </SelectContent>
         </Select>
       </div>

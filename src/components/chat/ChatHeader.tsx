@@ -15,13 +15,15 @@ interface ChatHeaderProps {
   onModeChange: (mode: 'auto' | 'manual') => void;
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
+  onResetConversation: () => void;
 }
 
 export const ChatHeader = ({ 
   mode, 
   onModeChange,
   showSettings,
-  setShowSettings
+  setShowSettings,
+  onResetConversation
 }: ChatHeaderProps) => {
   return (
     <div className="flex justify-between items-center p-4 border-b">
@@ -52,15 +54,26 @@ export const ChatHeader = ({
         </div>
       </div>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setShowSettings(!showSettings)}
-        className="hover:bg-gray-100"
-        title="Paramètres"
-      >
-        <Settings className="h-5 w-5" />
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onResetConversation}
+          className="hover:bg-gray-100"
+          title="Réinitialiser la conversation"
+        >
+          Réinitialiser
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowSettings(!showSettings)}
+          className="hover:bg-gray-100"
+          title="Paramètres"
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
+      </div>
     </div>
   );
 };
