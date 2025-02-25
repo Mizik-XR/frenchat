@@ -53,7 +53,6 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
   const activateDefaultModel = async () => {
     setIsConfiguring(true);
     try {
-      // Configuration par défaut avec Mistral via Hugging Face
       const { error } = await supabase
         .from('service_configurations')
         .upsert({
@@ -263,4 +262,3 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
     </div>
   );
 }
-
