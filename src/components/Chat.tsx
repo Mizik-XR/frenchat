@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AIProvider, WebUIConfig } from "@/types/chat";
+import { AIProvider, WebUIConfig, AnalysisMode } from "@/types/chat";
 import { useChatMessages } from '@/hooks/useChatMessages';
 import { useConversations } from '@/hooks/useConversations';
 import { useChatLogic } from '@/hooks/useChatLogic';
@@ -21,11 +21,13 @@ export const Chat = () => {
     model: 'huggingface',
     maxTokens: 2000,
     temperature: 0.7,
-    streamResponse: true
+    streamResponse: true,
+    analysisMode: 'default',
+    useMemory: true
   });
 
   const { config: llmConfig, status: llmStatus } = useServiceConfiguration('llm');
-  const { messages } = useChatMessages(selectedConversationId);
+  const { messages, clearMessages } = useChatMessages(selectedConversationId);
   const { conversations, createNewConversation, updateConversation } = useConversations();
   const { isLoading, processMessage } = useChatLogic(selectedConversationId);
 
@@ -48,9 +50,19 @@ export const Chat = () => {
         setSelectedConversationId(newConv.id);
       }
 
+      const conversationContext = webUIConfig.useMemory 
+        ? messages.slice(-5).map(m => `${m.role}: ${m.content}`).join('\n')
+        : '';
+
       const message = input;
       setInput('');
-      await processMessage(message, webUIConfig, selectedDocumentId);
+      
+      await processMessage(
+        message, 
+        webUIConfig,
+        selectedDocumentId,
+        conversationContext
+      );
     } catch (error: any) {
       toast({
         title: "Erreur",
@@ -58,6 +70,23 @@ export const Chat = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleResetConversation = () => {
+    clearMessages();
+    setSelectedConversationId(null);
+    toast({
+      title: "Conversation réinitialisée",
+      description: "L'historique a été effacé",
+    });
+  };
+
+  const handleAnalysisModeChange = (mode: AnalysisMode) => {
+    setWebUIConfig(prev => ({ ...prev, analysisMode: mode }));
+    toast({
+      title: "Mode d'analyse modifié",
+      description: `Mode ${mode} activé`,
+    });
   };
 
   const handleFilesSelected = async (files: File[]) => {
@@ -121,6 +150,8 @@ export const Chat = () => {
       onSubmit={handleSubmit}
       onFilesSelected={handleFilesSelected}
       onTopicSelect={handleTopicSelect}
+      onResetConversation={handleResetConversation}
+      onAnalysisModeChange={handleAnalysisModeChange}
     />
   );
 };

@@ -1,13 +1,15 @@
-
 export type AIProvider = 'auto' | 'huggingface' | 'internet-search' | 'deepthink' | 'stable-diffusion';
 
-export type MessageType = 'text' | 'document' | 'image';
+export type MessageType = 'text' | 'document' | 'image' | 'chart';
+
+export type AnalysisMode = 'default' | 'analysis' | 'summary' | 'action';
 
 export type MessageMetadata = {
   provider?: AIProvider;
   documentId?: string;
   imageUrl?: string;
   confidence?: number;
+  analysisMode?: AnalysisMode;
 };
 
 export type WebUIConfig = {
@@ -16,6 +18,8 @@ export type WebUIConfig = {
   maxTokens: number;
   temperature: number;
   streamResponse: boolean;
+  analysisMode: AnalysisMode;
+  useMemory: boolean;
 };
 
 export type Message = {
