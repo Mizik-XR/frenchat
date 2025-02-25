@@ -10,9 +10,10 @@ interface FileUploaderProps {
   onFilesSelected: (files: File[]) => Promise<void>;
   loading?: boolean;
   description?: string;
+  acceptedFileTypes?: string[];
 }
 
-export function FileUploader({ onFilesSelected, loading, description }: FileUploaderProps) {
+export function FileUploader({ onFilesSelected, loading, description, acceptedFileTypes }: FileUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const { validateFile, checkFileLimits } = useFileManager();
 
@@ -38,7 +39,11 @@ export function FileUploader({ onFilesSelected, loading, description }: FileUplo
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     onDragEnter: () => setIsDragging(true),
-    onDragLeave: () => setIsDragging(false)
+    onDragLeave: () => setIsDragging(false),
+    accept: acceptedFileTypes?.reduce((acc, type) => {
+      acc[type] = [];
+      return acc;
+    }, {} as Record<string, string[]>)
   });
 
   return (
@@ -83,6 +88,11 @@ export function FileUploader({ onFilesSelected, loading, description }: FileUplo
           </Button>
           {description && (
             <p className="text-sm text-gray-500 mt-2">{description}</p>
+          )}
+          {acceptedFileTypes && acceptedFileTypes.length > 0 && (
+            <p className="text-sm text-gray-500 mt-2">
+              Types de fichiers acceptés : {acceptedFileTypes.join(', ')}
+            </p>
           )}
         </div>
       </div>
