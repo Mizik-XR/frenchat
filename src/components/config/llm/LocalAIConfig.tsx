@@ -141,11 +141,12 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
   const selectedModelConfig = [...localModels, ...cloudModels].find(m => m.id === selectedModel);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <BrainCircuit className="h-6 w-6 text-purple-500" />
-          <h2 className="text-2xl font-bold">Configuration de l'IA</h2>
+    <div className="max-w-5xl mx-auto p-6 space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+        <div className="flex items-center gap-3">
+          <BrainCircuit className="h-7 w-7 text-purple-500" />
+          <h2 className="text-2xl font-bold text-gray-900">Configuration de l'IA</h2>
           {hasConfiguration && (
             <Badge variant="default" className="ml-2 bg-green-500 hover:bg-green-600">
               <CheckCircle className="h-3 w-3 mr-1" />
@@ -156,22 +157,23 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
         <Button 
           variant="outline" 
           onClick={() => navigate("/config")}
-          className="gap-2"
+          className="gap-2 hover:bg-gray-50"
         >
           <ArrowLeft className="h-4 w-4" />
           Retour
         </Button>
       </div>
 
+      {/* First-time setup card */}
       {!hasConfiguration && (
-        <Card className="glass-panel border-2 border-blue-200 bg-blue-50/80 backdrop-blur-sm">
-          <CardContent className="pt-6">
-            <div className="flex items-start space-x-4">
+        <Card className="overflow-hidden border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
               <Info className="h-8 w-8 text-blue-500 mt-1 shrink-0" />
-              <div className="space-y-4">
+              <div className="space-y-4 flex-1">
                 <div>
-                  <h3 className="text-lg font-semibold text-blue-900">Première utilisation ?</h3>
-                  <p className="text-blue-700 mt-2">
+                  <h3 className="text-xl font-semibold text-blue-900">Première utilisation ?</h3>
+                  <p className="text-blue-700 mt-3 leading-relaxed">
                     Pour commencer rapidement, nous recommandons d'utiliser notre configuration par défaut 
                     basée sur le modèle Mistral via Hugging Face. Ce modèle offre un excellent équilibre 
                     entre performances et facilité d'utilisation.
@@ -180,7 +182,7 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
                 <Button
                   onClick={activateDefaultModel}
                   disabled={isConfiguring}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  className="w-full py-6 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
                 >
                   {isConfiguring ? "Configuration en cours..." : "Activer la configuration par défaut"}
                 </Button>
@@ -190,11 +192,12 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
         </Card>
       )}
 
-      <Alert className="bg-purple-50 border-purple-200">
-        <AlertCircle className="h-4 w-4 text-purple-500" />
-        <AlertDescription className="text-purple-700">
-          <span className="font-semibold">Comment configurer votre modèle IA :</span>
-          <ul className="list-disc pl-6 mt-2 space-y-1">
+      {/* Instructions alert */}
+      <Alert className="bg-purple-50 border-purple-200 shadow-sm">
+        <AlertCircle className="h-5 w-5 text-purple-500" />
+        <AlertDescription className="text-purple-700 ml-2">
+          <span className="font-semibold block mb-2">Comment configurer votre modèle IA :</span>
+          <ul className="list-disc pl-6 space-y-2">
             <li>Choisissez entre un déploiement local (sans clé API) ou cloud</li>
             <li>Sélectionnez un modèle dans la liste proposée</li>
             <li>Pour les modèles cloud, vous pouvez optionnellement configurer une clé API</li>
@@ -203,17 +206,18 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
         </AlertDescription>
       </Alert>
 
-      <Card className="glass-panel border-gray-200/60 backdrop-blur-sm">
-        <CardHeader>
+      {/* Main configuration card */}
+      <Card className="border border-gray-200 shadow-md overflow-hidden">
+        <CardHeader className="bg-gray-50 border-b border-gray-200">
           <CardTitle className="flex items-center gap-2">
             Configuration du modèle
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <HelpCircle className="h-4 w-4 text-gray-400" />
+                  <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">
+                <TooltipContent className="p-3 bg-white shadow-xl">
+                  <p className="max-w-xs text-sm text-gray-600">
                     Choisissez entre un modèle local (exécuté sur votre machine) 
                     ou cloud (hébergé sur des serveurs distants).
                   </p>
@@ -221,70 +225,74 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
               </Tooltip>
             </TooltipProvider>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-gray-600">
             Choisissez le type de déploiement et le modèle que vous souhaitez utiliser.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="p-6 space-y-8">
           <Tabs 
             defaultValue={deploymentType} 
             onValueChange={(v) => setDeploymentType(v as "local" | "cloud")}
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="local" className="flex items-center gap-2">
+              <TabsTrigger value="local" className="flex items-center gap-2 py-3">
                 <Server className="h-4 w-4" />
                 Local
               </TabsTrigger>
-              <TabsTrigger value="cloud" className="flex items-center gap-2">
+              <TabsTrigger value="cloud" className="flex items-center gap-2 py-3">
                 <Cloud className="h-4 w-4" />
                 Cloud
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="local" className="space-y-4">
-              <Alert className="bg-green-50 border-green-200 mb-4">
+            <TabsContent value="local" className="space-y-6">
+              <Alert className="bg-green-50 border-green-200 shadow-sm">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <AlertDescription className="text-green-700">
+                <AlertDescription className="text-green-700 ml-2">
                   Les modèles locaux s'exécutent directement sur votre machine et ne nécessitent pas de clé API.
                 </AlertDescription>
               </Alert>
 
-              <ModelSelector
-                models={localModels}
-                selectedModel={selectedModel}
-                onModelSelect={setSelectedModel}
-                onModelAdd={handleModelAdd("local")}
-                label="Sélectionner un modèle local"
-                type="local"
-              />
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <ModelSelector
+                  models={localModels}
+                  selectedModel={selectedModel}
+                  onModelSelect={setSelectedModel}
+                  onModelAdd={handleModelAdd("local")}
+                  label="Sélectionner un modèle local"
+                  type="local"
+                />
+              </div>
             </TabsContent>
 
-            <TabsContent value="cloud" className="space-y-4">
-              <Alert className="bg-blue-50 border-blue-200 mb-4">
+            <TabsContent value="cloud" className="space-y-6">
+              <Alert className="bg-blue-50 border-blue-200 shadow-sm">
                 <Info className="h-4 w-4 text-blue-500" />
-                <AlertDescription className="text-blue-700">
+                <AlertDescription className="text-blue-700 ml-2">
                   Les modèles cloud offrent de meilleures performances et sont hébergés sur des serveurs distants.
                 </AlertDescription>
               </Alert>
 
-              <ModelSelector
-                models={cloudModels}
-                selectedModel={selectedModel}
-                onModelSelect={setSelectedModel}
-                onModelAdd={handleModelAdd("cloud")}
-                label="Sélectionner un modèle cloud"
-                type="cloud"
-              />
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <ModelSelector
+                  models={cloudModels}
+                  selectedModel={selectedModel}
+                  onModelSelect={setSelectedModel}
+                  onModelAdd={handleModelAdd("cloud")}
+                  label="Sélectionner un modèle cloud"
+                  type="cloud"
+                />
+              </div>
 
               {selectedModelConfig?.requiresKey && selectedModelConfig?.docsUrl && (
-                <div className="flex items-center gap-2 text-sm text-blue-600">
-                  <ExternalLink className="h-4 w-4" />
+                <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <ExternalLink className="h-4 w-4 text-blue-600" />
                   <a 
                     href={selectedModelConfig.docsUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="hover:underline"
+                    className="text-blue-600 hover:underline"
                   >
                     Obtenir une clé API
                   </a>
@@ -296,11 +304,11 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
           <Button
             onClick={handleSaveConfig}
             disabled={!selectedModel || isConfiguring}
-            className="w-full transition-all duration-200 hover:scale-[1.02] hover:shadow-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+            className="w-full h-12 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium"
           >
             {isConfiguring ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/60 border-t-white" />
+              <div className="flex items-center justify-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/60 border-t-white" />
                 Configuration en cours...
               </div>
             ) : (
