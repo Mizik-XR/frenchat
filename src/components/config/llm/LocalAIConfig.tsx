@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -148,7 +147,7 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
           <BrainCircuit className="h-7 w-7 text-purple-500" />
           <h2 className="text-2xl font-bold text-gray-900">Configuration de l'IA</h2>
           {hasConfiguration && (
-            <Badge variant="default" className="ml-2 bg-green-500 hover:bg-green-600">
+            <Badge variant="success" className="ml-2">
               <CheckCircle className="h-3 w-3 mr-1" />
               Configuré
             </Badge>
