@@ -7,14 +7,21 @@ echo ================================
 echo Vérification des mises à jour...
 echo ================================
 
-REM Vérification des mises à jour NPM
-echo Recherche des dépendances obsolètes...
-call npm outdated
-
-set /p UPDATE_CHOICE=Voulez-vous mettre à jour les dépendances ? (O/N) 
+REM Vérification des mises à jour NPM (optionnel)
+set /p UPDATE_CHOICE=Voulez-vous vérifier et mettre à jour les dépendances NPM ? (O/N) 
 if /i "%UPDATE_CHOICE%"=="O" (
-    echo Mise à jour des dépendances...
-    call npm update
+    echo.
+    echo Cette opération peut prendre quelques minutes...
+    echo.
+    REM Mise à jour sécurisée des dépendances
+    call npm install
+    if %ERRORLEVEL% NEQ 0 (
+        echo Erreur lors de la mise à jour des dépendances.
+        echo Continuation de l'installation...
+    ) else (
+        echo Mise à jour des dépendances terminée avec succès.
+    )
+    echo.
 )
 
 echo ================================
