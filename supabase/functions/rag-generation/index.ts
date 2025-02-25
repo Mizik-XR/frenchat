@@ -1,98 +1,133 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import "https://deno.land/x/xhr@0.1.0/mod.ts"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-async function processWithOpenAI(prompt: string, apiKey: string) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-    }),
-  });
-
-  const data = await response.json();
-  return data.choices[0].message.content;
-}
-
-async function processWithPerplexity(prompt: string, apiKey: string) {
-  const response = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'llama-3.1-sonar-small-128k-online',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-    }),
-  });
-
-  const data = await response.json();
-  return data.choices[0].message.content;
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { prompt, provider, documentIds } = await req.json();
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    )
 
-    // Récupération des documents pour le contexte
+    const { templateId, context, documentIds } = await req.json()
+
+    // 1. Récupérer le template
+    const { data: template, error: templateError } = await supabase
+      .from('document_templates')
+      .select('*')
+      .eq('id', templateId)
+      .single()
+
+    if (templateError) throw new Error('Template non trouvé')
+
+    // 2. Récupérer les documents pertinents
     const { data: documents, error: docsError } = await supabase
       .from('documents')
-      .select('content')
-      .in('id', documentIds);
+      .select('content, metadata')
+      .in('id', documentIds)
 
-    if (docsError) throw docsError;
+    if (docsError) throw new Error('Erreur lors de la récupération des documents')
 
-    // Création du contexte à partir des documents
-    const context = documents.map(doc => doc.content).join('\n\n');
-    const fullPrompt = `Context:\n${context}\n\nTask: ${prompt}`;
+    // 3. Préparer le contexte pour la génération
+    const documentContext = documents
+      .map(doc => doc.content)
+      .join('\n\n')
 
-    let result;
-    switch (provider) {
-      case 'openai':
-        result = await processWithOpenAI(fullPrompt, Deno.env.get('OPENAI_API_KEY') ?? '');
-        break;
-      case 'perplexity':
-        result = await processWithPerplexity(fullPrompt, Deno.env.get('PERPLEXITY_API_KEY') ?? '');
-        break;
-      default:
-        throw new Error('Provider non supporté');
-    }
+    // 4. Générer le contenu structuré en fonction du template
+    const generatedContent = await generateStructuredContent(
+      template.content_structure,
+      documentContext,
+      context
+    )
+
+    // 5. Sauvegarder le résultat
+    const { error: saveError } = await supabase
+      .from('documents')
+      .insert({
+        title: `${template.name} - ${new Date().toLocaleDateString()}`,
+        document_type: 'generated',
+        template_type: template.template_type,
+        generated_content: generatedContent,
+        metadata: { 
+          source_template: template.id,
+          source_documents: documentIds
+        }
+      })
+
+    if (saveError) throw new Error('Erreur lors de la sauvegarde du document')
 
     return new Response(
-      JSON.stringify({ result }),
+      JSON.stringify({ success: true, content: generatedContent }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Erreur dans rag-generation:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
-    );
+    )
   }
-});
+})
+
+async function generateStructuredContent(
+  structure: any,
+  context: string,
+  userContext: string
+): Promise<any> {
+  // Initialiser le contenu généré avec la structure du template
+  const generatedContent: Record<string, any> = {}
+
+  // Parcourir la structure et générer le contenu pour chaque section
+  for (const [key, config] of Object.entries(structure)) {
+    // Générer un prompt spécifique pour cette section
+    const prompt = generateSectionPrompt(key, config, context, userContext)
+    
+    // Utiliser le modèle local pour générer le contenu
+    const sectionContent = await generateWithTransformers(prompt)
+    
+    // Stocker le contenu généré
+    generatedContent[key] = sectionContent
+  }
+
+  return generatedContent
+}
+
+async function generateWithTransformers(prompt: string): Promise<string> {
+  // TODO: Implémenter la génération avec Transformers
+  // Pour l'instant, retourner un contenu de test
+  return `Contenu généré pour: ${prompt}`
+}
+
+function generateSectionPrompt(
+  section: string,
+  config: any,
+  context: string,
+  userContext: string
+): string {
+  return `
+    En utilisant le contexte suivant:
+    ${context}
+
+    Et les instructions de l'utilisateur:
+    ${userContext}
+
+    Générer le contenu pour la section "${section}" du document.
+    Type de contenu attendu: ${config.type}
+    Instructions spécifiques: ${config.instructions || 'Aucune'}
+  `
+}
