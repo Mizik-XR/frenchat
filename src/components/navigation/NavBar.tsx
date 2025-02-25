@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { UserAvatar } from "@/components/auth/UserAvatar";
 import { Button } from "@/components/ui/button";
-import { BrainCircuit, FileText, Cloud, Settings, ArrowLeft } from "lucide-react";
+import { BrainCircuit, FileText, Cloud, ArrowLeft } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -63,7 +63,7 @@ export function NavBar() {
     <nav className="w-full bg-background border-b">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <Link to="/chat" className="text-xl font-bold">
+          <Link to="/chat" className="text-xl font-bold hover:opacity-80 transition-opacity">
             Files Chat
           </Link>
         </div>
@@ -82,7 +82,7 @@ export function NavBar() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={currentSheet === item.id ? "bg-accent" : ""}
+                        className={`transition-all duration-200 ${currentSheet === item.id ? "bg-accent" : "hover:bg-accent/50"}`}
                       >
                         <item.icon className="h-5 w-5" />
                       </Button>
@@ -100,6 +100,7 @@ export function NavBar() {
                           variant="ghost" 
                           size="icon"
                           onClick={() => navigate(-1)}
+                          className="hover:bg-accent/50"
                         >
                           <ArrowLeft className="h-4 w-4" />
                         </Button>
@@ -113,7 +114,7 @@ export function NavBar() {
                   <SheetFooter>
                     <Button 
                       variant="outline" 
-                      className="w-full"
+                      className="w-full hover:bg-accent/50 transition-colors"
                       onClick={() => handleFullConfig(item.fullConfigPath)}
                     >
                       Configuration avancée
