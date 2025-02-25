@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -142,6 +141,38 @@ export interface Database {
           id?: string
           service_type?: string | null
           status?: string | null
+        }
+      }
+      document_templates: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          template_type: string
+          content_structure: Json
+          user_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          template_type: string
+          content_structure?: Json
+          user_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          template_type?: string
+          content_structure?: Json
+          user_id?: string
+          created_at?: string
+          updated_at?: string
         }
       }
     }

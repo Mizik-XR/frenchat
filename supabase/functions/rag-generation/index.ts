@@ -2,6 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { pipeline } from '@huggingface/transformers'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,7 +10,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -44,14 +44,29 @@ serve(async (req) => {
       .map(doc => doc.content)
       .join('\n\n')
 
-    // 4. Générer le contenu structuré en fonction du template
-    const generatedContent = await generateStructuredContent(
-      template.content_structure,
-      documentContext,
-      context
-    )
+    // 4. Générer le contenu structuré
+    const generator = await pipeline('text-generation', 'Xenova/LaMini-Flan-T5-783M')
+    const generatedContent: Record<string, any> = {}
 
-    // 5. Sauvegarder le résultat
+    for (const [key, config] of Object.entries(template.content_structure)) {
+      console.log(`Génération de la section: ${key}`)
+      const prompt = `
+        Contexte: ${documentContext}
+        
+        Instructions: ${config.instructions}
+        
+        Générer le contenu pour la section "${key}" de type ${config.type}.
+      `
+
+      const result = await generator(prompt, {
+        max_length: 512,
+        temperature: 0.7
+      })
+
+      generatedContent[key] = result[0].generated_text
+    }
+
+    // 5. Sauvegarder le document généré
     const { error: saveError } = await supabase
       .from('documents')
       .insert({
@@ -83,51 +98,3 @@ serve(async (req) => {
     )
   }
 })
-
-async function generateStructuredContent(
-  structure: any,
-  context: string,
-  userContext: string
-): Promise<any> {
-  // Initialiser le contenu généré avec la structure du template
-  const generatedContent: Record<string, any> = {}
-
-  // Parcourir la structure et générer le contenu pour chaque section
-  for (const [key, config] of Object.entries(structure)) {
-    // Générer un prompt spécifique pour cette section
-    const prompt = generateSectionPrompt(key, config, context, userContext)
-    
-    // Utiliser le modèle local pour générer le contenu
-    const sectionContent = await generateWithTransformers(prompt)
-    
-    // Stocker le contenu généré
-    generatedContent[key] = sectionContent
-  }
-
-  return generatedContent
-}
-
-async function generateWithTransformers(prompt: string): Promise<string> {
-  // TODO: Implémenter la génération avec Transformers
-  // Pour l'instant, retourner un contenu de test
-  return `Contenu généré pour: ${prompt}`
-}
-
-function generateSectionPrompt(
-  section: string,
-  config: any,
-  context: string,
-  userContext: string
-): string {
-  return `
-    En utilisant le contexte suivant:
-    ${context}
-
-    Et les instructions de l'utilisateur:
-    ${userContext}
-
-    Générer le contenu pour la section "${section}" du document.
-    Type de contenu attendu: ${config.type}
-    Instructions spécifiques: ${config.instructions || 'Aucune'}
-  `
-}
