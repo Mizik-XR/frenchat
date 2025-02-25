@@ -13,14 +13,36 @@ if /i "%UPDATE_CHOICE%"=="O" (
     echo.
     echo Cette opération peut prendre quelques minutes...
     echo.
-    REM Mise à jour sécurisée des dépendances
-    call npm install
-    if %ERRORLEVEL% NEQ 0 (
-        echo Erreur lors de la mise à jour des dépendances.
-        echo Continuation de l'installation...
-    ) else (
-        echo Mise à jour des dépendances terminée avec succès.
-    )
+    REM Mise à jour sécurisée des dépendances une par une
+    call npm install @radix-ui/react-tooltip@latest
+    call npm install @supabase/supabase-js@latest
+    call npm install @tanstack/react-query@latest
+    call npm install class-variance-authority@latest
+    call npm install clsx@latest
+    call npm install cmdk@latest
+    call npm install cypress@latest
+    call npm install date-fns@latest
+    call npm install embla-carousel-react@latest
+    call npm install input-otp@latest
+    call npm install lucide-react@latest
+    call npm install next-themes@latest
+    call npm install pptxgenjs@latest
+    call npm install react@latest react-dom@latest
+    call npm install react-day-picker@latest
+    call npm install react-dropzone@latest
+    call npm install react-hook-form@latest
+    call npm install react-resizable-panels@latest
+    call npm install react-router-dom@latest
+    call npm install recharts@latest
+    call npm install sonner@latest
+    call npm install tailwind-merge@latest
+    call npm install tailwindcss-animate@latest
+    call npm install vaul@latest
+    call npm install vitest@latest
+    call npm install zod@latest
+
+    echo.
+    echo Mise à jour des dépendances terminée.
     echo.
 )
 
