@@ -44,7 +44,8 @@ export type ConversationFolder = {
 export type Conversation = {
   id: string;
   title: string;
-  updatedAt: Date;
+  created_at: string;
+  updated_at: string;
   folderId?: string;
   isPinned: boolean;
   isArchived: boolean;

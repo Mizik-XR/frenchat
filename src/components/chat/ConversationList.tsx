@@ -182,7 +182,7 @@ export const ConversationList = ({
               onUpdateConversation={onUpdateConversation}
               onExportToDoc={onExportToDoc}
               onDelete={onDelete}
-              isArchived
+              isArchived={true}
             />
           </TabsContent>
         </ScrollArea>
