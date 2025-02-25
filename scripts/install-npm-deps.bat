@@ -9,25 +9,49 @@ echo Nettoyage des dépendances conflictuelles...
 call npm uninstall date-fns react-day-picker
 call npm cache clean --force
 
-REM Installation des dépendances dans un ordre spécifique
-echo Installation des utilitaires de date...
-call npm install --legacy-peer-deps date-fns@2.28.0 || exit /b
-call npm install --legacy-peer-deps react-day-picker@8.10.1 || exit /b
+REM Installation des dépendances dans un ordre spécifique avec --legacy-peer-deps
+echo Installation des composants principaux...
+call npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0 || (
+    echo Erreur lors de l'installation de React
+    exit /b 1
+)
 
+REM Installation des dates et composants avec --legacy-peer-deps
+echo Installation des utilitaires de date...
+call npm install --legacy-peer-deps date-fns@2.28.0 react-day-picker@8.10.1 || (
+    echo Erreur lors de l'installation des utilitaires de date
+    exit /b 1
+)
+
+REM Installation groupée des composants UI avec --legacy-peer-deps
 echo Installation des composants UI...
-call npm install --legacy-peer-deps @radix-ui/react-tooltip@latest || exit /b
-call npm install @supabase/supabase-js@latest || exit /b
-call npm install @tanstack/react-query@latest || exit /b
-call npm install class-variance-authority@latest clsx@latest cmdk@latest || exit /b
-call npm install cypress@latest || exit /b
-call npm install embla-carousel-react@latest input-otp@latest lucide-react@latest || exit /b
-call npm install next-themes@latest || exit /b
-call npm install pptxgenjs@latest || exit /b
-call npm install react@18.2.0 react-dom@18.2.0 || exit /b
-call npm install react-dropzone@latest react-hook-form@latest react-resizable-panels@latest react-router-dom@latest || exit /b
-call npm install recharts@latest || exit /b
-call npm install sonner@latest tailwind-merge@latest tailwindcss-animate@latest vaul@latest || exit /b
-call npm install vitest@latest zod@latest || exit /b
+call npm install --legacy-peer-deps ^
+    @radix-ui/react-tooltip@latest ^
+    @supabase/supabase-js@latest ^
+    @tanstack/react-query@latest ^
+    class-variance-authority@latest ^
+    clsx@latest ^
+    cmdk@latest ^
+    cypress@latest ^
+    embla-carousel-react@latest ^
+    input-otp@latest ^
+    lucide-react@latest ^
+    next-themes@latest ^
+    pptxgenjs@latest ^
+    react-dropzone@latest ^
+    react-hook-form@latest ^
+    react-resizable-panels@latest ^
+    react-router-dom@latest ^
+    recharts@latest ^
+    sonner@latest ^
+    tailwind-merge@latest ^
+    tailwindcss-animate@latest ^
+    vaul@latest ^
+    vitest@latest ^
+    zod@latest || (
+    echo Erreur lors de l'installation des composants UI
+    exit /b 1
+)
 
 echo.
 echo Installation des dépendances NPM terminée.
