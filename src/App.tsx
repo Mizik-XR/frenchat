@@ -13,7 +13,6 @@ import { QuickConfig } from "@/components/config/QuickConfig";
 import { MicrosoftTeamsConfig } from "@/components/config/MicrosoftTeamsConfig";
 import { CloudAIConfig } from "@/components/config/CloudAIConfig";
 import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
-import { routes } from "@/routes";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -38,77 +37,71 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
-function AppRoutes() {
-  return (
-    <Routes>
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/auth/callback/google" element={<GoogleAuthCallback />} />
-      <Route 
-        path="/chat" 
-        element={
-          <PrivateRoute>
-            <Chat />
-          </PrivateRoute>
-        } 
-      />
-      <Route
-        path="/documents"
-        element={
-          <PrivateRoute>
-            <Documents />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/config"
-        element={
-          <PrivateRoute>
-            <QuickConfig />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/config/microsoft-teams"
-        element={
-          <PrivateRoute>
-            <MicrosoftTeamsConfig />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/config/cloud-ai"
-        element={
-          <PrivateRoute>
-            <CloudAIConfig />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/config/local-ai"
-        element={
-          <PrivateRoute>
-            <LocalAIConfig />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/advanced-config"
-        element={
-          <PrivateRoute>
-            <AdvancedConfig />
-          </PrivateRoute>
-        }
-      />
-      <Route path="/" element={<Navigate to="/chat" replace />} />
-    </Routes>
-  );
-}
-
 export default function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <Routes>
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/callback/google" element={<GoogleAuthCallback />} />
+          <Route 
+            path="/chat" 
+            element={
+              <PrivateRoute>
+                <Chat />
+              </PrivateRoute>
+            } 
+          />
+          <Route
+            path="/documents"
+            element={
+              <PrivateRoute>
+                <Documents />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/config"
+            element={
+              <PrivateRoute>
+                <QuickConfig />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/config/microsoft-teams"
+            element={
+              <PrivateRoute>
+                <MicrosoftTeamsConfig />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/config/cloud-ai"
+            element={
+              <PrivateRoute>
+                <CloudAIConfig />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/config/local-ai"
+            element={
+              <PrivateRoute>
+                <LocalAIConfig />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/advanced-config"
+            element={
+              <PrivateRoute>
+                <AdvancedConfig />
+              </PrivateRoute>
+            }
+          />
+          <Route path="/" element={<Navigate to="/chat" replace />} />
+        </Routes>
         <Toaster />
       </AuthProvider>
     </Router>

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { UserAvatar } from "@/components/auth/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { BrainCircuit, FileText, Cloud, Settings, ArrowLeft } from "lucide-react";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { QuickConfig } from "@/components/config/QuickConfig";
 import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export function NavBar() {
   const [currentSheet, setCurrentSheet] = useState<string | null>(null);
@@ -41,7 +42,7 @@ export function NavBar() {
       id: "docs",
       tooltip: "Gestion des documents",
       content: <QuickConfig />,
-      fullConfigPath: "/documents"
+      fullConfigPath: "/config"
     },
     {
       icon: BrainCircuit,
