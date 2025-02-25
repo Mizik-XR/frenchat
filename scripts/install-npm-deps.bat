@@ -23,7 +23,7 @@ call npm install cypress@latest || exit /b
 call npm install embla-carousel-react@latest input-otp@latest lucide-react@latest || exit /b
 call npm install next-themes@latest || exit /b
 call npm install pptxgenjs@latest || exit /b
-call npm install react@latest react-dom@latest || exit /b
+call npm install react@18.2.0 react-dom@18.2.0 || exit /b
 call npm install react-dropzone@latest react-hook-form@latest react-resizable-panels@latest react-router-dom@latest || exit /b
 call npm install recharts@latest || exit /b
 call npm install sonner@latest tailwind-merge@latest tailwindcss-animate@latest vaul@latest || exit /b
