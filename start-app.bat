@@ -4,6 +4,20 @@ chcp 65001
 setlocal enabledelayedexpansion
 
 echo ================================
+echo Vérification des mises à jour...
+echo ================================
+
+REM Vérification des mises à jour NPM
+echo Recherche des dépendances obsolètes...
+call npm outdated
+
+set /p UPDATE_CHOICE=Voulez-vous mettre à jour les dépendances ? (O/N) 
+if /i "%UPDATE_CHOICE%"=="O" (
+    echo Mise à jour des dépendances...
+    call npm update
+)
+
+echo ================================
 echo Installation de l'environnement IA
 echo ================================
 
