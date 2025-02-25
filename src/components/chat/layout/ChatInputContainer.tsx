@@ -121,7 +121,6 @@ export const ChatInputContainer = ({
       {showUploader && (
         <FileUploader
           onFilesSelected={onFilesSelected}
-          acceptedFileTypes={['.pdf', '.doc', '.docx', '.txt', '.csv']}
         />
       )}
     </form>

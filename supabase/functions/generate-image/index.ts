@@ -14,14 +14,15 @@ serve(async (req) => {
 
   try {
     const { prompt, type } = await req.json()
+    console.log(`Generating ${type} with prompt: ${prompt}`)
     
     // Utilisation du token Hugging Face
     const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
 
     if (type === 'chart') {
-      // Pour les graphiques, on utilise un modèle spécialisé
+      // Pour les graphiques, on utilise un modèle spécialisé pour les visualisations
       const image = await hf.textToImage({
-        inputs: `A professional ${prompt} chart or graph with clean design`,
+        inputs: `A professional ${prompt} chart or graph with clean design, data visualization`,
         model: 'black-forest-labs/FLUX.1-schnell',
         parameters: {
           negative_prompt: 'blurry, low quality, text, watermark',
@@ -31,6 +32,7 @@ serve(async (req) => {
       const arrayBuffer = await image.arrayBuffer()
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
 
+      console.log('Chart generated successfully')
       return new Response(
         JSON.stringify({ image: `data:image/png;base64,${base64}` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -40,11 +42,15 @@ serve(async (req) => {
       const image = await hf.textToImage({
         inputs: prompt,
         model: 'black-forest-labs/FLUX.1-schnell',
+        parameters: {
+          negative_prompt: 'blurry, low quality, watermark',
+        }
       })
 
       const arrayBuffer = await image.arrayBuffer()
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
 
+      console.log('Illustration generated successfully')
       return new Response(
         JSON.stringify({ image: `data:image/png;base64,${base64}` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
