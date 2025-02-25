@@ -125,3 +125,4 @@ echo.
 echo Pour arrêter les services, fermez les fenêtres de terminal ou pressez Ctrl+C
 echo.
 pause
+
