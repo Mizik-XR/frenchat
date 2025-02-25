@@ -3,13 +3,25 @@ import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, BrainCircuit, ArrowLeft, ExternalLink, CheckCircle, Info } from "lucide-react";
+import { 
+  AlertCircle, 
+  BrainCircuit, 
+  ArrowLeft, 
+  ExternalLink, 
+  CheckCircle, 
+  Info, 
+  Server, 
+  Cloud,
+  HelpCircle 
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LOCAL_MODELS, CLOUD_MODELS, type AIModel } from "./types";
 import { ModelSelector } from "./ModelSelector";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 interface LocalAIConfigProps {
   onSave?: () => void;
@@ -129,14 +141,20 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
   const selectedModelConfig = [...localModels, ...cloudModels].find(m => m.id === selectedModel);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 p-6">
+    <div className="max-w-5xl mx-auto space-y-6 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <BrainCircuit className="h-6 w-6 text-purple-500" />
           <h2 className="text-2xl font-bold">Configuration de l'IA</h2>
+          {hasConfiguration && (
+            <Badge variant="success" className="ml-2">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Configuré
+            </Badge>
+          )}
         </div>
         <Button 
-          variant="ghost" 
+          variant="outline" 
           onClick={() => navigate("/config")}
           className="gap-2"
         >
@@ -146,10 +164,10 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
       </div>
 
       {!hasConfiguration && (
-        <Card className="glass-panel border-2 border-blue-200 bg-blue-50">
+        <Card className="glass-panel border-2 border-blue-200 bg-blue-50/80 backdrop-blur-sm">
           <CardContent className="pt-6">
             <div className="flex items-start space-x-4">
-              <Info className="h-8 w-8 text-blue-500 mt-1" />
+              <Info className="h-8 w-8 text-blue-500 mt-1 shrink-0" />
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-blue-900">Première utilisation ?</h3>
@@ -162,7 +180,7 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
                 <Button
                   onClick={activateDefaultModel}
                   disabled={isConfiguring}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {isConfiguring ? "Configuration en cours..." : "Activer la configuration par défaut"}
                 </Button>
@@ -185,18 +203,43 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
         </AlertDescription>
       </Alert>
 
-      <Card className="glass-panel">
+      <Card className="glass-panel border-gray-200/60 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle>Configuration du modèle</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Configuration du modèle
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <HelpCircle className="h-4 w-4 text-gray-400" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    Choisissez entre un modèle local (exécuté sur votre machine) 
+                    ou cloud (hébergé sur des serveurs distants).
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardTitle>
           <CardDescription>
             Choisissez le type de déploiement et le modèle que vous souhaitez utiliser.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <Tabs defaultValue={deploymentType} onValueChange={(v) => setDeploymentType(v as "local" | "cloud")}>
+          <Tabs 
+            defaultValue={deploymentType} 
+            onValueChange={(v) => setDeploymentType(v as "local" | "cloud")}
+            className="w-full"
+          >
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="local">Local</TabsTrigger>
-              <TabsTrigger value="cloud">Cloud</TabsTrigger>
+              <TabsTrigger value="local" className="flex items-center gap-2">
+                <Server className="h-4 w-4" />
+                Local
+              </TabsTrigger>
+              <TabsTrigger value="cloud" className="flex items-center gap-2">
+                <Cloud className="h-4 w-4" />
+                Cloud
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="local" className="space-y-4">
@@ -253,9 +296,16 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
           <Button
             onClick={handleSaveConfig}
             disabled={!selectedModel || isConfiguring}
-            className="w-full transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
+            className="w-full transition-all duration-200 hover:scale-[1.02] hover:shadow-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white"
           >
-            {isConfiguring ? "Configuration en cours..." : "Sauvegarder la configuration"}
+            {isConfiguring ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/60 border-t-white" />
+                Configuration en cours...
+              </div>
+            ) : (
+              "Sauvegarder la configuration"
+            )}
           </Button>
         </CardContent>
       </Card>
