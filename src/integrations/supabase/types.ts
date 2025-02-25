@@ -463,6 +463,39 @@ export type Database = {
         }
         Relationships: []
       }
+      document_templates: {
+        Row: {
+          content_structure: Json
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          template_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content_structure?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          template_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content_structure?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          template_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       document_versions: {
         Row: {
           content: string | null
@@ -497,8 +530,10 @@ export type Database = {
           created_at: string | null
           document_type: string
           external_id: string | null
+          generated_content: Json | null
           id: string
           metadata: Json | null
+          template_type: string | null
           title: string
           updated_at: string | null
           user_id: string | null
@@ -509,8 +544,10 @@ export type Database = {
           created_at?: string | null
           document_type: string
           external_id?: string | null
+          generated_content?: Json | null
           id?: string
           metadata?: Json | null
+          template_type?: string | null
           title: string
           updated_at?: string | null
           user_id?: string | null
@@ -521,8 +558,10 @@ export type Database = {
           created_at?: string | null
           document_type?: string
           external_id?: string | null
+          generated_content?: Json | null
           id?: string
           metadata?: Json | null
+          template_type?: string | null
           title?: string
           updated_at?: string | null
           user_id?: string | null
