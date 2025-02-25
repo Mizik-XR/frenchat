@@ -64,35 +64,9 @@ export const useRAG = () => {
     }
   };
 
-  const generateFromTemplate = async (templateId: string, query: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('rag-generation', {
-        body: { templateId, query }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Document généré",
-        description: "Le document a été généré avec succès",
-      });
-
-      return data.content;
-    } catch (error) {
-      console.error('Erreur lors de la génération:', error);
-      toast({
-        title: "Erreur de génération",
-        description: "Impossible de générer le document",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-
   return {
     indexDocument,
     searchDocuments,
-    generateFromTemplate,
     isIndexing,
     isSearching,
     results

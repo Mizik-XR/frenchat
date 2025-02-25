@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle, Save, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useRAG } from "@/hooks/use-rag";
 
 interface Template {
   id: string;
@@ -21,9 +21,6 @@ export function TemplateManager() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const { generateFromTemplate } = useRAG();
-  const [generationQuery, setGenerationQuery] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     loadTemplates();
@@ -112,25 +109,6 @@ export function TemplateManager() {
         description: "Impossible de supprimer le template",
         variant: "destructive"
       });
-    }
-  };
-
-  const handleGenerate = async (templateId: string) => {
-    if (!generationQuery.trim()) {
-      toast({
-        title: "Requête requise",
-        description: "Veuillez entrer une requête pour la génération",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      await generateFromTemplate(templateId, generationQuery);
-    } finally {
-      setIsGenerating(false);
-      setGenerationQuery('');
     }
   };
 
@@ -226,19 +204,6 @@ export function TemplateManager() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
-                <div className="mt-4 space-y-2">
-                  <Input
-                    placeholder="Entrez votre requête pour générer un document..."
-                    value={generationQuery}
-                    onChange={(e) => setGenerationQuery(e.target.value)}
-                  />
-                  <Button
-                    onClick={() => handleGenerate(template.id)}
-                    disabled={isGenerating}
-                  >
-                    {isGenerating ? 'Génération...' : 'Générer un Document'}
-                  </Button>
                 </div>
               </Card>
             ))}
