@@ -147,7 +147,7 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
           <BrainCircuit className="h-6 w-6 text-purple-500" />
           <h2 className="text-2xl font-bold">Configuration de l'IA</h2>
           {hasConfiguration && (
-            <Badge variant="success" className="ml-2">
+            <Badge variant="default" className="ml-2 bg-green-500 hover:bg-green-600">
               <CheckCircle className="h-3 w-3 mr-1" />
               Configuré
             </Badge>
