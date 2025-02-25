@@ -9,9 +9,10 @@ import { toast } from '@/hooks/use-toast';
 interface FileUploaderProps {
   onFilesSelected: (files: File[]) => Promise<void>;
   loading?: boolean;
+  description?: string;
 }
 
-export function FileUploader({ onFilesSelected, loading }: FileUploaderProps) {
+export function FileUploader({ onFilesSelected, loading, description }: FileUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const { validateFile, checkFileLimits } = useFileManager();
 
@@ -71,12 +72,18 @@ export function FileUploader({ onFilesSelected, loading }: FileUploaderProps) {
             disabled={loading}
             onClick={(e) => {
               e.stopPropagation();
-              document.querySelector('input[type="file"]')?.click();
+              const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+              if (fileInput) {
+                fileInput.click();
+              }
             }}
           >
             <FileText className="h-4 w-4 mr-2" />
             Parcourir
           </Button>
+          {description && (
+            <p className="text-sm text-gray-500 mt-2">{description}</p>
+          )}
         </div>
       </div>
     </div>
