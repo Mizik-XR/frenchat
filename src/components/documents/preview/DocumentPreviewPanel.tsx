@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ZoomIn, ZoomOut, Download, Share, Check, AlertCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -43,11 +42,22 @@ export const DocumentPreviewPanel = ({
         description: `Le document a été exporté vers ${destination === 'drive' ? 'Google Drive' : 'Microsoft Teams'}`,
       });
     } catch (error) {
-      toast({
-        title: "Erreur lors de l'export",
-        description: error instanceof Error ? error.message : "Une erreur est survenue",
-        variant: "destructive",
-      });
+      const errorMessage = error instanceof Error ? error.message : "Une erreur est survenue";
+      console.error('Erreur lors de l\'export:', error);
+      
+      if (errorMessage.includes('Token') || errorMessage.includes('oauth')) {
+        toast({
+          title: "Erreur d'authentification",
+          description: `Veuillez vous reconnecter à ${destination === 'drive' ? 'Google Drive' : 'Microsoft Teams'}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erreur lors de l'export",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsExporting(false);
     }
