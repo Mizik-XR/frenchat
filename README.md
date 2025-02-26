@@ -1,3 +1,4 @@
+
 # DocuChatter
 
 Application de chat intelligente avec intégration de Google Drive et traitement de documents.
@@ -141,17 +142,14 @@ await supabase.functions.invoke('google-oauth', {
 
 ## Tests
 
-L'application inclut des tests unitaires et d'intégration :
-
+1. Exécuter les tests unitaires :
 ```bash
-# Exécuter les tests
-npm test
-
-# Tests d'intégration
-npm run test:integration
-
-# Tests unitaires
 npm run test:unit
+```
+
+2. Tests d'intégration :
+```bash
+npm run test:integration
 ```
 
 ## Déploiement
@@ -266,3 +264,4 @@ import { AIProviderSelect } from '@/components/chat/AIProviderSelect';
    - Implémentez des retries pour les appels API
    - Gérez les timeouts appropriés
    - Prévoyez des fallbacks entre modèles
+
