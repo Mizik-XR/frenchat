@@ -11,7 +11,8 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: true,
-      port: parseInt(env.VITE_PORT || '5173'),
+      port: mode === 'development' ? 5173 : parseInt(env.PORT || '5173'),
+      strictPort: true // Force Vite à utiliser uniquement le port spécifié
     },
     optimizeDeps: {
       include: ['react-dropzone']
