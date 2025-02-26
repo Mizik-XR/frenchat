@@ -1,3 +1,4 @@
+
 @echo off
 chcp 65001
 setlocal enabledelayedexpansion
@@ -107,10 +108,10 @@ start "Serveur IA Local" cmd /c "venv\Scripts\python.exe serve_model.py"
 REM Attente pour laisser le temps au serveur de démarrer
 timeout /t 5 /nobreak
 
-REM Démarrage de l'application React
+REM Démarrage de l'application React sur le port 8080
 echo.
 echo Démarrage de l'application...
-start "Application React" cmd /c "npm run dev"
+start "Application React" cmd /c "set PORT=8080 && npm run dev"
 
 echo.
 echo ================================
