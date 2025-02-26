@@ -1,4 +1,3 @@
-
 @echo off
 chcp 65001
 setlocal enabledelayedexpansion
@@ -120,9 +119,8 @@ echo ================================
 echo.
 echo Services démarrés:
 echo 1. Serveur IA local: http://localhost:8000
-echo 2. Application React: http://localhost:5173
+echo 2. Application React: http://localhost:8080
 echo.
 echo Pour arrêter les services, fermez les fenêtres de terminal ou pressez Ctrl+C
 echo.
 pause
-
