@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: true,
-      port: parseInt(env.VITE_PORT || '5173'),
+      port: 8080,
     },
     optimizeDeps: {
       include: ['react-dropzone']
