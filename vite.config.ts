@@ -1,26 +1,31 @@
 
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-  },
-  optimizeDeps: {
-    include: ['react-dropzone']
-  },
-  plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+export default defineConfig(({ mode }) => {
+  // Charger les variables d'environnement en fonction du mode
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  return {
+    server: {
+      host: true,
+      port: parseInt(env.VITE_PORT || '5173'),
     },
-    dedupe: ['react-dropzone', 'react']
-  },
-}));
+    optimizeDeps: {
+      include: ['react-dropzone']
+    },
+    plugins: [
+      react(),
+      mode === 'development' &&
+      componentTagger(),
+    ].filter(Boolean),
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+      dedupe: ['react-dropzone', 'react']
+    },
+  };
+});
