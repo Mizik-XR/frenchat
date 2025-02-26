@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: true,
-      port: mode === 'development' ? 5173 : parseInt(env.PORT || '5173'),
+      port: 8080,
       strictPort: true // Force Vite à utiliser uniquement le port spécifié
     },
     optimizeDeps: {
