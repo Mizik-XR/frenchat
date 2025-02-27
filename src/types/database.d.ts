@@ -78,6 +78,29 @@ export interface Database {
           updated_at?: string;
         };
       };
+      user_preferences: {
+        Row: {
+          id: string;
+          user_id: string;
+          onboarding_completed: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          onboarding_completed?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          onboarding_completed?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       uploaded_documents: {
         Row: {
           id: string;
