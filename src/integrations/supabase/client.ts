@@ -10,6 +10,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Défini' : 'Non défini');
 }
 
+// URL à utiliser pour les redirections d'authentification (en local)
+export const SITE_URL = 'http://localhost:8080';
+
 export const supabase = createClient(
   supabaseUrl || '',
   supabaseAnonKey || '',
