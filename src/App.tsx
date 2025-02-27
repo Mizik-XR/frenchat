@@ -16,6 +16,7 @@ import RagAdvancedSettings from "./pages/RagAdvancedSettings";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { DebugPanel } from "./components/DebugPanel";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 function AppWithAuth() {
   return (
@@ -76,9 +77,11 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <AppWithAuth />
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AppWithAuth />
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
