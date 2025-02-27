@@ -17,6 +17,9 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
 });
 
+// Liste des routes protégées qui nécessitent une authentification
+const PROTECTED_ROUTES = ['/chat', '/config', '/documents', '/monitoring', '/ai-config'];
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -59,6 +62,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       setUser(session?.user ?? null);
       
+      // Vérifier si l'utilisateur tente d'accéder à une route protégée sans être authentifié
+      if (!session?.user && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+        navigate('/auth', { state: { from: location } });
+        toast({
+          title: "Authentification requise",
+          description: "Veuillez vous connecter pour accéder à cette page.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       if (_event === 'SIGNED_IN') {
         const result = await checkUserAndConfig(session);
         
@@ -86,7 +101,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (_event === 'SIGNED_OUT') {
         setIsLoading(false);
-        navigate('/auth');
+        if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+          navigate('/auth');
+        }
         return;
       }
 
@@ -115,8 +132,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               navigate('/chat');
             }
           }
-        } else if (location.pathname !== '/auth' && location.pathname !== '/') {
-          navigate('/auth');
+        } else if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+          // Rediriger si l'utilisateur tente d'accéder à une route protégée sans être authentifié
+          navigate('/auth', { state: { from: location } });
+          toast({
+            title: "Authentification requise",
+            description: "Veuillez vous connecter pour accéder à cette page.",
+            variant: "destructive"
+          });
         }
         
         setIsLoading(false);

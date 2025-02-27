@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useState } from "react";
 import type { AIModel } from "../types";
 
 interface ModelConfigurationFieldsProps {
@@ -16,6 +17,15 @@ interface ModelConfigurationFieldsProps {
 
 export function ModelConfigurationFields({ model, onModelUpdate }: ModelConfigurationFieldsProps) {
   if (!model.configFields) return null;
+  
+  // Utiliser un état local pour masquer la clé API réelle du DOM
+  const [apiKeyVisible, setApiKeyVisible] = useState(false);
+  const [apiKeyState, setApiKeyState] = useState(model.apiKey || '');
+
+  const handleApiKeyChange = (value: string) => {
+    setApiKeyState(value);
+    handleValueChange('apiKey', value);
+  };
 
   const handleValueChange = (field: string, value: string | number) => {
     const updatedModel = { ...model } as AIModel & Record<string, any>;
@@ -49,13 +59,24 @@ export function ModelConfigurationFields({ model, onModelUpdate }: ModelConfigur
               </Tooltip>
             </TooltipProvider>
           </Label>
-          <Input 
-            type="password"
-            placeholder="sk-..."
-            className="w-full font-mono text-base bg-white"
-            onChange={(e) => handleValueChange('apiKey', e.target.value)}
-            value={model.apiKey || ''}
-          />
+          <div className="relative">
+            <Input 
+              type={apiKeyVisible ? "text" : "password"}
+              placeholder="sk-..."
+              className="w-full font-mono text-base bg-white pr-24"
+              onChange={(e) => handleApiKeyChange(e.target.value)}
+              value={apiKeyState}
+              // Ne pas stocker de valeurs sensibles dans des attributs data-*
+              aria-label="API Key Input"
+            />
+            <button
+              type="button"
+              onClick={() => setApiKeyVisible(!apiKeyVisible)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-700 px-2 py-1 bg-gray-100 rounded"
+            >
+              {apiKeyVisible ? "Masquer" : "Afficher"}
+            </button>
+          </div>
           {model.docsUrl && (
             <a 
               href={model.docsUrl}

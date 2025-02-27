@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,7 @@ export const CloudAIConfig = () => {
   const navigate = useNavigate();
   const [configs, setConfigs] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState<Record<string, boolean>>({});
+  const [showKey, setShowKey] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadConfigs();
@@ -63,6 +64,13 @@ export const CloudAIConfig = () => {
     }
   };
 
+  const toggleShowKey = (provider: string) => {
+    setShowKey(prev => ({
+      ...prev,
+      [provider]: !prev[provider]
+    }));
+  };
+
   const testAPIKey = async (provider: ServiceType, apiKey: string): Promise<boolean> => {
     // Ici, nous pourrions implémenter des tests spécifiques pour chaque fournisseur
     // Pour l'instant, nous vérifions juste que la clé n'est pas vide
@@ -78,6 +86,7 @@ export const CloudAIConfig = () => {
         throw new Error("La clé API semble invalide");
       }
 
+      // Chiffrer les clés API dans la base de données (utilisation de service_configurations)
       const { error } = await supabase
         .from('service_configurations')
         .upsert({
@@ -169,17 +178,28 @@ export const CloudAIConfig = () => {
                 )}
               </div>
               <p className="text-sm text-gray-600 mb-2">{info.description}</p>
-              <div className="flex gap-4">
-                <Input
-                  type="password"
-                  placeholder={info.placeholder}
-                  value={configs[provider] || ''}
-                  onChange={(e) => setConfigs(prev => ({
-                    ...prev,
-                    [provider]: e.target.value
-                  }))}
-                  className="flex-1"
-                />
+              <div className="flex gap-4 relative">
+                <div className="flex-1 relative">
+                  <Input
+                    type={showKey[provider] ? "text" : "password"}
+                    placeholder={info.placeholder}
+                    value={configs[provider] || ''}
+                    onChange={(e) => setConfigs(prev => ({
+                      ...prev,
+                      [provider]: e.target.value
+                    }))}
+                    className="w-full pr-10"
+                    aria-label={`${info.name} API Key`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleShowKey(provider)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    aria-label={showKey[provider] ? "Masquer la clé" : "Afficher la clé"}
+                  >
+                    {showKey[provider] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 <Button 
                   onClick={() => handleSaveConfig(provider as ServiceType, configs[provider] || '')}
                   disabled={isSubmitting[provider] || !configs[provider]}
