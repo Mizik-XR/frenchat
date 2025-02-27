@@ -14,14 +14,12 @@ import { LocalAIConfig } from "./llm/LocalAIConfig";
 import { ImageConfig } from "./ImageConfig";
 import { supabase } from "@/integrations/supabase/client";
 
+// Réduit à 4 étapes principales au lieu de 7
 const STEPS = [
   { title: "Bienvenue", description: "Configuration initiale de l'application" },
-  { title: "Méthode d'Import", description: "Choisissez comment importer vos documents" },
-  { title: "Google Drive", description: "Configuration de la synchronisation" },
-  { title: "Microsoft Teams", description: "Intégration avec Teams" },
-  { title: "LLM", description: "Configuration du modèle de langage" },
-  { title: "Image", description: "Paramètres de génération d'images" },
-  { title: "Récapitulatif", description: "Vérification finale" }
+  { title: "Sources", description: "Importation de vos documents" },
+  { title: "Intelligence", description: "Configuration de l'IA" },
+  { title: "Finalisation", description: "Vérification finale" }
 ];
 
 export const ConfigWizard = () => {
@@ -64,7 +62,7 @@ export const ConfigWizard = () => {
     setConfigStatus(prev => ({ ...prev, llm: true }));
     handleNext();
     toast({
-      title: "LLM configuré",
+      title: "IA configurée",
       description: "Le modèle de langage a été configuré avec succès.",
     });
   };
@@ -76,6 +74,7 @@ export const ConfigWizard = () => {
       case 1:
         return (
           <div className="animate-fade-in space-y-8">
+            <h2 className="text-xl font-semibold mb-4">Sources de données</h2>
             <ImportMethodSelector
               selectedMethod={importMethod}
               onMethodChange={setImportMethod}
@@ -86,47 +85,58 @@ export const ConfigWizard = () => {
                 loading={isProcessing}
               />
             )}
+            {importMethod === "drive" && (
+              <div className="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h3 className="text-lg font-medium mb-2">Google Drive</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Connectez votre Google Drive pour indexer et analyser vos documents.
+                </p>
+                <GoogleDriveConfig />
+              </div>
+            )}
+            {importMethod === "teams" && (
+              <div className="mt-4 bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                <h3 className="text-lg font-medium mb-2">Microsoft Teams</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Connectez Microsoft Teams pour accéder à vos conversations et documents.
+                </p>
+                <MicrosoftTeamsConfig
+                  onSave={() => {
+                    setConfigStatus(prev => ({ ...prev, teams: true }));
+                    handleNext();
+                  }}
+                />
+              </div>
+            )}
           </div>
         );
       case 2:
-        if (importMethod === "drive") {
-          return (
-            <div className="animate-fade-in">
-              <GoogleDriveConfig />
+        return (
+          <div className="animate-fade-in space-y-6">
+            <h2 className="text-xl font-semibold mb-4">Configuration de l'intelligence artificielle</h2>
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mb-6">
+              <h3 className="text-lg font-medium mb-2">Modèle de langage</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Configurez le modèle de langage qui sera utilisé pour comprendre et répondre à vos questions.
+              </p>
+              <LocalAIConfig onSave={handleLLMSave} />
             </div>
-          );
-        }
-        setCurrentStep(prev => prev + 1);
-        return null;
+            
+            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+              <h3 className="text-lg font-medium mb-2">Génération d'images</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Configurez les paramètres de génération d'images (optionnel).
+              </p>
+              <ImageConfig
+                onSave={() => {
+                  setConfigStatus(prev => ({ ...prev, image: true }));
+                  handleNext();
+                }}
+              />
+            </div>
+          </div>
+        );
       case 3:
-        return (
-          <div className="animate-fade-in">
-            <MicrosoftTeamsConfig
-              onSave={() => {
-                setConfigStatus(prev => ({ ...prev, teams: true }));
-                handleNext();
-              }}
-            />
-          </div>
-        );
-      case 4:
-        return (
-          <div className="animate-fade-in">
-            <LocalAIConfig onSave={handleLLMSave} />
-          </div>
-        );
-      case 5:
-        return (
-          <div className="animate-fade-in">
-            <ImageConfig
-              onSave={() => {
-                setConfigStatus(prev => ({ ...prev, image: true }));
-                handleNext();
-              }}
-            />
-          </div>
-        );
-      case 6:
         return <SummaryStep configStatus={configStatus} onFinish={handleNext} />;
       default:
         return null;
