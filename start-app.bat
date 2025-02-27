@@ -117,9 +117,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Démarrage immédiat de l'application React sur le port 5173
+REM Démarrage immédiat de l'application React sur le port 8080
 echo [INFO] Démarrage de l'application React...
-start "Application React" cmd /c "npm run dev -- --host --port 5173"
+start "Application React" cmd /c "npm run dev -- --host --port 8080"
 if errorlevel 1 (
     echo [ERREUR] Démarrage de l'application React échoué
     echo.
@@ -135,12 +135,12 @@ echo ================================
 echo.
 echo Services disponibles:
 echo [1] Serveur IA local: http://localhost:8000
-echo [2] Application React: http://localhost:5173
+echo [2] Application React: http://localhost:8080
 echo.
 echo [INFO] Attendez quelques secondes que les serveurs démarrent complètement...
 timeout /t 10 /nobreak > nul
 echo [INFO] Ouverture automatique du navigateur...
-start http://localhost:5173
+start http://localhost:8080
 echo.
 echo Pour arrêter les services, fermez les fenêtres de terminal ou pressez Ctrl+C
 echo Pour fermer cette fenêtre, appuyez sur une touche...

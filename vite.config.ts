@@ -11,8 +11,8 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: true,
-      port: 5173,
-      strictPort: true, // Utiliser strictement le port 5173
+      port: 8080, // Changement du port à 8080
+      strictPort: true, // Utiliser strictement le port 8080
       open: true, // Ouvrir automatiquement le navigateur
     },
     optimizeDeps: {
