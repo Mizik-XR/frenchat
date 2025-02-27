@@ -1,123 +1,126 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
-import { useHuggingFace } from "@/hooks/useHuggingFace";
-import { useAIConfig } from "@/hooks/useAIConfig";
-import { Download } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { ArrowLeft, Braces, Code, FileCode, Info, Settings2 } from 'lucide-react';
+import { AIConfig, ServiceType } from '@/types/config';
 
-const TRANSFORMER_MODELS = [
-  {
-    id: "mistral-7b",
-    name: "Mistral 7B",
-    description: "Modèle polyvalent 7B paramètres"
-  },
-  {
-    id: "llama-2-7b",
-    name: "Llama 2 7B",
-    description: "Modèle Meta de base 7B paramètres"
-  },
-  {
-    id: "phi-2",
-    name: "Phi-2",
-    description: "Petit modèle Microsoft très performant"
-  },
-  {
-    id: "falcon-7b",
-    name: "Falcon 7B",
-    description: "Modèle TII généraliste"
-  }
-];
-
-const HF_MODELS = [
-  {
-    id: "facebook/bart-large-cnn",
-    name: "BART Large CNN",
-    description: "Spécialisé en résumé de texte"
-  },
-  {
-    id: "t5-base",
-    name: "T5 Base",
-    description: "Modèle polyvalent pour diverses tâches"
-  },
-  {
-    id: "google/flan-t5-base",
-    name: "Flan-T5",
-    description: "Version améliorée de T5 avec instructions"
-  }
-];
-
-interface TransformersConfigProps {
-  onConfigSave?: (config: any) => void;
-}
-
-export function TransformersConfig({ onConfigSave }: TransformersConfigProps) {
-  const [selectedModel, setSelectedModel] = useState("");
-  const [apiEndpoint, setApiEndpoint] = useState("http://localhost:8000");
+export function TransformersConfig() {
+  const navigate = useNavigate();
+  const [installStatus, setInstallStatus] = useState('unknown');
+  const [type, setType] = useState<"local" | "huggingface">("local");
+  const [modelPath, setModelPath] = useState('');
+  const [modelId, setModelId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [modelType, setModelType] = useState<"local" | "huggingface">("local");
-  
-  const { textGeneration } = useHuggingFace('transformers');
-  const { saveConfig } = useAIConfig();
+  const [lastTested, setLastTested] = useState<string | null>(null);
 
-  const handleDownloadScript = () => {
-    const link = document.createElement('a');
-    link.href = '/start-app.bat';
-    link.download = 'start-app.bat';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast({
-      title: "Script téléchargé",
-      description: "Exécutez start-app.bat pour installer et démarrer le serveur local",
-    });
+  useEffect(() => {
+    // Vérifier l'état d'installation du serveur Transformers
+    checkServerStatus();
+    // Charger la configuration sauvegardée
+    loadConfig();
+  }, []);
+
+  const checkServerStatus = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.functions.invoke('check-model-availability');
+      
+      if (error) throw error;
+      
+      if (data.status === 'available') {
+        setInstallStatus('installed');
+      } else {
+        setInstallStatus('not_installed');
+      }
+    } catch (error) {
+      console.error("Erreur lors de la vérification de l'installation:", error);
+      setInstallStatus('error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleTestConnection = async () => {
-    setIsLoading(true);
+  const loadConfig = async () => {
     try {
-      const response = await textGeneration({
-        prompt: "Test de connexion",
-        model: selectedModel,
-        endpoint: apiEndpoint
-      });
+      const { data, error } = await supabase
+        .from('user_ai_configs')
+        .select('*')
+        .eq('provider', 'local')
+        .single();
 
-      if (response) {
-        const config = {
-          provider: 'transformers',
-          model_name: selectedModel,
-          api_endpoint: apiEndpoint,
-          config: {
-            type: modelType,
-            last_tested: new Date().toISOString()
-          }
-        };
+      if (error && error.code !== 'PGRST116') { // PGRST116 = pas de résultats
+        throw error;
+      }
 
-        await saveConfig(config);
+      if (data) {
+        setType(data.config?.type || 'local');
+        setModelPath(data.config?.modelPath || '');
+        setModelId(data.config?.modelId || '');
+        setLastTested(data.config?.last_tested || null);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement de la configuration:", error);
+    }
+  };
 
+  const saveConfig = async () => {
+    try {
+      setIsLoading(true);
+
+      // Récupérer l'utilisateur actuel
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) {
         toast({
-          title: "Connexion réussie",
-          description: "Le modèle est correctement configuré",
+          title: "Erreur",
+          description: "Vous devez être connecté pour sauvegarder la configuration",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const configData = {
+        provider: 'local' as ServiceType,
+        model_name: type === 'local' ? 'transformers-local' : modelId,
+        api_endpoint: '',
+        config: {
+          type,
+          last_tested: new Date().toISOString(),
+          ...(type === 'local' ? { modelPath } : { modelId })
+        }
+      };
+
+      const { error } = await supabase
+        .from('user_ai_configs')
+        .upsert({
+          ...configData,
+          user_id: userData.user.id
+        }, {
+          onConflict: 'provider,user_id'
         });
 
-        if (onConfigSave) {
-          onConfigSave(config);
-        }
-      }
-    } catch (error: any) {
+      if (error) throw error;
+
       toast({
-        title: "Erreur de connexion",
-        description: error.message,
+        title: "Configuration sauvegardée",
+        description: "Les paramètres de Transformers ont été mis à jour"
+      });
+
+      setLastTested(new Date().toISOString());
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder la configuration",
         variant: "destructive",
       });
     } finally {
@@ -125,89 +128,154 @@ export function TransformersConfig({ onConfigSave }: TransformersConfigProps) {
     }
   };
 
-  const models = modelType === "local" ? TRANSFORMER_MODELS : HF_MODELS;
-
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Label>Type de modèle</Label>
-        <Select value={modelType} onValueChange={(value: "local" | "huggingface") => setModelType(value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner le type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="local">Modèles locaux</SelectItem>
-            <SelectItem value="huggingface">Modèles Hugging Face</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="container mx-auto py-8 space-y-6">
+      <Button 
+        variant="ghost" 
+        onClick={() => navigate("/config")}
+        className="mb-4"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Retour
+      </Button>
 
-      <div className="space-y-2">
-        <Label>Modèle Transformer</Label>
-        <Select value={selectedModel} onValueChange={setSelectedModel}>
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner un modèle" />
-          </SelectTrigger>
-          <SelectContent>
-            {models.map((model) => (
-              <SelectItem key={model.id} value={model.id}>
-                <div className="flex flex-col">
-                  <span className="font-medium">{model.name}</span>
-                  <span className="text-xs text-gray-500">{model.description}</span>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Configuration de Hugging Face Transformers</CardTitle>
+          <CardDescription>
+            Utilisez des modèles d'IA locaux basés sur Transformers. Choisissez entre exécuter les modèles localement ou via l'API Hugging Face.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {installStatus === 'not_installed' && (
+            <Alert variant="destructive">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Serveur Transformers non détecté</AlertTitle>
+              <AlertDescription>
+                Le serveur de modèles Transformers ne semble pas être installé ou en cours d'exécution.
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto ml-2"
+                  onClick={() => window.open('https://github.com/votre-repo/docs/installation.md', '_blank')}
+                >
+                  Voir les instructions d'installation
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {installStatus === 'error' && (
+            <Alert variant="destructive">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Erreur de connexion</AlertTitle>
+              <AlertDescription>
+                Impossible de vérifier l'état du serveur Transformers. Vérifiez votre connexion et que le serveur est en cours d'exécution.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          <Tabs defaultValue="deploy" className="w-full">
+            <TabsList className="grid grid-cols-2 w-full mb-8">
+              <TabsTrigger value="deploy" className="flex items-center gap-2">
+                <Code className="h-4 w-4" />
+                Mode de déploiement
+              </TabsTrigger>
+              <TabsTrigger value="config" className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4" />
+                Configuration avancée
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="deploy">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Mode d'exécution</Label>
+                  <Select
+                    value={type}
+                    onValueChange={(value) => setType(value as "local" | "huggingface")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez un mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="local">Exécution locale (recommandé)</SelectItem>
+                      <SelectItem value="huggingface">API Hugging Face (cloud)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-gray-500">
+                    {type === 'local' 
+                      ? "Exécutez les modèles localement sur votre machine pour une confidentialité maximale." 
+                      : "Utilisez l'API Hugging Face pour accéder aux modèles sans installation locale."}
+                  </p>
                 </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
 
-      <div className="space-y-2">
-        <Label>URL du serveur (endpoint)</Label>
-        <Input 
-          value={apiEndpoint}
-          onChange={(e) => setApiEndpoint(e.target.value)}
-          placeholder="http://localhost:8000"
-          className="font-mono text-sm"
-        />
-        <p className="text-xs text-gray-500">
-          URL du serveur {modelType === "local" ? "local" : "API"} hébergeant le modèle
-        </p>
-      </div>
+                <Separator />
 
-      {modelType === "local" && (
-        <div className="space-y-4">
-          <div className="bg-slate-50 p-4 rounded-lg border space-y-4">
-            <h4 className="font-medium">Installation automatique (Windows)</h4>
-            <p className="text-sm text-gray-600">
-              Téléchargez et exécutez le script d'installation automatique qui s'occupera de :
-            </p>
-            <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-              <li>Installer Python si nécessaire</li>
-              <li>Configurer l'environnement virtuel</li>
-              <li>Installer toutes les dépendances</li>
-              <li>Démarrer le serveur local</li>
-            </ul>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={handleDownloadScript}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Télécharger le script d'installation
-            </Button>
+                {type === 'local' ? (
+                  <div className="space-y-4">
+                    <Label>Chemin du modèle local</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Chemin vers le dossier du modèle"
+                        value={modelPath}
+                        onChange={(e) => setModelPath(e.target.value)}
+                      />
+                      <Button variant="outline" onClick={() => {}} disabled={true}>
+                        <FileCode className="h-4 w-4 mr-2" />
+                        Parcourir
+                      </Button>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      Spécifiez le chemin vers le dossier contenant votre modèle local.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <Label>ID du modèle Hugging Face</Label>
+                    <Input
+                      placeholder="mistralai/Mistral-7B-Instruct-v0.1"
+                      value={modelId}
+                      onChange={(e) => setModelId(e.target.value)}
+                    />
+                    <p className="text-sm text-gray-500">
+                      Spécifiez l'ID du modèle Hugging Face à utiliser via l'API.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="config">
+              <Alert>
+                <Braces className="h-4 w-4" />
+                <AlertTitle>Configuration avancée</AlertTitle>
+                <AlertDescription>
+                  Ces paramètres permettent un contrôle précis du comportement des modèles Transformers.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="mt-6 space-y-4">
+                <p className="text-sm text-gray-600">
+                  La configuration avancée sera disponible prochainement.
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+
+        <CardFooter className="flex justify-between items-center">
+          <div className="text-sm text-gray-500">
+            {lastTested && `Dernière configuration: ${new Date(lastTested).toLocaleString()}`}
           </div>
-        </div>
-      )}
-
-      <div className="space-y-2">
-        <Button 
-          onClick={handleTestConnection}
-          disabled={!selectedModel || !apiEndpoint || isLoading}
-          className="w-full"
-        >
-          {isLoading ? "Test en cours..." : "Tester la connexion"}
-        </Button>
-      </div>
+          <Button 
+            onClick={saveConfig} 
+            disabled={isLoading || (type === 'local' && !modelPath) || (type === 'huggingface' && !modelId)}
+          >
+            {isLoading ? "Sauvegarde en cours..." : "Sauvegarder la configuration"}
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

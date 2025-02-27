@@ -1,18 +1,21 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { EmbeddingCacheItem, CacheConfig } from "@/types/config";
 import { Json } from "@/types/database";
 
-// Utility functions pour transformer les JSON en types appropriés
-function isJsonWithEmbedding(json: Json): json is { embedding: number[] } {
-  return typeof json === 'object' && json !== null && 'embedding' in json;
+// Interface pour les objets de cache d'embedding
+export interface EmbeddingCacheItem {
+  text: string;
+  embedding: number[];
+  model: string;
+  metadata?: Record<string, any>;
 }
 
-function isJsonWithText(json: Json): json is { text: string } {
-  return typeof json === 'object' && json !== null && 'text' in json;
-}
-
-function isJsonWithModel(json: Json): json is { model: string } {
-  return typeof json === 'object' && json !== null && 'model' in json;
+// Interface pour la configuration de cache
+export interface CacheConfig extends Record<string, Json> {
+  embedding?: number[];
+  text?: string;
+  model?: string;
+  metadata?: Record<string, any>;
 }
 
 // Cache en mémoire pour réduire les appels à la base de données
@@ -46,17 +49,13 @@ export async function checkEmbeddingCache(text: string, model: string): Promise<
   if (memCacheItem && memCacheItem.expires > Date.now()) {
     console.log("Cache hit in memory");
     
-    // Vérifier si les propriétés existent sur l'objet JSON
     const cacheData = memCacheItem.value;
-    const embedding = isJsonWithEmbedding(cacheData) ? cacheData.embedding : undefined;
-    const cachedText = isJsonWithText(cacheData) ? cacheData.text : undefined;
-    const cachedModel = isJsonWithModel(cacheData) ? cacheData.model : undefined;
-    
-    if (embedding && cachedText && cachedModel) {
+    if (cacheData.embedding && cacheData.text && cacheData.model) {
       return {
-        embedding,
-        text: cachedText,
-        model: cachedModel
+        embedding: cacheData.embedding,
+        text: cacheData.text,
+        model: cacheData.model,
+        metadata: cacheData.metadata || {}
       };
     }
   }
@@ -81,19 +80,12 @@ export async function checkEmbeddingCache(text: string, model: string): Promise<
     }
     
     // Récupérer les propriétés de l'objet JSON
-    const cacheValue = data.value as Json;
-    const embedding = isJsonWithEmbedding(cacheValue) ? cacheValue.embedding : undefined;
-    const cachedText = isJsonWithText(cacheValue) ? cacheValue.text : undefined;
-    const cachedModel = isJsonWithModel(cacheValue) ? cacheValue.model : undefined;
+    const cacheValue = data.value as CacheConfig;
     
-    if (embedding && cachedText && cachedModel) {
+    if (cacheValue.embedding && cacheValue.text && cacheValue.model) {
       // Mettre à jour le cache en mémoire
       memoryCache.set(cacheKey, {
-        value: {
-          embedding,
-          text: cachedText,
-          model: cachedModel
-        },
+        value: cacheValue,
         expires: expiresAt.getTime()
       });
       
@@ -107,9 +99,10 @@ export async function checkEmbeddingCache(text: string, model: string): Promise<
       });
       
       return {
-        embedding,
-        text: cachedText,
-        model: cachedModel
+        embedding: cacheValue.embedding,
+        text: cacheValue.text,
+        model: cacheValue.model,
+        metadata: cacheValue.metadata || {}
       };
     }
     
@@ -121,98 +114,47 @@ export async function checkEmbeddingCache(text: string, model: string): Promise<
 }
 
 /**
- * Ajoute un embedding au cache
+ * Stocke un embedding dans le cache
  */
-export async function addEmbeddingToCache(text: string, embedding: number[], model: string, metadata?: Record<string, any>): Promise<void> {
-  if (!text || !embedding || !model) {
-    console.warn("Missing required parameters for caching.");
-    return;
-  }
-
-  const cacheKey = getCacheKey(text, model);
+export async function storeEmbeddingInCache(item: EmbeddingCacheItem, ttlHours: number = 24): Promise<boolean> {
+  const cacheKey = getCacheKey(item.text, item.model);
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 30); // Expiration après 30 jours
-
-  const cacheValue: CacheConfig = {
-    embedding: embedding,
-    text: text,
-    model: model,
-    metadata: metadata
-  };
-
+  expiresAt.setHours(expiresAt.getHours() + ttlHours);
+  
   try {
+    // Stocker dans le cache en mémoire d'abord
+    memoryCache.set(cacheKey, {
+      value: {
+        embedding: item.embedding,
+        text: item.text,
+        model: item.model,
+        metadata: item.metadata || {}
+      },
+      expires: expiresAt.getTime()
+    });
+    
+    // Stocker dans la base de données ensuite
     const { error } = await supabase
       .from('embeddings_cache')
-      .insert([
-        {
-          key: cacheKey,
-          value: cacheValue as any,
-          expires_at: expiresAt.toISOString(),
-          compression_enabled: false
-        }
-      ]);
-
-    if (error) {
-      console.error("Error adding embedding to cache:", error);
-    } else {
-      console.log("Embedding added to cache");
-      memoryCache.set(cacheKey, {
-        value: cacheValue,
-        expires: expiresAt.getTime()
+      .upsert({
+        key: cacheKey,
+        value: {
+          embedding: item.embedding,
+          text: item.text,
+          model: item.model,
+          metadata: item.metadata || {}
+        } as Json,
+        expires_at: expiresAt.toISOString(),
+        access_count: 1
       });
-    }
+    
+    if (error) throw error;
+    
+    console.log("Stored embedding in cache");
+    return true;
   } catch (error) {
-    console.error("Error adding embedding to cache:", error);
-  }
-}
-
-/**
- * Supprime une entrée de cache
- */
-export async function removeCacheEntry(key: string): Promise<void> {
-  try {
-    const { error } = await supabase
-      .from('embeddings_cache')
-      .delete()
-      .eq('key', key);
-
-    if (error) {
-      console.error("Error removing cache entry:", error);
-    } else {
-      console.log("Cache entry removed");
-      memoryCache.delete(key);
-    }
-  } catch (error) {
-    console.error("Error removing cache entry:", error);
-  }
-}
-
-/**
- * Efface le cache en mémoire
- */
-export function clearMemoryCache(): void {
-  memoryCache.clear();
-  console.log("Memory cache cleared");
-}
-
-/**
- * Efface le cache en base de données (Attention: Opération coûteuse)
- */
-export async function clearDatabaseCache(): Promise<void> {
-  try {
-    const { error } = await supabase
-      .from('embeddings_cache')
-      .delete()
-      .neq('key', ''); // Supprimer toutes les entrées
-
-    if (error) {
-      console.error("Error clearing database cache:", error);
-    } else {
-      console.log("Database cache cleared");
-      clearMemoryCache(); // S'assurer de vider aussi le cache mémoire
-    }
-  } catch (error) {
-    console.error("Error clearing database cache:", error);
+    console.error("Error storing embedding in cache:", error);
+    return false;
   }
 }
 
@@ -236,21 +178,8 @@ export async function getCacheEntry(key: string): Promise<{ data: CacheConfig, e
       return null;
     }
     
-    // Conversion sécurisée du JSON en CacheConfig
-    const jsonValue = data.value as Json;
-    const cacheConfig: CacheConfig = {};
-    
-    if (isJsonWithEmbedding(jsonValue)) {
-      cacheConfig.embedding = jsonValue.embedding;
-    }
-    
-    if (isJsonWithText(jsonValue)) {
-      cacheConfig.text = jsonValue.text;
-    }
-    
-    if (isJsonWithModel(jsonValue)) {
-      cacheConfig.model = jsonValue.model;
-    }
+    // Conversion sécurisée du JSON
+    const cacheConfig = data.value as CacheConfig;
     
     return {
       data: cacheConfig,
@@ -263,99 +192,33 @@ export async function getCacheEntry(key: string): Promise<{ data: CacheConfig, e
 }
 
 /**
- * Met à jour la date d'expiration d'une entrée de cache
+ * Invalide une entrée de cache par sa clé
  */
-export async function updateCacheExpiration(key: string, newExpiration: Date): Promise<void> {
+export async function invalidateCacheEntry(key: string): Promise<boolean> {
   try {
+    // Supprimer du cache en mémoire
+    memoryCache.delete(key);
+    
+    // Supprimer de la base de données
     const { error } = await supabase
       .from('embeddings_cache')
-      .update({ expires_at: newExpiration.toISOString() })
+      .delete()
       .eq('key', key);
-
-    if (error) {
-      console.error("Error updating cache expiration:", error);
-    } else {
-      console.log("Cache expiration updated");
-      // Mettre à jour aussi le cache mémoire si présent
-      const memCacheItem = memoryCache.get(key);
-      if (memCacheItem) {
-        memoryCache.set(key, {
-          value: memCacheItem.value,
-          expires: newExpiration.getTime()
-        });
-      }
-    }
+    
+    if (error) throw error;
+    
+    return true;
   } catch (error) {
-    console.error("Error updating cache expiration:", error);
+    console.error("Error invalidating cache entry:", error);
+    return false;
   }
 }
 
-/**
- * Compresse une chaîne de caractères avec gzip
- */
-async function compressString(text: string): Promise<string> {
-  try {
-    const compressed = await new Promise<string>((resolve, reject) => {
-      const stream = new CompressionStream('gzip');
-      const writer = stream.writable.getWriter();
-      const encoder = new TextEncoder();
-      writer.write(encoder.encode(text));
-      writer.close();
-
-      const reader = stream.readable.getReader();
-      let result = '';
-      const decoder = new TextDecoder();
-
-      const pump = async () => {
-        const { done, value } = await reader.read();
-        if (done) {
-          resolve(result);
-          return;
-        }
-        result += decoder.decode(value);
-        pump();
-      };
-
-      pump().catch(reject);
-    });
-    return compressed;
-  } catch (error) {
-    console.error("Error compressing string:", error);
-    throw error;
-  }
-}
-
-/**
- * Décompresse une chaîne de caractères compressée avec gzip
- */
-async function decompressString(compressed: string): Promise<string> {
-  try {
-    const decompressed = await new Promise<string>((resolve, reject) => {
-      const stream = new DecompressionStream('gzip');
-      const writer = stream.writable.getWriter();
-      const encoder = new TextEncoder();
-      writer.write(encoder.encode(compressed));
-      writer.close();
-
-      const reader = stream.readable.getReader();
-      let result = '';
-      const decoder = new TextDecoder();
-
-      const pump = async () => {
-        const { done, value } = await reader.read();
-        if (done) {
-          resolve(result);
-          return;
-        }
-        result += decoder.decode(value);
-        pump();
-      };
-
-      pump().catch(reject);
-    });
-    return decompressed;
-  } catch (error) {
-    console.error("Error decompressing string:", error);
-    throw error;
-  }
-}
+// Exportation des fonctions pour les tests
+export const getCachedEmbedding = checkEmbeddingCache;
+export const cacheEmbedding = storeEmbeddingInCache;
+export const optimizedCache = {
+  get: checkEmbeddingCache,
+  set: storeEmbeddingInCache,
+  invalidate: invalidateCacheEntry
+};

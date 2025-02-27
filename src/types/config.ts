@@ -44,6 +44,8 @@ export interface AIConfig {
   modelPath?: string;
   type?: string;
   config?: Record<string, any>;
+  model_name?: string;
+  api_endpoint?: string;
 }
 
 export interface RagConfig {
@@ -112,9 +114,9 @@ export interface EmbeddingCacheItem {
   metadata?: Record<string, any>;
 }
 
-// Mise à jour pour supporter les propriétés de CacheConfig
 export interface CacheConfig {
   embedding?: number[];
   text?: string;
   model?: string;
+  metadata?: Record<string, any>;
 }
