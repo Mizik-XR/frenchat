@@ -9,89 +9,100 @@ export default function Index() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  // Fonction pour logger l'état actuel
+  console.log("Index page rendering, user state:", user ? "Logged in" : "Not logged in");
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-100 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-blue-200 p-4">
       <div className="max-w-4xl w-full">
-        <Card className="w-full p-6 shadow-xl border-blue-200">
+        <Card className="w-full p-6 shadow-xl bg-white border-blue-500 border-2">
           <CardHeader className="text-center">
-            <div className="mx-auto bg-blue-500 text-white p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-              <FileText className="w-8 h-8" />
+            <div className="mx-auto bg-blue-600 text-white p-4 rounded-full w-20 h-20 flex items-center justify-center mb-4">
+              <FileText className="w-10 h-10" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            <h1 className="text-4xl font-bold text-blue-800 mb-2">
               DocuChatter
             </h1>
-            <p className="text-gray-600 max-w-md mx-auto">
+            <p className="text-gray-700 max-w-md mx-auto font-medium">
               Votre assistant IA pour analyser et discuter de vos documents. Indexez vos fichiers et posez des questions en langage naturel.
             </p>
           </CardHeader>
           
           <CardContent className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                <h2 className="text-xl font-semibold flex items-center mb-3">
-                  <Settings className="mr-2 h-5 w-5 text-blue-500" /> 
+              <div className="bg-blue-50 p-6 rounded-lg shadow-md border-2 border-blue-200 hover:border-blue-400 transition-all">
+                <h2 className="text-xl font-semibold flex items-center mb-3 text-blue-700">
+                  <Settings className="mr-2 h-6 w-6 text-blue-500" /> 
                   Configuration
                 </h2>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-700 mb-4">
                   Configurez vos accès aux API Google Drive et Microsoft Teams pour commencer à indexer vos documents.
                 </p>
                 <Button 
-                  onClick={() => navigate('/config')}
-                  className="w-full"
-                  variant="default"
+                  onClick={() => {
+                    console.log("Navigating to /config");
+                    navigate('/config');
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                 >
                   Configurer les accès
                 </Button>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                <h2 className="text-xl font-semibold flex items-center mb-3">
-                  <MessageCircle className="mr-2 h-5 w-5 text-blue-500" /> 
+              <div className="bg-blue-50 p-6 rounded-lg shadow-md border-2 border-blue-200 hover:border-blue-400 transition-all">
+                <h2 className="text-xl font-semibold flex items-center mb-3 text-blue-700">
+                  <MessageCircle className="mr-2 h-6 w-6 text-blue-500" /> 
                   Chat IA
                 </h2>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-700 mb-4">
                   Posez des questions à propos de vos documents et obtenez des réponses précises grâce à l'IA.
                 </p>
                 <Button 
-                  onClick={() => navigate('/chat')}
-                  className="w-full"
-                  variant="default"
+                  onClick={() => {
+                    console.log("Navigating to /chat");
+                    navigate('/chat');
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                 >
                   Accéder au Chat
                 </Button>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                <h2 className="text-xl font-semibold flex items-center mb-3">
-                  <Database className="mr-2 h-5 w-5 text-blue-500" /> 
+              <div className="bg-blue-50 p-6 rounded-lg shadow-md border-2 border-blue-200 hover:border-blue-400 transition-all">
+                <h2 className="text-xl font-semibold flex items-center mb-3 text-blue-700">
+                  <Database className="mr-2 h-6 w-6 text-blue-500" /> 
                   Documents
                 </h2>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-700 mb-4">
                   Gérez vos documents indexés, ajoutez de nouveaux fichiers ou consultez les analyses existantes.
                 </p>
                 <Button 
-                  onClick={() => navigate('/documents')}
-                  className="w-full"
-                  variant="default"
+                  onClick={() => {
+                    console.log("Navigating to /documents");
+                    navigate('/documents');
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                 >
                   Gérer les documents
                 </Button>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                <h2 className="text-xl font-semibold flex items-center mb-3">
-                  <User className="mr-2 h-5 w-5 text-blue-500" /> 
+              <div className="bg-blue-50 p-6 rounded-lg shadow-md border-2 border-blue-200 hover:border-blue-400 transition-all">
+                <h2 className="text-xl font-semibold flex items-center mb-3 text-blue-700">
+                  <User className="mr-2 h-6 w-6 text-blue-500" /> 
                   Compte Utilisateur
                 </h2>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-700 mb-4">
                   {user 
                     ? "Vous êtes connecté. Gérez votre profil ou déconnectez-vous."
                     : "Connectez-vous ou créez un compte pour personnaliser votre expérience."}
                 </p>
                 <Button 
-                  onClick={() => navigate('/auth')}
-                  className="w-full"
-                  variant={user ? "outline" : "default"}
+                  onClick={() => {
+                    console.log("Navigating to /auth");
+                    navigate('/auth');
+                  }}
+                  className={`w-full ${user ? "bg-white text-blue-600 border-blue-600 border" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
                 >
                   {user ? "Mon profil" : "Se connecter"}
                 </Button>
@@ -99,8 +110,8 @@ export default function Index() {
             </div>
           </CardContent>
           
-          <CardFooter className="flex justify-center mt-6 pt-6 border-t border-gray-100">
-            <p className="text-sm text-gray-500">
+          <CardFooter className="flex justify-center mt-6 pt-6 border-t border-gray-200">
+            <p className="text-sm text-gray-600">
               DocuChatter - Votre assistant documentaire propulsé par l'IA © 2023
             </p>
           </CardFooter>
