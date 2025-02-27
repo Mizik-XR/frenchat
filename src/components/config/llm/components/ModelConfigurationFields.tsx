@@ -2,13 +2,14 @@
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { HelpCircle, AlertCircle } from "lucide-react";
+import { HelpCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { AIModel } from "../types";
+import { toast } from "@/hooks/use-toast";
 
 interface ModelConfigurationFieldsProps {
   model: AIModel;
@@ -18,13 +19,62 @@ interface ModelConfigurationFieldsProps {
 export function ModelConfigurationFields({ model, onModelUpdate }: ModelConfigurationFieldsProps) {
   if (!model.configFields) return null;
   
-  // Utiliser un état local pour masquer la clé API réelle du DOM
+  // État local pour masquer la clé API et contrôler le timeout de visibilité
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [apiKeyState, setApiKeyState] = useState(model.apiKey || '');
+  const [visibilityTimer, setVisibilityTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Masquer automatiquement la clé API après un délai (sécurité améliorée)
+  useEffect(() => {
+    if (apiKeyVisible) {
+      const timer = setTimeout(() => {
+        setApiKeyVisible(false);
+        toast({
+          title: "Clé masquée",
+          description: "La clé API a été automatiquement masquée pour des raisons de sécurité",
+          variant: "default",
+        });
+      }, 30000); // 30 secondes
+      
+      setVisibilityTimer(timer);
+      
+      return () => {
+        if (timer) clearTimeout(timer);
+      };
+    }
+  }, [apiKeyVisible]);
+
+  const toggleApiKeyVisibility = () => {
+    // Si on masque la clé, annuler le timer
+    if (apiKeyVisible && visibilityTimer) {
+      clearTimeout(visibilityTimer);
+      setVisibilityTimer(null);
+    }
+    
+    setApiKeyVisible(!apiKeyVisible);
+  };
 
   const handleApiKeyChange = (value: string) => {
     setApiKeyState(value);
     handleValueChange('apiKey', value);
+  };
+
+  // Validation basique des clés API selon le format
+  const validateApiKey = (key: string): boolean => {
+    if (!key) return false;
+    
+    // Patterns basiques pour les différents types de clés API
+    const patterns = {
+      openai: /^sk-[a-zA-Z0-9]{32,}$/,
+      anthropic: /^sk-ant-[a-zA-Z0-9]{32,}$/,
+      perplexity: /^pplx-[a-zA-Z0-9]{32,}$/,
+      huggingface: /^hf_[a-zA-Z0-9]{32,}$/,
+      // Motif générique pour les autres
+      generic: /^[a-zA-Z0-9_\-]{16,}$/
+    };
+    
+    // Vérifier si la clé correspond à l'un des motifs
+    return Object.values(patterns).some(pattern => pattern.test(key));
   };
 
   const handleValueChange = (field: string, value: string | number) => {
@@ -63,20 +113,41 @@ export function ModelConfigurationFields({ model, onModelUpdate }: ModelConfigur
             <Input 
               type={apiKeyVisible ? "text" : "password"}
               placeholder="sk-..."
-              className="w-full font-mono text-base bg-white pr-24"
+              className={`w-full font-mono text-base bg-white pr-24 ${apiKeyState && !validateApiKey(apiKeyState) ? 'border-red-400' : ''}`}
               onChange={(e) => handleApiKeyChange(e.target.value)}
               value={apiKeyState}
-              // Ne pas stocker de valeurs sensibles dans des attributs data-*
+              // Plus d'attributs sécurisés
+              autoComplete="off"
+              spellCheck="false"
+              autoCorrect="off"
               aria-label="API Key Input"
             />
             <button
               type="button"
-              onClick={() => setApiKeyVisible(!apiKeyVisible)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-700 px-2 py-1 bg-gray-100 rounded"
+              onClick={toggleApiKeyVisibility}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-700 px-2 py-1 bg-gray-100 rounded flex items-center gap-1"
             >
-              {apiKeyVisible ? "Masquer" : "Afficher"}
+              {apiKeyVisible ? (
+                <>
+                  <EyeOff className="h-3 w-3" /> Masquer
+                </>
+              ) : (
+                <>
+                  <Eye className="h-3 w-3" /> Afficher
+                </>
+              )}
             </button>
           </div>
+          {apiKeyState && !validateApiKey(apiKeyState) && (
+            <p className="text-red-500 text-xs mt-1">
+              Format de clé API potentiellement invalide
+            </p>
+          )}
+          {apiKeyVisible && (
+            <p className="text-amber-600 text-xs mt-1">
+              La clé sera automatiquement masquée après 30 secondes
+            </p>
+          )}
           {model.docsUrl && (
             <a 
               href={model.docsUrl}
