@@ -1,176 +1,107 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-
-type ProfileWithFirstLogin = {
-  is_first_login: boolean;
-};
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from './use-toast';
 
 export function useAuthActions() {
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignUp = async (
-    email: string,
-    password: string,
-    confirmPassword: string,
-    fullName: string
-  ) => {
-    if (password !== confirmPassword) {
-      toast({
-        title: "Erreur",
-        description: "Les mots de passe ne correspondent pas",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const signIn = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-          emailRedirectTo: `${window.location.origin}/auth?firstLogin=true`
-        },
-      });
-
-      if (signUpError) throw signUpError;
-
-      if (authData?.user) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: authData.user.id,
-              email: email,
-              full_name: fullName,
-              is_first_login: true,
-            }
-          ]);
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-        }
-
-        toast({
-          title: "Inscription réussie",
-          description: "Veuillez vérifier votre email pour confirmer votre compte",
-        });
-      }
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      toast({
-        title: "Erreur lors de l'inscription",
-        description: error.message || "Une erreur est survenue lors de l'inscription",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignIn = async (email: string, password: string, rememberMe: boolean = false) => {
-    try {
-      setLoading(true);
-      
-      // Configure la session avant la connexion
-      await supabase.auth.setSession({
-        access_token: '',
-        refresh_token: ''
-      });
-
-      // Effectue la connexion avec les options de session
+      console.log('Tentative de connexion avec email:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
-
-      // Configure la persistance de la session après la connexion réussie
-      if (!rememberMe) {
-        // Si "Se souvenir de moi" n'est pas coché, on configure la session pour expirer à la fermeture du navigateur
-        await supabase.auth.setSession({
-          access_token: data.session?.access_token || '',
-          refresh_token: '',
-        });
-      }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_first_login')
-        .eq('email', email)
-        .single() as { data: ProfileWithFirstLogin | null };
-
-      if (profile?.is_first_login) {
-        await supabase
-          .from('profiles')
-          .update({ is_first_login: false })
-          .eq('email', email);
-
-        navigate("/config");
-        toast({
-          title: "Première connexion",
-          description: "Bienvenue ! Configurons votre espace.",
-        });
-      } else {
-        navigate("/chat");
-        toast({
-          title: "Connexion réussie",
-          description: "Bienvenue !",
-        });
-      }
-    } catch (error: any) {
+      
+      console.log('Connexion réussie:', data.user?.id);
       toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive",
+        title: 'Connexion réussie',
+        description: 'Bienvenue !',
       });
+      
+      return { success: true, user: data.user };
+    } catch (error: any) {
+      console.error('Erreur de connexion:', error.message);
+      toast({
+        title: 'Erreur de connexion',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return { success: false, error };
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleMagicLink = async (email: string) => {
+  const signUp = async (email: string, password: string, metadata?: object) => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithOtp({
+      console.log('Tentative d\'inscription avec email:', email);
+      const { data, error } = await supabase.auth.signUp({
         email,
+        password,
         options: {
-          emailRedirectTo: `${window.location.origin}/config`
-        }
+          data: metadata,
+        },
       });
 
       if (error) throw error;
-
+      
+      console.log('Inscription réussie, vérifiez votre email');
       toast({
-        title: "Email envoyé",
-        description: "Vérifiez votre boîte mail pour vous connecter",
+        title: 'Inscription réussie',
+        description: 'Vérifiez votre email pour confirmer votre compte.',
       });
+      
+      return { success: true, user: data.user };
     } catch (error: any) {
+      console.error('Erreur d\'inscription:', error.message);
       toast({
-        title: "Erreur",
+        title: 'Erreur d\'inscription',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
+      return { success: false, error };
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    setIsLoading(true);
+    try {
+      console.log('Tentative de déconnexion');
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      console.log('Déconnexion réussie');
+      toast({
+        title: 'Déconnexion réussie',
+        description: 'À bientôt !',
+      });
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('Erreur de déconnexion:', error.message);
+      toast({
+        title: 'Erreur de déconnexion',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return { success: false, error };
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
-    loading,
-    handleSignUp,
-    handleSignIn,
-    handleMagicLink,
+    signIn,
+    signUp,
+    signOut,
+    isLoading,
   };
 }
