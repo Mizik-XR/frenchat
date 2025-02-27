@@ -1,6 +1,7 @@
 
 import { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Props {
   children: ReactNode;
@@ -33,24 +34,34 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      // Sinon, afficher un fallback par défaut
+      // Sinon, afficher un fallback par défaut avec le GIF animé
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
-          <div className="max-w-md p-6 bg-white rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">
-              Une erreur est survenue
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-white to-blue-50">
+          <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg text-center">
+            <div className="flex justify-center mb-6">
+              <img 
+                src="/filechat-animation.gif" 
+                alt="FileChat Logo" 
+                className="h-24 w-24"
+              />
+            </div>
+            
+            <h2 className="text-2xl font-bold text-red-500 mb-4">
+              Oooops !
             </h2>
+            
             <p className="text-gray-700 mb-6">
-              {this.state.error?.message || 
-               "L'application a rencontré un problème. Veuillez réessayer."}
+              Une erreur inattendue s'est produite. Nous vous prions de nous excuser pour ce désagrément.
             </p>
-            <div className="space-y-2">
+            
+            <div className="space-y-3">
               <Button
                 onClick={() => window.location.reload()}
-                className="w-full"
+                className="w-full bg-blue-500 hover:bg-blue-600"
               >
                 Recharger l'application
               </Button>
+              
               <Button
                 variant="outline"
                 onClick={() => this.setState({ hasError: false })}
@@ -59,9 +70,19 @@ export class ErrorBoundary extends Component<Props, State> {
                 Réessayer
               </Button>
             </div>
-            <div className="mt-4 p-2 bg-gray-100 rounded text-xs text-gray-600 overflow-auto max-h-40">
-              <pre>{this.state.error?.stack}</pre>
-            </div>
+            
+            {this.state.error && (
+              <Alert className="mt-6 bg-gray-50 border-gray-200">
+                <AlertTitle className="text-sm font-medium text-gray-800">
+                  Détails techniques
+                </AlertTitle>
+                <AlertDescription className="mt-2">
+                  <div className="p-2 bg-gray-100 rounded text-xs text-gray-600 overflow-auto max-h-32 text-left">
+                    <pre>{this.state.error.message}</pre>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         </div>
       );
