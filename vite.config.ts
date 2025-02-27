@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
       host: true,
       port: 8080, // Changement du port à 8080
       strictPort: true, // Utiliser strictement le port 8080
-      open: true, // Ouvrir automatiquement le navigateur
+      open: true, // Ouvrir automatiquement le navigateur (une seule fois)
     },
     optimizeDeps: {
       include: ['react-dropzone']

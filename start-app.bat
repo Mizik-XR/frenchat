@@ -139,9 +139,13 @@ echo [2] Application React: http://localhost:8080
 echo.
 echo [INFO] Attendez quelques secondes que les serveurs démarrent complètement...
 timeout /t 10 /nobreak > nul
-echo [INFO] Ouverture automatique du navigateur...
-start http://localhost:8080
+
+REM Désactivé l'ouverture automatique du navigateur car Vite le fait déjà
+REM echo [INFO] Ouverture automatique du navigateur...
+REM start http://localhost:8080
+
 echo.
+echo Pour accéder à l'application, ouvrez votre navigateur à l'adresse: http://localhost:8080
 echo Pour arrêter les services, fermez les fenêtres de terminal ou pressez Ctrl+C
 echo Pour fermer cette fenêtre, appuyez sur une touche...
 pause >nul
