@@ -1180,6 +1180,7 @@ export type Database = {
       uploaded_documents: {
         Row: {
           content: string | null
+          content_hash: string | null
           created_at: string
           file_path: string
           file_type: string
@@ -1194,6 +1195,7 @@ export type Database = {
         }
         Insert: {
           content?: string | null
+          content_hash?: string | null
           created_at?: string
           file_path: string
           file_type: string
@@ -1208,6 +1210,7 @@ export type Database = {
         }
         Update: {
           content?: string | null
+          content_hash?: string | null
           created_at?: string
           file_path?: string
           file_type?: string
