@@ -34,25 +34,25 @@ export const OnboardingStep: React.FC<OnboardingStepProps> = ({
 
   return (
     <div className="flex flex-col h-full animate-fade-in">
-      <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 p-2 max-w-lg w-full mx-auto">
+      <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 p-2 max-w-lg w-full mx-auto">
         <CardContent className="p-6 flex flex-col gap-4">
           <div className="flex items-center gap-3 mb-2">
             {icon && <div className="text-primary">{icon}</div>}
-            <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">{title}</h2>
           </div>
           
           {image && (
-            <div className="w-full rounded-md overflow-hidden mb-4 border border-gray-200">
+            <div className="w-full rounded-md overflow-hidden mb-4 border border-gray-200 dark:border-gray-700">
               <img src={image} alt={title} className="w-full h-auto" />
             </div>
           )}
           
-          <p className="text-gray-600 mb-4">{description}</p>
+          <p className="text-gray-600 dark:text-gray-300 mb-4">{description}</p>
           
           {children}
           
           <div className="flex justify-between items-center mt-4">
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               {index + 1} / {totalSteps}
             </div>
             

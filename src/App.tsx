@@ -18,26 +18,29 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { DebugPanel } from "./components/DebugPanel";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ThemeProvider } from "./components/ThemeProvider";
 
 function AppWithAuth() {
   return (
-    <AuthProvider>
-      <OnboardingIntro />
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/config" element={<Config />} />
-        <Route path="/advanced-config" element={<AdvancedConfig />} />
-        <Route path="/rag-advanced-settings" element={<RagAdvancedSettings />} />
-        <Route path="/documents" element={<Documents />} />
-        <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
-        <Route path="/monitoring" element={<Monitoring />} />
-        <Route path="/ai-config" element={<AIConfig />} />
-      </Routes>
-      <Toaster />
-      <DebugPanel />
-    </AuthProvider>
+    <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+      <AuthProvider>
+        <OnboardingIntro />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/config" element={<Config />} />
+          <Route path="/advanced-config" element={<AdvancedConfig />} />
+          <Route path="/rag-advanced-settings" element={<RagAdvancedSettings />} />
+          <Route path="/documents" element={<Documents />} />
+          <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
+          <Route path="/monitoring" element={<Monitoring />} />
+          <Route path="/ai-config" element={<AIConfig />} />
+        </Routes>
+        <Toaster />
+        <DebugPanel />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

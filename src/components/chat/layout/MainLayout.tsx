@@ -3,6 +3,7 @@ import { ConversationList } from "../ConversationList";
 import { ChatContainer } from "./ChatContainer";
 import { PriorityTopicsPanel } from "../PriorityTopicsPanel";
 import { Conversation, Message, WebUIConfig, AIProvider, AnalysisMode } from "@/types/chat";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface MainLayoutProps {
   conversations: Conversation[];
@@ -68,7 +69,7 @@ export const MainLayout = ({
   onAnalysisModeChange
 }: MainLayoutProps) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <div className="flex h-screen overflow-hidden">
         <div className="hidden sm:block">
           <ConversationList
@@ -82,6 +83,9 @@ export const MainLayout = ({
         
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 relative">
+            <div className="absolute top-2 right-2 z-50">
+              <ThemeToggle />
+            </div>
             <ChatContainer
               messages={messages}
               isLoading={isLoading}
@@ -108,7 +112,7 @@ export const MainLayout = ({
           </div>
 
           {showPriorityTopics && (
-            <div className="w-80 border-l border-gray-200 bg-white/80 backdrop-blur-sm shadow-lg animate-slide-in-right">
+            <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-black/40 backdrop-blur-sm shadow-lg animate-slide-in-right">
               <PriorityTopicsPanel
                 messages={messages}
                 onClose={() => setShowPriorityTopics(false)}

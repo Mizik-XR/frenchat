@@ -9,6 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Steps } from "@/components/ui/steps";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingButton } from "@/components/onboarding/OnboardingButton";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ export default function Index() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
         <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
@@ -24,14 +25,17 @@ export default function Index() {
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
         {/* Composant d'onboarding */}
         <OnboardingIntro />
         
         <div className="container mx-auto px-4 py-12">
-          <header className="mb-12 text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">FileChat</h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <header className="mb-12 text-center relative">
+            <div className="absolute right-0 top-0">
+              <ThemeToggle />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">FileChat</h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Votre assistant IA pour analyser, explorer et générer des documents intelligents
             </p>
             
@@ -48,7 +52,7 @@ export default function Index() {
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-full">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-full">
                     <MessageSquare className="h-6 w-6 text-primary" />
                   </div>
                   <CardTitle>Chat IA</CardTitle>
@@ -58,7 +62,7 @@ export default function Index() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-300">
                   Posez des questions sur vos documents et obtenez des réponses précises avec les sources.
                 </p>
               </CardContent>
@@ -75,7 +79,7 @@ export default function Index() {
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-full">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-full">
                     <FolderOpen className="h-6 w-6 text-primary" />
                   </div>
                   <CardTitle>Documents</CardTitle>
@@ -85,7 +89,7 @@ export default function Index() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-300">
                   Créez des documents structurés et exportez-les vers Google Drive ou Teams.
                 </p>
               </CardContent>
@@ -102,7 +106,7 @@ export default function Index() {
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-full">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-full">
                     <Settings className="h-6 w-6 text-primary" />
                   </div>
                   <CardTitle>Configuration</CardTitle>
@@ -112,7 +116,7 @@ export default function Index() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-300">
                   Intégrez Google Drive, Microsoft Teams ou téléversez des fichiers manuellement.
                 </p>
               </CardContent>
@@ -128,7 +132,7 @@ export default function Index() {
           </div>
 
           <div className="mt-12 text-center">
-            <p className="text-gray-500 text-sm">
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
               FileChat - Solution de chat intelligent pour vos documents
             </p>
           </div>

@@ -11,12 +11,12 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: 'Inter', sans-serif;
-  background-color: #f8fafc;
-  color: #1a202c;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 .glass-panel {
-  @apply bg-white/80 backdrop-blur-lg border border-gray-200 rounded-lg shadow-lg;
+  @apply bg-white/80 dark:bg-black/40 backdrop-blur-lg border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg;
 }
 
 .slide-up {
@@ -41,4 +41,3 @@ body {
 .fade-in {
   @apply animate-fadeIn;
 }
-

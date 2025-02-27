@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { ChatHeader } from "../ChatHeader";
 import { MessageList } from "../MessageList";
@@ -55,7 +56,7 @@ export const ChatContainer = ({
   onAnalysisModeChange
 }: ChatContainerProps) => {
   return (
-    <Card className="h-full flex flex-col bg-white shadow-sm">
+    <Card className="h-full flex flex-col bg-white dark:bg-gray-800 shadow-sm">
       <ChatHeader 
         mode={webUIConfig.mode}
         onModeChange={onModeChange}
