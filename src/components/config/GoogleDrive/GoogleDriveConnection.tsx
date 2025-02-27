@@ -4,6 +4,12 @@ import { Button } from "@/components/ui/button";
 import { useGoogleDrive } from "./useGoogleDrive";
 import { useAuth } from "@/components/AuthProvider";
 import { Loader2 } from "lucide-react";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
 
 interface GoogleDriveConnectionProps {
   onFolderSelect: (folderId: string) => void;
@@ -20,6 +26,26 @@ export const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionP
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div 
+                className={`w-3 h-3 rounded-full ${
+                  isConnected ? 'bg-green-500' : 'bg-red-500'
+                } transition-colors`}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{isConnected ? 'Google Drive connecté' : 'Google Drive non connecté'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <span className="text-sm text-gray-600">
+          Statut Google Drive
+        </span>
+      </div>
+
       {!isConnected ? (
         <Button 
           onClick={initiateGoogleAuth}
