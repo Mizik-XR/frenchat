@@ -11,8 +11,9 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: true,
-      port: 8080,
-      strictPort: false // Permet de basculer sur un autre port si 8080 est occupé
+      port: 5173,
+      strictPort: true, // Utiliser strictement le port 5173
+      open: true, // Ouvrir automatiquement le navigateur
     },
     optimizeDeps: {
       include: ['react-dropzone']

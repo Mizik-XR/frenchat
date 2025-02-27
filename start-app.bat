@@ -9,10 +9,12 @@ echo ================================
 echo.
 
 REM Nettoyage des processus existants sur les ports
+echo [INFO] Nettoyage des processus existants...
 taskkill /F /IM "python.exe" /FI "WINDOWTITLE eq Serveur IA Local" 2>nul
 taskkill /F /IM "node.exe" /FI "WINDOWTITLE eq Application React" 2>nul
 
 REM Vérification de Node.js
+echo [INFO] Vérification de Node.js...
 where node >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] Node.js n'est pas installé. Veuillez l'installer depuis https://nodejs.org/
@@ -27,6 +29,7 @@ node --version
 echo.
 
 REM Vérification des modules node
+echo [INFO] Vérification des modules NPM...
 if not exist "node_modules\" (
     echo [INFO] Installation des dépendances NPM nécessaire
     goto :npm_install
@@ -60,6 +63,7 @@ echo.
 :skip_npm_install
 
 REM Vérification et création de l'environnement Python si nécessaire
+echo [INFO] Vérification de l'environnement Python...
 if not exist "venv\" (
     echo ================================
     echo Configuration environnement Python
@@ -78,6 +82,7 @@ if not exist "venv\" (
 )
 
 REM Vérification du modèle IA
+echo [INFO] Vérification du serveur modèle IA...
 if not exist "serve_model.py" (
     echo ================================
     echo Création du serveur modèle IA
@@ -114,7 +119,7 @@ if errorlevel 1 (
 
 REM Démarrage immédiat de l'application React sur le port 5173
 echo [INFO] Démarrage de l'application React...
-start "Application React" cmd /c "npm run dev"
+start "Application React" cmd /c "npm run dev -- --host --port 5173"
 if errorlevel 1 (
     echo [ERREUR] Démarrage de l'application React échoué
     echo.
@@ -132,9 +137,11 @@ echo Services disponibles:
 echo [1] Serveur IA local: http://localhost:8000
 echo [2] Application React: http://localhost:5173
 echo.
-echo Pour accéder à l'application, ouvrez http://localhost:5173 dans votre navigateur.
+echo [INFO] Attendez quelques secondes que les serveurs démarrent complètement...
+timeout /t 10 /nobreak > nul
+echo [INFO] Ouverture automatique du navigateur...
+start http://localhost:5173
 echo.
 echo Pour arrêter les services, fermez les fenêtres de terminal ou pressez Ctrl+C
 echo Pour fermer cette fenêtre, appuyez sur une touche...
 pause >nul
-
