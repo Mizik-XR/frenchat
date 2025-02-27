@@ -13,6 +13,15 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Braces, Code, FileCode, Info, Settings2 } from 'lucide-react';
 import { AIConfig, ServiceType } from '@/types/config';
+import { Json } from '@/types/database';
+
+// Type pour la config stockée dans la base de données
+interface TransformersConfigData {
+  type?: string;
+  modelPath?: string;
+  modelId?: string;
+  last_tested?: string;
+}
 
 export function TransformersConfig() {
   const navigate = useNavigate();
@@ -63,10 +72,15 @@ export function TransformersConfig() {
       }
 
       if (data) {
-        setType(data.config?.type || 'local');
-        setModelPath(data.config?.modelPath || '');
-        setModelId(data.config?.modelId || '');
-        setLastTested(data.config?.last_tested || null);
+        // Convertir le JSON en objet avec type assertion pour accéder aux propriétés
+        const configData = data.config as TransformersConfigData;
+        
+        if (configData) {
+          setType((configData.type as "local" | "huggingface") || 'local');
+          setModelPath(configData.modelPath || '');
+          setModelId(configData.modelId || '');
+          setLastTested(configData.last_tested || null);
+        }
       }
     } catch (error) {
       console.error("Erreur lors du chargement de la configuration:", error);
