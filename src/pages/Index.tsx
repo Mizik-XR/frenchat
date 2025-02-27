@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 export default function Index() {
   const navigate = useNavigate();
   const { loading } = useOnboarding();
+  const [imageError, setImageError] = useState(false);
   
   // Redirection automatique vers le chat après un délai (optionnel)
   useEffect(() => {
@@ -20,6 +21,9 @@ export default function Index() {
     
     return () => clearTimeout(timer);
   }, [navigate]);
+
+  // Log pour vérifier que le composant est bien rechargé
+  console.log("Index component rendering with updated GIF path");
 
   if (loading) {
     return (
@@ -40,13 +44,22 @@ export default function Index() {
             <ThemeToggle />
           </div>
           
-          {/* GIF principal */}
-          <div className="max-w-2xl w-full mb-8 rounded-lg overflow-hidden shadow-2xl">
-            <img 
-              src="/your-gif-filename.gif" 
-              alt="FileChat Animation" 
-              className="w-full h-auto"
-            />
+          {/* GIF principal avec chemin corrigé */}
+          <div className="max-w-2xl w-full mb-8 rounded-lg overflow-hidden shadow-2xl bg-white">
+            {imageError ? (
+              <img 
+                src="/lovable-uploads/fb21020a-04ad-4e58-9d53-3224ce760584.png" 
+                alt="FileChat Animation Fallback" 
+                className="w-full h-auto"
+              />
+            ) : (
+              <img 
+                src="/docu-chatter/public/filechat-animation.gif" 
+                alt="FileChat Animation" 
+                className="w-full h-auto"
+                onError={() => setImageError(true)}
+              />
+            )}
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4 mt-6">
