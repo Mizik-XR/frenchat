@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ArrowRight, FileText } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -39,7 +39,11 @@ export default function Index() {
         <div className="flex-1 flex flex-col items-center justify-center p-4">
           <div className="max-w-3xl w-full mx-auto text-center">
             <div className="inline-flex items-center mb-8 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg">
-              <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <img 
+                src="/filechat-animation.gif" 
+                alt="FileChat Logo" 
+                className="h-8 w-8"
+              />
               <h1 className="text-3xl font-bold ml-2 text-gray-900 dark:text-white">FileChat</h1>
             </div>
             
