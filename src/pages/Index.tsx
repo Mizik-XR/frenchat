@@ -43,7 +43,7 @@ export default function Index() {
           {/* GIF principal */}
           <div className="max-w-2xl w-full mb-8 rounded-lg overflow-hidden shadow-2xl">
             <img 
-              src="/your-gif-filename.gif" 
+              src="/filechat-animation.gif" 
               alt="FileChat Animation" 
               className="w-full h-auto"
             />
