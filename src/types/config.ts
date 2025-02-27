@@ -12,6 +12,17 @@ export type ServiceType =
   | 'stable_diffusion'
   | 'microsoft_teams';
 
+export type LLMProvider =
+  | 'openai'
+  | 'huggingface'
+  | 'anthropic'
+  | 'perplexity'
+  | 'deepseek'
+  | 'local'
+  | 'cohere'
+  | 'mistral'
+  | 'ollama';
+
 export interface AIConfig {
   provider: ServiceType;
   apiKey?: string;
@@ -43,7 +54,7 @@ export interface RagConfig {
 export interface GoogleConfig {
   clientId: string;
   apiKey: string;
-  userId: string;
+  userId?: string;  // Rendu optionnel pour résoudre les erreurs
 }
 
 export interface IndexingProgress {
@@ -77,6 +88,7 @@ export interface LLMConfig {
   temperature?: number;
   maxTokens?: number;
   configuration?: Record<string, any>;
+  rateLimit?: number;  // Ajouté pour résoudre l'erreur dans les tests
 }
 
 export interface EmbeddingCacheItem {
@@ -86,7 +98,8 @@ export interface EmbeddingCacheItem {
   metadata?: Record<string, any>;
 }
 
-export interface CacheConfig extends Json {
+// Modifié pour éviter l'erreur d'interface avec Json
+export interface CacheConfig {
   embedding?: number[];
   text?: string;
   model?: string;

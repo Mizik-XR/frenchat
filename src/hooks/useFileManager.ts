@@ -16,7 +16,6 @@ interface FileLimits {
 
 interface FileMetadata {
   id: string;
-  content_hash: string;
   path: string;
 }
 
@@ -135,7 +134,7 @@ export const useFileManager = () => {
 
       const { data: file } = await supabase
         .from('uploaded_documents')
-        .select('content_hash, path')
+        .select('file_path')
         .eq('id', fileId)
         .single();
 
@@ -143,27 +142,27 @@ export const useFileManager = () => {
         throw new Error('Fichier non trouvé');
       }
 
-      if (file.content_hash !== newHash) {
-        console.log('Changement détecté, ré-indexation en cours...');
-        await supabase.functions.invoke('process-uploaded-files', {
-          body: { fileId, path: file.path }
-        });
+      // Procéder à la ré-indexation
+      console.log('Changement détecté, ré-indexation en cours...');
+      await supabase.functions.invoke('process-uploaded-files', {
+        body: { fileId, path: file.file_path }
+      });
 
-        await supabase
-          .from('uploaded_documents')
-          .update({ content_hash: newHash })
-          .eq('id', fileId);
+      // Mise à jour des métadonnées
+      await supabase
+        .from('uploaded_documents')
+        .update({ metadata: { content_hash: newHash } })
+        .eq('id', fileId);
 
-        // Mise à jour du cache
-        await supabase.functions.invoke('cache-manager', {
-          body: { action: 'set', fileId, hash: newHash }
-        });
+      // Mise à jour du cache
+      await supabase.functions.invoke('cache-manager', {
+        body: { action: 'set', fileId, hash: newHash }
+      });
 
-        toast({
-          title: "Mise à jour réussie",
-          description: "Le fichier a été ré-indexé avec succès"
-        });
-      }
+      toast({
+        title: "Mise à jour réussie",
+        description: "Le fichier a été ré-indexé avec succès"
+      });
     } catch (error) {
       console.error("Erreur lors de la mise à jour de l'index:", error);
       toast({

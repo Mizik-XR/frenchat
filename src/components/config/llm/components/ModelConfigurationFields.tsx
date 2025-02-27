@@ -17,7 +17,7 @@ interface ModelConfigurationFieldsProps {
 export function ModelConfigurationFields({ model, onModelUpdate }: ModelConfigurationFieldsProps) {
   if (!model.configFields) return null;
 
-  const handleValueChange = (field: keyof typeof model.configFields, value: string | number) => {
+  const handleValueChange = (field: string, value: string | number) => {
     const updatedModel = { ...model } as AIModel & Record<string, any>;
     updatedModel[field] = value;
     onModelUpdate(updatedModel);
