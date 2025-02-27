@@ -1,127 +1,139 @@
 
+import React from "react";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { useNavigate } from "react-router-dom";
-import { Settings, MessageCircle, User, Database, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/components/AuthProvider";
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { OnboardingIntro } from "@/components/onboarding/OnboardingIntro";
+import { MessageSquare, FolderOpen, Settings } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Steps } from "@/components/ui/steps";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { OnboardingButton } from "@/components/onboarding/OnboardingButton";
 
 export default function Index() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { loading } = useOnboarding();
 
-  // Fonction pour logger l'état actuel
-  console.log("Index page rendering, user state:", user ? "Logged in" : "Not logged in");
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-blue-200 p-4">
-      <div className="max-w-4xl w-full">
-        <Card className="w-full p-6 shadow-xl bg-white border-blue-500 border-2">
-          <CardHeader className="text-center">
-            <div className="mx-auto bg-blue-600 text-white p-4 rounded-full w-20 h-20 flex items-center justify-center mb-4">
-              <FileText className="w-10 h-10" />
+    <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        {/* Composant d'onboarding */}
+        <OnboardingIntro />
+        
+        <div className="container mx-auto px-4 py-12">
+          <header className="mb-12 text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">FileChat</h1>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Votre assistant IA pour analyser, explorer et générer des documents intelligents
+            </p>
+            
+            <div className="mt-4">
+              <OnboardingButton />
             </div>
-            <h1 className="text-4xl font-bold text-blue-800 mb-2">
-              DocuChatter
-            </h1>
-            {/* GIF d'animation remplaçant le texte d'introduction */}
-            <div className="max-w-md mx-auto">
-              <img 
-                src="/welcome-animation.gif" 
-                alt="Animation DocuChatter" 
-                className="w-full rounded-lg shadow-md"
-              />
-            </div>
-          </CardHeader>
-          
-          <CardContent className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-blue-50 p-6 rounded-lg shadow-md border-2 border-blue-200 hover:border-blue-400 transition-all">
-                <h2 className="text-xl font-semibold flex items-center mb-3 text-blue-700">
-                  <Settings className="mr-2 h-6 w-6 text-blue-500" /> 
-                  Configuration
-                </h2>
-                <p className="text-gray-700 mb-4">
-                  Configurez vos accès aux API Google Drive et Microsoft Teams pour commencer à indexer vos documents.
+          </header>
+
+          <div className="max-w-4xl mx-auto mb-12">
+            <Steps steps={["Connectez-vous", "Configurez vos sources", "Discutez avec l'IA"]} currentStep={0} />
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-full">
+                    <MessageSquare className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle>Chat IA</CardTitle>
+                </div>
+                <CardDescription>
+                  Discutez avec votre base documentaire
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Posez des questions sur vos documents et obtenez des réponses précises avec les sources.
                 </p>
+              </CardContent>
+              <CardFooter>
                 <Button 
-                  onClick={() => {
-                    console.log("Navigating to /config");
-                    navigate('/config');
-                  }}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  className="w-full" 
+                  onClick={() => navigate("/chat")}
                 >
-                  Configurer les accès
+                  Accéder au chat
                 </Button>
-              </div>
-              
-              <div className="bg-blue-50 p-6 rounded-lg shadow-md border-2 border-blue-200 hover:border-blue-400 transition-all">
-                <h2 className="text-xl font-semibold flex items-center mb-3 text-blue-700">
-                  <MessageCircle className="mr-2 h-6 w-6 text-blue-500" /> 
-                  Chat IA
-                </h2>
-                <p className="text-gray-700 mb-4">
-                  Posez des questions à propos de vos documents et obtenez des réponses précises grâce à l'IA.
+              </CardFooter>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-full">
+                    <FolderOpen className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle>Documents</CardTitle>
+                </div>
+                <CardDescription>
+                  Gérez et générez vos documents
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Créez des documents structurés et exportez-les vers Google Drive ou Teams.
                 </p>
+              </CardContent>
+              <CardFooter>
                 <Button 
-                  onClick={() => {
-                    console.log("Navigating to /chat");
-                    navigate('/chat');
-                  }}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                >
-                  Accéder au Chat
-                </Button>
-              </div>
-              
-              <div className="bg-blue-50 p-6 rounded-lg shadow-md border-2 border-blue-200 hover:border-blue-400 transition-all">
-                <h2 className="text-xl font-semibold flex items-center mb-3 text-blue-700">
-                  <Database className="mr-2 h-6 w-6 text-blue-500" /> 
-                  Documents
-                </h2>
-                <p className="text-gray-700 mb-4">
-                  Gérez vos documents indexés, ajoutez de nouveaux fichiers ou consultez les analyses existantes.
-                </p>
-                <Button 
-                  onClick={() => {
-                    console.log("Navigating to /documents");
-                    navigate('/documents');
-                  }}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  className="w-full" 
+                  onClick={() => navigate("/documents")}
                 >
                   Gérer les documents
                 </Button>
-              </div>
-              
-              <div className="bg-blue-50 p-6 rounded-lg shadow-md border-2 border-blue-200 hover:border-blue-400 transition-all">
-                <h2 className="text-xl font-semibold flex items-center mb-3 text-blue-700">
-                  <User className="mr-2 h-6 w-6 text-blue-500" /> 
-                  Compte Utilisateur
-                </h2>
-                <p className="text-gray-700 mb-4">
-                  {user 
-                    ? "Vous êtes connecté. Gérez votre profil ou déconnectez-vous."
-                    : "Connectez-vous ou créez un compte pour personnaliser votre expérience."}
+              </CardFooter>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-full">
+                    <Settings className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle>Configuration</CardTitle>
+                </div>
+                <CardDescription>
+                  Connectez vos sources de données
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Intégrez Google Drive, Microsoft Teams ou téléversez des fichiers manuellement.
                 </p>
+              </CardContent>
+              <CardFooter>
                 <Button 
-                  onClick={() => {
-                    console.log("Navigating to /auth");
-                    navigate('/auth');
-                  }}
-                  className={`w-full ${user ? "bg-white text-blue-600 border-blue-600 border" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
+                  className="w-full" 
+                  onClick={() => navigate("/config")}
                 >
-                  {user ? "Mon profil" : "Se connecter"}
+                  Configurer
                 </Button>
-              </div>
-            </div>
-          </CardContent>
-          
-          <CardFooter className="flex justify-center mt-6 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-600">
-              DocuChatter - Votre assistant documentaire propulsé par l'IA © 2023
+              </CardFooter>
+            </Card>
+          </div>
+
+          <div className="mt-12 text-center">
+            <p className="text-gray-500 text-sm">
+              FileChat - Solution de chat intelligent pour vos documents
             </p>
-          </CardFooter>
-        </Card>
+          </div>
+        </div>
       </div>
-    </div>
+    </ThemeProvider>
   );
 }

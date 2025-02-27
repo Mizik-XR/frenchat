@@ -3,6 +3,7 @@ import { BrowserRouter } from "react-router-dom";
 import { Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./components/AuthProvider";
 import { Toaster } from "@/components/ui/toaster";
+import { OnboardingIntro } from "./components/onboarding/OnboardingIntro";
 import Auth from "./pages/Auth";
 import Chat from "./pages/Chat";
 import Config from "./pages/Config";
@@ -21,6 +22,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 function AppWithAuth() {
   return (
     <AuthProvider>
+      <OnboardingIntro />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
