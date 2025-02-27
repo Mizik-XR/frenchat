@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, NavigateFunction, Location } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { toast } from "@/hooks/use-toast";
@@ -17,11 +17,33 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
 });
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+// Créez un composant HOC pour utiliser les hooks de navigation
+const AuthProviderWithNavigation = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  return (
+    <AuthProviderContent 
+      navigate={navigate} 
+      location={location}
+    >
+      {children}
+    </AuthProviderContent>
+  );
+};
+
+// Composant interne qui ne dépend pas directement des hooks de navigation
+const AuthProviderContent = ({ 
+  children,
+  navigate,
+  location
+}: { 
+  children: React.ReactNode;
+  navigate: NavigateFunction;
+  location: Location;
+}) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isFirstLoad = true;
@@ -150,6 +172,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     </AuthContext.Provider>
   );
 };
+
+// Export du composant principal qui sera utilisé par l'application
+export const AuthProvider = AuthProviderWithNavigation;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
