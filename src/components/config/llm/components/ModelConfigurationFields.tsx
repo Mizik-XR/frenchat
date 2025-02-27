@@ -17,6 +17,12 @@ interface ModelConfigurationFieldsProps {
 export function ModelConfigurationFields({ model, onModelUpdate }: ModelConfigurationFieldsProps) {
   if (!model.configFields) return null;
 
+  const handleValueChange = (field: keyof typeof model.configFields, value: string | number) => {
+    const updatedModel = { ...model } as AIModel & Record<string, any>;
+    updatedModel[field] = value;
+    onModelUpdate(updatedModel);
+  };
+
   return (
     <Card className="p-4 bg-gray-50 border-gray-200 space-y-6 animate-in fade-in-50 duration-200">
       <Alert className="bg-blue-50 border-blue-200">
@@ -47,12 +53,8 @@ export function ModelConfigurationFields({ model, onModelUpdate }: ModelConfigur
             type="password"
             placeholder="sk-..."
             className="w-full font-mono text-base bg-white"
-            onChange={(e) => {
-              onModelUpdate({
-                ...model,
-                apiKey: e.target.value
-              });
-            }}
+            onChange={(e) => handleValueChange('apiKey', e.target.value)}
+            value={model.apiKey || ''}
           />
           {model.docsUrl && (
             <a 
@@ -85,12 +87,8 @@ export function ModelConfigurationFields({ model, onModelUpdate }: ModelConfigur
           <Input 
             placeholder="gpt-4-turbo-preview"
             className="w-full font-mono text-base bg-white"
-            onChange={(e) => {
-              onModelUpdate({
-                ...model,
-                modelId: e.target.value
-              });
-            }}
+            onChange={(e) => handleValueChange('modelName', e.target.value)}
+            value={model.modelId || ''}
           />
         </div>
       )}
@@ -112,16 +110,11 @@ export function ModelConfigurationFields({ model, onModelUpdate }: ModelConfigur
           </Label>
           <div className="flex items-center gap-4">
             <Slider
-              defaultValue={[0.7]}
+              defaultValue={[model.temperature || 0.7]}
               max={1}
               step={0.1}
               className="flex-1"
-              onValueChange={([value]) => {
-                onModelUpdate({
-                  ...model,
-                  temperature: value
-                });
-              }}
+              onValueChange={([value]) => handleValueChange('temperature', value)}
             />
             <span className="text-sm text-gray-600 min-w-[40px]">
               {model.temperature?.toFixed(1) || "0.7"}
