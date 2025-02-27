@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { BrowserRouter } from "react-router-dom";
 import { Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./components/AuthProvider";
 import { Toaster } from "@/components/ui/toaster";
@@ -16,21 +16,23 @@ import RagAdvancedSettings from "./pages/RagAdvancedSettings";
 
 function App() {
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/config" element={<Config />} />
-        <Route path="/advanced-config" element={<AdvancedConfig />} />
-        <Route path="/rag-advanced-settings" element={<RagAdvancedSettings />} />
-        <Route path="/documents" element={<Documents />} />
-        <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
-        <Route path="/monitoring" element={<Monitoring />} />
-        <Route path="/ai-config" element={<AIConfig />} />
-      </Routes>
-      <Toaster />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/config" element={<Config />} />
+          <Route path="/advanced-config" element={<AdvancedConfig />} />
+          <Route path="/rag-advanced-settings" element={<RagAdvancedSettings />} />
+          <Route path="/documents" element={<Documents />} />
+          <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
+          <Route path="/monitoring" element={<Monitoring />} />
+          <Route path="/ai-config" element={<AIConfig />} />
+        </Routes>
+        <Toaster />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
