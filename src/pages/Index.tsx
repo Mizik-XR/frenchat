@@ -22,6 +22,9 @@ export default function Index() {
     return () => clearTimeout(timer);
   }, [navigate]);
 
+  // Log pour vérifier que le composant est bien rechargé
+  console.log("Index component rendering with updated GIF path");
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
