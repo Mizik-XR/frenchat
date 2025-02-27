@@ -1,74 +1,164 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { useGoogleDrive } from "./useGoogleDrive";
-import { useAuth } from "@/components/AuthProvider";
-import { Loader2 } from "lucide-react";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger 
-} from "@/components/ui/tooltip";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useGoogleDriveConfig } from '@/hooks/useGoogleDriveConfig';
+import GoogleDriveButton from './GoogleDriveButton';
+import { FolderCheck, ChevronDown, AlertTriangle } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { IndexingProgress } from './IndexingProgress';
+import { useGoogleDriveFolders } from '@/hooks/useGoogleDriveFolders';
+import GoogleDriveAlert from './GoogleDriveAlert';
+import { GoogleDriveConnectionProps } from '@/types/google-drive';
+import { AlertDescription, Alert } from '@/components/ui/alert';
 
-interface GoogleDriveConnectionProps {
-  onFolderSelect: (folderId: string) => void;
-}
+const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) => {
+  const { isConnected, disconnect } = useGoogleDriveConfig();
+  const { folders, loading: loadingFolders } = useGoogleDriveFolders();
+  const [selectedFolder, setSelectedFolder] = useState<string>('');
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
-export const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) => {
-  const { user } = useAuth();
-  const { isConnecting, isConnected, initiateGoogleAuth } = useGoogleDrive(
-    user,
-    () => console.log("Configuration sauvegardée")
-  );
+  // État pour tracker le progrès d'indexation
+  const [isIndexing, setIsIndexing] = useState(false);
+  const [indexProgress, setIndexProgress] = useState(0);
+  const [totalFiles, setTotalFiles] = useState(0);
+  const [processedFiles, setProcessedFiles] = useState(0);
 
-  if (!user) return null;
+  // Cas d'erreur
+  const [indexingError, setIndexingError] = useState<string | null>(null);
+
+  const handleFolderSelect = async () => {
+    if (!selectedFolder) return;
+    
+    try {
+      setShowConfirmation(false);
+      setIsIndexing(true);
+      setIndexProgress(0);
+      
+      // Ajout d'une simulation de progression pour montrer l'UI
+      // Sera remplacée par le vrai tracking dans l'implémentation finale
+      await onFolderSelect(selectedFolder);
+      
+      // Ici, on simule la mise à jour du progrès
+      // Dans la vraie implémentation, cela viendrait de la fonction onFolderSelect
+      const timer = setInterval(() => {
+        setIndexProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(timer);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 500);
+      
+      // Nettoyer le timer si le composant est démonté
+      return () => clearInterval(timer);
+    } catch (error) {
+      console.error('Erreur lors de l\'indexation:', error);
+      setIndexingError(error instanceof Error ? error.message : 'Une erreur est survenue');
+      setIsIndexing(false);
+    }
+  };
+
+  const handleDisconnect = () => {
+    disconnect();
+    setSelectedFolder('');
+    setShowConfirmation(false);
+  };
+
+  if (!isConnected) {
+    return <GoogleDriveButton />;
+  }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div 
-                className={`w-3 h-3 rounded-full ${
-                  isConnected ? 'bg-green-500' : 'bg-red-500'
-                } transition-colors`}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{isConnected ? 'Google Drive connecté' : 'Google Drive non connecté'}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <span className="text-sm text-gray-600">
-          Statut Google Drive
-        </span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="bg-green-100 p-2 rounded-full">
+            <FolderCheck className="h-5 w-5 text-green-600" />
+          </div>
+          <div>
+            <h3 className="font-medium">Google Drive connecté</h3>
+            <p className="text-sm text-gray-500">Sélectionnez un dossier à indexer</p>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleDisconnect}>
+          Déconnecter
+        </Button>
       </div>
 
-      {!isConnected ? (
-        <Button 
-          onClick={initiateGoogleAuth}
-          disabled={isConnecting}
-          className="w-full"
-        >
-          {isConnecting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Connexion en cours...
-            </>
-          ) : (
-            "Connecter Google Drive"
-          )}
-        </Button>
+      {loadingFolders ? (
+        <div className="flex justify-center p-4">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+        </div>
+      ) : folders.length > 0 ? (
+        <div>
+          <Select 
+            value={selectedFolder} 
+            onValueChange={setSelectedFolder}
+            disabled={isIndexing}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Sélectionner un dossier" />
+            </SelectTrigger>
+            <SelectContent>
+              {folders.map((folder) => (
+                <SelectItem key={folder.id} value={folder.id}>
+                  {folder.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <div className="mt-4 flex justify-end">
+            {!showConfirmation ? (
+              <Button 
+                onClick={() => selectedFolder && setShowConfirmation(true)}
+                disabled={!selectedFolder || isIndexing}
+              >
+                Indexer ce dossier
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <GoogleDriveAlert onCancel={() => setShowConfirmation(false)} onConfirm={handleFolderSelect} />
+              </div>
+            )}
+          </div>
+        </div>
       ) : (
-        <Button
-          onClick={() => onFolderSelect('root')}
-          className="w-full"
-        >
-          Indexer mon Google Drive
-        </Button>
+        <Alert variant="warning">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Aucun dossier trouvé dans votre Google Drive. Veuillez créer un dossier avant de continuer.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isIndexing && (
+        <div className="mt-4">
+          <IndexingProgress 
+            progress={indexProgress} 
+            totalFiles={totalFiles}
+            processedFiles={processedFiles}
+          />
+        </div>
+      )}
+
+      {indexingError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            {indexingError}
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );
 };
+
+export default GoogleDriveConnection;

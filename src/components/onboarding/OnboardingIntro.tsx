@@ -1,73 +1,94 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { OnboardingStep } from "./OnboardingStep";
 import { useOnboarding } from "@/hooks/useOnboarding";
-import { MessageSquare, FolderOpen, Settings, FileText, Search } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-
-const ONBOARDING_STEPS = [
-  {
-    title: "Bienvenue sur FileChat!",
-    description: "FileChat est votre assistant IA pour analyser, rechercher et générer des documents intelligents à partir de vos fichiers.",
-    icon: <MessageSquare className="h-6 w-6" />,
-  },
-  {
-    title: "Chat conversationnel intelligent",
-    description: "Posez des questions sur vos documents et obtenez des réponses précises basées sur leur contenu. Notre interface de type 'WhatsApp' vous permet de répondre à des messages spécifiques et d'organiser vos conversations par dossiers.",
-    icon: <MessageSquare className="h-6 w-6" />,
-    image: "/lovable-uploads/7e688c58-987c-44c7-8ccb-3003407646a2.png",
-  },
-  {
-    title: "Indexation de documents",
-    description: "Connectez votre Google Drive ou Microsoft Teams pour indexer automatiquement vos documents. FileChat analysera leur contenu pour répondre à vos questions avec précision.",
-    icon: <FolderOpen className="h-6 w-6" />,
-  },
-  {
-    title: "Génération de documents",
-    description: "Créez des documents structurés comme des business plans ou des demandes de subvention directement depuis vos sources. Prévisualisez-les et exportez-les vers Google Drive ou Teams.",
-    icon: <FileText className="h-6 w-6" />,
-  },
-  {
-    title: "Recherche avancée",
-    description: "Utilisez notre moteur de recherche sémantique pour trouver rapidement des informations dans des centaines de documents. FileChat comprend le sens de vos questions, pas seulement les mots-clés.",
-    icon: <Search className="h-6 w-6" />,
-    image: "/lovable-uploads/b273a0a1-adfe-4515-b99c-34e1a3ac8c9f.png",
-  },
-];
+import { useNavigate } from "react-router-dom";
+import { CheckCircle, Database, FileSearch, Loader2, Workflow } from "lucide-react";
 
 export const OnboardingIntro = () => {
   const { 
     showOnboarding, 
     currentStep, 
-    nextStep, 
-    previousStep,
-    completeOnboarding 
+    setCurrentStep, 
+    completeOnboarding, 
+    setShowOnboarding,
+    loading 
   } = useOnboarding();
+  
+  const navigate = useNavigate();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || loading) return null;
+
+  if (!showOnboarding) return null;
+
+  const steps = [
+    {
+      title: "Bienvenue dans FileChat",
+      description: "FileChat vous permet d'interroger vos documents, fichiers et données avec l'IA pour obtenir des réponses précises et contextuelles.",
+      icon: <CheckCircle className="h-6 w-6" />,
+    },
+    {
+      title: "Connectez vos sources de données",
+      description: "Importez ou connectez vos documents depuis Google Drive, Microsoft Teams, ou par téléchargement direct pour les rendre accessibles à l'IA.",
+      icon: <Database className="h-6 w-6" />,
+    },
+    {
+      title: "Chat intelligent avec vos documents",
+      description: "L'IA analyse vos documents et vous répond en utilisant leur contenu. Idéal pour trouver rapidement des informations précises.",
+      icon: <FileSearch className="h-6 w-6" />,
+    },
+    {
+      title: "Génération de documents structurés",
+      description: "Créez des rapports, synthèses et autres documents structurés à partir de votre base documentaire. Exportez-les facilement vers Google Drive ou Teams.",
+      icon: <Workflow className="h-6 w-6" />,
+    },
+  ];
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
 
   const handleComplete = () => {
     completeOnboarding();
-    toast({
-      title: "Tutoriel terminé!",
-      description: "Vous pouvez le revoir à tout moment dans les paramètres.",
-    });
+    navigate("/config");
   };
 
+  // Ajoutez les images génériques pour chaque étape
+  const genericImages = [
+    "/placeholder.svg", // Image générique pour l'étape 1
+    "/placeholder.svg", // Image générique pour l'étape 2
+    "/placeholder.svg", // Image générique pour l'étape 3
+    "/placeholder.svg", // Image générique pour l'étape 4
+  ];
+
   return (
-    <Dialog open={showOnboarding} onOpenChange={(open) => !open && handleComplete()}>
-      <DialogContent 
-        className="sm:max-w-xl bg-transparent border-none shadow-none p-0"
-      >
+    <Dialog open={showOnboarding} onOpenChange={setShowOnboarding}>
+      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden gap-0">
         <OnboardingStep
-          title={ONBOARDING_STEPS[currentStep].title}
-          description={ONBOARDING_STEPS[currentStep].description}
-          image={ONBOARDING_STEPS[currentStep].image}
-          icon={ONBOARDING_STEPS[currentStep].icon}
+          title={steps[currentStep].title}
+          description={steps[currentStep].description}
+          image={genericImages[currentStep]}
           index={currentStep}
-          totalSteps={ONBOARDING_STEPS.length}
-          onPrevious={previousStep}
-          onNext={nextStep}
+          totalSteps={steps.length}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
           onComplete={handleComplete}
+          icon={steps[currentStep].icon}
         />
       </DialogContent>
     </Dialog>
