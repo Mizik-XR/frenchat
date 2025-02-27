@@ -1,12 +1,12 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { Cloud, Upload } from "lucide-react";
+import { Cloud, Upload, MessageSquare } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 
-export type ImportMethod = "drive" | "upload";
+export type ImportMethod = "drive" | "upload" | "teams";
 
 interface ImportMethodSelectorProps {
   onMethodChange: (method: ImportMethod) => void;
@@ -63,6 +63,24 @@ export const ImportMethodSelector = ({
                 <p className="text-sm text-muted-foreground mt-1">
                   Traitez un dossier en one-shot, idéal pour des opérations ponctuelles
                   sans nécessiter une synchronisation continue.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div>
+          <Card className="relative p-4 cursor-pointer hover:border-primary transition-colors">
+            <RadioGroupItem value="teams" id="teams" className="absolute right-4 top-4" />
+            <div className="flex items-start space-x-4">
+              <MessageSquare className="h-6 w-6 text-primary" />
+              <div>
+                <Label htmlFor="teams" className="text-base font-medium">
+                  Microsoft Teams
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Connectez-vous à Microsoft Teams pour indexer vos conversations et documents partagés.
+                  Idéal pour les équipes utilisant l'écosystème Microsoft.
                 </p>
               </div>
             </div>
