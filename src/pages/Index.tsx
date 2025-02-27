@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,21 +10,44 @@ import { ArrowRight } from "lucide-react";
 export default function Index() {
   const navigate = useNavigate();
   const { loading } = useOnboarding();
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
   
-  // Redirection automatique vers le chat après un délai (optionnel)
+  // Fonction pour gérer l'erreur de chargement d'image
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.log("Erreur de chargement de l'image, utilisation de l'image de secours");
+    const target = e.target as HTMLImageElement;
+    target.src = "/lovable-uploads/fb21020a-04ad-4e58-9d53-3224ce760584.png"; // Image de secours
+    setIsImageLoaded(true);
+  };
+
+  // Fonction pour confirmer le chargement d'image
+  const handleImageLoad = () => {
+    console.log("Image chargée avec succès");
+    setIsImageLoaded(true);
+  };
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      // Décommentez la ligne suivante si vous souhaitez une redirection automatique
-      // navigate("/chat");
-    }, 5000); // 5 secondes
+    // Log pour le débogage
+    console.log("Page Index montée, état de chargement:", loading);
     
-    return () => clearTimeout(timer);
-  }, [navigate]);
+    // Préchargement de l'image
+    const img = new Image();
+    img.src = "/filechat-animation.gif";
+    img.onload = handleImageLoad;
+    img.onerror = () => handleImageError({ target: img } as any);
+    
+    return () => {
+      console.log("Page Index démontée");
+    };
+  }, [loading]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
+        <div className="flex flex-col items-center">
+          <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+          <p className="text-gray-700 dark:text-gray-300">Chargement en cours...</p>
+        </div>
       </div>
     );
   }
@@ -40,23 +63,22 @@ export default function Index() {
           <div className="max-w-3xl w-full mx-auto text-center">
             <div className="inline-flex items-center mb-8 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg">
               <img 
-                src="/filechat-animation.gif" 
+                src="/lovable-uploads/fb21020a-04ad-4e58-9d53-3224ce760584.png" 
                 alt="FileChat Logo" 
                 className="h-8 w-8"
+                onLoad={handleImageLoad}
+                onError={handleImageError}
               />
               <h1 className="text-3xl font-bold ml-2 text-gray-900 dark:text-white">FileChat</h1>
             </div>
             
             <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-2xl mb-8 max-w-3xl mx-auto">
               <img 
-                src="/filechat-animation.gif" 
+                src="/lovable-uploads/fb21020a-04ad-4e58-9d53-3224ce760584.png" 
                 alt="FileChat Animation" 
                 className="w-full h-auto"
-                onError={(e) => {
-                  // Fallback en cas d'erreur de chargement du GIF
-                  const target = e.target as HTMLImageElement;
-                  target.src = "/lovable-uploads/fb21020a-04ad-4e58-9d53-3224ce760584.png";
-                }}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
               />
             </div>
             
