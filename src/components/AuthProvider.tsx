@@ -17,7 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
 });
 
-// Créez un composant HOC pour utiliser les hooks de navigation
+// Composant HOC pour utiliser les hooks de navigation
 const AuthProviderWithNavigation = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,30 +46,46 @@ const AuthProviderContent = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let isFirstLoad = true;
+    const checkUserAndConfig = async (session: any) => {
+      if (!session?.user) return null;
+      
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_first_login')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error("Erreur lors de la récupération du profil:", profileError);
+        }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("Auth state changed:", _event, "session:", session);
+        const { data: configs, error: configError } = await supabase
+          .from('service_configurations')
+          .select('service_type, status')
+          .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
+
+        if (configError) {
+          console.error("Erreur lors de la récupération des configurations:", configError);
+        }
+
+        return { profile, configs };
+      } catch (error) {
+        console.error("Erreur lors de la vérification de l'utilisateur:", error);
+        return null;
+      }
+    };
+
+    const handleAuthChange = async (_event: string, session: any) => {
+      console.log("Auth state changed:", _event, "session:", session?.user?.id ? "User authenticated" : "No user");
+      
+      setUser(session?.user ?? null);
       
       if (_event === 'SIGNED_IN') {
-        setUser(session?.user ?? null);
-        setIsLoading(false);
+        const result = await checkUserAndConfig(session);
         
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('is_first_login')
-            .eq('id', session.user.id)
-            .single();
-
-          const { data: configs, error: configError } = await supabase
-            .from('service_configurations')
-            .select('service_type, status')
-            .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
-
-          console.log("User configs:", configs);
-          console.log("Config error:", configError);
-
+        if (result) {
+          const { profile, configs } = result;
           const hasAllConfigs = configs?.some(c => c.status === 'configured');
           const needsConfiguration = !configs?.length || !hasAllConfigs;
 
@@ -85,62 +101,62 @@ const AuthProviderContent = ({
             navigate('/chat');
           }
         }
+        
+        setIsLoading(false);
         return;
       }
 
       if (_event === 'SIGNED_OUT') {
-        setUser(null);
         setIsLoading(false);
         navigate('/auth');
         return;
       }
 
-      setUser(session?.user ?? null);
       setIsLoading(false);
+    };
 
-      if (!session?.user && !isFirstLoad && location.pathname !== '/auth') {
-        navigate("/auth");
-      }
-    });
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log("Initial session check:", session);
-      
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_first_login')
-          .eq('id', session.user.id)
-          .single();
-
-        const { data: configs } = await supabase
-          .from('service_configurations')
-          .select('service_type, status')
-          .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
-
-        setUser(session.user);
-        setIsLoading(false);
-        isFirstLoad = false;
-
-        const hasAllConfigs = configs?.some(c => c.status === 'configured');
-        const needsConfiguration = !configs?.length || !hasAllConfigs;
-
-        if ((profile?.is_first_login || needsConfiguration) && location.pathname !== '/config') {
-          navigate('/config');
-        } else if (location.pathname === '/' || location.pathname === '/auth') {
-          navigate('/chat');
-        }
-      } else {
-        setUser(null);
-        setIsLoading(false);
-        isFirstLoad = false;
+    // Vérification initiale de la session
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Initial session check:", session?.user?.id ? "User authenticated" : "No user");
         
-        if (location.pathname !== '/auth') {
+        if (session?.user) {
+          setUser(session.user);
+          
+          const result = await checkUserAndConfig(session);
+          
+          if (result) {
+            const { profile, configs } = result;
+            const hasAllConfigs = configs?.some(c => c.status === 'configured');
+            const needsConfiguration = !configs?.length || !hasAllConfigs;
+
+            if ((profile?.is_first_login || needsConfiguration) && location.pathname !== '/config') {
+              navigate('/config');
+            } else if (location.pathname === '/' || location.pathname === '/auth') {
+              navigate('/chat');
+            }
+          }
+        } else if (location.pathname !== '/auth') {
           navigate('/auth');
         }
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Erreur lors de la vérification de la session:", error);
+        setUser(null);
+        setIsLoading(false);
+        navigate('/auth');
       }
-    });
+    };
 
+    // Mettre en place le listener d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
+    
+    // Vérifier la session initiale
+    checkSession();
+
+    // Nettoyer le listener à la désinscription
     return () => {
       subscription.unsubscribe();
     };
