@@ -23,9 +23,14 @@ export default function Index() {
             <h1 className="text-4xl font-bold text-blue-800 mb-2">
               DocuChatter
             </h1>
-            <p className="text-gray-700 max-w-md mx-auto font-medium">
-              Votre assistant IA pour analyser et discuter de vos documents. Indexez vos fichiers et posez des questions en langage naturel.
-            </p>
+            {/* GIF d'animation remplaçant le texte d'introduction */}
+            <div className="max-w-md mx-auto">
+              <img 
+                src="/welcome-animation.gif" 
+                alt="Animation DocuChatter" 
+                className="w-full rounded-lg shadow-md"
+              />
+            </div>
           </CardHeader>
           
           <CardContent className="mt-6">
