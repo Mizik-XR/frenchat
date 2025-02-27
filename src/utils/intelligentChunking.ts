@@ -49,7 +49,9 @@ export function detectStructuralBreakpoints(text: string): number[] {
   // Détecter les titres et sections
   for (const pattern of SECTION_PATTERNS) {
     let match;
-    while ((match = pattern.exec(text)) !== null) {
+    // On doit réinitialiser le pattern à chaque utilisation pour éviter les problèmes avec lastIndex
+    const regex = new RegExp(pattern.source, pattern.flags);
+    while ((match = regex.exec(text)) !== null) {
       breakpoints.push(match.index);
     }
   }
