@@ -3,13 +3,14 @@ import React from 'react';
 import { Progress } from "@/components/ui/progress";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from '@/types/database';
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-type IndexingProgress = Database['public']['Tables']['indexing_progress']['Row'];
+interface IndexingProgressProps {
+  userId: string;
+}
 
-export const IndexingProgress = ({ userId }: { userId: string }) => {
+export const IndexingProgress: React.FC<IndexingProgressProps> = ({ userId }) => {
   const { data: progress, error, isLoading } = useQuery({
     queryKey: ['indexing-progress', userId],
     queryFn: async () => {
@@ -20,7 +21,7 @@ export const IndexingProgress = ({ userId }: { userId: string }) => {
         .maybeSingle();
 
       if (error) throw error;
-      return data as IndexingProgress | null;
+      return data;
     },
     refetchInterval: 1000,
     retry: 3

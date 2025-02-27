@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGoogleDriveConfig } from '@/hooks/useGoogleDriveConfig';
-import GoogleDriveButton from './GoogleDriveButton';
-import { FolderCheck, ChevronDown, AlertTriangle } from 'lucide-react';
+import { GoogleDriveButton } from './GoogleDriveButton';
+import { FolderCheck, AlertTriangle } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -13,13 +13,15 @@ import {
 } from "@/components/ui/select";
 import { IndexingProgress } from './IndexingProgress';
 import { useGoogleDriveFolders } from '@/hooks/useGoogleDriveFolders';
-import GoogleDriveAlert from './GoogleDriveAlert';
+import { GoogleDriveAlert } from './GoogleDriveAlert';
 import { GoogleDriveConnectionProps } from '@/types/google-drive';
 import { AlertDescription, Alert } from '@/components/ui/alert';
+import { useGoogleDriveStatus } from '@/hooks/useGoogleDriveStatus';
 
 const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) => {
-  const { isConnected, disconnect } = useGoogleDriveConfig();
-  const { folders, loading: loadingFolders } = useGoogleDriveFolders();
+  const { googleConfig, saveConfig } = useGoogleDriveConfig();
+  const isConnected = useGoogleDriveStatus();
+  const { folders, isLoading: loadingFolders } = useGoogleDriveFolders();
   const [selectedFolder, setSelectedFolder] = useState<string>('');
   const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -65,8 +67,9 @@ const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) =
     }
   };
 
-  const handleDisconnect = () => {
-    disconnect();
+  const handleDisconnect = async () => {
+    // Implementation simplifiée, nous utilisons le hook useGoogleDriveStatus pour vérifier la connexion
+    await saveConfig({ clientId: '', apiKey: '' });
     setSelectedFolder('');
     setShowConfirmation(false);
   };
@@ -131,7 +134,7 @@ const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) =
           </div>
         </div>
       ) : (
-        <Alert variant="warning">
+        <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             Aucun dossier trouvé dans votre Google Drive. Veuillez créer un dossier avant de continuer.
@@ -141,11 +144,21 @@ const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) =
 
       {isIndexing && (
         <div className="mt-4">
-          <IndexingProgress 
-            progress={indexProgress} 
-            totalFiles={totalFiles}
-            processedFiles={processedFiles}
-          />
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Progression de l'indexation</span>
+              <span>{indexProgress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="bg-primary h-2.5 rounded-full" 
+                style={{ width: `${indexProgress}%` }}
+              ></div>
+            </div>
+            <div className="text-sm text-gray-500">
+              {processedFiles} fichiers traités sur {totalFiles}
+            </div>
+          </div>
         </div>
       )}
 

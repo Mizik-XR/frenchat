@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/components/AuthProvider";
-import { GoogleDriveConnection } from "./GoogleDriveConnection";
+import GoogleDriveConnection from "./GoogleDriveConnection";
 import { IndexingProgress } from "./IndexingProgress";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";

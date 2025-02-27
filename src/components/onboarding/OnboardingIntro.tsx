@@ -1,20 +1,20 @@
 
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { OnboardingStep } from "./OnboardingStep";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, Database, FileSearch, Loader2, Workflow } from "lucide-react";
+import { CheckCircle, Database, FileSearch, Workflow } from "lucide-react";
 
 export const OnboardingIntro = () => {
   const { 
     showOnboarding, 
     currentStep, 
-    setCurrentStep, 
-    completeOnboarding, 
-    setShowOnboarding,
-    loading 
+    loading,
+    nextStep,
+    previousStep,
+    completeOnboarding,
+    resetOnboarding
   } = useOnboarding();
   
   const navigate = useNavigate();
@@ -51,18 +51,6 @@ export const OnboardingIntro = () => {
     },
   ];
 
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
   const handleComplete = () => {
     completeOnboarding();
     navigate("/config");
@@ -77,7 +65,7 @@ export const OnboardingIntro = () => {
   ];
 
   return (
-    <Dialog open={showOnboarding} onOpenChange={setShowOnboarding}>
+    <Dialog open={showOnboarding} onOpenChange={resetOnboarding}>
       <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden gap-0">
         <OnboardingStep
           title={steps[currentStep].title}
@@ -85,8 +73,8 @@ export const OnboardingIntro = () => {
           image={genericImages[currentStep]}
           index={currentStep}
           totalSteps={steps.length}
-          onPrevious={handlePrevious}
-          onNext={handleNext}
+          onPrevious={previousStep}
+          onNext={nextStep}
           onComplete={handleComplete}
           icon={steps[currentStep].icon}
         />
