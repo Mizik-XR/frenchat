@@ -40,7 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg text-center">
             <div className="flex justify-center mb-6">
               <img 
-                src="/lovable-uploads/fb21020a-04ad-4e58-9d53-3224ce760584.png" 
+                src="/filechat-animation.gif" 
                 alt="FileChat Logo" 
                 className="h-24 w-24"
               />

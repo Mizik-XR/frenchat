@@ -30,7 +30,7 @@ export const ChatHeader = ({
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <img 
-            src="/lovable-uploads/fb21020a-04ad-4e58-9d53-3224ce760584.png" 
+            src="/filechat-animation.gif" 
             alt="FileChat Logo" 
             className="h-6 w-6"
           />
