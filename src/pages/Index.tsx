@@ -1,6 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
-import { Settings, MessageCircle, User } from "lucide-react";
+import { Settings, MessageCircle, User, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { Card } from "@/components/ui/card";
@@ -40,6 +40,15 @@ export default function Index() {
             >
               <MessageCircle className="mr-2 h-4 w-4" />
               Accéder au Chat
+            </Button>
+            <Button 
+              onClick={() => navigate('/documents')}
+              size="lg"
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
+              <Database className="mr-2 h-4 w-4" />
+              Documents
             </Button>
             {!user && (
               <Button 
