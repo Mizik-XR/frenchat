@@ -19,14 +19,14 @@ interface SummaryStepProps {
 
 export const SummaryStep = ({ configStatus: initialConfigStatus, onFinish }: SummaryStepProps) => {
   const [configStatus, setConfigStatus] = useState(initialConfigStatus);
-  const isGoogleDriveConnected = useGoogleDriveStatus();
+  const googleDriveStatus = useGoogleDriveStatus();
 
   useEffect(() => {
     setConfigStatus(prev => ({
       ...prev,
-      googleDrive: isGoogleDriveConnected
+      googleDrive: googleDriveStatus.isConnected
     }));
-  }, [isGoogleDriveConnected]);
+  }, [googleDriveStatus.isConnected]);
 
   const GoogleDriveIcon = () => (
     <svg 
@@ -64,7 +64,7 @@ export const SummaryStep = ({ configStatus: initialConfigStatus, onFinish }: Sum
                     </AlertTitle>
                     <AlertDescription className="flex items-center justify-between">
                       <span>Connecté</span>
-                      <Button variant="outline" size="sm" className="ml-2">
+                      <Button variant="outline" size="sm" className="ml-2" onClick={googleDriveStatus.reconnectGoogleDrive}>
                         <PlusCircle className="h-4 w-4 mr-1" />
                         Ajouter un autre compte
                       </Button>
