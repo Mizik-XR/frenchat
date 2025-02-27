@@ -18,6 +18,14 @@ export interface RagQueryOptions {
   reranking: boolean;              // Réorganiser les résultats après récupération
 }
 
+export interface RetrievalOptions {
+  k: number;                       // Nombre de résultats à retourner
+  threshold: number;               // Seuil de similarité minimum
+  useHybrid: boolean;              // Utiliser la recherche hybride
+  diversify: boolean;              // Diversifier les résultats
+  filterMetadata?: Record<string, any>; // Filtres sur les métadonnées
+}
+
 export const defaultRagQueryOptions: RagQueryOptions = {
   useHybridSearch: true,
   useQueryClassification: true,
@@ -25,6 +33,13 @@ export const defaultRagQueryOptions: RagQueryOptions = {
   minSimilarityThreshold: 0.7,
   maxResults: 5,
   reranking: true
+};
+
+export const defaultRetrievalOptions: RetrievalOptions = {
+  k: 5,
+  threshold: 0.7,
+  useHybrid: true,
+  diversify: true
 };
 
 // Patterns pour la classification des questions
@@ -80,6 +95,158 @@ export function extractKeywords(text: string): string[] {
 }
 
 /**
+ * Recherche sémantique utilisant les embeddings
+ */
+export async function performSemanticSearch(
+  question: string, 
+  embedding: number[],
+  limit: number = 5,
+  threshold: number = 0.7
+) {
+  const normalizedEmbedding = normalizeVector(embedding);
+  
+  try {
+    const { data, error } = await supabase.rpc(
+      'search_documents',
+      {
+        query_embedding: normalizedEmbedding,
+        match_threshold: threshold,
+        match_count: limit
+      }
+    );
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Erreur lors de la recherche sémantique:', error);
+    throw error;
+  }
+}
+
+/**
+ * Recherche par mots-clés utilisant la recherche full-text
+ */
+export async function performKeywordSearch(
+  keywords: string[],
+  limit: number = 5
+) {
+  if (!keywords.length) return [];
+  
+  try {
+    // Construire une requête fulltext search
+    const keywordQuery = keywords.join(' & ');
+    
+    const { data, error } = await supabase
+      .from('document_chunks')
+      .select('*, metadata')
+      .textSearch('content', keywordQuery)
+      .limit(limit);
+      
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Erreur lors de la recherche par mots-clés:', error);
+    throw error;
+  }
+}
+
+/**
+ * Diversifie les résultats pour éviter la redondance
+ * Utilise une mesure de distance pour sélectionner des résultats variés
+ */
+export function diversifyResults(results: any[], count: number = 5): any[] {
+  if (results.length <= count) return results;
+  
+  const selected: any[] = [results[0]]; // Toujours inclure le premier résultat (le plus pertinent)
+  const remainingCandidates = results.slice(1);
+  
+  while (selected.length < count && remainingCandidates.length > 0) {
+    // Calculer la diversité (distance minimale aux résultats déjà sélectionnés)
+    const diversityScores = remainingCandidates.map(candidate => {
+      // Calculer la distance minimale aux résultats déjà sélectionnés
+      const minDistance = Math.min(...selected.map(item => 
+        // Distance simple basée sur le contenu textuel (peut être améliorée)
+        calculateTextualDistance(candidate.content, item.content)
+      ));
+      return { candidate, diversityScore: minDistance };
+    });
+    
+    // Sélectionner le candidat avec le meilleur score de diversité
+    diversityScores.sort((a, b) => b.diversityScore - a.diversityScore);
+    const nextBest = diversityScores[0].candidate;
+    
+    // Ajouter à la sélection et retirer des candidats
+    selected.push(nextBest);
+    remainingCandidates.splice(
+      remainingCandidates.findIndex(c => c.id === nextBest.id),
+      1
+    );
+  }
+  
+  return selected;
+}
+
+/**
+ * Calcule une mesure de distance simple entre deux textes
+ * Cette implémentation basique peut être améliorée pour de meilleurs résultats
+ */
+function calculateTextualDistance(text1: string, text2: string): number {
+  // Extraire les mots de chaque texte
+  const words1 = new Set(text1.toLowerCase().split(/\s+/));
+  const words2 = new Set(text2.toLowerCase().split(/\s+/));
+  
+  // Calculer Jaccard distance: 1 - (intersection / union)
+  const intersection = new Set([...words1].filter(x => words2.has(x)));
+  const union = new Set([...words1, ...words2]);
+  
+  // Distance: 0 = identiques, 1 = complètement différents
+  return 1 - (intersection.size / union.size);
+}
+
+/**
+ * Combine et réordonne les résultats de différentes sources de recherche
+ */
+export function mergeAndReorderResults(
+  semanticResults: any[],
+  keywordResults: any[],
+  limit: number = 5
+): any[] {
+  // Créer une map pour dédupliquer par ID
+  const resultMap = new Map();
+  
+  // Ajouter les résultats sémantiques avec un score de base élevé
+  semanticResults.forEach(result => {
+    resultMap.set(result.id, {
+      ...result,
+      combinedScore: result.similarity * 0.7 // 70% du poids aux résultats sémantiques
+    });
+  });
+  
+  // Ajouter ou mettre à jour avec les résultats par mots-clés
+  keywordResults.forEach(result => {
+    if (resultMap.has(result.id)) {
+      // Si déjà présent, augmenter le score combiné
+      const existingEntry = resultMap.get(result.id);
+      existingEntry.combinedScore += 0.3; // Bonus pour les résultats trouvés par les deux méthodes
+    } else {
+      // Sinon, ajouter avec un score de base différent
+      resultMap.set(result.id, {
+        ...result,
+        similarity: result.similarity || 0.6, // Score par défaut si non présent
+        combinedScore: 0.3 // 30% du poids aux résultats par mots-clés
+      });
+    }
+  });
+  
+  // Convertir en tableau et trier par score combiné
+  const combinedResults = Array.from(resultMap.values());
+  combinedResults.sort((a, b) => b.combinedScore - a.combinedScore);
+  
+  // Retourner les meilleurs résultats
+  return combinedResults.slice(0, limit);
+}
+
+/**
  * Exécute une recherche hybride combinant embeddings et mots-clés
  */
 export async function performHybridSearch(
@@ -95,51 +262,28 @@ export async function performHybridSearch(
   
   try {
     // 1. Recherche vectorielle basée sur les embeddings
-    const { data: semanticResults, error: semanticError } = await supabase.rpc(
-      'search_documents',
-      {
-        query_embedding: normalizedEmbedding,
-        match_threshold: opts.minSimilarityThreshold,
-        match_count: opts.maxResults * 2  // On récupère plus pour le filtrage ultérieur
-      }
+    const semanticResults = await performSemanticSearch(
+      question,
+      normalizedEmbedding,
+      opts.maxResults * 2,
+      opts.minSimilarityThreshold
     );
-    
-    if (semanticError) throw semanticError;
     
     // 2. Si activé, enrichir avec une recherche par mots-clés
     let keywordResults = [];
     if (opts.useHybridSearch) {
       const keywords = extractKeywords(question);
-      
       if (keywords.length > 0) {
-        // Construire une requête fulltext search
-        const keywordQuery = keywords.join(' & ');
-        
-        const { data: keywordData, error: keywordError } = await supabase
-          .from('document_chunks')
-          .select('*, metadata')
-          .textSearch('content', keywordQuery)
-          .limit(opts.maxResults);
-          
-        if (!keywordError && keywordData) {
-          keywordResults = keywordData;
-        }
+        keywordResults = await performKeywordSearch(keywords, opts.maxResults);
       }
     }
     
     // 3. Fusionner et classer les résultats
-    let combinedResults = [...semanticResults];
-    
-    // Ajouter les résultats par mots-clés non déjà présents
-    const existingIds = new Set(semanticResults.map(r => r.id));
-    for (const result of keywordResults) {
-      if (!existingIds.has(result.id)) {
-        combinedResults.push({
-          ...result,
-          similarity: 0.6  // Score par défaut pour les résultats par mots-clés
-        });
-      }
-    }
+    let combinedResults = mergeAndReorderResults(
+      semanticResults,
+      keywordResults,
+      opts.maxResults * 2
+    );
     
     // 4. Réorganiser les résultats selon le type de question si activé
     if (opts.reranking) {
@@ -153,6 +297,60 @@ export async function performHybridSearch(
     console.error('Erreur lors de la recherche hybride:', error);
     throw error;
   }
+}
+
+/**
+ * Stratégie de récupération avancée qui s'adapte au type de question
+ */
+export async function enhancedRetrieval(
+  query: string, 
+  embedding: number[],
+  options: Partial<RetrievalOptions> = {}
+) {
+  const opts = { ...defaultRetrievalOptions, ...options };
+  
+  // Classifier la question pour déterminer la stratégie optimale
+  const questionType = classifyQuestion(query);
+  
+  // Stratégie de base: recherche sémantique
+  const semanticResults = await performSemanticSearch(
+    query,
+    embedding,
+    opts.k * 2,
+    opts.threshold
+  );
+  
+  if (!semanticResults.length) return [];
+  
+  if (questionType === 'factual' && opts.useHybrid) {
+    // Pour les questions factuelles, ajouter des filtres exacts
+    const keywords = extractKeywords(query);
+    const keywordResults = await performKeywordSearch(keywords, opts.k);
+    
+    // Combiner et réordonner les résultats avec une stratégie de fusion
+    return mergeAndReorderResults(semanticResults, keywordResults, opts.k);
+  }
+  
+  if (questionType === 'conceptual' && opts.diversify) {
+    // Pour les questions conceptuelles, privilégier la diversité sémantique
+    return diversifyResults(semanticResults, opts.k);
+  }
+  
+  // Appliquer les filtres de métadonnées si spécifiés
+  if (opts.filterMetadata && Object.keys(opts.filterMetadata).length > 0) {
+    return semanticResults
+      .filter(result => {
+        if (!result.metadata) return false;
+        
+        // Vérifier que chaque filtre correspond
+        return Object.entries(opts.filterMetadata || {}).every(([key, value]) => {
+          return result.metadata[key] === value;
+        });
+      })
+      .slice(0, opts.k);
+  }
+  
+  return semanticResults.slice(0, opts.k);
 }
 
 /**
