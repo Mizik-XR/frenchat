@@ -37,9 +37,11 @@ export const CloudAIConfig = () => {
       if (error) throw error;
 
       const formattedConfigs = existingConfigs.reduce((acc, curr) => {
-        if (curr.config?.apiKey) {
-          acc[curr.service_type] = curr.config.apiKey;
-        }
+        // Accéder de manière sécurisée à la propriété apiKey
+        const configObj = typeof curr.config === 'object' ? curr.config : {};
+        const apiKey = configObj && 'apiKey' in configObj ? (configObj as any).apiKey : '';
+        
+        acc[curr.service_type] = apiKey;
         return acc;
       }, {} as Record<string, string>);
 

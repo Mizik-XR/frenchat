@@ -12,7 +12,8 @@ export type ServiceType =
   | 'stable_diffusion'
   | 'microsoft_teams';
 
-export type LLMProvider =
+// Chaîne de caractères pour le provider
+export type LLMProviderType =
   | 'openai'
   | 'huggingface'
   | 'anthropic'
@@ -22,6 +23,19 @@ export type LLMProvider =
   | 'cohere'
   | 'mistral'
   | 'ollama';
+
+// Interface pour l'objet provider complet
+export interface LLMProvider {
+  id: string;
+  name: string;
+  description: string;
+  models?: string[];
+  docsUrl?: string;
+  requiresApiKey: boolean;
+  isLocal?: boolean;
+  setupInstructions?: string;
+  type: LLMProviderType;
+}
 
 export interface AIConfig {
   provider: ServiceType;
@@ -88,7 +102,7 @@ export interface LLMConfig {
   temperature?: number;
   maxTokens?: number;
   configuration?: Record<string, any>;
-  rateLimit?: number;  // Ajouté pour résoudre l'erreur dans les tests
+  rateLimit?: number;
 }
 
 export interface EmbeddingCacheItem {
@@ -98,7 +112,7 @@ export interface EmbeddingCacheItem {
   metadata?: Record<string, any>;
 }
 
-// Modifié pour éviter l'erreur d'interface avec Json
+// Mise à jour pour supporter les propriétés de CacheConfig
 export interface CacheConfig {
   embedding?: number[];
   text?: string;

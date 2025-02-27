@@ -1,83 +1,128 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { AIConfig } from "@/types/config";
 
-interface AIConfig {
-  id?: string;
-  provider: string;
-  model_name: string;
-  api_endpoint: string;
-  config?: Record<string, any>;
-}
-
-export function useAIConfig() {
+export const useAIConfig = () => {
   const [configs, setConfigs] = useState<AIConfig[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [provider, setProvider] = useState("huggingface");
+  const [modelName, setModelName] = useState("mistralai/Mistral-7B-Instruct-v0.1");
+  const [testText, setTestText] = useState(
+    "La conférence sur le changement climatique a réuni plus de 1000 participants de 50 pays différents. Les discussions ont porté sur la réduction des émissions de CO2 et les énergies alternatives. Un accord a été signé pour limiter le réchauffement global."
+  );
 
   useEffect(() => {
-    fetchConfigs();
+    loadConfigs();
   }, []);
 
-  const fetchConfigs = async () => {
+  const loadConfigs = async () => {
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('user_ai_configs')
         .select('*');
 
       if (error) throw error;
-      setConfigs(data || []);
-    } catch (error: any) {
-      console.error('Error fetching AI configs:', error);
+
+      // Conversion des données en AIConfig[]
+      const aiConfigs: AIConfig[] = data.map(item => ({
+        provider: item.provider as any,
+        model: item.model_name,
+        apiKey: item.api_key,
+        config: typeof item.config === 'object' ? item.config : {}
+      }));
+
+      setConfigs(aiConfigs);
+    } catch (error) {
+      console.error("Erreur lors du chargement des configurations:", error);
       toast({
         title: "Erreur",
         description: "Impossible de charger les configurations",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const saveConfig = async (config: AIConfig) => {
+  const saveConfig = async (config: Partial<AIConfig>) => {
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      // Récupérer l'utilisateur actuel
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) throw new Error("Utilisateur non connecté");
+      
+      // Mise à jour de la table user_ai_configs
+      const { error } = await supabase
         .from('user_ai_configs')
         .upsert({
-          provider: config.provider,
-          model_name: config.model_name,
-          api_endpoint: config.api_endpoint,
-          config: config.config
-        })
-        .select()
-        .single();
+          provider: config.provider || provider,
+          model_name: config.model || modelName,
+          api_endpoint: '',
+          config: config.config || {},
+          user_id: userData.user.id
+        }, {
+          onConflict: 'provider,user_id'
+        });
 
       if (error) throw error;
 
+      // Mettre à jour l'état local
       setConfigs(prev => {
-        const index = prev.findIndex(c => c.id === data.id);
-        if (index >= 0) {
-          return [...prev.slice(0, index), data, ...prev.slice(index + 1)];
+        const existingConfigIndex = prev.findIndex(c => c.provider === config.provider);
+        if (existingConfigIndex >= 0) {
+          // Mise à jour d'une configuration existante
+          const newConfigs = [...prev];
+          newConfigs[existingConfigIndex] = {
+            ...newConfigs[existingConfigIndex],
+            ...config
+          };
+          return newConfigs;
+        } else {
+          // Ajout d'une nouvelle configuration
+          const newConfig: AIConfig = {
+            provider: config.provider || provider,
+            model: config.model || modelName,
+            config: config.config || {}
+          };
+          return [...prev, newConfig];
         }
-        return [...prev, data];
       });
 
-      return data;
-    } catch (error: any) {
-      console.error('Error saving AI config:', error);
+      toast({
+        title: "Configuration sauvegardée",
+        description: "Les paramètres ont été mis à jour avec succès"
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde:", error);
       toast({
         title: "Erreur",
         description: "Impossible de sauvegarder la configuration",
-        variant: "destructive"
+        variant: "destructive",
       });
-      throw error;
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
     configs,
     isLoading,
-    saveConfig,
-    refreshConfigs: fetchConfigs
+    provider,
+    setProvider,
+    modelName,
+    setModelName,
+    testText,
+    setTestText,
+    summary,
+    setSummary,
+    loadConfigs,
+    saveConfig
   };
-}
+};

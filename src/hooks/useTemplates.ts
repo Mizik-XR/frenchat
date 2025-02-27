@@ -1,58 +1,83 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Template } from '@/components/documents/template/types';
+import { Json } from "@/types/database";
 
-export function useTemplates() {
+interface Template {
+  id: string;
+  name: string;
+  description: string | null;
+  template_type: string;
+  content_structure: Json;
+  user_id?: string;
+}
+
+export const useTemplates = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const loadTemplates = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('document_templates')
-      .select('*');
-
-    if (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les templates",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setTemplates(data);
+  useEffect(() => {
+    loadTemplates();
   }, []);
 
-  const saveTemplate = useCallback(async (template: Template) => {
+  const loadTemplates = async () => {
+    setIsLoading(true);
     try {
+      const { data, error } = await supabase
+        .from('document_templates')
+        .select('*');
+
+      if (error) throw error;
+
+      setTemplates(data);
+    } catch (error) {
+      console.error("Erreur lors du chargement des templates:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveTemplate = async (template: Template) => {
+    setIsLoading(true);
+    try {
+      // Récupérer l'utilisateur actuel
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) throw new Error("Utilisateur non connecté");
+      
+      // Préparer l'objet à sauvegarder
+      const templateToSave = {
+        ...template,
+        user_id: userData.user.id
+      };
+
       const { error } = await supabase
         .from('document_templates')
-        .upsert({
-          ...template,
-          id: template.id || undefined
-        });
+        .upsert(templateToSave);
 
       if (error) throw error;
 
       toast({
-        title: "Succès",
-        description: "Template sauvegardé avec succès"
+        title: "Template sauvegardé",
+        description: "Le template a été mis à jour avec succès"
       });
 
-      await loadTemplates();
+      loadTemplates();
       return true;
     } catch (error) {
+      console.error("Erreur lors de la sauvegarde:", error);
       toast({
         title: "Erreur",
         description: "Impossible de sauvegarder le template",
-        variant: "destructive"
+        variant: "destructive",
       });
       return false;
+    } finally {
+      setIsLoading(false);
     }
-  }, [loadTemplates]);
+  };
 
-  const deleteTemplate = useCallback(async (id: string) => {
+  const deleteTemplate = async (id: string) => {
     try {
       const { error } = await supabase
         .from('document_templates')
@@ -61,27 +86,28 @@ export function useTemplates() {
 
       if (error) throw error;
 
+      setTemplates(templates.filter(t => t.id !== id));
       toast({
-        title: "Succès",
-        description: "Template supprimé avec succès"
+        title: "Template supprimé",
+        description: "Le template a été supprimé avec succès"
       });
-
-      await loadTemplates();
       return true;
     } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
       toast({
         title: "Erreur",
         description: "Impossible de supprimer le template",
-        variant: "destructive"
+        variant: "destructive",
       });
       return false;
     }
-  }, [loadTemplates]);
+  };
 
   return {
     templates,
+    isLoading,
     loadTemplates,
     saveTemplate,
     deleteTemplate
   };
-}
+};

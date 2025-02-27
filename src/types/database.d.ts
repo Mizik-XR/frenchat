@@ -122,7 +122,51 @@ export interface Database {
           preview_url?: string | null;
         };
       };
-      // Ajoutez d'autres tables selon vos besoins
+      indexing_progress: {
+        Row: {
+          id: string;
+          user_id: string;
+          status: string;
+          total_files: number | null;
+          processed_files: number | null;
+          current_folder: string | null;
+          parent_folder: string | null;
+          last_processed_file: string | null;
+          depth: number | null;
+          error: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          status?: string;
+          total_files?: number | null;
+          processed_files?: number | null;
+          current_folder?: string | null;
+          parent_folder?: string | null;
+          last_processed_file?: string | null;
+          depth?: number | null;
+          error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          status?: string;
+          total_files?: number | null;
+          processed_files?: number | null;
+          current_folder?: string | null;
+          parent_folder?: string | null;
+          last_processed_file?: string | null;
+          depth?: number | null;
+          error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      // Autres tables
     };
   };
 }

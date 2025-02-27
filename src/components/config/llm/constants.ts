@@ -1,52 +1,58 @@
 
-import { LLMProvider } from "@/types/config";
+import { LLMProvider, LLMProviderType } from "@/types/config";
 
+// Correction des providers pour utiliser la nouvelle interface
 export const LLM_PROVIDERS: LLMProvider[] = [
   {
-    id: 'ollama',
-    name: 'Ollama (Local)',
-    description: 'Exécutez des modèles open source localement sur votre machine.',
-    models: ['llama2', 'mistral', 'phi'],
-    docsUrl: 'https://ollama.ai/download',
+    id: "local",
+    name: "Local (HuggingFace)",
+    description: "Exécutez des modèles localement sans partager de données",
+    models: ["transformers"],
+    docsUrl: "https://huggingface.co/docs/transformers/installation",
     requiresApiKey: false,
     isLocal: true,
-    setupInstructions: `
-      1. Téléchargez et installez Ollama depuis https://ollama.ai/download
-      2. Ouvrez un terminal et exécutez : ollama run <nom-du-modèle>
-      3. Le modèle sera automatiquement téléchargé et démarré
-      4. L'application se connectera automatiquement au modèle local
-    `
+    setupInstructions: "Installez Python et les dépendances requises",
+    type: "local" as LLMProviderType
   },
   {
-    id: 'huggingface',
-    name: 'Hugging Face',
-    description: 'Plateforme open source avec de nombreux modèles gratuits.',
-    models: ['mistral-7b', 'llama-2', 'falcon-40b'],
-    docsUrl: 'https://huggingface.co/docs/api-inference/index',
-    requiresApiKey: false
+    id: "huggingface",
+    name: "Hugging Face (Cloud)",
+    description: "Utilisez l'API Hugging Face pour accéder à une vaste gamme de modèles",
+    models: ["mistral", "llama", "gpt2-xl"],
+    docsUrl: "https://huggingface.co/docs/api-inference/index",
+    requiresApiKey: false,
+    type: "huggingface" as LLMProviderType
   },
   {
-    id: 'phi',
-    name: 'Phi-3 (Open Source)',
-    description: 'Modèle open source de Microsoft, optimisé pour les tâches de compréhension.',
-    models: ['phi-3-small', 'phi-3-medium'],
-    docsUrl: 'https://huggingface.co/microsoft/phi-3',
-    requiresApiKey: false
+    id: "ollama",
+    name: "Ollama",
+    description: "Modèles locaux faciles à installer via Ollama",
+    models: ["llama2", "mistral", "phi"],
+    docsUrl: "https://ollama.ai/",
+    requiresApiKey: false,
+    type: "ollama" as LLMProviderType
   },
   {
-    id: 'openai',
-    name: 'OpenAI',
-    description: 'Service payant avec d\'excellentes performances. Nécessite une clé API.',
-    models: ['gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'],
-    docsUrl: 'https://platform.openai.com/docs/api-reference',
-    requiresApiKey: true
+    id: "openai",
+    name: "OpenAI",
+    description: "Utilisez GPT-4 et d'autres modèles avancés d'OpenAI",
+    models: ["gpt-4", "gpt-3.5-turbo"],
+    docsUrl: "https://platform.openai.com/docs/api-reference",
+    requiresApiKey: true,
+    type: "openai" as LLMProviderType
   },
   {
-    id: 'deepseek',
-    name: 'DeepSeek',
-    description: 'Alternative performante pour les tâches spécialisées. Nécessite une clé API.',
-    models: ['deepseek-coder', 'deepseek-chat'],
-    docsUrl: 'https://github.com/deepseek-ai/DeepSeek-LLM',
-    requiresApiKey: true
+    id: "anthropic",
+    name: "Anthropic (Claude)",
+    description: "Modèles Claude d'Anthropic, conçus pour être utiles et sûrs",
+    models: ["claude-v2", "claude-instant-v1"],
+    docsUrl: "https://docs.anthropic.com/claude/reference/getting-started-with-the-api",
+    requiresApiKey: true,
+    type: "anthropic" as LLMProviderType
   }
 ];
+
+// Fonction utilitaire pour récupérer un provider par son ID
+export function getProviderById(id: string): LLMProvider | undefined {
+  return LLM_PROVIDERS.find(provider => provider.id === id);
+}
