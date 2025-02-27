@@ -1,398 +1,194 @@
 
-/**
- * Stratégies avancées pour les requêtes RAG
- * Implémente un système hybride de recherche et classification automatique
- */
+import { Json } from '@/types/database';
 
-import { normalizeVector } from './embeddingModels';
-import { supabase } from "@/integrations/supabase/client";
-
-export type QueryType = 'factual' | 'conceptual' | 'procedural' | 'comparative' | 'general';
-
-export interface RagQueryOptions {
-  useHybridSearch: boolean;        // Combinaison recherche sémantique + mots-clés
-  useQueryClassification: boolean; // Classification automatique de la question
-  enhanceWithMetadata: boolean;    // Utiliser les métadonnées pour filtrer/trier
-  minSimilarityThreshold: number;  // Seuil minimum de similarité (0-1)
-  maxResults: number;              // Nombre maximum de résultats
-  reranking: boolean;              // Réorganiser les résultats après récupération
+// Definir nos types pour les modèles RAG avancés
+interface RagStrategyOptions {
+  similarityThreshold: number;
+  maxResults: number;
+  useHybridSearch: boolean;
+  chunkingStrategy: 'fixed' | 'semantic' | 'adaptive';
+  reranking: boolean;
+  embeddingModel: string;
 }
 
-export interface RetrievalOptions {
-  k: number;                       // Nombre de résultats à retourner
-  threshold: number;               // Seuil de similarité minimum
-  useHybrid: boolean;              // Utiliser la recherche hybride
-  diversify: boolean;              // Diversifier les résultats
-  filterMetadata?: Record<string, any>; // Filtres sur les métadonnées
+interface QueryContext {
+  queryType: 'factual' | 'conceptual' | 'procedural' | 'opinion';
+  userHistory: string[];
+  recentDocuments: string[];
+  timeContext?: Date;
 }
 
-export const defaultRagQueryOptions: RagQueryOptions = {
-  useHybridSearch: true,
-  useQueryClassification: true,
-  enhanceWithMetadata: true,
-  minSimilarityThreshold: 0.7,
-  maxResults: 5,
-  reranking: true
-};
+interface RetrievedChunk {
+  id: string;
+  content: string;
+  similarity: number;
+  sourceDocument: string;
+  metadata: Record<string, any>;
+}
 
-export const defaultRetrievalOptions: RetrievalOptions = {
-  k: 5,
-  threshold: 0.7,
-  useHybrid: true,
-  diversify: true
-};
+// Implémentation de la stratégie avancée RAG
+export class AdvancedRagStrategy {
+  private options: RagStrategyOptions;
+  private context: QueryContext | null = null;
 
-// Patterns pour la classification des questions
-const QUESTION_PATTERNS = {
-  factual: [
-    /qui est|qu'est.ce que|quand|où|combien|quel/i,
-    /définir|définition|signifie/i
-  ],
-  conceptual: [
-    /pourquoi|comment|expliquer|concept|comprendre/i,
-    /quelle est la différence|comparer/i
-  ],
-  procedural: [
-    /comment faire|étapes|processus|méthode/i,
-    /guide|tutoriel|instructions/i
-  ],
-  comparative: [
-    /différence entre|vs|versus|comparé à|meilleur/i,
-    /avantages|inconvénients|pour et contre/i
-  ]
-};
+  constructor(options?: Partial<RagStrategyOptions>) {
+    // Valeurs par défaut pour les options
+    this.options = {
+      similarityThreshold: 0.75,
+      maxResults: 5,
+      useHybridSearch: true,
+      chunkingStrategy: 'adaptive',
+      reranking: true,
+      embeddingModel: 'bge-large-en-v1.5',
+      ...options
+    };
+  }
 
-/**
- * Classifie une question selon son type
- */
-export function classifyQuestion(question: string): QueryType {
-  for (const [type, patterns] of Object.entries(QUESTION_PATTERNS)) {
-    for (const pattern of patterns) {
-      if (pattern.test(question)) {
-        return type as QueryType;
-      }
+  // Définir le contexte de la requête
+  setContext(context: QueryContext): void {
+    this.context = context;
+  }
+
+  // Méthode pour classifier le type de requête
+  classifyQuery(query: string): 'factual' | 'conceptual' | 'procedural' | 'opinion' {
+    // Logique simple de classification basée sur des mots-clés
+    const lowercaseQuery = query.toLowerCase();
+    
+    if (lowercaseQuery.match(/comment|étape|procédure|faire|créer|implémenter|procéder/)) {
+      return 'procedural';
+    }
+    if (lowercaseQuery.match(/qu'est-ce que|définir|expliquer|décrire|concept|théorie/)) {
+      return 'conceptual';
+    }
+    if (lowercaseQuery.match(/penses-tu|opinion|avis|préférence|meilleur|pire|selon vous/)) {
+      return 'opinion';
+    }
+    
+    // Par défaut, on considère la requête comme factuelle
+    return 'factual';
+  }
+
+  // Adaptation de la stratégie de recherche en fonction du type de requête
+  adaptSearchStrategy(queryType: string): Partial<RagStrategyOptions> {
+    switch (queryType) {
+      case 'factual':
+        return {
+          similarityThreshold: 0.8,
+          maxResults: 3,
+          useHybridSearch: true
+        };
+      case 'conceptual':
+        return {
+          similarityThreshold: 0.7,
+          maxResults: 5,
+          useHybridSearch: false // Prioriser la recherche sémantique
+        };
+      case 'procedural':
+        return {
+          similarityThreshold: 0.75,
+          maxResults: 6,
+          useHybridSearch: true
+        };
+      case 'opinion':
+        return {
+          similarityThreshold: 0.65, // Plus permissif
+          maxResults: 8,
+          useHybridSearch: true
+        };
+      default:
+        return {};
     }
   }
-  
-  return 'general';
-}
 
-/**
- * Extrait les mots-clés importants d'une question
- */
-export function extractKeywords(text: string): string[] {
-  // Supprimer les mots vides
-  const stopwords = ['le', 'la', 'les', 'un', 'une', 'des', 'et', 'ou', 'de', 'du', 'ce', 'cette', 'ces', 'est', 'sont'];
-  
-  // Diviser en mots, filtrer les stopwords et les mots courts
-  const words = text.toLowerCase()
-    .replace(/[^\w\s]/g, '')
-    .split(/\s+/)
-    .filter(word => word.length > 2 && !stopwords.includes(word));
-  
-  // Supprimer les duplicats
-  return [...new Set(words)];
-}
-
-/**
- * Recherche sémantique utilisant les embeddings
- */
-export async function performSemanticSearch(
-  question: string, 
-  embedding: number[],
-  limit: number = 5,
-  threshold: number = 0.7
-) {
-  const normalizedEmbedding = normalizeVector(embedding);
-  
-  try {
-    const { data, error } = await supabase.rpc(
-      'search_documents',
-      {
-        query_embedding: normalizedEmbedding,
-        match_threshold: threshold,
-        match_count: limit
-      }
-    );
+  // Extraction de mots-clés importants pour la recherche hybride
+  extractKeywords(query: string): string {
+    // Implémentation simple d'extraction de mots-clés
+    const stopWords = ['le', 'la', 'les', 'un', 'une', 'des', 'et', 'ou', 'à', 'de', 'ce', 'cette', 'ces'];
     
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Erreur lors de la recherche sémantique:', error);
-    throw error;
+    return query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(word => word.length > 3 && !stopWords.includes(word))
+      .join(' ');
   }
-}
 
-/**
- * Recherche par mots-clés utilisant la recherche full-text
- */
-export async function performKeywordSearch(
-  keywords: string[],
-  limit: number = 5
-) {
-  if (!keywords.length) return [];
-  
-  try {
-    // Construire une requête fulltext search
-    const keywordQuery = keywords.join(' & ');
+  // Reranking des résultats basé sur des critères multiples
+  rerankResults(chunks: RetrievedChunk[], query: string): RetrievedChunk[] {
+    if (!this.options.reranking) return chunks;
     
-    const { data, error } = await supabase
-      .from('document_chunks')
-      .select('*, metadata')
-      .textSearch('content', keywordQuery)
-      .limit(limit);
+    // On doit conserver l'ordre original des résultats
+    const rerankScores = chunks.map(chunk => {
+      let score = chunk.similarity;
       
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Erreur lors de la recherche par mots-clés:', error);
-    throw error;
-  }
-}
-
-/**
- * Diversifie les résultats pour éviter la redondance
- * Utilise une mesure de distance pour sélectionner des résultats variés
- */
-export function diversifyResults(results: any[], count: number = 5): any[] {
-  if (results.length <= count) return results;
-  
-  const selected: any[] = [results[0]]; // Toujours inclure le premier résultat (le plus pertinent)
-  const remainingCandidates = results.slice(1);
-  
-  while (selected.length < count && remainingCandidates.length > 0) {
-    // Calculer la diversité (distance minimale aux résultats déjà sélectionnés)
-    const diversityScores = remainingCandidates.map(candidate => {
-      // Calculer la distance minimale aux résultats déjà sélectionnés
-      const minDistance = Math.min(...selected.map(item => 
-        // Distance simple basée sur le contenu textuel (peut être améliorée)
-        calculateTextualDistance(candidate.content, item.content)
-      ));
-      return { candidate, diversityScore: minDistance };
-    });
-    
-    // Sélectionner le candidat avec le meilleur score de diversité
-    diversityScores.sort((a, b) => b.diversityScore - a.diversityScore);
-    const nextBest = diversityScores[0].candidate;
-    
-    // Ajouter à la sélection et retirer des candidats
-    selected.push(nextBest);
-    remainingCandidates.splice(
-      remainingCandidates.findIndex(c => c.id === nextBest.id),
-      1
-    );
-  }
-  
-  return selected;
-}
-
-/**
- * Calcule une mesure de distance simple entre deux textes
- * Cette implémentation basique peut être améliorée pour de meilleurs résultats
- */
-function calculateTextualDistance(text1: string, text2: string): number {
-  // Extraire les mots de chaque texte
-  const words1 = new Set(text1.toLowerCase().split(/\s+/));
-  const words2 = new Set(text2.toLowerCase().split(/\s+/));
-  
-  // Calculer Jaccard distance: 1 - (intersection / union)
-  const intersection = new Set([...words1].filter(x => words2.has(x)));
-  const union = new Set([...words1, ...words2]);
-  
-  // Distance: 0 = identiques, 1 = complètement différents
-  return 1 - (intersection.size / union.size);
-}
-
-/**
- * Combine et réordonne les résultats de différentes sources de recherche
- */
-export function mergeAndReorderResults(
-  semanticResults: any[],
-  keywordResults: any[],
-  limit: number = 5
-): any[] {
-  // Créer une map pour dédupliquer par ID
-  const resultMap = new Map();
-  
-  // Ajouter les résultats sémantiques avec un score de base élevé
-  semanticResults.forEach(result => {
-    resultMap.set(result.id, {
-      ...result,
-      combinedScore: result.similarity * 0.7 // 70% du poids aux résultats sémantiques
-    });
-  });
-  
-  // Ajouter ou mettre à jour avec les résultats par mots-clés
-  keywordResults.forEach(result => {
-    if (resultMap.has(result.id)) {
-      // Si déjà présent, augmenter le score combiné
-      const existingEntry = resultMap.get(result.id);
-      existingEntry.combinedScore += 0.3; // Bonus pour les résultats trouvés par les deux méthodes
-    } else {
-      // Sinon, ajouter avec un score de base différent
-      resultMap.set(result.id, {
-        ...result,
-        similarity: result.similarity || 0.6, // Score par défaut si non présent
-        combinedScore: 0.3 // 30% du poids aux résultats par mots-clés
-      });
-    }
-  });
-  
-  // Convertir en tableau et trier par score combiné
-  const combinedResults = Array.from(resultMap.values());
-  combinedResults.sort((a, b) => b.combinedScore - a.combinedScore);
-  
-  // Retourner les meilleurs résultats
-  return combinedResults.slice(0, limit);
-}
-
-/**
- * Exécute une recherche hybride combinant embeddings et mots-clés
- */
-export async function performHybridSearch(
-  questionEmbedding: number[],
-  question: string,
-  options: Partial<RagQueryOptions> = {}
-) {
-  const opts = { ...defaultRagQueryOptions, ...options };
-  const queryType = opts.useQueryClassification ? classifyQuestion(question) : 'general';
-  
-  // Normaliser l'embedding pour de meilleurs résultats de similarité
-  const normalizedEmbedding = normalizeVector(questionEmbedding);
-  
-  try {
-    // 1. Recherche vectorielle basée sur les embeddings
-    const semanticResults = await performSemanticSearch(
-      question,
-      normalizedEmbedding,
-      opts.maxResults * 2,
-      opts.minSimilarityThreshold
-    );
-    
-    // 2. Si activé, enrichir avec une recherche par mots-clés
-    let keywordResults = [];
-    if (opts.useHybridSearch) {
-      const keywords = extractKeywords(question);
-      if (keywords.length > 0) {
-        keywordResults = await performKeywordSearch(keywords, opts.maxResults);
+      // Bonus pour les documents récents
+      if (chunk.metadata.createdAt) {
+        const docDate = new Date(chunk.metadata.createdAt);
+        const now = new Date();
+        const daysDiff = Math.floor((now.getTime() - docDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysDiff < 30) {
+          score += 0.05; // Petit bonus pour les docs récents
+        }
       }
-    }
+      
+      // Bonus pour les documents consultés récemment par l'utilisateur
+      if (this.context?.recentDocuments.includes(chunk.sourceDocument)) {
+        score += 0.1;
+      }
+      
+      // Bonus pour la qualité du contenu (arbitraire pour l'exemple)
+      if (chunk.content.length > 200) {
+        score += 0.02; // Bonus pour les chunks substantiels
+      }
+      
+      return { chunk, score };
+    });
     
-    // 3. Fusionner et classer les résultats
-    let combinedResults = mergeAndReorderResults(
-      semanticResults,
-      keywordResults,
-      opts.maxResults * 2
-    );
-    
-    // 4. Réorganiser les résultats selon le type de question si activé
-    if (opts.reranking) {
-      combinedResults = rerankResultsByQueryType(combinedResults, queryType);
-    }
-    
-    // 5. Limiter au nombre de résultats demandé
-    return combinedResults.slice(0, opts.maxResults);
-    
-  } catch (error) {
-    console.error('Erreur lors de la recherche hybride:', error);
-    throw error;
+    // Trier par score et retourner les chunks
+    return rerankScores
+      .sort((a, b) => b.score - a.score)
+      .map(item => item.chunk);
   }
-}
 
-/**
- * Stratégie de récupération avancée qui s'adapte au type de question
- */
-export async function enhancedRetrieval(
-  query: string, 
-  embedding: number[],
-  options: Partial<RetrievalOptions> = {}
-) {
-  const opts = { ...defaultRetrievalOptions, ...options };
-  
-  // Classifier la question pour déterminer la stratégie optimale
-  const questionType = classifyQuestion(query);
-  
-  // Stratégie de base: recherche sémantique
-  const semanticResults = await performSemanticSearch(
-    query,
-    embedding,
-    opts.k * 2,
-    opts.threshold
-  );
-  
-  if (!semanticResults.length) return [];
-  
-  if (questionType === 'factual' && opts.useHybrid) {
-    // Pour les questions factuelles, ajouter des filtres exacts
-    const keywords = extractKeywords(query);
-    const keywordResults = await performKeywordSearch(keywords, opts.k);
+  // Génération de prompts adaptés au contexte
+  generateEnhancedPrompt(query: string, chunks: RetrievedChunk[]): string {
+    const queryType = this.context?.queryType || this.classifyQuery(query);
+    const contextInfo = this.context ? 
+      `\nBasé sur vos interactions précédentes et documents récemment consultés.` : '';
     
-    // Combiner et réordonner les résultats avec une stratégie de fusion
-    return mergeAndReorderResults(semanticResults, keywordResults, opts.k);
-  }
-  
-  if (questionType === 'conceptual' && opts.diversify) {
-    // Pour les questions conceptuelles, privilégier la diversité sémantique
-    return diversifyResults(semanticResults, opts.k);
-  }
-  
-  // Appliquer les filtres de métadonnées si spécifiés
-  if (opts.filterMetadata && Object.keys(opts.filterMetadata).length > 0) {
-    return semanticResults
-      .filter(result => {
-        if (!result.metadata) return false;
-        
-        // Vérifier que chaque filtre correspond
-        return Object.entries(opts.filterMetadata || {}).every(([key, value]) => {
-          return result.metadata[key] === value;
-        });
+    let contextualPrompt: string;
+    
+    switch (queryType) {
+      case 'factual':
+        contextualPrompt = `Voici une question factuelle : "${query}"
+Veuillez répondre de manière précise et concise en vous basant uniquement sur les informations suivantes :${contextInfo}`;
+        break;
+      case 'conceptual':
+        contextualPrompt = `Voici une question conceptuelle : "${query}"
+Veuillez expliquer ce concept de façon claire et structurée en vous basant sur les informations suivantes :${contextInfo}`;
+        break;
+      case 'procedural':
+        contextualPrompt = `Voici une question de procédure : "${query}"
+Veuillez expliquer les étapes à suivre de manière structurée en vous basant sur les informations suivantes :${contextInfo}`;
+        break;
+      case 'opinion':
+        contextualPrompt = `Voici une demande d'opinion : "${query}"
+Veuillez fournir une analyse équilibrée en vous basant sur les informations suivantes, en présentant différents points de vue si possible :${contextInfo}`;
+        break;
+      default:
+        contextualPrompt = `Voici une question : "${query}"
+Veuillez répondre en vous basant sur les informations suivantes :${contextInfo}`;
+    }
+    
+    // Ajouter les extraits de documents au prompt
+    const chunksContent = chunks
+      .map((chunk, index) => {
+        const source = chunk.metadata.title || chunk.sourceDocument || `Source ${index + 1}`;
+        return `---\nExtrait de "${source}" (pertinence: ${Math.round(chunk.similarity * 100)}%):\n${chunk.content}\n---`;
       })
-      .slice(0, opts.k);
+      .join('\n\n');
+    
+    return `${contextualPrompt}\n\n${chunksContent}\n\nRéponse:`;
   }
-  
-  return semanticResults.slice(0, opts.k);
 }
 
-/**
- * Réorganise les résultats en fonction du type de question
- */
-function rerankResultsByQueryType(results: any[], queryType: QueryType) {
-  return results.sort((a, b) => {
-    let scoreA = a.similarity;
-    let scoreB = b.similarity;
-    
-    // Appliquer des bonus selon le type de requête et les métadonnées
-    if (a.metadata && b.metadata) {
-      switch (queryType) {
-        case 'factual':
-          // Favoriser les définitions et les faits
-          if (a.metadata.is_definition) scoreA += 0.1;
-          if (b.metadata.is_definition) scoreB += 0.1;
-          break;
-          
-        case 'procedural':
-          // Favoriser les instructions par étapes
-          if (a.metadata.contains_steps) scoreA += 0.15;
-          if (b.metadata.contains_steps) scoreB += 0.15;
-          break;
-          
-        case 'comparative':
-          // Favoriser les comparaisons
-          if (a.metadata.is_comparison) scoreA += 0.2;
-          if (b.metadata.is_comparison) scoreB += 0.2;
-          break;
-      }
-      
-      // Favoriser les contenus plus récents pour certaines questions
-      const isTimeSensitive = /récent|nouveau|dernier|actuel|aujourd'hui/i.test(queryType);
-      if (isTimeSensitive && a.metadata.date && b.metadata.date) {
-        const dateA = new Date(a.metadata.date);
-        const dateB = new Date(b.metadata.date);
-        if (dateA > dateB) scoreA += 0.05;
-        if (dateB > dateA) scoreB += 0.05;
-      }
-    }
-    
-    return scoreB - scoreA;  // Tri décroissant
-  });
-}
+export default AdvancedRagStrategy;

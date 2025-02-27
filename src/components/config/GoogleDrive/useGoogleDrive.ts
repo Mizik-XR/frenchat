@@ -1,12 +1,14 @@
 
 import { useState, useEffect } from "react";
-import { supabase, SITE_URL } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
 import { GoogleOAuthConfig } from "@/types/google-drive";
 
-// Utiliser l'URL du site détectée dans le client Supabase
-const REDIRECT_URI = `${SITE_URL}/auth/callback/google`;
+// Définir l'URL de redirection pour OAuth
+const REDIRECT_URI = typeof window !== 'undefined' 
+  ? `${window.location.protocol}//${window.location.host}/auth/callback/google`
+  : "http://localhost:5173/auth/callback/google";
 
 const isGoogleOAuthConfig = (obj: unknown): obj is GoogleOAuthConfig => {
   if (!obj || typeof obj !== 'object') {

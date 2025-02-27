@@ -6,24 +6,31 @@ import { supabase } from '@/integrations/supabase/client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { Json } from '@/types/database';
+
+interface MetricsSummary {
+  success_rate: number;
+  avg_duration: number;
+  error_count: number;
+  total_operations: number;
+}
+
+interface CacheStats {
+  hit_rate: number;
+  miss_rate: number;
+}
+
+interface RecentError {
+  message: string;
+  timestamp: string;
+}
 
 interface SystemReport {
   id: string;
   timestamp: string;
-  metrics_summary: {
-    success_rate: number;
-    avg_duration: number;
-    error_count: number;
-    total_operations: number;
-  };
-  cache_stats: {
-    hit_rate: number;
-    miss_rate: number;
-  };
-  recent_errors: Array<{
-    message: string;
-    timestamp: string;
-  }>;
+  metrics_summary: MetricsSummary;
+  cache_stats: CacheStats;
+  recent_errors: RecentError[];
 }
 
 export const SystemReportChart = () => {
@@ -37,7 +44,15 @@ export const SystemReportChart = () => {
         .limit(24); // Dernières 24 heures
 
       if (error) throw error;
-      return data as SystemReport[];
+      
+      // Transformer les données brutes en type SystemReport
+      return (data || []).map(item => ({
+        id: item.id,
+        timestamp: item.timestamp,
+        metrics_summary: item.metrics_summary as unknown as MetricsSummary,
+        cache_stats: item.cache_stats as unknown as CacheStats,
+        recent_errors: (item.recent_errors as unknown as RecentError[]) || []
+      })) as SystemReport[];
     },
     refetchInterval: 60000, // Rafraîchir toutes les minutes
   });

@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { SPECIALIZED_EMBEDDING_MODELS, EmbeddingModel } from "@/utils/embeddingModels";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Json } from "@/types/database";
 
 interface RagAdvancedConfigProps {
   onSave?: () => void;
@@ -94,9 +95,11 @@ export function RagAdvancedConfig({ onSave }: RagAdvancedConfigProps) {
       if (error) throw error;
       
       if (data?.config) {
+        // Faire un cast sécurisé de Json vers notre type RagConfig
+        const configData = data.config as unknown;
         setRagConfig({
           ...defaultRagConfig,
-          ...data.config
+          ...(configData as RagConfig)
         });
         setHasConfiguration(true);
       }
@@ -109,11 +112,14 @@ export function RagAdvancedConfig({ onSave }: RagAdvancedConfigProps) {
     setIsConfiguring(true);
     
     try {
+      // Convert RagConfig to Json compatible object
+      const configAsJson = ragConfig as unknown as Json;
+      
       const { error } = await supabase
         .from('service_configurations')
         .upsert({
           service_type: 'rag',
-          config: ragConfig,
+          config: configAsJson,
           status: 'configured'
         });
       

@@ -37,8 +37,10 @@ export const CloudAIConfig = () => {
       if (error) throw error;
 
       const formattedConfigs = existingConfigs.reduce((acc, curr) => {
-        if (curr.config?.apiKey) {
-          acc[curr.service_type] = curr.config.apiKey;
+        // Accéder de manière sécurisée à la propriété apiKey
+        const config = curr.config as any;
+        if (config && typeof config === 'object' && 'apiKey' in config) {
+          acc[curr.service_type] = config.apiKey;
         }
         return acc;
       }, {} as Record<string, string>);
@@ -73,9 +75,8 @@ export const CloudAIConfig = () => {
         .from('service_configurations')
         .upsert({
           service_type: provider,
-          config: { apiKey },
+          config: { apiKey }, // Objet avec la propriété apiKey
           status: 'configured',
-          last_tested_at: new Date().toISOString()
         }, {
           onConflict: 'service_type'
         });
