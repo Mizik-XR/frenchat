@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { ZoomIn, ZoomOut, Download, Share, Check, AlertCircle } from 'lucide-react';
+import { ZoomIn, ZoomOut, Download, Share, Check, AlertCircle, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -16,6 +17,7 @@ interface DocumentPreviewPanelProps {
   onExport?: (destination: 'drive' | 'teams') => Promise<void>;
   isLoading?: boolean;
   error?: string;
+  onClose?: () => void;
 }
 
 export const DocumentPreviewPanel = ({
@@ -23,7 +25,8 @@ export const DocumentPreviewPanel = ({
   title,
   onExport,
   isLoading,
-  error
+  error,
+  onClose
 }: DocumentPreviewPanelProps) => {
   const [zoom, setZoom] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
@@ -61,6 +64,18 @@ export const DocumentPreviewPanel = ({
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -108,43 +123,66 @@ export const DocumentPreviewPanel = ({
             <ZoomIn className="h-4 w-4" />
           </Button>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExport('drive')}
-                  disabled={isExporting || isLoading || !!error}
-                >
-                  <Share className="h-4 w-4 mr-2" />
-                  Drive
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Exporter vers Google Drive</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleDownload}
+          >
+            <Download className="h-4 w-4" />
+          </Button>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExport('teams')}
-                  disabled={isExporting || isLoading || !!error}
-                >
-                  <Share className="h-4 w-4 mr-2" />
-                  Teams
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Exporter vers Microsoft Teams</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {onExport && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExport('drive')}
+                      disabled={isExporting || isLoading || !!error}
+                    >
+                      <Share className="h-4 w-4 mr-2" />
+                      Drive
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Exporter vers Google Drive</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExport('teams')}
+                      disabled={isExporting || isLoading || !!error}
+                    >
+                      <Share className="h-4 w-4 mr-2" />
+                      Teams
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Exporter vers Microsoft Teams</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
+          )}
+
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="ml-2"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -160,7 +198,7 @@ export const DocumentPreviewPanel = ({
         >
           <div className="prose prose-sm max-w-none">
             {content.split('\n').map((paragraph, index) => (
-              <p key={index} className="mb-4">{paragraph}</p>
+              <p key={index} className="mb-4">{paragraph || ' '}</p>
             ))}
           </div>
         </div>

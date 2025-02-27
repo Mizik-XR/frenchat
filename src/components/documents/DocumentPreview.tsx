@@ -88,16 +88,9 @@ export const DocumentPreview = ({
               content={content}
               title={`Document ${documentId}`}
               onExport={onExport}
+              onClose={() => setShowFullPreview(false)}
             />
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute top-4 right-4 text-white hover:text-white/80"
-            onClick={() => setShowFullPreview(false)}
-          >
-            <EyeOff className="h-4 w-4" />
-          </Button>
         </div>
       )}
     </>
