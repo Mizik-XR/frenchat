@@ -5,24 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   AlertCircle, 
-  CheckCircle, 
   Server, 
   Cloud, 
-  HelpCircle, 
   StopCircle, 
-  Info,
-  ExternalLink as LinkExternal  // Renommé pour éviter les conflits
+  Info
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LOCAL_MODELS, CLOUD_MODELS, type AIModel } from "./types";
+import { LOCAL_MODELS, CLOUD_MODELS } from "./types";
 import { ModelSelector } from "./ModelSelector";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfigHeader } from "./components/ConfigHeader";
 import { FirstTimeSetup } from "./components/FirstTimeSetup";
 import { ModelPathSelector } from "./components/ModelPathSelector";
 import { PathSelectionDialog } from "./components/PathSelectionDialog";
+import { Json } from "@/types/database";
 
 interface LocalAIConfigProps {
   onSave?: () => void;
@@ -32,8 +29,8 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [deploymentType, setDeploymentType] = useState<"local" | "cloud">("cloud");
   const [isConfiguring, setIsConfiguring] = useState(false);
-  const [localModels, setLocalModels] = useState<AIModel[]>(LOCAL_MODELS);
-  const [cloudModels, setCloudModels] = useState<AIModel[]>(CLOUD_MODELS);
+  const [localModels, setLocalModels] = useState(LOCAL_MODELS);
+  const [cloudModels, setCloudModels] = useState(CLOUD_MODELS);
   const [hasConfiguration, setHasConfiguration] = useState(false);
   const [modelPath, setModelPath] = useState<string>("");
   const [showPathDialog, setShowPathDialog] = useState(false);
@@ -55,14 +52,16 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
       .single();
 
     if (data?.config) {
-      setSelectedModel(data.config.model);
-      setDeploymentType(data.config.type || "cloud");
-      setModelPath(data.config.modelPath || defaultModelPath);
+      // Conversion sécurisée
+      const config = data.config as any;
+      setSelectedModel(config.model || "");
+      setDeploymentType(config.type || "cloud");
+      setModelPath(config.modelPath || defaultModelPath);
       setHasConfiguration(true);
     }
   };
 
-  const handleModelAdd = (type: "local" | "cloud") => (newModel: AIModel) => {
+  const handleModelAdd = (type: "local" | "cloud") => (newModel: any) => {
     if (type === "local") {
       setLocalModels(prev => [...prev, newModel]);
     } else {
@@ -101,16 +100,18 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
 
     setIsConfiguring(true);
     try {
+      const configData = { 
+        model: "huggingface/mistral",
+        type: "cloud",
+        customModelId: "mistralai/Mistral-7B-Instruct-v0.1",
+        modelPath: modelPath
+      };
+      
       const { error } = await supabase
         .from('service_configurations')
         .upsert({
           service_type: 'llm',
-          config: { 
-            model: "huggingface/mistral",
-            type: "cloud",
-            customModelId: "mistralai/Mistral-7B-Instruct-v0.1",
-            modelPath: modelPath
-          },
+          config: configData as Json,
           status: 'configured'
         });
 
@@ -147,16 +148,18 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
     try {
       const modelConfig = [...localModels, ...cloudModels].find(m => m.id === selectedModel);
       
+      const configData = { 
+        model: selectedModel,
+        type: deploymentType,
+        customModelId: modelConfig?.modelId,
+        modelPath: modelPath
+      };
+      
       const { error } = await supabase
         .from('service_configurations')
         .upsert({
           service_type: 'llm',
-          config: { 
-            model: selectedModel,
-            type: deploymentType,
-            customModelId: modelConfig?.modelId,
-            modelPath: modelPath
-          },
+          config: configData as Json,
           status: 'configured'
         });
 
@@ -211,19 +214,6 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
         <CardHeader className="bg-gray-50 border-b border-gray-200">
           <CardTitle className="flex items-center gap-2">
             Configuration du modèle
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="p-3 bg-white shadow-xl">
-                  <p className="max-w-xs text-sm text-gray-600">
-                    Choisissez entre un modèle local (exécuté sur votre machine) 
-                    ou cloud (hébergé sur des serveurs distants).
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
           </CardTitle>
           <CardDescription className="text-gray-600">
             Choisissez le type de déploiement et le modèle que vous souhaitez utiliser.
@@ -248,7 +238,7 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
 
             <TabsContent value="local" className="space-y-6">
               <Alert className="bg-green-50 border-green-200 shadow-sm">
-                <CheckCircle className="h-4 w-4 text-green-500" />
+                <Info className="h-4 w-4 text-green-500" />
                 <AlertDescription className="text-green-700 ml-2">
                   Les modèles locaux s'exécutent directement sur votre machine et ne nécessitent pas de clé API.
                 </AlertDescription>
@@ -291,20 +281,6 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
                   type="cloud"
                 />
               </div>
-
-              {selectedModelConfig?.requiresKey && selectedModelConfig?.docsUrl && (
-                <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <LinkExternal className="h-4 w-4 text-blue-600" />
-                  <a 
-                    href={selectedModelConfig.docsUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    Obtenir une clé API
-                  </a>
-                </div>
-              )}
             </TabsContent>
           </Tabs>
 
