@@ -1,5 +1,5 @@
 
-import { Bot, Info, Settings } from "lucide-react";
+import { FileText, Info, Settings } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -29,8 +29,8 @@ export const ChatHeader = ({
     <div className="flex justify-between items-center p-4 border-b">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <Bot className="h-6 w-6 text-blue-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Files Chat</h2>
+          <FileText className="h-6 w-6 text-blue-600" />
+          <h2 className="text-lg font-semibold text-gray-900">FileChat</h2>
         </div>
 
         <div className="flex items-center gap-2">

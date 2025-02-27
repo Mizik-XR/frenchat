@@ -1,5 +1,5 @@
 
-# DocuChatter
+# FileChat
 
 Application de chat intelligente avec intégration de Google Drive et traitement de documents.
 
