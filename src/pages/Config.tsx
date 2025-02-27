@@ -4,11 +4,18 @@ import { ConfigHeader } from "@/components/config/ConfigHeader";
 import { isLocalDevelopment } from "@/services/apiConfig";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Config() {
+  const navigate = useNavigate();
+  
+  const handleBack = () => {
+    navigate("/chat");
+  };
+  
   return (
     <div className="container py-8 space-y-6 max-w-5xl mx-auto">
-      <ConfigHeader />
+      <ConfigHeader onBack={handleBack} />
       
       {!isLocalDevelopment() && (
         <Alert variant="destructive" className="mb-6">
