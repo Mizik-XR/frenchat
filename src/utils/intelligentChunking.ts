@@ -7,6 +7,8 @@
 interface ChunkingOptions {
   // Taille maximale des chunks en tokens
   maxChunkSize: number;
+  // Taille minimale des chunks en tokens (pour éviter les chunks trop petits)
+  minChunkSize?: number;
   // Taille du chevauchement entre chunks voisins
   overlapSize: number;
   // Utiliser la détection de structure sémantique
@@ -17,6 +19,7 @@ interface ChunkingOptions {
 
 const defaultChunkingOptions: ChunkingOptions = {
   maxChunkSize: 1000,
+  minChunkSize: 50,
   overlapSize: 200,
   useSemanticStructure: true,
   respectStructure: true
@@ -38,35 +41,53 @@ const PARAGRAPH_DELIMITERS = [
 ];
 
 /**
- * Détecte les points de séparation structurels dans un texte
+ * Détecte les titres dans un document
  */
-export function detectStructuralBreakpoints(text: string): number[] {
-  const breakpoints: number[] = [];
+export function detectHeadings(text: string): number[] {
+  const headingPositions: number[] = [];
   
-  // Ajouter le début et la fin comme points de séparation
-  breakpoints.push(0);
-  
-  // Détecter les titres et sections
   for (const pattern of SECTION_PATTERNS) {
     let match;
     // On doit réinitialiser le pattern à chaque utilisation pour éviter les problèmes avec lastIndex
     const regex = new RegExp(pattern.source, pattern.flags);
     while ((match = regex.exec(text)) !== null) {
-      breakpoints.push(match.index);
+      headingPositions.push(match.index);
     }
   }
+  
+  return headingPositions.sort((a, b) => a - b);
+}
+
+/**
+ * Détecte les limites de paragraphes dans un document
+ */
+export function detectParagraphBoundaries(text: string): number[] {
+  const boundaries: number[] = [];
+  
+  // Ajouter le début comme point de séparation
+  boundaries.push(0);
   
   // Détecter les paragraphes
   for (const delimiter of PARAGRAPH_DELIMITERS) {
     let position = 0;
     while ((position = text.indexOf(delimiter, position)) !== -1) {
-      breakpoints.push(position);
+      boundaries.push(position);
       position += delimiter.length;
     }
   }
   
+  return boundaries.sort((a, b) => a - b);
+}
+
+/**
+ * Détecte les points de séparation structurels dans un texte
+ */
+export function detectStructuralBreakpoints(text: string): number[] {
+  const headings = detectHeadings(text);
+  const paragraphBoundaries = detectParagraphBoundaries(text);
+  
   // Ajouter la fin comme point de séparation
-  breakpoints.push(text.length);
+  const breakpoints = [...headings, ...paragraphBoundaries, text.length];
   
   // Trier et dédupliquer
   return [...new Set(breakpoints)].sort((a, b) => a - b);
@@ -102,6 +123,21 @@ export function chunkTextIntelligently(
     
     for (let i = 1; i < breakpoints.length; i++) {
       const section = text.substring(breakpoints[i-1], breakpoints[i]);
+      const sectionTokenCount = estimateTokenCount(section);
+      
+      // Vérification si cette section à elle seule dépasse la taille maximale
+      // Dans ce cas, on utilise un chunking basé sur les mots
+      if (sectionTokenCount > opts.maxChunkSize) {
+        if (currentChunk) {
+          chunks.push(currentChunk);
+          currentChunk = "";
+        }
+        
+        // Chunking de la section trop grande
+        const sectionChunks = chunkLargeSection(section, opts);
+        chunks.push(...sectionChunks);
+        continue;
+      }
       
       // Si l'ajout de cette section dépasse la taille maximale, on crée un nouveau chunk
       if (estimateTokenCount(currentChunk + section) > opts.maxChunkSize && currentChunk !== "") {
@@ -119,8 +155,8 @@ export function chunkTextIntelligently(
       currentChunk += section;
     }
     
-    // Ajouter le dernier chunk
-    if (currentChunk) {
+    // Ajouter le dernier chunk s'il est assez grand
+    if (currentChunk && (!opts.minChunkSize || estimateTokenCount(currentChunk) >= opts.minChunkSize)) {
       chunks.push(currentChunk);
     }
   } else {
@@ -144,10 +180,42 @@ export function chunkTextIntelligently(
       currentChunk += (currentChunk ? " " : "") + word;
     }
     
-    // Ajouter le dernier chunk
-    if (currentChunk) {
+    // Ajouter le dernier chunk s'il est assez grand
+    if (currentChunk && (!opts.minChunkSize || estimateTokenCount(currentChunk) >= opts.minChunkSize)) {
       chunks.push(currentChunk);
     }
+  }
+  
+  return chunks;
+}
+
+/**
+ * Chunking d'une section trop grande en utilisant une approche basée sur les mots
+ */
+function chunkLargeSection(text: string, options: ChunkingOptions): string[] {
+  const chunks: string[] = [];
+  let currentChunk = "";
+  const words = text.split(/\s+/);
+  
+  for (const word of words) {
+    if (estimateTokenCount(currentChunk + " " + word) > options.maxChunkSize && currentChunk !== "") {
+      chunks.push(currentChunk);
+      
+      // Ajouter du chevauchement si nécessaire
+      if (options.overlapSize > 0 && currentChunk.length > options.overlapSize) {
+        const overlapText = currentChunk.substring(currentChunk.length - options.overlapSize);
+        currentChunk = overlapText;
+      } else {
+        currentChunk = "";
+      }
+    }
+    
+    currentChunk += (currentChunk ? " " : "") + word;
+  }
+  
+  // Ajouter le dernier chunk s'il est assez grand
+  if (currentChunk && (!options.minChunkSize || estimateTokenCount(currentChunk) >= options.minChunkSize)) {
+    chunks.push(currentChunk);
   }
   
   return chunks;
