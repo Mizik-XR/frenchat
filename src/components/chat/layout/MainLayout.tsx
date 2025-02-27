@@ -16,12 +16,15 @@ interface MainLayoutProps {
   showSettings: boolean;
   showUploader: boolean;
   showPriorityTopics: boolean;
+  replyToMessage: Message | null;
+  onClearReply: () => void;
   onConversationSelect: (id: string) => void;
   onNewConversation: () => Promise<void>;
   onUpdateConversation: (params: { id: string; title?: string; isPinned?: boolean; isArchived?: boolean }) => void;
   onModeChange: (mode: 'auto' | 'manual') => void;
   onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
   onProviderChange: (provider: AIProvider) => void;
+  onReplyToMessage: (message: Message) => void;
   setInput: (input: string) => void;
   setShowSettings: (show: boolean) => void;
   setShowUploader: (show: boolean) => void;
@@ -45,12 +48,15 @@ export const MainLayout = ({
   showSettings,
   showUploader,
   showPriorityTopics,
+  replyToMessage,
+  onClearReply,
   onConversationSelect,
   onNewConversation,
   onUpdateConversation,
   onModeChange,
   onWebUIConfigChange,
   onProviderChange,
+  onReplyToMessage,
   setInput,
   setShowSettings,
   setShowUploader,
@@ -85,9 +91,12 @@ export const MainLayout = ({
               selectedDocumentId={selectedDocumentId}
               showSettings={showSettings}
               showUploader={showUploader}
+              replyToMessage={replyToMessage}
+              onClearReply={onClearReply}
               onModeChange={onModeChange}
               onWebUIConfigChange={onWebUIConfigChange}
               onProviderChange={onProviderChange}
+              onReplyToMessage={onReplyToMessage}
               setInput={setInput}
               setShowSettings={setShowSettings}
               setShowUploader={setShowUploader}

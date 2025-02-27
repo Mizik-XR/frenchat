@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { ChatHeader } from "../ChatHeader";
 import { MessageList } from "../MessageList";
@@ -6,7 +5,7 @@ import { ChatInputContainer } from "./ChatInputContainer";
 import { SettingsPanel } from "../SettingsPanel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { AIProvider, Message, WebUIConfig, AnalysisMode } from "@/types/chat";
+import { Message, WebUIConfig, AIProvider, AnalysisMode } from "@/types/chat";
 
 interface ChatContainerProps {
   messages: Message[];
@@ -17,9 +16,12 @@ interface ChatContainerProps {
   selectedDocumentId: string | null;
   showSettings: boolean;
   showUploader: boolean;
+  replyToMessage: Message | null;
+  onClearReply: () => void;
   onModeChange: (mode: 'auto' | 'manual') => void;
   onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
   onProviderChange: (provider: AIProvider) => void;
+  onReplyToMessage: (message: Message) => void;
   setInput: (input: string) => void;
   setShowSettings: (show: boolean) => void;
   setShowUploader: (show: boolean) => void;
@@ -38,9 +40,12 @@ export const ChatContainer = ({
   selectedDocumentId,
   showSettings,
   showUploader,
+  replyToMessage,
+  onClearReply,
   onModeChange,
   onWebUIConfigChange,
   onProviderChange,
+  onReplyToMessage,
   setInput,
   setShowSettings,
   setShowUploader,
