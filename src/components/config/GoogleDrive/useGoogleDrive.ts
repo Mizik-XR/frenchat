@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SITE_URL } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
 import { GoogleOAuthConfig } from "@/types/google-drive";
 
-const REDIRECT_URI = `${window.location.origin}/auth/callback/google`;
+// Utiliser l'URL du site détectée dans le client Supabase
+const REDIRECT_URI = `${SITE_URL}/auth/callback/google`;
 
 const isGoogleOAuthConfig = (obj: unknown): obj is GoogleOAuthConfig => {
   if (!obj || typeof obj !== 'object') {
@@ -82,10 +83,15 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
 
     try {
       setIsConnecting(true);
+      console.log("URL de redirection OAuth configurée:", REDIRECT_URI);
+      
       const { data: authData, error: authError } = await supabase.functions.invoke<{
         client_id: string;
       }>('google-oauth', {
-        body: { action: 'get_client_id' }
+        body: { 
+          action: 'get_client_id',
+          redirect_uri: REDIRECT_URI
+        }
       });
 
       if (authError || !authData?.client_id) {
@@ -103,6 +109,7 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
         `access_type=offline&` +
         `prompt=consent`;
 
+      console.log("Redirection vers:", authUrl);
       window.location.href = authUrl;
     } catch (error) {
       console.error('Erreur lors de l\'initialisation de l\'auth Google:', error);

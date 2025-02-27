@@ -15,6 +15,7 @@ import AIConfig from "./pages/AIConfig";
 import RagAdvancedSettings from "./pages/RagAdvancedSettings";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { DebugPanel } from "./components/DebugPanel";
 
 function AppWithAuth() {
   return (
@@ -37,6 +38,7 @@ function AppWithAuth() {
         <Route path="/ai-config" element={<AIConfig />} />
       </Routes>
       <Toaster />
+      <DebugPanel />
     </AuthProvider>
   );
 }
@@ -46,8 +48,14 @@ function App() {
   console.log("App component rendering");
 
   useEffect(() => {
-    // Vérifier si les ressources Firebase sont accessibles
-    console.log("Checking Firebase resources");
+    // Afficher l'URL actuelle pour le débogage
+    console.log("Current environment:", 
+      window.location.hostname.includes('preview') || window.location.hostname.includes('lovable') 
+        ? "Preview environment" 
+        : "Local environment");
+    console.log("Current URL:", window.location.href);
+    console.log("Current hostname:", window.location.hostname);
+    console.log("Current origin:", window.location.origin);
     
     // Loguer toute erreur de chargement des ressources
     const originalFetch = window.fetch;

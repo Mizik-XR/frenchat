@@ -10,6 +10,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Défini' : 'Non défini');
 }
 
+// Détecter si nous sommes dans l'environnement de prévisualisation
+const isPreviewEnvironment = window.location.hostname.includes('preview') || 
+                            window.location.hostname.includes('lovable') || 
+                            !window.location.hostname.includes('localhost');
+
+// URL à utiliser pour les redirections d'authentification
+const siteUrl = isPreviewEnvironment 
+  ? window.location.origin 
+  : 'http://localhost:8080';
+
+console.log('URL du site détectée pour l\'authentification:', siteUrl);
+
 export const supabase = createClient(
   supabaseUrl || '',
   supabaseAnonKey || '',
@@ -17,7 +29,12 @@ export const supabase = createClient(
     auth: {
       persistSession: true,
       storageKey: 'filechat-storage-key',
-      debug: true, // Activer le débogage en développement
+      autoRefreshToken: true,
+      debug: true,
+      flowType: 'pkce',
+      detectSessionInUrl: true,
+      // Utiliser la bonne URL pour les redirections
+      site: siteUrl
     },
   }
 )
@@ -35,3 +52,6 @@ supabase.auth.getSession().then(({ data, error }) => {
     console.log('Statut de connexion Supabase :', data.session ? 'Connecté' : 'Non connecté');
   }
 });
+
+// Exporter l'URL du site pour réutilisation
+export const SITE_URL = siteUrl;
