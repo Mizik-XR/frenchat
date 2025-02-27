@@ -1,3 +1,4 @@
+
 export type AIProvider = 'auto' | 'huggingface' | 'internet-search' | 'deepthink' | 'stable-diffusion';
 
 export type MessageType = 'text' | 'document' | 'image' | 'chart';
@@ -10,6 +11,11 @@ export type MessageMetadata = {
   imageUrl?: string;
   confidence?: number;
   analysisMode?: AnalysisMode;
+  replyTo?: {
+    id: string;
+    content: string;
+    role: 'user' | 'assistant';
+  };
 };
 
 export type WebUIConfig = {

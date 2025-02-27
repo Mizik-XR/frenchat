@@ -4,10 +4,11 @@ import { toast } from "@/hooks/use-toast";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
 import { chatService } from "@/services/chatService";
 import { supabase } from "@/integrations/supabase/client";
-import { AIProvider, WebUIConfig } from "@/types/chat";
+import { AIProvider, WebUIConfig, Message } from "@/types/chat";
 
 export function useChatLogic(selectedConversationId: string | null) {
   const [isLoading, setIsLoading] = useState(false);
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const { textGeneration } = useHuggingFace();
 
   const getSystemPrompt = (mode: string) => {
@@ -39,11 +40,35 @@ export function useChatLogic(selectedConversationId: string | null) {
     setIsLoading(true);
 
     try {
-      await chatService.sendUserMessage(message, selectedConversationId);
+      // Préparer les métadonnées si on répond à un message
+      const replyMetadata = replyToMessage ? {
+        replyTo: {
+          id: replyToMessage.id,
+          content: replyToMessage.content,
+          role: replyToMessage.role
+        }
+      } : undefined;
+
+      // Envoyer le message utilisateur
+      await chatService.sendUserMessage(
+        message, 
+        selectedConversationId, 
+        'text', 
+        documentId, 
+        replyMetadata
+      );
+
+      // Réinitialiser le message auquel on répond
+      setReplyToMessage(null);
 
       let prompt = message;
       if (webUIConfig.useMemory && conversationContext) {
         prompt = `Contexte précédent:\n${conversationContext}\n\nNouvelle question: ${message}`;
+      }
+
+      // Si on répond à un message, ajouter le contexte
+      if (replyToMessage) {
+        prompt = `Tu réponds au message suivant: "${replyToMessage.content}"\n\nLa nouvelle question/commentaire est: "${message}"`;
       }
 
       let response;
@@ -83,6 +108,7 @@ export function useChatLogic(selectedConversationId: string | null) {
         response[0].generated_text,
         selectedConversationId,
         'text',
+        documentId,
         { 
           provider: webUIConfig.model,
           analysisMode: webUIConfig.analysisMode
@@ -102,8 +128,19 @@ export function useChatLogic(selectedConversationId: string | null) {
     }
   };
 
+  const handleReplyToMessage = (message: Message) => {
+    setReplyToMessage(message);
+    toast({
+      title: "Réponse",
+      description: "Vous répondez à un message spécifique",
+    });
+  };
+
   return {
     isLoading,
-    processMessage
+    replyToMessage,
+    processMessage,
+    handleReplyToMessage,
+    clearReplyToMessage: () => setReplyToMessage(null)
   };
 }

@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { AIProvider, WebUIConfig, AnalysisMode } from "@/types/chat";
+import { AIProvider, WebUIConfig, AnalysisMode, Message } from "@/types/chat";
 import { useChatMessages } from '@/hooks/useChatMessages';
 import { useConversations } from '@/hooks/useConversations';
 import { useChatLogic } from '@/hooks/useChatLogic';
@@ -29,7 +30,7 @@ export const Chat = () => {
   const { config: llmConfig, status: llmStatus } = useServiceConfiguration('llm');
   const { messages, clearMessages } = useChatMessages(selectedConversationId);
   const { conversations, createNewConversation, updateConversation } = useConversations();
-  const { isLoading, processMessage } = useChatLogic(selectedConversationId);
+  const { isLoading, processMessage, handleReplyToMessage, replyToMessage, clearReplyToMessage } = useChatLogic(selectedConversationId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,12 +138,15 @@ export const Chat = () => {
       showSettings={showSettings}
       showUploader={showUploader}
       showPriorityTopics={showPriorityTopics}
+      replyToMessage={replyToMessage}
+      onClearReply={clearReplyToMessage}
       onConversationSelect={setSelectedConversationId}
       onNewConversation={handleNewConversation}
       onUpdateConversation={updateConversation}
       onModeChange={(mode) => setWebUIConfig(prev => ({ ...prev, mode }))}
       onWebUIConfigChange={(config) => setWebUIConfig(prev => ({ ...prev, ...config }))}
       onProviderChange={(provider) => setWebUIConfig(prev => ({ ...prev, model: provider }))}
+      onReplyToMessage={handleReplyToMessage}
       setInput={setInput}
       setShowSettings={setShowSettings}
       setShowUploader={setShowUploader}

@@ -1,9 +1,16 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Message, MessageType, MessageMetadata } from "@/types/chat";
 import { apiConfig } from "./apiConfig";
 
 export const chatService = {
-  async sendUserMessage(content: string, conversationId: string): Promise<Message> {
+  async sendUserMessage(
+    content: string, 
+    conversationId: string,
+    type: MessageType = 'text',
+    documentId?: string | null,
+    metadata?: MessageMetadata
+  ): Promise<Message> {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) throw new Error("User not authenticated");
 
@@ -12,8 +19,10 @@ export const chatService = {
       .insert({
         role: 'user',
         content,
-        message_type: 'text',
+        message_type: type,
         conversation_id: conversationId,
+        context: documentId || null,
+        metadata,
         user_id: user.user.id
       })
       .select()
@@ -35,8 +44,9 @@ export const chatService = {
 
   async sendAssistantMessage(
     content: string, 
-    conversationId: string, 
+    conversationId: string,
     type: MessageType = 'text',
+    documentId?: string | null,
     metadata?: MessageMetadata
   ): Promise<Message> {
     const { data: user } = await supabase.auth.getUser();
@@ -49,6 +59,7 @@ export const chatService = {
         content,
         message_type: type,
         conversation_id: conversationId,
+        context: documentId || null,
         metadata,
         user_id: user.user.id
       })
