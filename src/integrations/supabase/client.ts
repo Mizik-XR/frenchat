@@ -8,14 +8,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Les variables d\'environnement Supabase ne sont pas configurées :');
   console.error('VITE_SUPABASE_URL:', supabaseUrl ? 'Défini' : 'Non défini');
   console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Défini' : 'Non défini');
+  throw new Error('Configuration Supabase manquante');
 }
 
 // URL à utiliser pour les redirections d'authentification (en local)
 export const SITE_URL = 'http://localhost:8080';
 
 export const supabase = createClient(
-  supabaseUrl || '',
-  supabaseAnonKey || '',
+  supabaseUrl,
+  supabaseAnonKey,
   {
     auth: {
       persistSession: true,
