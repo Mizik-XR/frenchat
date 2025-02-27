@@ -1,39 +1,49 @@
 
-export type ServiceType = 'huggingface' | 'openai' | 'deepseek' | 'google_drive' | 'microsoft_teams' | 'ollama' | 'phi' | 'local' | 'stable_diffusion' | 'llm' | 'perplexity' | 'anthropic';
+import { Json } from './database';
 
-export type LLMProvider = {
-  id: ServiceType;
-  name: string;
-  description: string;
-  models: string[];
-  docsUrl: string;
-  requiresApiKey: boolean;
-  isLocal?: boolean;
-  setupInstructions?: string;
-};
+export type ServiceType = 'openai' | 'perplexity' | 'deepseek' | 'anthropic' | 'local' | 'rag';
 
-export type LLMConfig = {
+export interface AIConfig {
   provider: ServiceType;
-  apiKey: string;
-  model: string;
-  rateLimit: number;
-  useLocal?: boolean;
-  batchSize?: number;
-  cacheEnabled?: boolean;
-};
-
-export type GoogleConfig = {
-  clientId: string;
-  apiKey: string;
-};
-
-export type TeamsConfig = {
-  clientId: string;
-  tenantId: string;
-};
-
-export type ServiceCredentials = {
   apiKey?: string;
-  clientId?: string;
-  clientSecret?: string;
-};
+  model?: string;
+  modelPath?: string;
+  type?: string;
+  config?: Record<string, any>;
+}
+
+export interface RagConfig {
+  chunkSize: number;
+  overlapSize: number;
+  useSemanticStructure: boolean;
+  respectStructure: boolean;
+  embeddingModel: string;
+  normalizeVectors: boolean;
+  useHybridSearch: boolean;
+  useQueryClassification: boolean;
+  enhanceWithMetadata: boolean;
+  minSimilarityThreshold: number;
+  maxResults: number;
+  reranking: boolean;
+  useLocalCache: boolean;
+  usePersistentCache: boolean;
+  cacheTTL: number;
+  compressionEnabled: boolean;
+}
+
+export interface IndexingProgress {
+  total: number;
+  processed: number;
+  created_at: string;
+  current_folder: string | null;
+  depth: number | null;
+  error: string | null;
+  id: string;
+  last_processed_file: string | null;
+  parent_folder: string | null;
+  processed_files: number | null;
+  status: string;
+  total_files: number | null;
+  updated_at: string;
+  user_id: string;
+}

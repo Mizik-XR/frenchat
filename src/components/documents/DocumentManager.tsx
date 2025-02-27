@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,15 +26,17 @@ export const DocumentManager = () => {
     if (!user) return;
 
     try {
-      const { data: document, error } = await supabase
-        .from('documents')
-        .select('content_text')
+      const { data: document, error: documentError } = await supabase
+        .from('indexed_documents')
+        .select('*')
         .eq('id', docId)
         .single();
 
-      if (error) throw error;
+      if (documentError) throw documentError;
 
-      setDocumentContent(document?.content_text || "Ce document n'a pas de contenu");
+      const contentText = document.content_text;
+
+      setDocumentContent(contentText || "Ce document n'a pas de contenu");
     } catch (error: any) {
       console.error('Erreur lors de la récupération du contenu:', error);
       setDocumentContent("Impossible de charger le contenu du document");
@@ -58,23 +59,24 @@ export const DocumentManager = () => {
 
     setIsUploading(true);
     try {
-      const filePath = `${user.id}/${Date.now()}_${file.name}`;
+      const filePath = `${user.id}/${file.name}`;
       
       const { error: uploadError } = await supabase.storage
-        .from('documents')
+        .from('indexed_documents')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       const { data: documentData, error: dbError } = await supabase
-        .from('documents')
+        .from('indexed_documents')
         .insert({
           title: file.name,
           file_path: filePath,
           mime_type: file.type,
           file_size: file.size,
           user_id: user.id,
-          content_text: "Contenu en cours d'indexation..."
+          status: 'pending',
+          provider_type: 'local'
         })
         .select()
         .single();

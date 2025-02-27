@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -95,11 +94,12 @@ export function RagAdvancedConfig({ onSave }: RagAdvancedConfigProps) {
       if (error) throw error;
       
       if (data?.config) {
-        // Faire un cast sécurisé de Json vers notre type RagConfig
+        // Conversion sécurisée du JSON en RagConfig
         const configData = data.config as unknown;
+        const typedConfig = configData as RagConfig;
         setRagConfig({
           ...defaultRagConfig,
-          ...(configData as RagConfig)
+          ...typedConfig
         });
         setHasConfiguration(true);
       }
@@ -112,15 +112,17 @@ export function RagAdvancedConfig({ onSave }: RagAdvancedConfigProps) {
     setIsConfiguring(true);
     
     try {
-      // Convert RagConfig to Json compatible object
-      const configAsJson = ragConfig as unknown as Json;
+      // Conversion de RagConfig en type Json compatible
+      const jsonConfig: Json = ragConfig as unknown as Json;
       
       const { error } = await supabase
         .from('service_configurations')
         .upsert({
           service_type: 'rag',
-          config: configAsJson,
+          config: jsonConfig,
           status: 'configured'
+        }, {
+          onConflict: 'service_type'
         });
       
       if (error) throw error;
