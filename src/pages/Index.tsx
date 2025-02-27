@@ -41,7 +41,7 @@ export default function Index() {
             <ThemeToggle />
           </div>
           
-          {/* GIF principal */}
+          {/* GIF principal avec chemin corrigé */}
           <div className="max-w-2xl w-full mb-8 rounded-lg overflow-hidden shadow-2xl bg-white">
             {imageError ? (
               <img 
@@ -51,7 +51,7 @@ export default function Index() {
               />
             ) : (
               <img 
-                src="/filechat-animation.gif" 
+                src="/docu-chatter/public/filechat-animation.gif" 
                 alt="FileChat Animation" 
                 className="w-full h-auto"
                 onError={() => setImageError(true)}
