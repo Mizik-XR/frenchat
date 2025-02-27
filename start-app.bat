@@ -4,7 +4,7 @@ chcp 65001
 setlocal enabledelayedexpansion
 
 echo ================================
-echo Démarrage de DocuChatter
+echo Démarrage de FileChat
 echo ================================
 echo.
 
