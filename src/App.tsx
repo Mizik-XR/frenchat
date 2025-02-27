@@ -19,12 +19,7 @@ import { DebugPanel } from "./components/DebugPanel";
 
 function AppWithAuth() {
   return (
-    <AuthProvider fallback={
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        <span className="ml-2 text-gray-700">Chargement de l'application...</span>
-      </div>
-    }>
+    <AuthProvider>
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
@@ -60,16 +55,17 @@ function App() {
     // Loguer toute erreur de chargement des ressources
     const originalFetch = window.fetch;
     window.fetch = function(input, init) {
-      console.log(`Fetch request to: ${typeof input === 'string' ? input : input.url}`);
+      const inputUrl = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
+      console.log(`Fetch request to: ${inputUrl}`);
       return originalFetch(input, init)
         .then(response => {
           if (!response.ok) {
-            console.warn(`Fetch error ${response.status} for ${typeof input === 'string' ? input : input.url}`);
+            console.warn(`Fetch error ${response.status} for ${inputUrl}`);
           }
           return response;
         })
         .catch(error => {
-          console.error(`Fetch failed for ${typeof input === 'string' ? input : input.url}:`, error);
+          console.error(`Fetch failed for ${inputUrl}:`, error);
           throw error;
         });
     };
