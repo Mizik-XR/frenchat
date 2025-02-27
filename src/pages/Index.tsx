@@ -30,9 +30,9 @@ export default function Index() {
     // Log pour le débogage
     console.log("Page Index montée, état de chargement:", loading);
     
-    // Préchargement de l'image
+    // Préchargement de l'image avec le chemin correct
     const img = new Image();
-    img.src = "/filechat-animation.gif";
+    img.src = "/filechat-animation.gif"; // Chemin correct observé dans la capture d'écran
     img.onload = handleImageLoad;
     img.onerror = () => handleImageError({ target: img } as any);
     
@@ -63,7 +63,7 @@ export default function Index() {
           <div className="max-w-3xl w-full mx-auto text-center">
             <div className="inline-flex items-center mb-8 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg">
               <img 
-                src="/lovable-uploads/fb21020a-04ad-4e58-9d53-3224ce760584.png" 
+                src="/filechat-animation.gif" 
                 alt="FileChat Logo" 
                 className="h-8 w-8"
                 onLoad={handleImageLoad}
@@ -74,7 +74,7 @@ export default function Index() {
             
             <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-2xl mb-8 max-w-3xl mx-auto">
               <img 
-                src="/lovable-uploads/fb21020a-04ad-4e58-9d53-3224ce760584.png" 
+                src="/filechat-animation.gif" 
                 alt="FileChat Animation" 
                 className="w-full h-auto"
                 onLoad={handleImageLoad}
