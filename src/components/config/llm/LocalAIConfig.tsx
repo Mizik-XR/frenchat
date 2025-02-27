@@ -1,8 +1,18 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle, Server, Cloud, HelpCircle, StopCircle } from "lucide-react";
+import { 
+  AlertCircle, 
+  CheckCircle, 
+  Server, 
+  Cloud, 
+  HelpCircle, 
+  StopCircle, 
+  Info,
+  ExternalLink as LinkExternal  // Renommé pour éviter les conflits
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -284,7 +294,7 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
 
               {selectedModelConfig?.requiresKey && selectedModelConfig?.docsUrl && (
                 <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <ExternalLink className="h-4 w-4 text-blue-600" />
+                  <LinkExternal className="h-4 w-4 text-blue-600" />
                   <a 
                     href={selectedModelConfig.docsUrl} 
                     target="_blank" 
