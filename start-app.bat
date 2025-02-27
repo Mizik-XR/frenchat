@@ -72,10 +72,10 @@ echo ================================
 REM Démarrage du serveur IA dans une nouvelle fenêtre
 start "Serveur IA Local" cmd /c "venv\Scripts\python.exe serve_model.py"
 
-REM Démarrage immédiat de l'application React sur le port 8080
+REM Démarrage immédiat de l'application React sur le port 5173
 echo.
 echo Démarrage de l'application...
-start "Application React" cmd /c "set PORT=8080 && npm run dev"
+start "Application React" cmd /c "npm run dev"
 
 echo.
 echo ================================
@@ -84,7 +84,7 @@ echo ================================
 echo.
 echo Services:
 echo 1. Serveur IA local: http://localhost:8000
-echo 2. Application React: http://localhost:8080
+echo 2. Application React: http://localhost:5173
 echo.
 echo Pour arrêter les services, fermez les fenêtres de terminal ou pressez Ctrl+C
 echo.

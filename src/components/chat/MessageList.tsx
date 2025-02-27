@@ -1,5 +1,5 @@
 
-import { Bot, FileText, Image, Loader } from "lucide-react";
+import { Bot, FileText, Image, Loader, Reply } from "lucide-react";
 import { Message } from "@/types/chat";
 import { DocumentPreview } from "@/components/documents/DocumentPreview";
 import { MessageContextMenu } from "./message/MessageContextMenu";
@@ -63,9 +63,9 @@ export const MessageList = ({
           <div
             className={`relative max-w-[80%] p-4 rounded-lg ${
               message.role === 'user'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-800'
-            }`}
+                ? 'bg-blue-500 text-white rounded-tr-none'
+                : 'bg-gray-100 text-gray-800 rounded-tl-none'
+            } shadow-sm`}
           >
             {message.role === 'assistant' && (
               <div className="flex items-center gap-2 mb-2 text-gray-600">
@@ -73,11 +73,20 @@ export const MessageList = ({
                 <span className="text-xs">Assistant IA</span>
               </div>
             )}
+            
+            {message.metadata?.replyTo && (
+              <div className="bg-gray-500/10 p-2 rounded mb-2 text-xs border-l-2 border-blue-400">
+                <div className="font-medium mb-1">En réponse à :</div>
+                <div className="line-clamp-2">{message.metadata.replyTo.content}</div>
+              </div>
+            )}
+            
             {message.metadata?.provider && (
               <div className="text-xs text-gray-500 mb-1">
                 via {message.metadata.provider}
               </div>
             )}
+            
             <div className="whitespace-pre-wrap">{message.content}</div>
             
             {message.type === 'document' && message.context && (
@@ -89,13 +98,34 @@ export const MessageList = ({
               </div>
             )}
 
-            <div className="absolute top-2 right-2">
-              <MessageContextMenu
-                message={message}
-                onReply={onReplyToMessage || (() => {})}
-                onDelete={onDeleteMessage || (() => {})}
-                onArchive={onArchiveMessage || (() => {})}
-              />
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex gap-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button 
+                        className="p-1 rounded hover:bg-gray-200/30"
+                        onClick={() => onReplyToMessage && onReplyToMessage(message)}
+                      >
+                        <Reply className="h-3.5 w-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Répondre à ce message</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <MessageContextMenu
+                  message={message}
+                  onReply={onReplyToMessage || (() => {})}
+                  onDelete={onDeleteMessage || (() => {})}
+                  onArchive={onArchiveMessage || (() => {})}
+                />
+              </div>
+            </div>
+            
+            <div className="text-xs opacity-70 mt-1 text-right">
+              {message.timestamp && format(message.timestamp, 'HH:mm', { locale: fr })}
             </div>
           </div>
         </div>

@@ -11,8 +11,8 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: true,
-      port: 8080,
-      strictPort: true // Force Vite à utiliser uniquement le port spécifié
+      port: 5173,
+      strictPort: false // Permet de basculer sur un autre port si 5173 est occupé
     },
     optimizeDeps: {
       include: ['react-dropzone']
