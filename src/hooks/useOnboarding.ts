@@ -28,12 +28,13 @@ export const useOnboarding = () => {
         if (session) {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("has_seen_onboarding")
+            .select("*")
             .eq("id", session.user.id)
             .single();
           
-          // Si le profil existe et a déjà vu l'onboarding
-          if (profile && profile.has_seen_onboarding) {
+          // Si le profil existe et a un flag is_first_login à false
+          // Nous utilisons is_first_login comme proxy puisque has_seen_onboarding n'existe pas
+          if (profile && profile.is_first_login === false) {
             setShowOnboarding(false);
             localStorage.setItem("has_seen_onboarding", "true");
           } else {
@@ -78,7 +79,7 @@ export const useOnboarding = () => {
       if (session) {
         await supabase
           .from("profiles")
-          .update({ has_seen_onboarding: true })
+          .update({ is_first_login: false })
           .eq("id", session.user.id);
       }
     } catch (error) {

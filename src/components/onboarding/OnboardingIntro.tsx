@@ -56,8 +56,7 @@ export const OnboardingIntro = () => {
   return (
     <Dialog open={showOnboarding} onOpenChange={(open) => !open && handleComplete()}>
       <DialogContent 
-        className="sm:max-w-xl bg-transparent border-none shadow-none p-0" 
-        closeButton={false}
+        className="sm:max-w-xl bg-transparent border-none shadow-none p-0"
       >
         <OnboardingStep
           title={ONBOARDING_STEPS[currentStep].title}

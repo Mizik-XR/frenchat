@@ -14,6 +14,7 @@ export interface OnboardingStepProps {
   onNext: () => void;
   onComplete: () => void;
   icon?: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const OnboardingStep: React.FC<OnboardingStepProps> = ({
