@@ -2,14 +2,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Json } from "@/types/database";
 
 interface Template {
   id: string;
   name: string;
   description: string | null;
   template_type: string;
-  content_structure: Json;
+  content_structure: any;
   user_id?: string;
 }
 
@@ -24,15 +23,29 @@ export const useTemplates = () => {
   const loadTemplates = async () => {
     setIsLoading(true);
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (!userData?.user) {
+        console.warn("Aucun utilisateur connecté pour charger les templates");
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('document_templates')
-        .select('*');
+        .select('*')
+        .eq('user_id', userData.user.id);
 
       if (error) throw error;
 
       setTemplates(data);
     } catch (error) {
       console.error("Erreur lors du chargement des templates:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les templates",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -79,10 +92,14 @@ export const useTemplates = () => {
 
   const deleteTemplate = async (id: string) => {
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) throw new Error("Utilisateur non connecté");
+
       const { error } = await supabase
         .from('document_templates')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', userData.user.id);
 
       if (error) throw error;
 

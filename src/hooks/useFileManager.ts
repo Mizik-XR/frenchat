@@ -151,7 +151,10 @@ export const useFileManager = () => {
       // Mise à jour des métadonnées
       await supabase
         .from('uploaded_documents')
-        .update({ metadata: { content_hash: newHash } })
+        .update({ 
+          metadata: { content_hash: newHash },
+          content_hash: newHash // Ajout direct du content_hash
+        })
         .eq('id', fileId);
 
       // Mise à jour du cache

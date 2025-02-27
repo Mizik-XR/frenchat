@@ -1,22 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/types/database";
-
-// Interface pour les objets de cache d'embedding
-export interface EmbeddingCacheItem {
-  text: string;
-  embedding: number[];
-  model: string;
-  metadata?: Record<string, any>;
-}
-
-// Interface pour la configuration de cache
-export interface CacheConfig extends Record<string, Json> {
-  embedding?: number[];
-  text?: string;
-  model?: string;
-  metadata?: Record<string, any>;
-}
+import { EmbeddingCacheItem, CacheConfig } from "@/types/config";
 
 // Cache en mémoire pour réduire les appels à la base de données
 const memoryCache = new Map<string, {
@@ -39,6 +23,29 @@ function getCacheKey(text: string, model: string): string {
 }
 
 /**
+ * Vérification sécurisée du type du cache pour éviter les erreurs d'accès
+ */
+function ensureCacheObject(value: any): CacheConfig {
+  // Si c'est déjà un objet avec des propriétés, on le retourne
+  if (typeof value === 'object' && value !== null) {
+    return value as CacheConfig;
+  }
+  
+  // Si c'est une chaîne JSON, on essaie de la parser
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as CacheConfig;
+    } catch (e) {
+      console.error('Erreur lors du parsing JSON:', e);
+      return {};
+    }
+  }
+  
+  // Par défaut, retourner un objet vide
+  return {};
+}
+
+/**
  * Vérifie si un embedding est déjà en cache
  */
 export async function checkEmbeddingCache(text: string, model: string): Promise<EmbeddingCacheItem | null> {
@@ -55,7 +62,7 @@ export async function checkEmbeddingCache(text: string, model: string): Promise<
         embedding: cacheData.embedding,
         text: cacheData.text,
         model: cacheData.model,
-        metadata: cacheData.metadata || {}
+        metadata: cacheData.metadata
       };
     }
   }
@@ -79,8 +86,8 @@ export async function checkEmbeddingCache(text: string, model: string): Promise<
       return null;
     }
     
-    // Récupérer les propriétés de l'objet JSON
-    const cacheValue = data.value as CacheConfig;
+    // Récupérer les propriétés de l'objet JSON de manière sécurisée
+    const cacheValue = ensureCacheObject(data.value);
     
     if (cacheValue.embedding && cacheValue.text && cacheValue.model) {
       // Mettre à jour le cache en mémoire
@@ -102,7 +109,7 @@ export async function checkEmbeddingCache(text: string, model: string): Promise<
         embedding: cacheValue.embedding,
         text: cacheValue.text,
         model: cacheValue.model,
-        metadata: cacheValue.metadata || {}
+        metadata: cacheValue.metadata
       };
     }
     
@@ -143,7 +150,7 @@ export async function storeEmbeddingInCache(item: EmbeddingCacheItem, ttlHours: 
           text: item.text,
           model: item.model,
           metadata: item.metadata || {}
-        } as Json,
+        },
         expires_at: expiresAt.toISOString(),
         access_count: 1
       });
@@ -178,8 +185,8 @@ export async function getCacheEntry(key: string): Promise<{ data: CacheConfig, e
       return null;
     }
     
-    // Conversion sécurisée du JSON
-    const cacheConfig = data.value as CacheConfig;
+    // Conversion sécurisée
+    const cacheConfig = ensureCacheObject(data.value);
     
     return {
       data: cacheConfig,

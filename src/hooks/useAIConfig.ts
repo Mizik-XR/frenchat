@@ -21,19 +21,36 @@ export const useAIConfig = () => {
   const loadConfigs = async () => {
     setIsLoading(true);
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) {
+        console.warn("Aucun utilisateur connecté pour charger les configurations");
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('user_ai_configs')
-        .select('*');
+        .select('*')
+        .eq('user_id', userData.user.id);
 
       if (error) throw error;
 
       // Conversion des données en AIConfig[]
-      const aiConfigs: AIConfig[] = data.map(item => ({
-        provider: item.provider as ServiceType,
-        model: item.model_name,
-        apiKey: item.api_key,
-        config: typeof item.config === 'object' ? item.config : {}
-      }));
+      const aiConfigs: AIConfig[] = data.map(item => {
+        // Conversion sûre du config JSON
+        const configObj = typeof item.config === 'object' 
+          ? item.config 
+          : (typeof item.config === 'string' ? JSON.parse(item.config) : {});
+        
+        return {
+          provider: item.provider as ServiceType,
+          model: item.model_name,
+          apiKey: item.api_key,
+          model_name: item.model_name,
+          api_endpoint: item.api_endpoint,
+          config: configObj
+        };
+      });
 
       setConfigs(aiConfigs);
     } catch (error) {
@@ -62,6 +79,7 @@ export const useAIConfig = () => {
           provider: config.provider || provider,
           model_name: config.model || modelName,
           api_endpoint: config.api_endpoint || '',
+          api_key: config.apiKey || '',
           config: config.config || {},
           user_id: userData.user.id
         }, {

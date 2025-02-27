@@ -92,6 +92,7 @@ export interface Database {
           updated_at: string;
           content: string | null;
           preview_url: string | null;
+          content_hash: string | null; // Ajout du champ content_hash manquant
         };
         Insert: {
           id?: string;
@@ -106,6 +107,7 @@ export interface Database {
           updated_at?: string;
           content?: string | null;
           preview_url?: string | null;
+          content_hash?: string | null; // Ajout du champ content_hash
         };
         Update: {
           id?: string;
@@ -120,6 +122,7 @@ export interface Database {
           updated_at?: string;
           content?: string | null;
           preview_url?: string | null;
+          content_hash?: string | null; // Ajout du champ content_hash
         };
       };
       indexing_progress: {

@@ -17,6 +17,11 @@ interface APIConfig {
   apiKey: string;
 }
 
+interface ConfigData {
+  apiKey?: string;
+  [key: string]: any;
+}
+
 export const CloudAIConfig = () => {
   const navigate = useNavigate();
   const [configs, setConfigs] = useState<Record<string, string>>({});
@@ -38,10 +43,12 @@ export const CloudAIConfig = () => {
 
       const formattedConfigs = existingConfigs.reduce((acc, curr) => {
         // Accéder de manière sécurisée à la propriété apiKey
-        const config = curr.config as any;
-        if (config && typeof config === 'object' && 'apiKey' in config) {
-          acc[curr.service_type] = config.apiKey;
-        }
+        const configObj = typeof curr.config === 'object' 
+          ? curr.config as ConfigData 
+          : (typeof curr.config === 'string' ? JSON.parse(curr.config) : {});
+        
+        const apiKey = configObj.apiKey || '';
+        acc[curr.service_type] = apiKey;
         return acc;
       }, {} as Record<string, string>);
 
