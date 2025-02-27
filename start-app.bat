@@ -47,10 +47,23 @@ if errorlevel 1 (
 
 :skip_npm_install
 
-REM Installation de l'environnement Python en parallèle
-start /B cmd /c "scripts\setup-venv.bat"
+REM Vérification et création de l'environnement Python si nécessaire
+if not exist "venv\" (
+    echo ================================
+    echo Configuration environnement Python
+    echo ================================
+    call scripts\setup-venv.bat
+)
 
-REM Démarrage de l'application React immédiatement
+REM Vérification du modèle IA
+if not exist "serve_model.py" (
+    echo ================================
+    echo Création du serveur modèle IA
+    echo ================================
+    call scripts\create-model-server.bat
+)
+
+REM Démarrage des services
 echo.
 echo ================================
 echo Démarrage des services
