@@ -36,11 +36,11 @@ export default function Config() {
           <TabsTrigger value="usage">Utilisation & Coûts</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="config">
+        <TabsContent value="config" className="space-y-6">
           <ConfigWizard />
         </TabsContent>
         
-        <TabsContent value="usage">
+        <TabsContent value="usage" className="space-y-6">
           <AIUsageMetrics />
         </TabsContent>
       </Tabs>
