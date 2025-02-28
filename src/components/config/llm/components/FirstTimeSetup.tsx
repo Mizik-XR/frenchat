@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BrainCircuit } from "lucide-react";
+import { LogoImage } from "@/components/common/LogoImage";
 
 interface FirstTimeSetupProps {
   onActivate: () => Promise<void>;
@@ -14,6 +15,11 @@ export function FirstTimeSetup({ onActivate, isConfiguring }: FirstTimeSetupProp
     <Card className="bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200 shadow-md overflow-hidden">
       <CardContent className="p-6">
         <div className="flex flex-col items-center text-center space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <LogoImage className="h-12 w-12" />
+            <h2 className="text-2xl font-bold text-purple-900">FileChat</h2>
+          </div>
+          
           <div className="p-3 bg-purple-100 rounded-full">
             <BrainCircuit className="h-8 w-8 text-purple-700" />
           </div>

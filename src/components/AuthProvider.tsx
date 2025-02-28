@@ -18,7 +18,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 // Liste des routes protégées qui nécessitent une authentification
-const PROTECTED_ROUTES = ['/chat', '/config', '/documents', '/monitoring', '/ai-config'];
+const PROTECTED_ROUTES = ['/chat', '/config', '/documents', '/monitoring', '/ai-config', '/home'];
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               });
             }
           } else if (location.pathname === '/auth' || location.pathname === '/') {
-            navigate('/chat');
+            navigate('/home');
           }
         }
         
@@ -102,7 +102,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (_event === 'SIGNED_OUT') {
         setIsLoading(false);
         if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
-          navigate('/auth');
+          navigate('/');
         }
         return;
       }
@@ -128,8 +128,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             if ((profile?.is_first_login || needsConfiguration) && location.pathname !== '/config') {
               navigate('/config');
-            } else if (location.pathname === '/' || location.pathname === '/auth') {
-              navigate('/chat');
+            } else if ((location.pathname === '/' || location.pathname === '/auth') && !location.pathname.startsWith('/auth/google')) {
+              navigate('/home');
             }
           }
         } else if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
@@ -147,7 +147,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error("Erreur lors de la vérification de la session:", error);
         setUser(null);
         setIsLoading(false);
-        navigate('/auth');
+        
+        // Rediriger vers l'accueil en cas d'erreur, au lieu de la page d'authentification
+        if (location.pathname !== '/') {
+          navigate('/');
+        }
       }
     };
 
@@ -167,7 +171,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await supabase.auth.signOut();
       setUser(null);
-      navigate("/auth");
+      navigate("/");
       
       toast({
         title: "Déconnexion réussie",

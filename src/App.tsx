@@ -19,6 +19,7 @@ import { Loader2 } from "lucide-react";
 import { DebugPanel } from "./components/DebugPanel";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { WelcomePage } from "./components/onboarding/WelcomePage";
 
 function AppWithAuth() {
   return (
@@ -26,7 +27,8 @@ function AppWithAuth() {
       <AuthProvider>
         <OnboardingIntro />
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<WelcomePage />} />
+          <Route path="/home" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/config" element={<Config />} />
