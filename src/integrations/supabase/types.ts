@@ -679,11 +679,13 @@ export type Database = {
           created_at: string
           folder_id: string
           id: string
+          is_shared: boolean | null
           last_synced: string | null
           metadata: Json | null
           name: string
           parent_folder_id: string | null
           path: string | null
+          shared_with: string[] | null
           updated_at: string
           user_id: string
         }
@@ -691,11 +693,13 @@ export type Database = {
           created_at?: string
           folder_id: string
           id?: string
+          is_shared?: boolean | null
           last_synced?: string | null
           metadata?: Json | null
           name: string
           parent_folder_id?: string | null
           path?: string | null
+          shared_with?: string[] | null
           updated_at?: string
           user_id: string
         }
@@ -703,11 +707,13 @@ export type Database = {
           created_at?: string
           folder_id?: string
           id?: string
+          is_shared?: boolean | null
           last_synced?: string | null
           metadata?: Json | null
           name?: string
           parent_folder_id?: string | null
           path?: string | null
+          shared_with?: string[] | null
           updated_at?: string
           user_id?: string
         }

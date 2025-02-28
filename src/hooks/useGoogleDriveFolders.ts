@@ -36,7 +36,7 @@ export function useGoogleDriveFolders() {
         id: folder.folder_id,
         name: folder.name,
         path: folder.path || folder.name,
-        metadata: folder.metadata,
+        metadata: folder.metadata as Record<string, any>,
         is_shared: folder.is_shared,
         shared_with: folder.shared_with
       })));

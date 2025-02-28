@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Folder, Loader2, Share2, Users, BookOpen, RotateCw } from 'lucide-react';
-import { useGoogleDriveFolders } from '@/hooks/useGoogleDriveFolders';
+import { useGoogleDriveFolders, Folder as DriveFolder } from '@/hooks/useGoogleDriveFolders';
 import { useGoogleDriveStatus } from '@/hooks/useGoogleDriveStatus';
 import { useIndexingProgress } from '@/hooks/useIndexingProgress';
 import { IndexingProgressBar } from './IndexingProgressBar';
