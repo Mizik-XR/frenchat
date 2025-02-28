@@ -29,10 +29,13 @@ export const WelcomePage = () => {
               <p className="font-medium mb-2">
                 Contrairement à d'autres solutions, FileChat est unique :
               </p>
-              <p>
+              <p className="mb-2">
                 FileChat indexe automatiquement tous vos documents depuis Google Drive 
                 et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre 
                 base documentaire sans sélection manuelle préalable.
+              </p>
+              <p className="font-medium text-purple-900">
+                100% local et open source : vos données restent privées et sous votre contrôle
               </p>
             </div>
             
