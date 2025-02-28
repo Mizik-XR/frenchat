@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface LogoImageProps {
   className?: string;
@@ -8,6 +8,11 @@ interface LogoImageProps {
 export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
   const [imagePath, setImagePath] = useState<string>("");
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const [isHovering, setIsHovering] = useState<boolean>(false);
+
+  // État pour suivre si l'animation initiale a été jouée
+  const [initialAnimationPlayed, setInitialAnimationPlayed] = useState<boolean>(false);
 
   useEffect(() => {
     // Déterminer si nous sommes en environnement de développement ou de production
@@ -93,6 +98,56 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
     findWorkingPath();
   }, []);
 
+  // Effet pour gérer l'animation initiale une seule fois
+  useEffect(() => {
+    if (imageLoaded && imageRef.current && !initialAnimationPlayed) {
+      // Permettre à l'animation de démarrer une fois
+      const img = imageRef.current;
+      
+      // Utiliser une timeout pour s'assurer que l'animation est terminée
+      // La plupart des animations GIF durent quelques secondes
+      const timeoutId = setTimeout(() => {
+        // Arrêter l'animation en remplaçant le src avec lui-même
+        // Cela fige le GIF sur sa dernière frame
+        if (img && img.src && !isHovering) {
+          const currentSrc = img.src;
+          // On recharge l'image pour arrêter l'animation
+          img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; // Image vide
+          img.src = currentSrc;
+          setInitialAnimationPlayed(true);
+        }
+      }, 3000); // Durée estimée de l'animation (ajuster selon la durée réelle du GIF)
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [imageLoaded, initialAnimationPlayed, isHovering]);
+
+  // Gestion du hover pour rejouer l'animation
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+    if (imageRef.current && initialAnimationPlayed) {
+      // Recharger l'image pour relancer l'animation
+      const img = imageRef.current;
+      const currentSrc = img.src;
+      img.src = currentSrc;
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    // Lorsque la souris quitte, on arrête l'animation après un délai
+    if (imageRef.current && initialAnimationPlayed) {
+      const img = imageRef.current;
+      setTimeout(() => {
+        if (img && !isHovering) {
+          const currentSrc = img.src;
+          img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+          img.src = currentSrc;
+        }
+      }, 3000); // Délai pour laisser l'animation se terminer
+    }
+  };
+
   // Utiliser une icône de secours si l'image ne charge pas
   if (!imageLoaded) {
     return (
@@ -104,9 +159,12 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
 
   return (
     <img
+      ref={imageRef}
       src={imagePath}
       alt="FileChat Logo"
       className={className}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onError={(e) => {
         console.error("Erreur de chargement d'image");
         setImageLoaded(false);
