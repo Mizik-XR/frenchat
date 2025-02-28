@@ -13,54 +13,20 @@ echo [INFO] Nettoyage des processus existants...
 taskkill /F /IM "python.exe" /FI "WINDOWTITLE eq Serveur IA Local" 2>nul
 taskkill /F /IM "node.exe" /FI "WINDOWTITLE eq Application React" 2>nul
 
-REM Vérification de Node.js
-echo [INFO] Vérification de Node.js...
-where node >nul 2>nul
+REM Vérification de Python
+echo [INFO] Vérification de Python...
+where python >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERREUR] Node.js n'est pas installé. Veuillez l'installer depuis https://nodejs.org/
+    echo [ERREUR] Python n'est pas installé. Veuillez l'installer depuis https://python.org/
     echo.
     echo Appuyez sur une touche pour quitter...
     pause >nul
     exit /b 1
 )
 
-echo [OK] Node.js détecté: 
-node --version
+echo [OK] Python détecté: 
+python --version
 echo.
-
-REM Vérification des modules node
-echo [INFO] Vérification des modules NPM...
-if not exist "node_modules\" (
-    echo [INFO] Installation des dépendances NPM nécessaire
-    goto :npm_install
-) else (
-    if not exist "node_modules\.cache" (
-        echo [INFO] Réinstallation complète des dépendances NPM requise
-        rmdir /s /q node_modules
-        goto :npm_install
-    ) else (
-        echo [OK] Les node_modules semblent valides
-        goto :skip_npm_install
-    )
-)
-
-:npm_install
-echo ================================
-echo Installation des dépendances NPM
-echo ================================
-echo.
-call npm install --prefer-offline --no-audit --no-fund
-if errorlevel 1 (
-    echo [ERREUR] Installation des dépendances NPM échouée
-    echo.
-    echo Appuyez sur une touche pour quitter...
-    pause >nul
-    exit /b 1
-)
-echo [OK] Dépendances NPM installées avec succès
-echo.
-
-:skip_npm_install
 
 REM Vérification et création de l'environnement Python si nécessaire
 echo [INFO] Vérification de l'environnement Python...
@@ -102,13 +68,21 @@ if not exist "serve_model.py" (
 
 REM Démarrage des services
 echo ================================
-echo Démarrage des services
+echo Démarrage du serveur IA local
 echo ================================
 echo.
 
-REM Démarrage du serveur IA dans une nouvelle fenêtre
+REM Récupération de l'adresse IP locale pour améliorer la compatibilité réseau
+for /f "tokens=4" %%i in ('route print ^| find " 0.0.0.0"') do set LOCAL_IP=%%i
+echo [INFO] Adresse IP locale détectée: %LOCAL_IP%
+
+REM Configuration des origines autorisées pour CORS
+set "ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173,http://127.0.0.1:5173,*"
+echo [INFO] Origines CORS autorisées: %ALLOWED_ORIGINS%
+
+REM Démarrage du serveur IA dans une nouvelle fenêtre avec les variables d'environnement configurées
 echo [INFO] Démarrage du serveur IA local...
-start "Serveur IA Local" cmd /c "venv\Scripts\python.exe serve_model.py"
+start "Serveur IA Local" cmd /c "set ALLOWED_ORIGINS=%ALLOWED_ORIGINS% && venv\Scripts\python.exe serve_model.py"
 if errorlevel 1 (
     echo [ERREUR] Démarrage du serveur IA échoué
     echo.
@@ -120,31 +94,22 @@ if errorlevel 1 (
 REM Attendre un peu que le serveur IA démarre
 timeout /t 3 /nobreak > nul
 
-REM Démarrage immédiat de l'application React sur le port 8080
-echo [INFO] Démarrage de l'application React...
-start "Application React" cmd /c "npm run dev -- --host --port 8080"
-if errorlevel 1 (
-    echo [ERREUR] Démarrage de l'application React échoué
-    echo.
-    echo Appuyez sur une touche pour quitter...
-    pause >nul
-    exit /b 1
-)
-
 echo.
 echo ================================
-echo Services démarrés avec succès
+echo Service IA démarré avec succès
 echo ================================
 echo.
-echo Services disponibles:
+echo Service disponible:
 echo [1] Serveur IA local: http://localhost:8000
-echo [2] Application React: http://localhost:8080
 echo.
-echo [INFO] Attendez quelques secondes que les serveurs démarrent complètement...
-timeout /t 10 /nobreak > nul
+echo [INFO] Le serveur IA local est prêt à être utilisé avec l'application web déployée
+echo [INFO] Utilisez le service en vous connectant sur l'application web FileChat
+echo.
+echo Pour arrêter le service, fermez cette fenêtre ou pressez Ctrl+C
+echo.
+echo Logs du serveur:
+echo ---------------
+echo.
 
-echo.
-echo Pour accéder à l'application, ouvrez votre navigateur à l'adresse: http://localhost:8080
-echo Pour arrêter les services, fermez les fenêtres de terminal ou pressez Ctrl+C
-echo Pour fermer cette fenêtre, appuyez sur une touche...
-pause >nul
+REM Maintenir la fenêtre ouverte pour voir les logs
+timeout /t 9999 /nobreak > nul

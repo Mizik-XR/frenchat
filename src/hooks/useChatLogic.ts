@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
 import { chatService } from "@/services/chatService";
@@ -9,7 +9,21 @@ import { AIProvider, WebUIConfig, Message } from "@/types/chat";
 export function useChatLogic(selectedConversationId: string | null) {
   const [isLoading, setIsLoading] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
-  const { textGeneration } = useHuggingFace();
+  const { 
+    textGeneration, 
+    serviceType, 
+    localAIUrl 
+  } = useHuggingFace();
+
+  useEffect(() => {
+    // Notification à l'utilisateur sur le type de service utilisé
+    if (serviceType === 'local' && localAIUrl) {
+      toast({
+        title: "Service IA local détecté",
+        description: "Utilisation du modèle IA local pour de meilleures performances",
+      });
+    }
+  }, [serviceType, localAIUrl]);
 
   const getSystemPrompt = (mode: string) => {
     switch (mode) {
@@ -71,6 +85,12 @@ export function useChatLogic(selectedConversationId: string | null) {
         prompt = `Tu réponds au message suivant: "${replyToMessage.content}"\n\nLa nouvelle question/commentaire est: "${message}"`;
       }
 
+      // Ajout d'information sur le type de service IA utilisé dans les métadonnées
+      const aiServiceInfo = {
+        type: serviceType,
+        endpoint: serviceType === 'local' ? localAIUrl : 'cloud'
+      };
+
       let response;
       switch (webUIConfig.model) {
         case 'huggingface':
@@ -111,7 +131,8 @@ export function useChatLogic(selectedConversationId: string | null) {
         documentId,
         { 
           provider: webUIConfig.model,
-          analysisMode: webUIConfig.analysisMode
+          analysisMode: webUIConfig.analysisMode,
+          aiService: aiServiceInfo
         }
       );
 
@@ -141,6 +162,8 @@ export function useChatLogic(selectedConversationId: string | null) {
     replyToMessage,
     processMessage,
     handleReplyToMessage,
-    clearReplyToMessage: () => setReplyToMessage(null)
+    clearReplyToMessage: () => setReplyToMessage(null),
+    serviceType,
+    localAIUrl
   };
 }

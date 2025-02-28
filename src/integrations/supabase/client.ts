@@ -21,6 +21,60 @@ export const preloadSession = async () => {
   }
 };
 
+// Détection dynamique du service d'IA locale
+export const detectLocalAIService = async () => {
+  try {
+    // Teste si un serveur d'IA local est disponible
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // Timeout après 2 secondes
+    
+    const localBaseUrls = [
+      'http://localhost:8000',
+      'http://127.0.0.1:8000',
+      // Ajoutez d'autres ports potentiels si nécessaire
+    ];
+    
+    let localAIAvailable = false;
+    let localAIUrl = '';
+    
+    for (const url of localBaseUrls) {
+      try {
+        const response = await fetch(`${url}/health`, {
+          method: 'GET',
+          signal: controller.signal
+        });
+        
+        if (response.ok) {
+          localAIAvailable = true;
+          localAIUrl = url;
+          break;
+        }
+      } catch (e) {
+        // Ignore les erreurs et continue avec l'URL suivante
+        continue;
+      }
+    }
+    
+    clearTimeout(timeoutId);
+    
+    if (localAIAvailable) {
+      console.log("Service d'IA local détecté:", localAIUrl);
+      localStorage.setItem('aiServiceType', 'local');
+      localStorage.setItem('localAIUrl', localAIUrl);
+      return { available: true, url: localAIUrl };
+    } else {
+      console.log("Aucun service d'IA local détecté, utilisation du service cloud");
+      localStorage.setItem('aiServiceType', 'cloud');
+      localStorage.removeItem('localAIUrl');
+      return { available: false, url: null };
+    }
+  } catch (error) {
+    console.error("Erreur lors de la détection du service d'IA local:", error);
+    localStorage.setItem('aiServiceType', 'cloud');
+    return { available: false, url: null };
+  }
+};
+
 // Création du client avec des options optimisées
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
@@ -54,4 +108,10 @@ export const supabase = createClient<Database>(
 if (typeof window !== 'undefined') {
   // Préchargement non-bloquant
   setTimeout(preloadSession, 0);
+  
+  // Détection du service d'IA local au démarrage de l'application
+  setTimeout(detectLocalAIService, 1000);
+  
+  // Réessayer périodiquement la détection du service local (toutes les 30 secondes)
+  setInterval(detectLocalAIService, 30000);
 }

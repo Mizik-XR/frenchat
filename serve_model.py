@@ -17,9 +17,9 @@ logger = logging.getLogger("serve_model")
 # Création de l'application FastAPI
 app = FastAPI()
 
-# Configuration CORS sécurisée
+# Configuration CORS pour permettre l'accès depuis n'importe quelle origine
 # En production, utilisez une liste d'origines spécifiques au lieu de "*"
-ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8080").split(",")
+ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "*").split(",")
 ALLOWED_METHODS = ["GET", "POST", "OPTIONS"]
 ALLOWED_HEADERS = ["Content-Type", "Authorization", "X-Client-Info"]
 
@@ -44,13 +44,9 @@ async def rate_limit_middleware(request: Request, call_next):
     # Journalisation des requêtes pour analyse
     logger.info(f"Requête de {client_host} à {request.url.path} à {current_time}")
     
-    # Continuer avec la requête
+    # Ajouter un header pour indiquer que le serveur est local
     response = await call_next(request)
-    
-    # Pour une implémentation complète de rate limiting:
-    # 1. Vérifier si l'IP a dépassé la limite (ex: 20 req/min)
-    # 2. Si oui, renvoyer 429 Too Many Requests
-    # 3. Sinon, incrémenter le compteur et poursuivre
+    response.headers["X-FileChat-Server"] = "local"
     
     return response
 
@@ -138,7 +134,8 @@ async def health_check():
         "status": "ok", 
         "model": DEFAULT_MODEL,
         "version": "1.1.0",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "type": "local"
     }
 
 @app.get("/models")
