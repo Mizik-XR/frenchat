@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Folder, Loader2, Share2, Users, BookOpen, RotateCw } from 'lucide-react';
@@ -17,6 +16,24 @@ import { IndexingProgressBar } from './IndexingProgressBar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
+
+interface SharedFolder {
+  id: string;
+  folder_id: string;
+  name: string;
+  path?: string;
+  metadata?: Record<string, any>;
+  shared_with?: string[];
+}
+
+interface KnowledgeBase {
+  id: string;
+  status: string;
+  total_files: number;
+  processed_files: number;
+  current_folder?: string;
+  parent_folder?: string;
+}
 
 export function FolderIndexingSelector() {
   const navigate = useNavigate();
@@ -31,11 +48,11 @@ export function FolderIndexingSelector() {
   const [maxDepth, setMaxDepth] = useState(10);
   const [batchSize, setBatchSize] = useState(100);
   const [activeTab, setActiveTab] = useState('index');
-  const [sharedFolders, setSharedFolders] = useState<any[]>([]);
+  const [sharedFolders, setSharedFolders] = useState<SharedFolder[]>([]);
   const [isLoadingShared, setIsLoadingShared] = useState(false);
   const [isShared, setIsShared] = useState(false);
   const [sharingWith, setSharingWith] = useState('');
-  const [recentKnowledgeBases, setRecentKnowledgeBases] = useState<any[]>([]);
+  const [recentKnowledgeBases, setRecentKnowledgeBases] = useState<KnowledgeBase[]>([]);
   
   useEffect(() => {
     if (isConnected) {

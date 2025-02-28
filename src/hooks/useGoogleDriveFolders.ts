@@ -8,7 +8,7 @@ export interface Folder {
   id: string;
   name: string;
   path: string;
-  metadata?: any;
+  metadata?: Record<string, any>;
 }
 
 export function useGoogleDriveFolders() {
