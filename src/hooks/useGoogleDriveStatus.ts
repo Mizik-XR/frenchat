@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { toast } from "@/hooks/use-toast";
+import { Json } from "@/types/database";
 
 // Définir l'URL de redirection pour OAuth de manière dynamique
 export const getRedirectUrl = () => {
@@ -53,9 +54,14 @@ export const useGoogleDriveStatus = () => {
         const isExpired = expiresAt < new Date();
         console.log('Token trouvé, expire le:', expiresAt, 'Expiré?', isExpired);
         
+        // Extraction de l'email avec vérification de type
+        let userEmail = "Utilisateur Google";
+        if (data.metadata && typeof data.metadata === 'object') {
+          userEmail = (data.metadata as Record<string, any>).email || userEmail;
+        }
+        
         setConnectionData({
-          // Utiliser les données disponibles dans metadata au lieu de user_email
-          email: data.metadata?.email || "Utilisateur Google",
+          email: userEmail,
           connectedSince: new Date(data.created_at),
           metadata: data.metadata
         });
