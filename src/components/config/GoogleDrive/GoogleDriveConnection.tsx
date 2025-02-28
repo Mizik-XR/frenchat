@@ -20,7 +20,7 @@ import { useGoogleDriveStatus } from '@/hooks/useGoogleDriveStatus';
 
 const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) => {
   const { googleConfig, saveConfig } = useGoogleDriveConfig();
-  const isConnected = useGoogleDriveStatus();
+  const { isConnected } = useGoogleDriveStatus();
   const { folders, isLoading: loadingFolders } = useGoogleDriveFolders();
   const [selectedFolder, setSelectedFolder] = useState<string>('');
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -67,13 +67,6 @@ const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) =
     }
   };
 
-  const handleDisconnect = async () => {
-    // Implementation simplifiée, nous utilisons le hook useGoogleDriveStatus pour vérifier la connexion
-    await saveConfig({ clientId: '', apiKey: '' });
-    setSelectedFolder('');
-    setShowConfirmation(false);
-  };
-
   if (!isConnected) {
     return <GoogleDriveButton />;
   }
@@ -90,9 +83,6 @@ const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) =
             <p className="text-sm text-gray-500">Sélectionnez un dossier à indexer</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={handleDisconnect}>
-          Déconnecter
-        </Button>
       </div>
 
       {loadingFolders ? (
@@ -118,7 +108,14 @@ const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) =
             </SelectContent>
           </Select>
           
-          <div className="mt-4 flex justify-end">
+          <div className="mt-4 flex justify-between">
+            <Button
+              onClick={() => window.history.back()}
+              variant="outline"
+            >
+              Retour
+            </Button>
+            
             {!showConfirmation ? (
               <Button 
                 onClick={() => selectedFolder && setShowConfirmation(true)}

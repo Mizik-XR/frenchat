@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUploader } from "@/components/config/ImportMethod/FileUploader";
-import { ImageIcon, BarChart3 } from "lucide-react";
+import { ImageIcon, BarChart3, Upload, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ChartGenerator } from "../visualization/ChartGenerator";
@@ -126,6 +126,16 @@ export const ChatInputContainer = ({
           >
             <BarChart3 className="h-4 w-4" />
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setShowUploader(!showUploader)}
+            disabled={isLoading}
+            title="Téléverser un fichier"
+          >
+            <Upload className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="flex gap-2">
@@ -133,6 +143,7 @@ export const ChatInputContainer = ({
             type="button"
             variant="outline"
             onClick={() => setShowUploader(!showUploader)}
+            className="sm:flex hidden"
           >
             Ajouter un fichier
           </Button>
