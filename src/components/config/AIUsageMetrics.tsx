@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 
@@ -100,7 +100,7 @@ export const AIUsageMetrics = () => {
           Utilisation de l'IA et Coûts Estimés
           <Tooltip>
             <TooltipTrigger asChild>
-              <InfoCircle className="ml-2 h-4 w-4 text-gray-400 cursor-help" />
+              <Info className="ml-2 h-4 w-4 text-gray-400 cursor-help" />
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
               <p>Estimations basées sur les tarifs actuels des fournisseurs. Les modèles locaux n'engendrent pas de coûts par requête.</p>
