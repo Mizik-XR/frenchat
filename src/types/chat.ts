@@ -11,6 +11,10 @@ export type MessageMetadata = {
   imageUrl?: string;
   confidence?: number;
   analysisMode?: AnalysisMode;
+  aiService?: {
+    type: 'local' | 'cloud';
+    endpoint: string;
+  };
   replyTo?: {
     id: string;
     content: string;
