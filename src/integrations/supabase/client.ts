@@ -34,12 +34,17 @@ export const supabase = createClient<Database>(
     },
     global: {
       fetch: (...args) => {
-        // @ts-ignore - Nous ignorons l'erreur de type pour la propriété cache
-        args[1] = {
-          ...args[1],
-          cache: args[0].toString().includes('auth/') ? 'no-cache' : 'default'
+        // Correction de l'opérateur spread pour traiter correctement les arguments typés
+        const request = args[0];
+        const options = args[1] || {};
+        
+        // Ajout conditionnel des options de cache
+        const updatedOptions = {
+          ...options,
+          cache: request.toString().includes('auth/') ? 'no-cache' : 'default'
         };
-        return fetch(...args);
+        
+        return fetch(request, updatedOptions);
       }
     }
   }
