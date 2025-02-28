@@ -1,133 +1,220 @@
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { UserAvatar } from "@/components/auth/UserAvatar";
-import { Button } from "@/components/ui/button";
-import { BrainCircuit, FileText, Cloud, ArrowLeft } from "lucide-react";
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { 
+  Settings, 
+  MessageSquare, 
+  FileText, 
+  BarChart, 
+  Menu, 
+  ChevronDown
+} from 'lucide-react';
+import { ModeToggle } from "../ThemeToggle";
+import { UserAvatar } from '../auth/UserAvatar';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-} from "@/components/ui/sheet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { QuickConfig } from "@/components/config/QuickConfig";
-import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
-import { useNavigate, useLocation } from "react-router-dom";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useAuth } from '../AuthProvider';
+import { Badge } from '../ui/badge';
+import { useUserNotifications } from '@/hooks/useUserNotifications';
+import { NotificationCenter } from '../notifications/NotificationCenter';
 
-export function NavBar() {
-  const [currentSheet, setCurrentSheet] = useState<string | null>(null);
-  const navigate = useNavigate();
+export const NavBar = () => {
   const location = useLocation();
+  const { user } = useAuth();
+  const { unreadCount } = useUserNotifications();
+  const [showMenu, setShowMenu] = useState(false);
 
-  const navItems = [
-    {
-      icon: Cloud,
-      label: "Google Drive",
-      id: "drive",
-      tooltip: "Configuration Google Drive",
-      content: <QuickConfig />,
-      fullConfigPath: "/config"
-    },
-    {
-      icon: FileText,
-      label: "Documents",
-      id: "docs",
-      tooltip: "Gestion des documents",
-      content: <QuickConfig />,
-      fullConfigPath: "/config"
-    },
-    {
-      icon: BrainCircuit,
-      label: "IA",
-      id: "ai",
-      tooltip: "Configuration de l'IA",
-      content: <LocalAIConfig />,
-      fullConfigPath: "/config/local-ai"
-    }
-  ];
-
-  const handleFullConfig = (path: string) => {
-    setCurrentSheet(null);
-    navigate(path);
+  const isActive = (path: string) => {
+    return location.pathname.startsWith(path);
   };
 
-  return (
-    <nav className="w-full bg-background border-b">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Link to="/chat" className="text-xl font-bold hover:opacity-80 transition-opacity">
-            Files Chat
-          </Link>
-        </div>
+  const closeMobileMenu = () => {
+    setShowMenu(false);
+  };
 
-        <div className="flex items-center gap-4">
-          <TooltipProvider>
-            {navItems.map((item) => (
-              <Sheet 
-                key={item.id}
-                open={currentSheet === item.id}
-                onOpenChange={(open) => setCurrentSheet(open ? item.id : null)}
-              >
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <SheetTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`transition-all duration-200 ${currentSheet === item.id ? "bg-accent" : "hover:bg-accent/50"}`}
-                      >
-                        <item.icon className="h-5 w-5" />
-                      </Button>
-                    </SheetTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{item.tooltip}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <SheetContent side="right" className="w-[400px] sm:w-[540px] overflow-y-auto">
-                  <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                      {location.pathname.startsWith('/config') && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => navigate(-1)}
-                          className="hover:bg-accent/50"
-                        >
-                          <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {item.label}
-                    </SheetTitle>
-                  </SheetHeader>
-                  <div className="py-6">
-                    {item.content}
-                  </div>
-                  <SheetFooter>
-                    <Button 
-                      variant="outline" 
-                      className="w-full hover:bg-accent/50 transition-colors"
-                      onClick={() => handleFullConfig(item.fullConfigPath)}
-                    >
-                      Configuration avancée
-                    </Button>
-                  </SheetFooter>
-                </SheetContent>
-              </Sheet>
-            ))}
-          </TooltipProvider>
-          
-          <UserAvatar />
-        </div>
-      </div>
-    </nav>
+  const renderNavLinks = () => (
+    <>
+      <Button
+        asChild
+        variant={isActive('/chat') ? 'default' : 'ghost'}
+        size="sm"
+        className="hidden md:flex"
+      >
+        <Link to="/chat">
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Chat
+        </Link>
+      </Button>
+      <Button
+        asChild
+        variant={isActive('/documents') ? 'default' : 'ghost'}
+        size="sm"
+        className="hidden md:flex"
+      >
+        <Link to="/documents">
+          <FileText className="h-4 w-4 mr-2" />
+          Documents
+        </Link>
+      </Button>
+      <Button
+        asChild
+        variant={isActive('/monitoring') ? 'default' : 'ghost'}
+        size="sm"
+        className="hidden md:flex"
+      >
+        <Link to="/monitoring">
+          <BarChart className="h-4 w-4 mr-2" />
+          Monitoring
+        </Link>
+      </Button>
+      <Button
+        asChild
+        variant={isActive('/config') ? 'default' : 'ghost'}
+        size="sm"
+        className="hidden md:flex"
+      >
+        <Link to="/config">
+          <Settings className="h-4 w-4 mr-2" />
+          Configuration
+        </Link>
+      </Button>
+    </>
   );
-}
+
+  return (
+    <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
+      <div className="flex items-center">
+        <Link to="/" className="flex items-center">
+          <img src="/favicon.ico" alt="filechat" className="mr-2 w-6 h-6" />
+          <span className="font-bold text-lg">filechat</span>
+        </Link>
+      </div>
+
+      <div className="flex-1 flex justify-center">
+        {renderNavLinks()}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <NotificationCenter />
+
+        <ModeToggle />
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="relative"
+            >
+              <UserAvatar />
+              <ChevronDown className="ml-2 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>
+              <div className="flex items-center gap-2">
+                <UserAvatar />
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold">Mon compte</span>
+                  {user && <span className="text-xs text-muted-foreground">{user.email}</span>}
+                </div>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link to="/chat" className="w-full cursor-pointer">
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  <span>Chat</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/documents" className="w-full cursor-pointer">
+                  <FileText className="mr-2 h-4 w-4" />
+                  <span>Documents</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/monitoring" className="w-full cursor-pointer">
+                  <BarChart className="mr-2 h-4 w-4" />
+                  <span>Monitoring</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/config" className="w-full cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configuration</span>
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => setShowMenu(!showMenu)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {showMenu && (
+        <div className="fixed inset-0 top-14 z-50 bg-background border-t md:hidden">
+          <div className="flex flex-col p-4 space-y-3">
+            <Button
+              asChild
+              variant={isActive('/chat') ? 'default' : 'ghost'}
+              onClick={closeMobileMenu}
+            >
+              <Link to="/chat">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Chat
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant={isActive('/documents') ? 'default' : 'ghost'}
+              onClick={closeMobileMenu}
+            >
+              <Link to="/documents">
+                <FileText className="h-4 w-4 mr-2" />
+                Documents
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant={isActive('/monitoring') ? 'default' : 'ghost'}
+              onClick={closeMobileMenu}
+            >
+              <Link to="/monitoring">
+                <BarChart className="h-4 w-4 mr-2" />
+                Monitoring
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant={isActive('/config') ? 'default' : 'ghost'}
+              onClick={closeMobileMenu}
+            >
+              <Link to="/config">
+                <Settings className="h-4 w-4 mr-2" />
+                Configuration
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+};

@@ -685,6 +685,7 @@ export type Database = {
           name: string
           parent_folder_id: string | null
           path: string | null
+          permissions: Json | null
           shared_with: string[] | null
           updated_at: string
           user_id: string
@@ -699,6 +700,7 @@ export type Database = {
           name: string
           parent_folder_id?: string | null
           path?: string | null
+          permissions?: Json | null
           shared_with?: string[] | null
           updated_at?: string
           user_id: string
@@ -713,6 +715,7 @@ export type Database = {
           name?: string
           parent_folder_id?: string | null
           path?: string | null
+          permissions?: Json | null
           shared_with?: string[] | null
           updated_at?: string
           user_id?: string
@@ -1263,6 +1266,42 @@ export type Database = {
           model_name?: string | null
           provider?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          expires_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          notification_type: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          notification_type: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          expires_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          notification_type?: string
+          title?: string
           user_id?: string
         }
         Relationships: []

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Folder, Loader2, Share2, Users, BookOpen, RotateCw } from 'lucide-react';
+import { ArrowLeft, Folder, Loader2, Share2, Users, BookOpen, RotateCw, Clock, HelpCircle } from 'lucide-react';
 import { useGoogleDriveFolders, Folder as DriveFolder } from '@/hooks/useGoogleDriveFolders';
 import { useGoogleDriveStatus } from '@/hooks/useGoogleDriveStatus';
 import { useIndexingProgress } from '@/hooks/useIndexingProgress';
@@ -16,6 +16,10 @@ import { IndexingProgressBar } from './IndexingProgressBar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
+import { FolderPermissionsDialog } from './FolderPermissionsDialog';
+import { NotificationCenter } from '../notifications/NotificationCenter';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 interface SharedFolder {
   id: string;
@@ -25,6 +29,12 @@ interface SharedFolder {
   metadata?: Record<string, any>;
   shared_with?: string[];
   is_shared?: boolean;
+  permissions?: {
+    can_read: boolean;
+    can_query: boolean;
+    can_reindex: boolean;
+  };
+  owner_email?: string;
 }
 
 interface KnowledgeBase {
@@ -40,7 +50,13 @@ export function FolderIndexingSelector() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { folders, isLoading: isFoldersLoading, refreshFolders } = useGoogleDriveFolders();
+  const { 
+    folders, 
+    sharedFolders, 
+    isLoading: isFoldersLoading, 
+    isSharedLoading,
+    refreshFolders 
+  } = useGoogleDriveFolders();
   const { isConnected, checkGoogleDriveConnection } = useGoogleDriveStatus();
   const { indexingProgress, startIndexing } = useIndexingProgress();
   const [selectedFolder, setSelectedFolder] = useState<string>('');
@@ -49,49 +65,15 @@ export function FolderIndexingSelector() {
   const [maxDepth, setMaxDepth] = useState(10);
   const [batchSize, setBatchSize] = useState(100);
   const [activeTab, setActiveTab] = useState('index');
-  const [sharedFolders, setSharedFolders] = useState<SharedFolder[]>([]);
-  const [isLoadingShared, setIsLoadingShared] = useState(false);
   const [isShared, setIsShared] = useState(false);
   const [sharingWith, setSharingWith] = useState('');
   const [recentKnowledgeBases, setRecentKnowledgeBases] = useState<KnowledgeBase[]>([]);
   
   useEffect(() => {
     if (isConnected) {
-      loadSharedFolders();
       loadRecentKnowledgeBases();
     }
   }, [isConnected]);
-
-  const loadSharedFolders = async () => {
-    if (!user) return;
-    setIsLoadingShared(true);
-    try {
-      const { data, error } = await supabase
-        .from('google_drive_folders')
-        .select('id, folder_id, name, path, metadata, shared_with')
-        .eq('user_id', user.id)
-        .eq('is_shared', true);
-
-      if (error) throw error;
-      setSharedFolders((data || []).map(folder => ({
-        id: folder.id,
-        folder_id: folder.folder_id,
-        name: folder.name,
-        path: folder.path,
-        metadata: folder.metadata as Record<string, any>,
-        shared_with: folder.shared_with
-      })));
-    } catch (error) {
-      console.error('Error loading shared folders:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les dossiers partagés",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingShared(false);
-    }
-  };
 
   const loadRecentKnowledgeBases = async () => {
     if (!user) return;
@@ -133,6 +115,11 @@ export function FolderIndexingSelector() {
             .update({
               is_shared: true,
               shared_with: sharingWith.split(',').map(email => email.trim()),
+              permissions: {
+                can_read: true,
+                can_query: true,
+                can_reindex: false
+              },
               metadata: {
                 ...folder.metadata,
                 shared_at: new Date().toISOString(),
@@ -147,11 +134,6 @@ export function FolderIndexingSelector() {
         title: "Indexation démarrée",
         description: "L'indexation de votre base de connaissances a démarré avec succès",
       });
-      
-      // Actualiser la liste des dossiers partagés si nécessaire
-      if (isShared) {
-        loadSharedFolders();
-      }
       
       // Actualiser la liste des bases de connaissances récentes
       loadRecentKnowledgeBases();
@@ -170,7 +152,6 @@ export function FolderIndexingSelector() {
   const handleRefresh = () => {
     checkGoogleDriveConnection();
     refreshFolders();
-    loadSharedFolders();
     loadRecentKnowledgeBases();
     toast({
       title: "Actualisation",
@@ -207,14 +188,17 @@ export function FolderIndexingSelector() {
           <ArrowLeft className="h-4 w-4" />
           Retour au chat
         </Button>
-        <Button
-          variant="outline"
-          onClick={handleRefresh}
-          className="gap-2"
-        >
-          <RotateCw className="h-4 w-4" />
-          Actualiser
-        </Button>
+        <div className="flex items-center gap-2">
+          <NotificationCenter />
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            className="gap-2"
+          >
+            <RotateCw className="h-4 w-4" />
+            Actualiser
+          </Button>
+        </div>
       </div>
 
       <Card className="w-full">
@@ -231,12 +215,20 @@ export function FolderIndexingSelector() {
                 <Folder className="h-4 w-4 mr-2" />
                 Indexer un dossier
               </TabsTrigger>
-              <TabsTrigger value="shared">
+              <TabsTrigger value="shared" className="relative">
                 <Share2 className="h-4 w-4 mr-2" />
                 Dossiers partagés
+                {sharedFolders.length > 0 && (
+                  <Badge 
+                    variant="secondary" 
+                    className="absolute -top-1 -right-1 text-xs h-4 min-w-4 flex items-center justify-center p-0"
+                  >
+                    {sharedFolders.length}
+                  </Badge>
+                )}
               </TabsTrigger>
               <TabsTrigger value="recent">
-                <BookOpen className="h-4 w-4 mr-2" />
+                <Clock className="h-4 w-4 mr-2" />
                 Bases récentes
               </TabsTrigger>
             </TabsList>
@@ -267,6 +259,11 @@ export function FolderIndexingSelector() {
                         <div className="flex items-center gap-2">
                           <Folder className="h-4 w-4" />
                           <span>{folder.path || folder.name}</span>
+                          {folder.is_shared && (
+                            <Badge variant="outline" size="sm" className="ml-auto">
+                              Partagé
+                            </Badge>
+                          )}
                         </div>
                       </SelectItem>
                     ))
@@ -330,6 +327,16 @@ export function FolderIndexingSelector() {
                     <Share2 className="h-4 w-4" />
                     Partager cette base de connaissances
                   </Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Le partage permet à d'autres utilisateurs d'accéder à cette base de connaissances depuis leur propre compte.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
 
                 {isShared && (
@@ -344,7 +351,7 @@ export function FolderIndexingSelector() {
                         placeholder="user@example.com, autre@example.com"
                       />
                       <span className="text-sm text-gray-500">
-                        Ces utilisateurs auront accès à la base de connaissances via le chat
+                        Ces utilisateurs recevront une notification et pourront accéder à vos documents dans le chat
                       </span>
                     </div>
                   </div>
@@ -368,7 +375,7 @@ export function FolderIndexingSelector() {
             </TabsContent>
             
             <TabsContent value="shared" className="space-y-4">
-              {isLoadingShared ? (
+              {isSharedLoading ? (
                 <div className="flex items-center justify-center p-6">
                   <Loader2 className="h-6 w-6 animate-spin mr-2" />
                   Chargement des dossiers partagés...
@@ -378,45 +385,69 @@ export function FolderIndexingSelector() {
                   <Share2 className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="font-medium mb-2">Aucun dossier partagé</h3>
                   <p className="text-muted-foreground">
-                    Partagez un dossier pour le voir apparaître ici
+                    Les dossiers partagés avec vous apparaîtront ici
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {sharedFolders.map((folder) => (
                     <Card key={folder.id} className="overflow-hidden">
-                      <CardHeader className="p-4 pb-0">
+                      <CardHeader className="p-4 pb-2">
                         <CardTitle className="text-base flex items-center gap-2">
                           <Folder className="h-4 w-4" />
                           {folder.name}
+                          <Badge variant="outline" className="ml-auto text-xs">
+                            Partagé par {folder.owner_email || "Utilisateur inconnu"}
+                          </Badge>
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            Partagé avec {Array.isArray(folder.shared_with) ? folder.shared_with.length : 0} utilisateur(s)
-                          </span>
+                      <CardContent className="p-4 pt-0">
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {folder.permissions?.can_read && (
+                            <Badge variant="secondary" className="gap-1 text-xs">
+                              <Eye className="h-3 w-3" />
+                              Lecture
+                            </Badge>
+                          )}
+                          {folder.permissions?.can_query && (
+                            <Badge variant="secondary" className="gap-1 text-xs">
+                              <MessageSquare className="h-3 w-3" />
+                              Interrogation
+                            </Badge>
+                          )}
+                          {folder.permissions?.can_reindex && (
+                            <Badge variant="secondary" className="gap-1 text-xs">
+                              <RefreshCcw className="h-3 w-3" />
+                              Réindexation
+                            </Badge>
+                          )}
                         </div>
+                        
                         <div className="flex justify-between items-center mt-4">
-                          <Button 
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedFolder(folder.folder_id)}
-                          >
-                            Réindexer
-                          </Button>
+                          {folder.permissions?.can_reindex && (
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedFolder(folder.id)}
+                            >
+                              <RefreshCcw className="h-3.5 w-3.5 mr-1" />
+                              Réindexer
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => {
-                              toast({
-                                title: "Bientôt disponible",
-                                description: "La gestion des accès sera disponible prochainement",
-                              });
-                            }}
+                            className="ml-auto"
                           >
-                            Gérer les accès
+                            <FolderPermissionsDialog 
+                              folder={folder} 
+                              trigger={
+                                <div className="flex items-center gap-1">
+                                  <Settings className="h-3.5 w-3.5" />
+                                  Permissions
+                                </div>
+                              }
+                            />
                           </Button>
                         </div>
                       </CardContent>
@@ -429,7 +460,7 @@ export function FolderIndexingSelector() {
             <TabsContent value="recent" className="space-y-4">
               {recentKnowledgeBases.length === 0 ? (
                 <div className="text-center py-8 px-4 border rounded-lg">
-                  <BookOpen className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
+                  <Clock className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="font-medium mb-2">Aucune base de connaissances récente</h3>
                   <p className="text-muted-foreground">
                     Indexez un dossier pour créer une base de connaissances
@@ -439,13 +470,13 @@ export function FolderIndexingSelector() {
                 <div className="space-y-3">
                   {recentKnowledgeBases.map((kb) => (
                     <Card key={kb.id} className="overflow-hidden">
-                      <CardHeader className="p-4 pb-0">
+                      <CardHeader className="p-4 pb-2">
                         <CardTitle className="text-base flex items-center gap-2">
                           <Folder className="h-4 w-4" />
                           {kb.current_folder || "Base de connaissances"}
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="p-4">
+                      <CardContent className="p-4 pt-0">
                         <div className="flex items-center gap-2 mb-2">
                           <span className={`inline-flex h-2 w-2 rounded-full ${
                             kb.status === 'completed' ? 'bg-green-500' : 
