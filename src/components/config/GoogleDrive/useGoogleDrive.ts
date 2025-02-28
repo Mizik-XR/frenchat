@@ -4,11 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
 import { GoogleOAuthConfig } from "@/types/google-drive";
-
-// Définir l'URL de redirection pour OAuth
-const REDIRECT_URI = typeof window !== 'undefined' 
-  ? `${window.location.protocol}//${window.location.host}/auth/callback/google`
-  : "http://localhost:5173/auth/callback/google";
+import { getRedirectUrl } from "@/hooks/useGoogleDriveStatus";
 
 const isGoogleOAuthConfig = (obj: unknown): obj is GoogleOAuthConfig => {
   if (!obj || typeof obj !== 'object') {
@@ -85,14 +81,15 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
 
     try {
       setIsConnecting(true);
-      console.log("URL de redirection OAuth configurée:", REDIRECT_URI);
+      const redirectUri = getRedirectUrl();
+      console.log("URL de redirection OAuth configurée:", redirectUri);
       
       const { data: authData, error: authError } = await supabase.functions.invoke<{
         client_id: string;
       }>('google-oauth', {
         body: { 
           action: 'get_client_id',
-          redirect_uri: REDIRECT_URI
+          redirectUrl: redirectUri
         }
       });
 
@@ -101,11 +98,11 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
       }
 
       const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
-      const redirectUri = encodeURIComponent(REDIRECT_URI);
+      const redirectUrl = encodeURIComponent(redirectUri);
       
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${authData.client_id}&` +
-        `redirect_uri=${redirectUri}&` +
+        `redirect_uri=${redirectUrl}&` +
         `response_type=code&` +
         `scope=${scopes}&` +
         `access_type=offline&` +

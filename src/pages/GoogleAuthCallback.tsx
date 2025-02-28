@@ -1,191 +1,104 @@
 
-import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/components/AuthProvider";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { IndexingProgressBar } from "@/components/documents/IndexingProgressBar";
-import { useIndexingProgress } from "@/hooks/useIndexingProgress";
-import { Loader2 } from "lucide-react";
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 export default function GoogleAuthCallback() {
-  const [searchParams] = useSearchParams();
+  const [isProcessing, setIsProcessing] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [showConsent, setShowConsent] = useState(false);
-  const [configComplete, setConfigComplete] = useState(false);
-  const { indexingProgress, startIndexing } = useIndexingProgress();
+  const location = useLocation();
 
   useEffect(() => {
-    const handleCallback = async () => {
-      const code = searchParams.get('code');
-      const error = searchParams.get('error');
-      
-      if (error) {
-        console.error("Erreur d'authentification Google:", error);
-        toast({
-          title: "Erreur d'authentification",
-          description: "L'authentification avec Google Drive a échoué",
-          variant: "destructive",
-        });
-        navigate('/config');
-        return;
-      }
-
-      if (!code) {
-        console.error("Code d'autorisation manquant");
-        toast({
-          title: "Erreur",
-          description: "Code d'autorisation manquant",
-          variant: "destructive",
-        });
-        navigate('/config');
-        return;
-      }
-
-      if (!user) {
-        console.error("Utilisateur non connecté");
-        toast({
-          title: "Erreur",
-          description: "Vous devez être connecté pour utiliser cette fonctionnalité",
-          variant: "destructive",
-        });
-        navigate('/config');
-        return;
-      }
-
+    const processAuthCode = async () => {
       try {
-        console.log("Démarrage de l'échange du code d'autorisation...");
-        const { error: functionError } = await supabase.functions.invoke(
-          'google-oauth',
-          {
-            body: { code },
-            headers: { 'x-user-id': user.id }
-          }
-        );
-
-        if (functionError) {
-          console.error("Erreur fonction Edge:", functionError);
-          throw functionError;
+        // Extraire le code d'autorisation de l'URL
+        const urlParams = new URLSearchParams(location.search);
+        const code = urlParams.get('code');
+        
+        if (!code) {
+          throw new Error("Aucun code d'autorisation reçu");
         }
 
-        console.log('Configuration Google Drive réussie');
+        // Log l'URL actuelle et l'origine pour le debugging
+        console.log("Origine actuelle:", window.location.origin);
+        console.log("URL actuelle:", window.location.href);
+        
+        // Appeler la fonction Edge pour échanger le code contre des tokens
+        const { error } = await supabase.functions.invoke('google-oauth', {
+          body: { 
+            code,
+            redirectUrl: `${window.location.origin}/auth/google/callback`
+          }
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        // Rediriger vers la page de configuration Google Drive
         toast({
-          title: "Succès",
-          description: "Google Drive connecté avec succès",
+          title: "Connexion réussie",
+          description: "Votre compte Google Drive a été connecté avec succès"
         });
         
-        setConfigComplete(true);
-        setShowConsent(true);
-
+        navigate('/config/google-drive');
       } catch (err) {
-        console.error("Erreur lors de l'échange du code:", err);
+        console.error("Erreur lors du traitement du callback Google:", err);
+        setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
+        
         toast({
-          title: "Erreur",
-          description: "Erreur lors de la connexion à Google Drive",
-          variant: "destructive",
+          title: "Erreur de connexion",
+          description: err instanceof Error ? err.message : "Une erreur est survenue lors de la connexion à Google Drive",
+          variant: "destructive"
         });
-        navigate('/config');
+        
+        // Rediriger vers la page de configuration en cas d'erreur
+        setTimeout(() => navigate('/config'), 3000);
+      } finally {
+        setIsProcessing(false);
       }
     };
 
-    handleCallback();
-  }, [searchParams, navigate, user]);
-
-  const handleStartIndexing = async () => {
-    try {
-      await startIndexing("root", {
-        recursive: true,
-        maxDepth: 10,
-        batchSize: 100
-      });
-      setShowConsent(false);
-      toast({
-        title: "Indexation démarrée",
-        description: "L'indexation de votre Google Drive a démarré",
-      });
-    } catch (error) {
-      console.error("Erreur lors du démarrage de l'indexation:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de démarrer l'indexation",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCancel = () => {
-    toast({
-      title: "Indexation annulée",
-      description: "Vous pourrez lancer l'indexation plus tard depuis les paramètres",
-    });
-    navigate('/config');
-  };
-
-  if (!configComplete) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md w-full">
-          <Loader2 className="h-16 w-16 animate-spin text-blue-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">
-            Configuration de Google Drive en cours...
-          </h2>
-          <p className="text-gray-500">
-            Veuillez patienter pendant que nous finalisons la configuration.
-          </p>
-        </div>
-      </div>
-    );
-  }
+    processAuthCode();
+  }, [location, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full space-y-8">
-        <AlertDialog open={showConsent}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Autoriser l'indexation de Google Drive</AlertDialogTitle>
-              <AlertDialogDescription>
-                Voulez-vous autoriser l'application à scanner et indexer l'ensemble de vos documents Google Drive ? 
-                Cela permettra à l'IA d'y accéder pour la recherche contextuelle.
-                <br /><br />
-                Cette opération peut prendre plusieurs minutes selon la taille de votre Drive.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleCancel}>Annuler</AlertDialogCancel>
-              <AlertDialogAction onClick={handleStartIndexing}>
-                Démarrer l'indexation
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {indexingProgress && indexingProgress.status !== 'idle' && (
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4">Progression de l'indexation</h2>
-            <IndexingProgressBar progress={indexingProgress} />
-            <div className="mt-4 flex justify-end">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/config')}
-              >
-                Retour aux paramètres
-              </Button>
-            </div>
-          </div>
-        )}
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
+      <div className="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow-md">
+        <div className="flex flex-col items-center text-center">
+          {isProcessing ? (
+            <>
+              <Loader2 className="w-8 h-8 mb-4 text-blue-500 animate-spin" />
+              <h1 className="text-xl font-bold">Traitement de l'authentification Google Drive...</h1>
+              <p className="mt-2 text-gray-500">Veuillez patienter pendant que nous établissons la connexion.</p>
+            </>
+          ) : error ? (
+            <>
+              <div className="p-3 mb-4 text-red-500 bg-red-100 rounded-full">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </div>
+              <h1 className="text-xl font-bold text-red-700">Erreur d'authentification</h1>
+              <p className="mt-2 text-gray-700">{error}</p>
+              <p className="mt-4 text-sm text-gray-500">Redirection vers la page de configuration...</p>
+            </>
+          ) : (
+            <>
+              <div className="p-3 mb-4 text-green-500 bg-green-100 rounded-full">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <h1 className="text-xl font-bold text-green-700">Authentification réussie</h1>
+              <p className="mt-2 text-gray-700">Votre compte Google Drive a été connecté avec succès.</p>
+              <p className="mt-4 text-sm text-gray-500">Redirection en cours...</p>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

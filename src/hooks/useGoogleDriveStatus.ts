@@ -4,6 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { toast } from "@/hooks/use-toast";
 
+// Définir l'URL de redirection pour OAuth de manière dynamique
+export const getRedirectUrl = () => {
+  const baseUrl = typeof window !== 'undefined' 
+    ? window.location.origin
+    : process.env.VITE_SITE_URL || 'http://localhost:5173';
+  
+  return `${baseUrl}/auth/google/callback`;
+};
+
 export const useGoogleDriveStatus = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
@@ -46,7 +55,11 @@ export const useGoogleDriveStatus = () => {
           
           // Tentative de rafraîchissement du token
           const { data: refreshData, error: refreshError } = await supabase.functions.invoke('google-oauth', {
-            body: { action: 'refresh_token', userId: user.id }
+            body: { 
+              action: 'refresh_token', 
+              userId: user.id,
+              redirectUrl: getRedirectUrl()
+            }
           });
           
           if (refreshError || !refreshData?.success) {
@@ -92,10 +105,16 @@ export const useGoogleDriveStatus = () => {
     }
 
     try {
+      const redirectUri = getRedirectUrl();
+      console.log("URL de redirection configurée:", redirectUri);
+      
       const { data: authData, error: authError } = await supabase.functions.invoke<{
         client_id: string;
       }>('google-oauth', {
-        body: { action: 'get_client_id' }
+        body: { 
+          action: 'get_client_id',
+          redirectUrl: redirectUri
+        }
       });
 
       if (authError || !authData?.client_id) {
@@ -103,16 +122,17 @@ export const useGoogleDriveStatus = () => {
       }
 
       const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
-      const redirectUri = encodeURIComponent(`${window.location.origin}/auth/google/callback`);
+      const redirectUrl = encodeURIComponent(redirectUri);
       
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${authData.client_id}&` +
-        `redirect_uri=${redirectUri}&` +
+        `redirect_uri=${redirectUrl}&` +
         `response_type=code&` +
         `scope=${scopes}&` +
         `access_type=offline&` +
         `prompt=consent`;
 
+      console.log("Redirection vers:", authUrl);
       window.location.href = authUrl;
     } catch (error) {
       console.error('Erreur lors de l\'initialisation de l\'auth Google:', error);

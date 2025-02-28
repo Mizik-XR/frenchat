@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
+import { useGoogleDriveStatus, getRedirectUrl } from "@/hooks/useGoogleDriveStatus";
 import { Check, Loader2, LogIn } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useGoogleDrive } from "./useGoogleDrive";
@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const GoogleDriveButton = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const isConnected = useGoogleDriveStatus();
+  const { isConnected, isChecking, reconnectGoogleDrive } = useGoogleDriveStatus();
   const { isConnecting, initiateGoogleAuth } = useGoogleDrive(user, async () => {
     toast({
       title: "Connexion réussie",
@@ -52,6 +52,17 @@ export const GoogleDriveButton = () => {
     navigate("/chat");
   };
 
+  // Afficher les informations de debug en développement
+  React.useEffect(() => {
+    console.log("Environnement:", process.env.NODE_ENV);
+    console.log("URL de redirection OAuth:", getRedirectUrl());
+  }, []);
+
+  const handleGoogleAuth = async () => {
+    // Utilise la reconnexion de useGoogleDriveStatus qui gère les URLs dynamiquement
+    await reconnectGoogleDrive();
+  };
+
   if (isConnected) {
     return (
       <div className="space-y-4">
@@ -75,16 +86,16 @@ export const GoogleDriveButton = () => {
   return (
     <div className="space-y-4">
       <Button 
-        onClick={initiateGoogleAuth}
-        disabled={isConnecting}
+        onClick={handleGoogleAuth}
+        disabled={isConnecting || isChecking}
         className="w-full"
       >
-        {isConnecting ? (
+        {isConnecting || isChecking ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
           <LogIn className="mr-2 h-4 w-4" />
         )}
-        {isConnecting ? 'Connexion en cours...' : 'Connecter Google Drive'}
+        {isConnecting || isChecking ? 'Connexion en cours...' : 'Connecter Google Drive'}
       </Button>
       <p className="text-sm text-muted-foreground">
         Autorisez l'accès à Google Drive pour pouvoir indexer et rechercher dans vos documents.
