@@ -1,326 +1,106 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  AlertCircle, 
-  Server, 
-  Cloud, 
-  StopCircle, 
-  Info
-} from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LOCAL_MODELS, CLOUD_MODELS } from "./types";
-import { ModelSelector } from "./ModelSelector";
-import { ConfigHeader } from "./components/ConfigHeader";
-import { FirstTimeSetup } from "./components/FirstTimeSetup";
 import { ModelPathSelector } from "./components/ModelPathSelector";
 import { PathSelectionDialog } from "./components/PathSelectionDialog";
-import { Json } from "@/types/database";
+import { CompanionDownloadDialog } from "./components/CompanionDownloadDialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
+import { LLMProviderType } from "@/types/config";
 
 interface LocalAIConfigProps {
-  onSave?: () => void;
+  modelPath: string;
+  onModelPathChange: (path: string) => void;
+  provider: LLMProviderType;
+  onProviderChange: (provider: LLMProviderType) => void;
 }
 
-export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
-  const [selectedModel, setSelectedModel] = useState<string>("");
-  const [deploymentType, setDeploymentType] = useState<"local" | "cloud">("cloud");
-  const [isConfiguring, setIsConfiguring] = useState(false);
-  const [localModels, setLocalModels] = useState(LOCAL_MODELS);
-  const [cloudModels, setCloudModels] = useState(CLOUD_MODELS);
-  const [hasConfiguration, setHasConfiguration] = useState(false);
-  const [modelPath, setModelPath] = useState<string>("");
-  const [showPathDialog, setShowPathDialog] = useState(false);
-  const [defaultModelPath, setDefaultModelPath] = useState<string>("");
-
-  useEffect(() => {
-    loadCurrentConfig();
-    const defaultPath = process.platform === 'win32' 
-      ? 'C:\\Users\\%USERNAME%\\AppData\\Local\\DocuChatter\\models'
-      : '/home/$USER/.local/share/DocuChatter/models';
-    setDefaultModelPath(defaultPath);
-  }, []);
-
-  const loadCurrentConfig = async () => {
-    const { data, error } = await supabase
-      .from('service_configurations')
-      .select('config')
-      .eq('service_type', 'llm')
-      .single();
-
-    if (data?.config) {
-      // Conversion sécurisée
-      const config = data.config as any;
-      setSelectedModel(config.model || "");
-      setDeploymentType(config.type || "cloud");
-      setModelPath(config.modelPath || defaultModelPath);
-      setHasConfiguration(true);
-    }
-  };
-
-  const handleModelAdd = (type: "local" | "cloud") => (newModel: any) => {
-    if (type === "local") {
-      setLocalModels(prev => [...prev, newModel]);
-    } else {
-      setCloudModels(prev => [...prev, newModel]);
-    }
-  };
-
-  const handlePathSelect = () => {
-    setShowPathDialog(true);
-  };
+export function LocalAIConfig({
+  modelPath,
+  onModelPathChange,
+  provider,
+  onProviderChange
+}: LocalAIConfigProps) {
+  const [pathDialogOpen, setPathDialogOpen] = useState(false);
+  const [companionDialogOpen, setCompanionDialogOpen] = useState(false);
+  const defaultModelPath = `${process.env.APPDATA || process.env.HOME}/filechat/models`;
 
   const handlePathConfirm = () => {
-    if (!modelPath) {
-      setModelPath(defaultModelPath);
-    }
-    setShowPathDialog(false);
+    setPathDialogOpen(false);
     toast({
-      title: "Chemin de modèle configuré",
-      description: `Les modèles seront installés dans : ${modelPath}`,
+      title: "Chemin d'installation mis à jour",
+      description: "Les modèles seront installés dans ce dossier"
     });
   };
 
-  const stopConfiguration = () => {
-    setIsConfiguring(false);
+  const handleDownloadCompanion = () => {
+    setCompanionDialogOpen(true);
+  };
+
+  const handleProviderChange = (newProvider: LLMProviderType) => {
+    onProviderChange(newProvider);
     toast({
-      title: "Configuration arrêtée",
-      description: "La configuration a été interrompue",
+      title: `Fournisseur local changé pour ${newProvider}`,
+      description: "L'IA utilisera ce fournisseur pour les modèles locaux"
     });
   };
-
-  const activateDefaultModel = async () => {
-    if (!modelPath) {
-      setShowPathDialog(true);
-      return;
-    }
-
-    setIsConfiguring(true);
-    try {
-      const configData = { 
-        model: "huggingface/mistral",
-        type: "cloud",
-        customModelId: "mistralai/Mistral-7B-Instruct-v0.1",
-        modelPath: modelPath
-      };
-      
-      const { error } = await supabase
-        .from('service_configurations')
-        .upsert({
-          service_type: 'llm',
-          config: configData as Json,
-          status: 'configured'
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Configuration par défaut activée",
-        description: "Le modèle Mistral 7B a été configuré avec succès",
-      });
-
-      setHasConfiguration(true);
-      setSelectedModel("huggingface/mistral");
-      setDeploymentType("cloud");
-      onSave?.();
-    } catch (error) {
-      console.error('Erreur de configuration:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'activer la configuration par défaut",
-        variant: "destructive"
-      });
-    } finally {
-      setIsConfiguring(false);
-    }
-  };
-
-  const handleSaveConfig = async () => {
-    if (deploymentType === "local" && !modelPath) {
-      setShowPathDialog(true);
-      return;
-    }
-
-    setIsConfiguring(true);
-    try {
-      const modelConfig = [...localModels, ...cloudModels].find(m => m.id === selectedModel);
-      
-      const configData = { 
-        model: selectedModel,
-        type: deploymentType,
-        customModelId: modelConfig?.modelId,
-        modelPath: modelPath
-      };
-      
-      const { error } = await supabase
-        .from('service_configurations')
-        .upsert({
-          service_type: 'llm',
-          config: configData as Json,
-          status: 'configured'
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Configuration sauvegardée",
-        description: "La configuration du modèle a été mise à jour avec succès",
-      });
-
-      setHasConfiguration(true);
-      onSave?.();
-    } catch (error) {
-      console.error('Erreur de configuration:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder la configuration",
-        variant: "destructive"
-      });
-    } finally {
-      setIsConfiguring(false);
-    }
-  };
-
-  const selectedModelConfig = [...localModels, ...cloudModels].find(m => m.id === selectedModel);
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8">
-      <ConfigHeader hasConfiguration={hasConfiguration} />
-
-      {!hasConfiguration && (
-        <FirstTimeSetup 
-          onActivate={activateDefaultModel}
-          isConfiguring={isConfiguring}
-        />
-      )}
-
-      <Alert className="bg-purple-50 border-purple-200 shadow-sm">
-        <AlertCircle className="h-5 w-5 text-purple-500" />
-        <AlertDescription className="text-purple-700 ml-2">
-          <span className="font-semibold block mb-2">Comment configurer votre modèle IA :</span>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>Choisissez entre un déploiement local (sans clé API) ou cloud</li>
-            <li>Pour les modèles locaux, sélectionnez un dossier d'installation</li>
-            <li>Sélectionnez un modèle dans la liste proposée</li>
-            <li>Pour les modèles cloud, vous pouvez optionnellement configurer une clé API</li>
-          </ul>
-        </AlertDescription>
-      </Alert>
-
-      <Card className="border border-gray-200 shadow-md overflow-hidden">
-        <CardHeader className="bg-gray-50 border-b border-gray-200">
-          <CardTitle className="flex items-center gap-2">
-            Configuration du modèle
-          </CardTitle>
-          <CardDescription className="text-gray-600">
-            Choisissez le type de déploiement et le modèle que vous souhaitez utiliser.
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Configuration de l'IA locale</CardTitle>
+          <CardDescription>
+            Utilisez des modèles d'IA en local pour plus de confidentialité et de rapidité
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-6 space-y-8">
-          <Tabs 
-            defaultValue={deploymentType} 
-            onValueChange={(v) => setDeploymentType(v as "local" | "cloud")}
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="local" className="flex items-center gap-2 py-3">
-                <Server className="h-4 w-4" />
-                Local
-              </TabsTrigger>
-              <TabsTrigger value="cloud" className="flex items-center gap-2 py-3">
-                <Cloud className="h-4 w-4" />
-                Cloud
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="local" className="space-y-6">
-              <Alert className="bg-green-50 border-green-200 shadow-sm">
-                <Info className="h-4 w-4 text-green-500" />
-                <AlertDescription className="text-green-700 ml-2">
-                  Les modèles locaux s'exécutent directement sur votre machine et ne nécessitent pas de clé API.
-                </AlertDescription>
-              </Alert>
-
-              <ModelPathSelector
-                modelPath={modelPath}
-                defaultModelPath={defaultModelPath}
-                onPathChange={setModelPath}
-                onPathSelect={handlePathSelect}
-              />
-
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <ModelSelector
-                  models={localModels}
-                  selectedModel={selectedModel}
-                  onModelSelect={setSelectedModel}
-                  onModelAdd={handleModelAdd("local")}
-                  label="Sélectionner un modèle local"
-                  type="local"
-                />
+        <CardContent className="space-y-4">
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Fournisseur local
+              </label>
+              <div className="flex gap-2 pb-2">
+                <Button
+                  variant={provider === "huggingface" ? "default" : "outline"}
+                  onClick={() => handleProviderChange("huggingface")}
+                  className="flex-1"
+                >
+                  Hugging Face (intégré)
+                </Button>
+                <Button
+                  variant={provider === "ollama" ? "default" : "outline"}
+                  onClick={() => handleProviderChange("ollama")}
+                  className="flex-1"
+                >
+                  Ollama (Windows/Mac/Linux)
+                </Button>
               </div>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="cloud">
-              <Alert className="bg-blue-50 border-blue-200 shadow-sm">
-                <Info className="h-4 w-4 text-blue-500" />
-                <AlertDescription className="text-blue-700 ml-2">
-                  Les modèles cloud offrent de meilleures performances et sont hébergés sur des serveurs distants.
-                </AlertDescription>
-              </Alert>
-
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <ModelSelector
-                  models={cloudModels}
-                  selectedModel={selectedModel}
-                  onModelSelect={setSelectedModel}
-                  onModelAdd={handleModelAdd("cloud")}
-                  label="Sélectionner un modèle cloud"
-                  type="cloud"
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <div className="flex gap-4">
-            <Button
-              onClick={handleSaveConfig}
-              disabled={!selectedModel || (!modelPath && deploymentType === "local")}
-              className="flex-1 h-12 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium"
-            >
-              {isConfiguring ? (
-                <div className="flex items-center justify-center gap-3">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/60 border-t-white" />
-                  Configuration en cours...
-                </div>
-              ) : (
-                "Sauvegarder la configuration"
-              )}
-            </Button>
-            
-            {isConfiguring && (
-              <Button
-                onClick={stopConfiguration}
-                variant="destructive"
-                className="gap-2"
-              >
-                <StopCircle className="h-4 w-4" />
-                Arrêter
-              </Button>
-            )}
+            <ModelPathSelector
+              modelPath={modelPath}
+              defaultModelPath={defaultModelPath}
+              onPathChange={onModelPathChange}
+              onPathSelect={() => setPathDialogOpen(true)}
+              onDownloadCompanion={handleDownloadCompanion}
+            />
           </div>
         </CardContent>
       </Card>
 
       <PathSelectionDialog
-        open={showPathDialog}
-        onOpenChange={setShowPathDialog}
+        open={pathDialogOpen}
+        onOpenChange={setPathDialogOpen}
         modelPath={modelPath}
         defaultModelPath={defaultModelPath}
-        onPathChange={setModelPath}
+        onPathChange={onModelPathChange}
         onConfirm={handlePathConfirm}
+      />
+
+      <CompanionDownloadDialog
+        open={companionDialogOpen}
+        onOpenChange={setCompanionDialogOpen}
       />
     </div>
   );

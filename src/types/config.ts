@@ -11,7 +11,7 @@ export type ServiceType =
   | 'llm'
   | 'stable_diffusion'
   | 'microsoft_teams'
-  | 'huggingface';  // Ajout de 'huggingface' au type ServiceType
+  | 'huggingface';
 
 // Chaîne de caractères pour le provider
 export type LLMProviderType =
