@@ -14,9 +14,16 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              FileChat
-            </h1>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <img 
+                src="/filechat-animation.gif" 
+                alt="FileChat Animation" 
+                className="h-10 w-10"
+              />
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+                FileChat
+              </h1>
+            </div>
             <p className="text-xl text-gray-600 dark:text-gray-300">
               Assistant IA conversationnel pour l'analyse et l'indexation de documents
             </p>

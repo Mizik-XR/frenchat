@@ -41,3 +41,16 @@ body {
 .fade-in {
   @apply animate-fadeIn;
 }
+
+/* Assurez-vous que les images sont correctement chargées */
+img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+}
+
+/* Style spécifique pour l'animation FileChat */
+img[src="/filechat-animation.gif"] {
+  display: inline-block;
+  vertical-align: middle;
+}
