@@ -19,9 +19,16 @@ export const ImportMethodSelector = ({
 }: ImportMethodSelectorProps) => {
   const navigate = useNavigate();
 
-  const handleDriveSelection = () => {
-    onMethodChange("drive");
-    navigate("/config/google-drive");
+  const handleMethodSelection = (method: ImportMethod) => {
+    onMethodChange(method);
+    
+    // Navigation en fonction de la méthode sélectionnée
+    if (method === "drive") {
+      navigate("/config/google-drive");
+    } else if (method === "teams") {
+      navigate("/config/microsoft-teams");
+    }
+    // Pour "upload", pas de navigation automatique
   };
 
   return (
@@ -30,7 +37,7 @@ export const ImportMethodSelector = ({
       
       <RadioGroup
         value={selectedMethod}
-        onValueChange={(value) => value === "drive" ? handleDriveSelection() : onMethodChange(value as ImportMethod)}
+        onValueChange={(value) => handleMethodSelection(value as ImportMethod)}
         className="grid gap-4"
       >
         <div>

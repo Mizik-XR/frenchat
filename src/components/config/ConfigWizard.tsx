@@ -67,6 +67,12 @@ export const ConfigWizard = () => {
     });
   };
 
+  const handleImportMethodChange = (method: ImportMethod) => {
+    setImportMethod(method);
+    // Nous ne faisons pas la navigation ici, car elle est maintenant
+    // gérée dans le composant ImportMethodSelector
+  };
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 0:
@@ -77,7 +83,7 @@ export const ConfigWizard = () => {
             <h2 className="text-xl font-semibold mb-4">Sources de données</h2>
             <ImportMethodSelector
               selectedMethod={importMethod}
-              onMethodChange={setImportMethod}
+              onMethodChange={handleImportMethodChange}
             />
             {importMethod === "upload" && (
               <FileUploader
@@ -184,4 +190,4 @@ export const ConfigWizard = () => {
       )}
     </div>
   );
-}
+};
