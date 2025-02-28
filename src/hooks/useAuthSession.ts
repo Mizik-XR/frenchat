@@ -1,6 +1,6 @@
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect, useCallback } from "react";
+import { supabase, preloadSession } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -8,14 +8,18 @@ import { toast } from "@/hooks/use-toast";
 // Liste des routes protégées qui nécessitent une authentification
 export const PROTECTED_ROUTES = ['/chat', '/config', '/documents', '/monitoring', '/ai-config', '/home'];
 
+// Optimiser la vérification initiale des sessions avec un cache mémoire
+let cachedUser: User | null = null;
+let isSessionLoading = true;
+
 export function useAuthSession() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(cachedUser);
+  const [isLoading, setIsLoading] = useState(isSessionLoading);
 
   // Fonction pour vérifier le profil utilisateur et les configurations
-  const checkUserAndConfig = async (session: any) => {
+  const checkUserAndConfig = useCallback(async (session: any) => {
     if (!session?.user) return null;
     
     try {
@@ -43,13 +47,15 @@ export function useAuthSession() {
       console.error("Erreur lors de la vérification de l'utilisateur:", error);
       return null;
     }
-  };
+  }, []);
 
   // Gérer les changements d'état d'authentification
-  const handleAuthChange = async (_event: string, session: any) => {
+  const handleAuthChange = useCallback(async (_event: string, session: any) => {
     console.log("Auth state changed:", _event, "session:", session?.user?.id ? "User authenticated" : "No user");
     
-    setUser(session?.user ?? null);
+    // Mettre à jour le cache global
+    cachedUser = session?.user ?? null;
+    setUser(cachedUser);
     
     // Vérifier si l'utilisateur tente d'accéder à une route protégée sans être authentifié
     if (!session?.user && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
@@ -59,6 +65,7 @@ export function useAuthSession() {
         description: "Veuillez vous connecter pour accéder à cette page.",
         variant: "destructive"
       });
+      isSessionLoading = false;
       setIsLoading(false);
       return;
     }
@@ -84,11 +91,13 @@ export function useAuthSession() {
         }
       }
       
+      isSessionLoading = false;
       setIsLoading(false);
       return;
     }
 
     if (_event === 'SIGNED_OUT') {
+      isSessionLoading = false;
       setIsLoading(false);
       if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
         navigate('/');
@@ -96,18 +105,22 @@ export function useAuthSession() {
       return;
     }
 
+    isSessionLoading = false;
     setIsLoading(false);
-  };
+  }, [navigate, location, checkUserAndConfig]);
 
-  // Fonction de vérification initiale de la session
-  const checkSession = async () => {
+  // Fonction de vérification initiale de la session avec optimisation
+  const checkSession = useCallback(async () => {
     try {
       console.log("Checking initial session...");
+      // Utiliser la session préchargée
       const { data: { session } } = await supabase.auth.getSession();
       console.log("Initial session check:", session?.user?.id ? "User authenticated" : "No user");
       
       if (session?.user) {
-        setUser(session.user);
+        // Mettre à jour le cache global
+        cachedUser = session.user;
+        setUser(cachedUser);
         
         const result = await checkUserAndConfig(session);
         
@@ -135,11 +148,14 @@ export function useAuthSession() {
         });
       }
       
-      // Fixer le problème de chargement sans fin
+      // Mettre à jour l'état de chargement global
+      isSessionLoading = false;
       setIsLoading(false);
     } catch (error) {
       console.error("Erreur lors de la vérification de la session:", error);
+      cachedUser = null;
       setUser(null);
+      isSessionLoading = false;
       setIsLoading(false);
       
       // Rediriger vers l'accueil en cas d'erreur, au lieu de la page d'authentification
@@ -147,12 +163,13 @@ export function useAuthSession() {
         navigate('/');
       }
     }
-  };
+  }, [navigate, location.pathname, checkUserAndConfig]);
 
   // Fonction de déconnexion
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
+      cachedUser = null;
       setUser(null);
       navigate("/");
       
@@ -168,21 +185,28 @@ export function useAuthSession() {
         variant: "destructive",
       });
     }
-  };
+  }, [navigate]);
 
-  // Configurer le listener d'authentification
+  // Configurer le listener d'authentification avec optimisation de performance
   useEffect(() => {
+    // Précharger la session si ce n'est pas déjà fait
+    if (isSessionLoading) {
+      preloadSession();
+    }
+    
     // Mettre en place le listener d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
     
-    // Vérifier la session initiale
-    checkSession();
+    // Vérifier la session initiale uniquement si nécessaire
+    if (isSessionLoading) {
+      checkSession();
+    }
 
     // Nettoyer le listener à la désinscription
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [navigate, location.pathname, handleAuthChange, checkSession]);
 
   return { user, isLoading, signOut };
 }

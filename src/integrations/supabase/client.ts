@@ -11,7 +11,42 @@ export const SITE_URL = typeof window !== 'undefined'
   ? `${window.location.protocol}//${window.location.host}`
   : "http://localhost:5173";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+// Préchargement de la session Supabase
+export const preloadSession = async () => {
+  try {
+    await supabase.auth.getSession();
+    console.log("Session Supabase préchargée");
+  } catch (error) {
+    console.error("Erreur de préchargement de session Supabase:", error);
+  }
+};
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+// Création du client avec des options optimisées
+export const supabase = createClient<Database>(
+  SUPABASE_URL, 
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: 'supabase.auth.token'
+    },
+    global: {
+      fetch: (...args) => {
+        // @ts-ignore - Nous ignorons l'erreur de type pour la propriété cache
+        args[1] = {
+          ...args[1],
+          cache: args[0].toString().includes('auth/') ? 'no-cache' : 'default'
+        };
+        return fetch(...args);
+      }
+    }
+  }
+);
+
+// Précharger la session dès que possible si nous sommes dans un navigateur
+if (typeof window !== 'undefined') {
+  // Préchargement non-bloquant
+  setTimeout(preloadSession, 0);
+}

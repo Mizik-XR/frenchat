@@ -3,47 +3,44 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/ico" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#3b82f6" />
-    <title>FileChat - Assistant IA pour vos documents</title>
-    <meta name="description" content="Analysez et discutez de vos documents avec l'IA" />
-    <meta name="author" content="FileChat" />
-    <meta property="og:image" content="/og-image.png" />
-    <link rel="icon" href="./favicon.ico" />
+    <title>DocuChatter - Assistant IA pour vos documents</title>
+    <!-- Préchargement des ressources critiques -->
+    <link rel="preload" href="/filechat-animation.gif" as="image" />
+    <link rel="preload" href="/src/index.css" as="style" />
+    <!-- Métadonnées pour SEO -->
+    <meta name="description" content="Assistant IA personnel pour vos documents - Analysez, discutez et générez du contenu à partir de vos fichiers" />
+    <!-- Style inline pour l'écran de chargement initial -->
     <style>
-      /* Style pour éviter la page blanche pendant le chargement */
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-        background-color: #e6f0ff;
-      }
-      
       #root:empty {
         display: flex;
         justify-content: center;
         align-items: center;
         height: 100vh;
         width: 100vw;
-        background-color: #e6f0ff;
-        color: #3b82f6;
+        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
       }
       
       #root:empty::after {
-        content: "Chargement de FileChat...";
-        font-size: 1.5rem;
-        font-weight: bold;
-        padding: 1rem 2rem;
-        border-radius: 0.5rem;
-        background-color: white;
-        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
-        border: 2px solid #3b82f6;
+        content: "";
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(99, 102, 241, 0.2);
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        animation: loading 1s linear infinite;
+      }
+      
+      @keyframes loading {
+        to {
+          transform: rotate(360deg);
+        }
       }
     </style>
-    <!-- Script GPT Engineer pour la fonctionnalité "Select" -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+    <!-- Cache-Control pour les ressources statiques -->
+    <meta http-equiv="Cache-Control" content="max-age=86400" />
   </head>
-
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
