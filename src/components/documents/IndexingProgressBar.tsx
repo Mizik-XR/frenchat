@@ -1,96 +1,92 @@
 
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { IndexingProgress } from '@/types/config';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { IndexingProgress } from '@/hooks/useIndexingProgress';
 
 interface IndexingProgressBarProps {
   progress: IndexingProgress;
 }
 
 export function IndexingProgressBar({ progress }: IndexingProgressBarProps) {
-  const percentage = progress && progress.total > 0 
-    ? Math.min(Math.round((progress.processed / progress.total) * 100), 100)
+  const statusIcon = () => {
+    switch (progress.status) {
+      case 'running':
+        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'error':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'paused':
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      default:
+        return null;
+    }
+  };
+
+  const statusText = () => {
+    switch (progress.status) {
+      case 'running':
+        return 'Indexation en cours...';
+      case 'completed':
+        return 'Indexation terminée';
+      case 'error':
+        return `Erreur d'indexation: ${progress.error || 'Une erreur est survenue'}`;
+      case 'paused':
+        return 'Indexation en pause';
+      default:
+        return 'État inconnu';
+    }
+  };
+
+  const percentComplete = progress.total > 0 
+    ? Math.round((progress.processed / progress.total) * 100) 
     : 0;
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'running':
-        return 'En cours';
-      case 'completed':
-        return 'Terminé';
-      case 'failed':
-        return 'Échoué';
-      case 'stopped':
-        return 'Arrêté';
-      default:
-        return 'En attente';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'running':
-        return 'text-blue-600';
-      case 'completed':
-        return 'text-green-600';
-      case 'failed':
-        return 'text-red-600';
-      case 'stopped':
-        return 'text-amber-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
-
   return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-sm font-medium">Progression de l'indexation</span>
-        <span className="text-sm font-medium">{percentage}%</span>
-      </div>
-      
-      <Progress value={percentage} className="w-full h-2" />
-      
-      <div className="flex items-center justify-between mt-1">
-        <span className="text-sm text-gray-500">
-          {progress.processed} sur {progress.total} fichiers traités
-        </span>
-        <span className={`text-sm font-medium ${getStatusColor(progress.status)}`}>
-          {getStatusText(progress.status)}
-          {progress.status === 'running' && (
-            <Loader2 className="inline ml-2 h-3 w-3 animate-spin" />
-          )}
-        </span>
-      </div>
-      
-      {progress.status === 'running' && (
-        <Alert className="mt-4">
-          <AlertTitle>Indexation en cours</AlertTitle>
-          <AlertDescription>
-            {progress.current_folder && (
-              <p className="text-sm truncate">
-                Dossier actuel : {progress.current_folder}
-              </p>
-            )}
-            {progress.last_processed_file && (
-              <p className="text-sm truncate mt-1">
-                Dernier fichier : {progress.last_processed_file}
-              </p>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {progress.error && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertTitle>Erreur d'indexation</AlertTitle>
-          <AlertDescription>
+    <Card className="w-full">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg flex items-center gap-2">
+          {statusIcon()}
+          <span>Progression de l'indexation</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>{statusText()}</span>
+            <span>{percentComplete}%</span>
+          </div>
+          <Progress value={percentComplete} className="h-2" />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-muted-foreground">Fichiers traités</p>
+            <p className="font-medium">{progress.processed} / {progress.total}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Dossier en cours</p>
+            <p className="font-medium truncate">{progress.current_folder || 'N/A'}</p>
+          </div>
+        </div>
+        
+        {progress.error && (
+          <div className="text-sm text-red-500 mt-2">
             {progress.error}
-          </AlertDescription>
-        </Alert>
+          </div>
+        )}
+      </CardContent>
+      
+      {progress.status === 'completed' && (
+        <CardFooter>
+          <Button variant="outline" size="sm" className="ml-auto">
+            Voir les résultats
+          </Button>
+        </CardFooter>
       )}
-    </div>
+    </Card>
   );
 }

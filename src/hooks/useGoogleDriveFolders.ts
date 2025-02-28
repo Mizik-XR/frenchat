@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +8,7 @@ export interface Folder {
   id: string;
   name: string;
   path: string;
+  metadata?: any;
 }
 
 export function useGoogleDriveFolders() {
@@ -16,38 +17,43 @@ export function useGoogleDriveFolders() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchFolders = async () => {
-      if (!user) return;
+  const fetchFolders = useCallback(async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('google_drive_folders')
+        .select('folder_id, name, path, metadata')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
       
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('google_drive_folders')
-          .select('folder_id, name, path')
-          .eq('user_id', user.id);
+      setFolders(data.map(folder => ({
+        id: folder.folder_id,
+        name: folder.name,
+        path: folder.path || folder.name,
+        metadata: folder.metadata
+      })));
+    } catch (error) {
+      console.error('Erreur lors du chargement des dossiers:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les dossiers Google Drive",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, toast]);
 
-        if (error) throw error;
-        
-        setFolders(data.map(folder => ({
-          id: folder.folder_id,
-          name: folder.name,
-          path: folder.path || folder.name
-        })));
-      } catch (error) {
-        console.error('Erreur lors du chargement des dossiers:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les dossiers Google Drive",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchFolders();
-  }, [user]);
+  }, [fetchFolders]);
 
-  return { folders, isLoading };
+  const refreshFolders = () => {
+    fetchFolders();
+  };
+
+  return { folders, isLoading, refreshFolders };
 }
