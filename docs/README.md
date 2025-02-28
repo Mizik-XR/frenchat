@@ -11,9 +11,10 @@ Bienvenue dans la documentation officielle de FileChat, votre solution d'intelli
 4. [Configuration OAuth et indexation](./oauth-indexation.md)
 5. [Module RAG et IA](./rag-ia.md)
 6. [UI/UX : Style "WhatsApp"](./ui-ux.md)
-7. [Mises à jour, maintenance et tests](./maintenance.md)
-8. [Roadmap et nouvelles fonctionnalités](./roadmap.md)
-9. [Wiki complet](./wiki.md)
+7. [Modèles d'IA supportés](./ai-models.md)
+8. [Mises à jour, maintenance et tests](./maintenance.md)
+9. [Roadmap et nouvelles fonctionnalités](./roadmap.md)
+10. [Wiki complet](./wiki.md)
 
 ## Introduction rapide
 
@@ -22,6 +23,8 @@ FileChat est une application permettant d'indexer, analyser et interroger vos do
 - Une interface utilisateur intuitive type "WhatsApp" 
 - L'indexation de documents depuis Google Drive et Microsoft Teams
 - Une intelligence artificielle locale ou cloud (au choix de l'utilisateur)
+- Des outils de visualisation de données (graphiques, tableaux)
 - Un système de génération et d'export de documents structurés
 
 Pour commencer, consultez le [guide d'installation](./installation.md) ou la [présentation générale](./presentation.md).
+

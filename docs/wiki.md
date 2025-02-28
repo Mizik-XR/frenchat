@@ -109,6 +109,12 @@ cd filechat
 - `useChatMessages.ts` : Gestion des messages
 - `useChatLogic.ts` : Logique du dialogue avec l'IA
 
+### Visualisation de données
+- `ChartGenerator.tsx` : Création de graphiques à partir de données CSV
+- Supporte plusieurs types de visualisations (barres, camembert, lignes, nuage de points)
+- Validation automatique des données d'entrée
+- Export des graphiques en format image
+
 ## Fonctionnalités principales
 
 ### 1. Authentication et gestion utilisateur
@@ -136,16 +142,22 @@ cd filechat
 - Support pour d'autres fournisseurs d'IA (optionnel)
 - Configuration paramétrable (température, longueur, etc.)
 
-### 5. Génération et export de documents
+### 5. Visualisation de données
+- Génération de graphiques à partir de données CSV
+- Support pour différents types de visualisations :
+  - Histogrammes
+  - Camemberts
+  - Courbes
+  - Nuages de points
+- Personnalisation des axes et des paramètres
+- Validation automatique des données entrantes
+- Export des graphiques en format image
+
+### 6. Génération et export de documents
 - Templates préformatés
 - Génération IA à partir de documents existants
 - Prévisualisation et modification
 - Export vers Google Drive ou Teams
-
-### 6. Visualisation et analyse
-- Génération de graphiques à partir de données CSV
-- Génération d'images descriptives
-- Visualisation de métriques et statistiques
 
 ## Points forts pour les clients
 
@@ -157,7 +169,7 @@ cd filechat
 2. **Gain de temps**
    - Réponses immédiates aux questions
    - Génération automatisée de rapports
-   - Indexation et organisation automatique
+   - Visualisation instantanée des données numériques
 
 3. **Souveraineté des données**
    - Option de traitement 100% local
@@ -169,10 +181,10 @@ cd filechat
    - Organisation personnalisable
    - Expérience utilisateur fluide
 
-5. **Extensibilité**
-   - Support de multiples sources de données
-   - Ajout facile de fournisseurs d'IA
-   - Templates personnalisables
+5. **Visualisation de données**
+   - Analyse graphique instantanée des fichiers CSV
+   - Multiples types de visualisations
+   - Validation et correction automatique des données
 
 ## Bonnes pratiques
 
@@ -190,7 +202,7 @@ cd filechat
 - Vérifier l'authentification complète
 - Tester l'indexation et le suivi de progression
 - Vérifier le chat et la génération de réponses
-- Tester l'export de documents (si implémenté)
+- Tester l'export de documents et la génération de graphiques
 
 ## Edge Functions Supabase
 
@@ -210,6 +222,10 @@ cd filechat
 - Traite les fichiers uploadés directement dans le chat
 - Génère des embeddings et les stocke dans la base de données
 
+### upload-to-google-drive
+- Permet d'uploader des fichiers vers Google Drive
+- Intégration avec le chat pour partager des fichiers
+
 ## Technologies d'indexation et RAG
 
 Le système utilise une approche sophistiquée pour l'indexation et la génération de réponses :
@@ -220,6 +236,14 @@ Le système utilise une approche sophistiquée pour l'indexation et la générat
 4. **Retrieval** : Recherche des chunks les plus pertinents pour une question
 5. **Augmentation** : Enrichissement du prompt avec le contexte récupéré
 6. **Generation** : Création d'une réponse cohérente et précise par l'IA
+
+## Gestion des ressources
+
+### Logo et interface visuelle
+- Logo animé (GIF) pour une expérience visuelle attrayante
+- Gestion intelligente des ressources avec fallback automatique
+- Support pour différents environnements (dev/prod)
+- Chargement adaptatif selon le contexte de déploiement
 
 ## Maintenance et support
 
@@ -237,3 +261,4 @@ Le système utilise une approche sophistiquée pour l'indexation et la générat
 - Processus de mise à jour documenté
 - Tests de non-régression automatisés
 - Sauvegarde des données avant mise à jour majeure
+

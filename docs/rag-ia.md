@@ -101,6 +101,45 @@ FileChat implémente plusieurs stratégies pour améliorer la qualité des répo
 - **Citations explicites** des sources dans les réponses
 - **Réutilisation des chunks** pertinents entre questions similaires
 
+## Visualisation de données
+
+FileChat intègre un système avancé de visualisation de données numériques:
+
+### 1. Générateur de graphiques
+
+- **Interface intégrée** au chat
+- **Détection automatique** des fichiers CSV
+- **Validation des données** avec feedback immédiat
+- **Types de graphiques** multiples (barres, camembert, lignes, nuage de points)
+- **Personnalisation** des axes et paramètres
+- **Export** en format image
+
+### 2. Processus d'utilisation
+
+1. L'utilisateur upload un fichier CSV dans le chat
+2. Le système détecte le format et propose l'interface de génération de graphiques
+3. L'utilisateur choisit le type de graphique et configure les paramètres
+4. Le graphique est généré et peut être inséré directement dans la conversation
+5. Le graphique devient un élément de contexte que l'IA peut référencer
+
+### 3. Avantages par rapport à DALL-E
+
+- **Précision numérique** supérieure
+- **Personnalisation** plus poussée
+- **Rapidité** de génération
+- **Pas de dépendance** à une API externe
+- **Validation des données** en temps réel
+
+### 4. Usage dans le chat
+
+```javascript
+// Exemple d'ajout d'un graphique dans la conversation
+const handleChartGenerated = (imageUrl) => {
+  setInput(input + `\n![Graphique généré](${imageUrl})`);
+  setShowChartGenerator(false);
+};
+```
+
 ## Intégration de modèles alternatifs
 
 Pour configurer un modèle alternatif (comme OpenAI):
@@ -178,3 +217,4 @@ interface DocumentTemplate {
    - Génération IA des sections
    - Prévisualisation et édition manuelle
    - Export vers le format désiré (DOCX, PDF, Google Doc)
+

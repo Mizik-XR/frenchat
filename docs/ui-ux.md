@@ -34,7 +34,7 @@ FileChat adopte une interface inspirée de WhatsApp pour garantir une expérienc
 - **Sidebar** (gauche): Liste des conversations, dossiers, filtres
 - **ChatContainer** (droite): Affichage des messages et zone de saisie
 - **MessageList**: Liste verticale des messages avec styles différenciés
-- **ChatInput**: Zone de saisie avec options (envoi de fichiers, etc.)
+- **ChatInput**: Zone de saisie avec options (envoi de fichiers, graphiques, etc.)
 
 ## Fonctionnalités de type "WhatsApp"
 
@@ -52,7 +52,14 @@ FileChat adopte une interface inspirée de WhatsApp pour garantir une expérienc
 - **Actions contextuelles**: Menu d'options au survol ou clic droit sur un message
 - **Mise en forme**: Support du markdown pour formater le texte
 
-### 3. Styles visuels des messages
+### 3. Intégration de fichiers et médias
+
+- **Upload de fichiers**: Ajout de documents PDF, Word, Excel, etc.
+- **Génération de graphiques**: Création de visualisations à partir de données CSV
+- **Prévisualisation**: Affichage direct des images et graphiques dans le chat
+- **Export**: Possibilité d'exporter des conversations ou des graphiques générés
+
+### 4. Styles visuels des messages
 
 ```
 ┌───────────────────────────────┐
@@ -89,6 +96,7 @@ FileChat adopte une interface inspirée de WhatsApp pour garantir une expérienc
   - Code avec coloration syntaxique
   - Images/graphiques générés
   - Liens avec prévisualisation
+  - Graphiques et visualisations de données
 
 ## Modes d'interaction
 
@@ -110,6 +118,13 @@ FileChat adopte une interface inspirée de WhatsApp pour garantir une expérienc
 - Aperçu du document en cours de génération
 - Options d'édition manuelle avant finalisation
 
+### 4. Mode visualisation de données
+
+- Analyse interactive des fichiers CSV
+- Sélection du type de graphique approprié
+- Personnalisation des visualisations
+- Intégration directe des graphiques dans la conversation
+
 ## Composants UI réutilisables
 
 FileChat utilise la bibliothèque shadcn/ui pour ses composants, avec une personnalisation en fonction du style "WhatsApp":
@@ -123,6 +138,7 @@ FileChat utilise la bibliothèque shadcn/ui pour ses composants, avec une person
 - **Tooltip**: Infobulles d'aide
 - **Tabs**: Navigation entre différentes sections
 - **Avatar**: Représentation de l'utilisateur et de l'IA
+- **ChartGenerator**: Création visuelle de graphiques à partir de données
 
 ### Adaptations de style
 
@@ -139,6 +155,43 @@ FileChat utilise la bibliothèque shadcn/ui pour ses composants, avec une person
 .message-quote {
   @apply bg-gray-50 border-l-4 border-gray-300 p-2 text-sm my-1;
 }
+```
+
+## Ressources graphiques
+
+### Logo et identité visuelle
+
+Le logo FileChat est géré par le composant `LogoImage` qui:
+- Charge une animation GIF pour une identité visuelle dynamique
+- Gère intelligemment les chemins de fichiers en fonction de l'environnement
+- Fournit un fallback en cas d'échec de chargement
+- S'adapte aux différents contextes d'utilisation (en-tête, sidebar, page d'accueil)
+
+```typescript
+// Extrait du composant LogoImage.tsx
+const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
+  const [imagePath, setImagePath] = useState<string>("");
+  const [imageLoaded, setImageLoaded] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Déterminer l'environnement et charger le logo approprié
+    const isDevEnvironment = process.env.NODE_ENV === 'development';
+    const paths = [...]; // Chemins à essayer
+    
+    // Logique de test des différents chemins...
+  }, []);
+
+  // Fallback si l'image ne charge pas
+  if (!imageLoaded) {
+    return (
+      <div className={`flex items-center justify-center bg-blue-100 rounded-full ${className}`}>
+        <span className="text-blue-600 font-bold">FC</span>
+      </div>
+    );
+  }
+
+  return <img src={imagePath} alt="FileChat Logo" className={className} />;
+};
 ```
 
 ## Onboarding et UX
@@ -160,3 +213,4 @@ FileChat utilise la bibliothèque shadcn/ui pour ses composants, avec une person
 - **Adaptatif mobile**: Interface réorganisée pour petits écrans
 - **Gestes tactiles**: Support du swipe et autres interactions tactiles
 - **Affichage compact**: Version simplifiée pour les appareils mobiles
+
