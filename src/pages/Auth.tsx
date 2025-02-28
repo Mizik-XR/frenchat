@@ -16,6 +16,9 @@ export default function Auth() {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const authForms = useAuthForms();
+  
+  // Récupérer l'onglet sélectionné depuis l'état de navigation
+  const defaultTab = location.state?.tab || 'signin';
 
   useEffect(() => {
     console.log("Auth component initializing");
@@ -60,7 +63,7 @@ export default function Auth() {
     <AuthContainer>
       <Card className="border-gray-200 shadow-lg">
         <CardHeader className="pb-0">
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="grid grid-cols-2 mb-4">
               <TabsTrigger value="signin">Connexion</TabsTrigger>
               <TabsTrigger value="signup">Inscription</TabsTrigger>

@@ -22,14 +22,17 @@ export const WelcomePage = () => {
             </div>
             
             <p className="text-lg text-purple-700">
-              Votre assistant IA conversationnel pour l'analyse et l'indexation de documents
+              La seule application qui indexe l'intégralité de vos documents en un clic
             </p>
             
             <div className="bg-purple-100 rounded-lg p-4 text-sm text-purple-800 leading-relaxed">
+              <p className="font-medium mb-2">
+                Contrairement à d'autres solutions, FileChat est unique :
+              </p>
               <p>
-                FileChat vous permet d'importer vos documents depuis Google Drive, 
-                Microsoft Teams ou depuis votre ordinateur, et d'interagir avec eux 
-                grâce à l'intelligence artificielle.
+                FileChat indexe automatiquement tous vos documents depuis Google Drive 
+                et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre 
+                base documentaire sans sélection manuelle préalable.
               </p>
             </div>
             
@@ -42,16 +45,26 @@ export const WelcomePage = () => {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               
-              <p className="mt-4 text-sm text-gray-500">
-                Vous avez déjà un compte ? 
+              <div className="mt-4 flex justify-center gap-2 text-sm text-gray-500">
+                <span>Vous avez déjà un compte ?</span>
                 <Button 
                   variant="link" 
-                  className="text-purple-600 font-medium"
-                  onClick={() => navigate("/auth")}
+                  className="text-purple-600 font-medium p-0"
+                  onClick={() => navigate("/auth", { state: { tab: "signin" } })}
                 >
                   Se connecter
                 </Button>
-              </p>
+              </div>
+              
+              <div className="mt-2 flex justify-center">
+                <Button 
+                  variant="link" 
+                  className="text-purple-600 font-medium"
+                  onClick={() => navigate("/auth", { state: { tab: "signup" } })}
+                >
+                  Créez un compte
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
