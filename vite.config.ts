@@ -11,9 +11,9 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: true,
-      port: 8080, // Changement du port à 8080
+      port: 8080, // Port fixé à 8080
       strictPort: true, // Utiliser strictement le port 8080
-      open: true, // Ouvrir automatiquement le navigateur (une seule fois)
+      open: true, // Ouvrir automatiquement le navigateur
     },
     optimizeDeps: {
       include: ['react-dropzone']
@@ -27,7 +27,19 @@ export default defineConfig(({ mode }) => {
       alias: {
         "@": path.resolve(__dirname, "./src"),
       },
-      dedupe: ['react-dropzone', 'react']
+      dedupe: ['react-dropzone', 'react', 'date-fns']
+    },
+    build: {
+      sourcemap: true,
+      chunkSizeWarningLimit: 1000,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom'],
+            'ui-components': ['@/components/ui'],
+          },
+        },
+      },
     },
   };
 });
