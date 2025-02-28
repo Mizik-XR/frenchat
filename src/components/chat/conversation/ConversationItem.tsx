@@ -9,8 +9,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Archive, Download, MoreVertical, Pin, PinOff, Trash2 } from "lucide-react";
+import { Archive, Download, MoreVertical, Pin, PinOff, Trash2, FileText, FileUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -30,6 +34,8 @@ export const ConversationItem = ({
   onDelete
 }: ConversationItemProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const { isConnected: isDriveConnected } = useGoogleDriveStatus();
 
   const handlePin = () => {
     onUpdateConversation({ id: conversation.id, isPinned: !conversation.isPinned });
@@ -61,16 +67,64 @@ export const ConversationItem = ({
     }
   };
 
-  const handleDelete = () => {
-    if (onDelete) {
-      onDelete(conversation.id);
+  const handleExportToDrive = async () => {
+    if (!isDriveConnected) {
       toast({
-        title: "Conversation supprimée",
-        description: "La conversation a été définitivement supprimée",
+        title: "Google Drive non connecté",
+        description: "Veuillez connecter votre compte Google Drive pour utiliser cette fonctionnalité",
         variant: "destructive"
       });
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      
+      // Appel à l'Edge Function pour exporter vers Google Drive
+      const { data, error } = await supabase.functions.invoke('export-to-google-drive', {
+        body: { 
+          conversationId: conversation.id,
+          title: conversation.title || `Conversation du ${format(new Date(conversation.created_at), 'dd/MM/yyyy', { locale: fr })}`
+        }
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Export réussi",
+        description: "La conversation a été exportée vers Google Drive avec succès",
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'export vers Google Drive:", error);
+      toast({
+        title: "Erreur d'export",
+        description: "Impossible d'exporter la conversation vers Google Drive",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
     }
   };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      // Confirmation avant suppression
+      if (window.confirm("Êtes-vous sûr de vouloir supprimer cette conversation ? Cette action est irréversible.")) {
+        onDelete(conversation.id);
+        toast({
+          title: "Conversation supprimée",
+          description: "La conversation a été définitivement supprimée",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  const formattedDate = format(
+    new Date(conversation.created_at), 
+    'dd MMM yyyy', 
+    { locale: fr }
+  );
 
   return (
     <div 
@@ -86,7 +140,7 @@ export const ConversationItem = ({
         <div className="flex-1 min-w-0">
           <h3 className="font-medium truncate">{conversation.title}</h3>
           <p className="text-sm text-muted-foreground truncate">
-            {new Date(conversation.created_at).toLocaleDateString()}
+            {formattedDate}
           </p>
         </div>
 
@@ -100,7 +154,7 @@ export const ConversationItem = ({
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem onClick={handlePin}>
               {conversation.isPinned ? (
                 <>
@@ -123,9 +177,24 @@ export const ConversationItem = ({
             {onExportToDoc && (
               <DropdownMenuItem onClick={handleExport}>
                 <Download className="h-4 w-4 mr-2" />
-                Exporter
+                Exporter en document
               </DropdownMenuItem>
             )}
+            
+            <DropdownMenuItem 
+              onClick={handleExportToDrive}
+              disabled={!isDriveConnected || isExporting}
+            >
+              <FileUp className="h-4 w-4 mr-2" />
+              {isExporting ? "Export en cours..." : "Exporter vers Google Drive"}
+            </DropdownMenuItem>
+            
+            <DropdownMenuItem onClick={() => {
+              window.open(`https://docs.google.com/document/create`, '_blank');
+            }}>
+              <FileText className="h-4 w-4 mr-2" />
+              Ouvrir dans Google Docs
+            </DropdownMenuItem>
 
             {onDelete && (
               <>
