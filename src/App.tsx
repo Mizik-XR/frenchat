@@ -15,7 +15,6 @@ import Monitoring from "./pages/Monitoring";
 import AIConfig from "./pages/AIConfig";
 import RagAdvancedSettings from "./pages/RagAdvancedSettings";
 import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
 import { DebugPanel } from "./components/DebugPanel";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeProvider } from "./components/ThemeProvider";

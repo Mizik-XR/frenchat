@@ -113,6 +113,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Vérification initiale de la session
     const checkSession = async () => {
       try {
+        console.log("Checking initial session...");
         const { data: { session } } = await supabase.auth.getSession();
         console.log("Initial session check:", session?.user?.id ? "User authenticated" : "No user");
         
@@ -126,9 +127,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const hasAllConfigs = configs?.some(c => c.status === 'configured');
             const needsConfiguration = !configs?.length || !hasAllConfigs;
 
+            // Réparation d'une erreur potentielle: si l'utilisateur est sur la page auth mais est
+            // déjà connecté, rediriger vers la configuration ou home
             if ((profile?.is_first_login || needsConfiguration) && location.pathname !== '/config') {
               navigate('/config');
-            } else if ((location.pathname === '/' || location.pathname === '/auth') && !location.pathname.startsWith('/auth/google')) {
+            } else if ((location.pathname === '/' || location.pathname === '/auth') && 
+                       !location.pathname.startsWith('/auth/google')) {
               navigate('/home');
             }
           }
@@ -142,6 +146,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           });
         }
         
+        // Fixer le problème de chargement sans fin
         setIsLoading(false);
       } catch (error) {
         console.error("Erreur lors de la vérification de la session:", error);
@@ -149,7 +154,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
         
         // Rediriger vers l'accueil en cas d'erreur, au lieu de la page d'authentification
-        if (location.pathname !== '/') {
+        if (location.pathname !== '/' && location.pathname !== '/auth') {
           navigate('/');
         }
       }
@@ -189,7 +194,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ user, isLoading, signOut }}>
-      {!isLoading && children}
+      {isLoading ? (
+        <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-700 mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold text-purple-900">Chargement de FileChat</h2>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };
