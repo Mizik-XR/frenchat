@@ -34,7 +34,7 @@ export const useGoogleDriveStatus = () => {
       
       const { data, error } = await supabase
         .from('oauth_tokens')
-        .select('expires_at, created_at, access_token, user_email, metadata')
+        .select('expires_at, created_at, access_token, metadata')
         .eq('user_id', user.id)
         .eq('provider', 'google')
         .maybeSingle();
@@ -54,7 +54,8 @@ export const useGoogleDriveStatus = () => {
         console.log('Token trouvé, expire le:', expiresAt, 'Expiré?', isExpired);
         
         setConnectionData({
-          email: data.user_email,
+          // Utiliser les données disponibles dans metadata au lieu de user_email
+          email: data.metadata?.email || "Utilisateur Google",
           connectedSince: new Date(data.created_at),
           metadata: data.metadata
         });
