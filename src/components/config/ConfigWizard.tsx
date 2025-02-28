@@ -7,7 +7,6 @@ import { toast } from "@/hooks/use-toast";
 import { WelcomeStep } from "./steps/WelcomeStep";
 import { SummaryStep } from "./steps/SummaryStep";
 import { ImportMethodSelector, ImportMethod } from "./ImportMethod/ImportMethodSelector";
-import { FileUploader } from "./ImportMethod/FileUploader";
 import { GoogleDriveConfig } from "./GoogleDrive/GoogleDriveConfig";
 import { MicrosoftTeamsConfig } from "./MicrosoftTeamsConfig";
 import { LocalAIConfig } from "./llm/LocalAIConfig";
@@ -32,31 +31,6 @@ export const ConfigWizard = () => {
     image: false
   });
   const [importMethod, setImportMethod] = useState<ImportMethod>("drive");
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleFilesSelected = async (files: File[]) => {
-    setIsProcessing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('process-uploaded-files', {
-        body: { files }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Traitement terminé",
-        description: `${files.length} fichiers ont été traités avec succès.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors du traitement des fichiers.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const handleLLMSave = () => {
     setConfigStatus(prev => ({ ...prev, llm: true }));
@@ -85,12 +59,6 @@ export const ConfigWizard = () => {
               selectedMethod={importMethod}
               onMethodChange={handleImportMethodChange}
             />
-            {importMethod === "upload" && (
-              <FileUploader
-                onFilesSelected={handleFilesSelected}
-                loading={isProcessing}
-              />
-            )}
             {importMethod === "drive" && (
               <div className="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <h3 className="text-lg font-medium mb-2">Google Drive</h3>
