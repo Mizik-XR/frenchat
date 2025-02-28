@@ -23,7 +23,7 @@ export const ImportMethodSelector = ({
   onNavigate
 }: ImportMethodSelectorProps) => {
   const navigate = useNavigate();
-  const { isConnected: isDriveConnected, connectGoogleDrive } = useGoogleDriveStatus();
+  const { isConnected: isDriveConnected, reconnectGoogleDrive } = useGoogleDriveStatus();
 
   const handleMethodSelection = (method: ImportMethod) => {
     onMethodChange(method);
@@ -49,7 +49,7 @@ export const ImportMethodSelector = ({
 
   const handleConnectDrive = async () => {
     try {
-      await connectGoogleDrive();
+      await reconnectGoogleDrive();
     } catch (error) {
       console.error("Erreur lors de la connexion à Google Drive:", error);
       toast({
