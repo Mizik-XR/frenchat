@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,31 +10,10 @@ import { ArrowRight } from "lucide-react";
 export default function Index() {
   const navigate = useNavigate();
   const { loading } = useOnboarding();
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
   
-  // Fonction pour gérer l'erreur de chargement d'image
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    console.log("Erreur de chargement de l'image, utilisation de l'image de secours");
-    const target = e.target as HTMLImageElement;
-    target.src = "/lovable-uploads/fb21020a-04ad-4e58-9d53-3224ce760584.png"; // Image de secours
-    setIsImageLoaded(true);
-  };
-
-  // Fonction pour confirmer le chargement d'image
-  const handleImageLoad = () => {
-    console.log("Image chargée avec succès");
-    setIsImageLoaded(true);
-  };
-
   useEffect(() => {
     // Log pour le débogage
     console.log("Page Index montée, état de chargement:", loading);
-    
-    // Préchargement de l'image avec le chemin correct
-    const img = new Image();
-    img.src = "/filechat-animation.gif"; // Chemin correct observé dans la capture d'écran
-    img.onload = handleImageLoad;
-    img.onerror = () => handleImageError({ target: img } as any);
     
     return () => {
       console.log("Page Index démontée");
@@ -66,8 +45,6 @@ export default function Index() {
                 src="/filechat-animation.gif" 
                 alt="FileChat Logo" 
                 className="h-8 w-8"
-                onLoad={handleImageLoad}
-                onError={handleImageError}
               />
               <h1 className="text-3xl font-bold ml-2 text-gray-900 dark:text-white">FileChat</h1>
             </div>
@@ -77,8 +54,6 @@ export default function Index() {
                 src="/filechat-animation.gif" 
                 alt="FileChat Animation" 
                 className="w-full h-auto"
-                onLoad={handleImageLoad}
-                onError={handleImageError}
               />
             </div>
             
