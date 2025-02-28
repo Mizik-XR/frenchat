@@ -90,20 +90,19 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
     findWorkingPath();
   }, []);
 
-  // Fonction pour arrêter l'animation du GIF de manière définitive
-  const stopAnimation = () => {
+  // Fonction pour "figer" l'animation du GIF
+  const pauseAnimation = () => {
     if (imageRef.current && imageRef.current.src && imageLoaded) {
-      // Stocker la source actuelle
+      // On sauvegarde l'URL originale du GIF
       const currentSrc = imageRef.current.src;
       
-      // Remplacer temporairement par une image vide pour arrêter l'animation
+      // On remplace temporairement par une image vide pour interrompre l'animation
       imageRef.current.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
       
-      // Puis remettre la source originale (qui sera maintenant "gelée")
+      // Puis on remet l'URL originale (qui sera maintenant "figée" à la dernière frame)
       setTimeout(() => {
         if (imageRef.current) {
           imageRef.current.src = currentSrc;
-          setInitialAnimationPlayed(true);
         }
       }, 30);
     }
@@ -115,9 +114,10 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
       // Arrêter l'animation après la durée souhaitée
       const timer = setTimeout(() => {
         if (!isHovering) {
-          stopAnimation();
+          pauseAnimation();
+          setInitialAnimationPlayed(true);
         }
-      }, 2000); // Temps pour voir l'animation initiale
+      }, 2000); // Durée de l'animation initiale
       
       return () => clearTimeout(timer);
     }
@@ -138,14 +138,14 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
   const handleMouseLeave = () => {
     setIsHovering(false);
     
-    // Arrêter l'animation après un délai
+    // Arrêter l'animation après un délai pour qu'elle se termine proprement
     if (animationTimeoutRef.current) {
       clearTimeout(animationTimeoutRef.current);
     }
     
     animationTimeoutRef.current = window.setTimeout(() => {
-      stopAnimation();
-    }, 2000); // Laisser l'animation se terminer avant de l'arrêter
+      pauseAnimation();
+    }, 2000); // Laisser l'animation se terminer avant de la figer
   };
 
   // Utiliser une icône de secours si l'image ne charge pas
@@ -168,10 +168,11 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
       onLoad={() => {
         // Si c'est le premier chargement et pas un rechargement au hover
         if (!initialAnimationPlayed) {
-          // On laisse l'animation initiale se jouer, puis on l'arrête
+          // On laisse l'animation initiale se jouer, puis on la fige
           setTimeout(() => {
             if (!isHovering) {
-              stopAnimation();
+              pauseAnimation();
+              setInitialAnimationPlayed(true);
             }
           }, 2000);
         }
