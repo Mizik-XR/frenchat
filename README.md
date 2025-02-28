@@ -1,40 +1,63 @@
 
-# FileChat
+# FileChat - Assistant IA Conversationnel pour Documents
 
-Application de chat intelligente avec intégration de Google Drive et traitement de documents.
+FileChat est une solution d'intelligence artificielle conversationnelle conçue pour l'analyse et l'indexation de documents via une interface de chat intuitive.
 
-## Fonctionnalités Principales
+## Fonctionnalités
 
-- 💬 Chat interactif avec IA
-- 📁 Intégration Google Drive
-- 📄 Traitement de documents
-- 🔒 Authentification sécurisée
-- 🎨 Interface utilisateur moderne avec shadcn/ui
-- 🌐 Architecture full-stack avec Supabase
+- 🤖 **Chat IA** : Interface style "WhatsApp" pour discuter avec l'IA
+- 📁 **Indexation de documents** : Google Drive, Microsoft Teams, et upload manuel
+- 🔍 **Recherche contextuelle** : Architecture RAG pour des réponses pertinentes
+- 📊 **Visualisation de données** : Génération de graphiques et analyses
+- 📃 **Génération de documents** : Création de rapports et documents structurés
+- 🔒 **Traitement local** : Option 100% locale pour la confidentialité des données
 
-## Documentation
+## Démarrage rapide
 
-- [Installation et Configuration](docs/installation.md)
-- [Architecture du Projet](docs/architecture.md)
-- [Modèles d'Intelligence Artificielle](docs/ai-models.md)
+### Windows
 
-## Démarrage Rapide
+1. Exécutez `start-app.bat` pour installer les dépendances et démarrer les services
+2. Accédez à l'application sur http://localhost:8080
 
-1. Clonez le repository
-2. Installez les dépendances : `npm install`
-3. Configurez les variables d'environnement
-4. Lancez l'application : `npm run dev`
+### macOS / Linux
 
-## Support
+1. Installation du serveur IA :
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python serve_model.py
+```
 
-Pour toute question ou problème :
-1. Consultez les issues GitHub
-2. Vérifiez les logs Supabase
-3. Contactez l'équipe de développement
+2. Dans un nouveau terminal, démarrez l'application React :
+```bash
+npm install
+npm run dev
+```
 
-## Sécurité
+## Configuration requise
 
-- Authentification JWT
-- Stockage sécurisé des clés API dans Supabase
-- Politiques RLS Supabase pour le contrôle d'accès
-- Configuration CORS sécurisée
+- Node.js 18+
+- Python 3.9+
+- 4 Go de RAM minimum
+- Connexion internet (pour l'installation initiale)
+
+## Déploiement en production
+
+Pour un déploiement en production :
+
+1. Créez le build optimisé :
+```bash
+npm run build
+```
+
+2. Servez les fichiers statiques avec NGINX ou tout autre serveur web
+3. Déployez le serveur IA séparément ou utilisez un service cloud
+
+## Contribution
+
+Les contributions sont les bienvenues ! Veuillez consulter notre [guide de contribution](docs/CONTRIBUTING.md) pour plus d'informations.
+
+## Licence
+
+Ce projet est sous licence [MIT](LICENSE).

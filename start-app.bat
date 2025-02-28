@@ -49,7 +49,7 @@ echo ================================
 echo Installation des dépendances NPM
 echo ================================
 echo.
-call npm install --legacy-peer-deps --prefer-offline --no-audit --no-fund
+call npm install --prefer-offline --no-audit --no-fund
 if errorlevel 1 (
     echo [ERREUR] Installation des dépendances NPM échouée
     echo.
@@ -117,6 +117,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM Attendre un peu que le serveur IA démarre
+timeout /t 3 /nobreak > nul
+
 REM Démarrage immédiat de l'application React sur le port 8080
 echo [INFO] Démarrage de l'application React...
 start "Application React" cmd /c "npm run dev -- --host --port 8080"
@@ -139,10 +142,6 @@ echo [2] Application React: http://localhost:8080
 echo.
 echo [INFO] Attendez quelques secondes que les serveurs démarrent complètement...
 timeout /t 10 /nobreak > nul
-
-REM Désactivé l'ouverture automatique du navigateur car Vite le fait déjà
-REM echo [INFO] Ouverture automatique du navigateur...
-REM start http://localhost:8080
 
 echo.
 echo Pour accéder à l'application, ouvrez votre navigateur à l'adresse: http://localhost:8080
