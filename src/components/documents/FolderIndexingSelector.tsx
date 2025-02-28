@@ -24,6 +24,7 @@ interface SharedFolder {
   path?: string;
   metadata?: Record<string, any>;
   shared_with?: string[];
+  is_shared?: boolean;
 }
 
 interface KnowledgeBase {
