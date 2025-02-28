@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase, preloadSession } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -86,7 +85,7 @@ export function useAuthSession() {
               description: "Configurons votre espace de travail.",
             });
           }
-        } else if (location.pathname === '/auth' || location.pathname === '/') {
+        } else if (location.pathname === '/auth' || location.pathname === '/' || location.pathname === '/index') {
           navigate('/home');
         }
       }
@@ -133,7 +132,7 @@ export function useAuthSession() {
           // déjà connecté, rediriger vers la configuration ou home
           if ((profile?.is_first_login || needsConfiguration) && location.pathname !== '/config') {
             navigate('/config');
-          } else if ((location.pathname === '/' || location.pathname === '/auth') && 
+          } else if ((location.pathname === '/' || location.pathname === '/auth' || location.pathname === '/index') && 
                      !location.pathname.startsWith('/auth/google')) {
             navigate('/home');
           }
@@ -157,11 +156,6 @@ export function useAuthSession() {
       setUser(null);
       isSessionLoading = false;
       setIsLoading(false);
-      
-      // Rediriger vers l'accueil en cas d'erreur, au lieu de la page d'authentification
-      if (location.pathname !== '/' && location.pathname !== '/auth') {
-        navigate('/');
-      }
     }
   }, [navigate, location.pathname, checkUserAndConfig]);
 

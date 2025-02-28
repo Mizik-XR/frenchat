@@ -52,6 +52,7 @@ function AppWithAuth() {
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
             <Route path="/" element={<WelcomePage />} />
+            <Route path="/index" element={<WelcomePage />} />
             <Route path="/home" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/chat" element={<Chat />} />
