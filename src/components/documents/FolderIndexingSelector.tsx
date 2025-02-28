@@ -73,7 +73,14 @@ export function FolderIndexingSelector() {
         .eq('is_shared', true);
 
       if (error) throw error;
-      setSharedFolders(data || []);
+      setSharedFolders((data || []).map(folder => ({
+        id: folder.id,
+        folder_id: folder.folder_id,
+        name: folder.name,
+        path: folder.path,
+        metadata: folder.metadata as Record<string, any>,
+        shared_with: folder.shared_with
+      })));
     } catch (error) {
       console.error('Error loading shared folders:', error);
       toast({
