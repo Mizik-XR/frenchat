@@ -59,11 +59,11 @@ export const GoogleDriveConfig = () => {
       <div className="mb-6">
         <Button 
           variant="ghost" 
-          onClick={() => navigate('/chat')}
+          onClick={() => navigate('/config')}
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour au chat
+          Retour à la configuration
         </Button>
       </div>
 
@@ -76,6 +76,12 @@ export const GoogleDriveConfig = () => {
           {user && <IndexingProgress userId={user.id} />}
         </CardContent>
       </Card>
+      
+      <div className="mt-6 flex justify-center">
+        <Button onClick={() => navigate('/chat')} className="w-full max-w-sm">
+          Retour au chat
+        </Button>
+      </div>
     </div>
   );
 };

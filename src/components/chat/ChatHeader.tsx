@@ -1,5 +1,5 @@
 
-import { Info, Settings } from "lucide-react";
+import { Info, Settings, Plus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ interface ChatHeaderProps {
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
   onResetConversation: () => void;
+  setShowUploader?: (show: boolean) => void;
 }
 
 export const ChatHeader = ({ 
@@ -23,7 +24,8 @@ export const ChatHeader = ({
   onModeChange,
   showSettings,
   setShowSettings,
-  onResetConversation
+  onResetConversation,
+  setShowUploader
 }: ChatHeaderProps) => {
   return (
     <div className="flex justify-between items-center p-4 border-b">
@@ -59,6 +61,17 @@ export const ChatHeader = ({
       </div>
 
       <div className="flex items-center gap-2">
+        {setShowUploader && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setShowUploader(true)}
+            className="hover:bg-gray-100"
+            title="Ajouter un document"
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
