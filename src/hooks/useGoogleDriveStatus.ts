@@ -16,6 +16,7 @@ export const getRedirectUrl = () => {
 export const useGoogleDriveStatus = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [connectionData, setConnectionData] = useState<any>(null);
   const { user } = useAuth();
 
   const checkGoogleDriveConnection = useCallback(async () => {
@@ -23,6 +24,7 @@ export const useGoogleDriveStatus = () => {
     if (!user) {
       setIsConnected(false);
       setIsChecking(false);
+      setConnectionData(null);
       return;
     }
 
@@ -32,7 +34,7 @@ export const useGoogleDriveStatus = () => {
       
       const { data, error } = await supabase
         .from('oauth_tokens')
-        .select('expires_at, created_at, access_token')
+        .select('expires_at, created_at, access_token, user_email, metadata')
         .eq('user_id', user.id)
         .eq('provider', 'google')
         .maybeSingle();
@@ -41,6 +43,7 @@ export const useGoogleDriveStatus = () => {
         console.error("Erreur lors de la vérification des tokens:", error);
         setIsConnected(false);
         setIsChecking(false);
+        setConnectionData(null);
         return;
       }
 
@@ -49,6 +52,12 @@ export const useGoogleDriveStatus = () => {
         const expiresAt = new Date(data.expires_at);
         const isExpired = expiresAt < new Date();
         console.log('Token trouvé, expire le:', expiresAt, 'Expiré?', isExpired);
+        
+        setConnectionData({
+          email: data.user_email,
+          connectedSince: new Date(data.created_at),
+          metadata: data.metadata
+        });
         
         if (isExpired) {
           console.log("Le token est expiré, tentative de rafraîchissement...");
@@ -75,10 +84,12 @@ export const useGoogleDriveStatus = () => {
       } else {
         console.log('Aucun token trouvé pour cet utilisateur');
         setIsConnected(false);
+        setConnectionData(null);
       }
     } catch (err) {
       console.error("Erreur lors de la vérification de la connexion Google Drive:", err);
       setIsConnected(false);
+      setConnectionData(null);
     } finally {
       setIsChecking(false);
     }
@@ -121,7 +132,14 @@ export const useGoogleDriveStatus = () => {
         throw new Error("Impossible de récupérer les informations d'authentification");
       }
 
-      const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
+      // Demande de scopes étendus pour l'accès aux fichiers
+      const scopes = encodeURIComponent(
+        'https://www.googleapis.com/auth/drive.file ' +
+        'https://www.googleapis.com/auth/drive.metadata.readonly ' +
+        'https://www.googleapis.com/auth/userinfo.email ' +
+        'https://www.googleapis.com/auth/userinfo.profile'
+      );
+      
       const redirectUrl = encodeURIComponent(redirectUri);
       
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -133,7 +151,18 @@ export const useGoogleDriveStatus = () => {
         `prompt=consent`;
 
       console.log("Redirection vers:", authUrl);
-      window.location.href = authUrl;
+      
+      // Afficher une notification avant la redirection
+      toast({
+        title: "Connexion à Google Drive",
+        description: "Vous allez être redirigé vers Google pour autoriser l'accès",
+      });
+      
+      // Rediriger après un court délai pour que l'utilisateur voie la notification
+      setTimeout(() => {
+        window.location.href = authUrl;
+      }, 1000);
+      
     } catch (error) {
       console.error('Erreur lors de l\'initialisation de l\'auth Google:', error);
       toast({
@@ -144,10 +173,60 @@ export const useGoogleDriveStatus = () => {
     }
   };
 
+  const disconnectGoogleDrive = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      // Révoquer le token d'accès côté Google
+      const { error: revokeError } = await supabase.functions.invoke('google-oauth', {
+        body: { 
+          action: 'revoke_token',
+          userId: user.id
+        }
+      });
+
+      if (revokeError) {
+        console.error("Erreur lors de la révocation du token:", revokeError);
+        // On continue pour supprimer le token côté Supabase même si la révocation échoue chez Google
+      }
+
+      // Supprimer le token de la base de données
+      const { error: deleteError } = await supabase
+        .from('oauth_tokens')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('provider', 'google');
+
+      if (deleteError) {
+        throw new Error("Erreur lors de la suppression du token local");
+      }
+
+      // Mise à jour de l'état
+      setIsConnected(false);
+      setConnectionData(null);
+      
+      toast({
+        title: "Déconnexion réussie",
+        description: "Votre compte Google Drive a été déconnecté",
+      });
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion de Google Drive:", error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: error instanceof Error ? error.message : "Impossible de déconnecter votre compte Google Drive",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     isConnected,
     isChecking,
+    connectionData,
     checkGoogleDriveConnection,
-    reconnectGoogleDrive
+    reconnectGoogleDrive,
+    disconnectGoogleDrive
   };
 };
