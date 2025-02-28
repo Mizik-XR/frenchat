@@ -97,6 +97,11 @@ export const ConversationList = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Rendu des icônes de toggle pour les sections
+  const renderCollapsibleIcon = (isOpen: boolean) => {
+    return isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />;
+  };
+
   return (
     <div className="w-80 h-full border-r border-gray-200 bg-white/90 backdrop-blur-sm flex flex-col">
       <div className="p-4 border-b border-gray-100">
@@ -173,12 +178,8 @@ export const ConversationList = ({
             {pinnedConversations.length > 0 && (
               <Collapsible defaultOpen className="mb-6">
                 <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-gray-500 mb-2 w-full hover:text-gray-700">
-                  {prev => (
-                    <>
-                      {prev ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                      Épinglées ({pinnedConversations.length})
-                    </>
-                  )}
+                  {renderCollapsibleIcon(true)}
+                  Épinglées ({pinnedConversations.length})
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <ConversationGroup
@@ -200,10 +201,12 @@ export const ConversationList = ({
 
               if (folderConversations.length === 0 && searchQuery) return null;
 
+              const isExpanded = expandedFolders[folder.id];
+
               return (
                 <Collapsible 
                   key={folder.id}
-                  open={expandedFolders[folder.id]}
+                  open={isExpanded}
                   className="mb-6"
                 >
                   <div className="flex items-center justify-between text-sm font-medium text-gray-500 mb-2">
@@ -211,11 +214,7 @@ export const ConversationList = ({
                       className="flex items-center gap-2 hover:text-gray-700"
                       onClick={() => toggleFolder(folder.id)}
                     >
-                      {expandedFolders[folder.id] ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
+                      {renderCollapsibleIcon(isExpanded)}
                       <Folder className="h-4 w-4" />
                       {folder.name} ({folderConversations.length})
                     </CollapsibleTrigger>
@@ -245,14 +244,10 @@ export const ConversationList = ({
             })}
 
             <Collapsible defaultOpen className="mb-6">
-              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-gray-500 mb-2 w-full hover:text-gray-700">
-                {prev => (
-                  <>
-                    {prev ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    Non classées ({filteredConversations(unpinnedConversations.filter(conv => !conv.folderId)).length})
-                  </>
-                )}
-              </CollapsibleTrigger>
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-gray-500 mb-2 w-full hover:text-gray-700">
+                  {renderCollapsibleIcon(true)}
+                  Non classées ({filteredConversations(unpinnedConversations.filter(conv => !conv.folderId)).length})
+                </CollapsibleTrigger>
               <CollapsibleContent>
                 <ConversationGroup
                   conversations={filteredConversations(
