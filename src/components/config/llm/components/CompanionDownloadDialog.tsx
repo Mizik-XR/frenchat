@@ -1,160 +1,162 @@
 
-import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { CheckCircle2, Download, ExternalLink, Loader2 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowDownToLine, ExternalLink, Server, Cpu, Globe } from "lucide-react";
 
 interface CompanionDownloadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function CompanionDownloadDialog({
-  open,
-  onOpenChange,
-}: CompanionDownloadDialogProps) {
-  const [downloadStatus, setDownloadStatus] = useState<"idle" | "downloading" | "completed" | "error">("idle");
-  const [activeTab, setActiveTab] = useState("windows");
-
-  const handleDownload = () => {
-    setDownloadStatus("downloading");
-    
-    // Simuler un téléchargement
-    setTimeout(() => {
-      setDownloadStatus("completed");
-    }, 2000);
-  };
-  
-  const getDownloadLink = () => {
-    switch(activeTab) {
-      case "windows":
-        return "https://github.com/ollama/ollama/releases/latest/download/ollama-windows-amd64.msi";
-      case "mac":
-        return "https://github.com/ollama/ollama/releases/latest/download/ollama-darwin";
-      case "linux":
-        return "https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64";
-      default:
-        return "#";
-    }
-  };
-
+export function CompanionDownloadDialog({ open, onOpenChange }: CompanionDownloadDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Télécharger le Compagnon IA</DialogTitle>
+          <DialogTitle>Options pour exécuter l'IA</DialogTitle>
           <DialogDescription>
-            Installez l'IA localement sur votre ordinateur pour une expérience plus rapide et privée
+            Choisissez la méthode qui convient le mieux à vos besoins
           </DialogDescription>
         </DialogHeader>
-        
-        <Tabs defaultValue="windows" className="w-full mt-4" onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="windows">Windows</TabsTrigger>
-            <TabsTrigger value="mac">macOS</TabsTrigger>
-            <TabsTrigger value="linux">Linux</TabsTrigger>
+
+        <Tabs defaultValue="browser">
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="browser" className="flex items-center gap-1">
+              <Cpu className="h-4 w-4" />
+              <span>Navigateur</span>
+            </TabsTrigger>
+            <TabsTrigger value="local" className="flex items-center gap-1">
+              <Server className="h-4 w-4" />
+              <span>Serveur Local</span>
+            </TabsTrigger>
+            <TabsTrigger value="cloud" className="flex items-center gap-1">
+              <Globe className="h-4 w-4" />
+              <span>Cloud</span>
+            </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="windows" className="space-y-4 mt-4">
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
-              <h3 className="font-medium">Installation sur Windows</h3>
-              <ol className="list-decimal pl-5 space-y-2 text-sm">
-                <li>Téléchargez le programme d'installation Ollama</li>
-                <li>Exécutez le fichier .msi téléchargé</li>
-                <li>Suivez les instructions d'installation</li>
-                <li>Une fois installé, redémarrez FileChat</li>
-              </ol>
+          <TabsContent value="browser" className="space-y-4">
+            <div>
+              <h3 className="font-semibold mb-2">Exécution dans le navigateur</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                La méthode la plus simple - aucune installation requise. Les modèles s'exécutent directement 
+                dans votre navigateur grâce à WebGPU.
+              </p>
+              
+              <div className="text-sm space-y-1 mb-4">
+                <p className="font-medium">Prérequis :</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Navigateur moderne (Chrome, Edge ou Firefox récent)</li>
+                  <li>Carte graphique relativement récente</li>
+                </ul>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex gap-2" asChild>
+                  <a 
+                    href="https://developer.chrome.com/docs/web-platform/webgpu" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Plus d'informations sur WebGPU
+                  </a>
+                </Button>
+              </div>
             </div>
           </TabsContent>
           
-          <TabsContent value="mac" className="space-y-4 mt-4">
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
-              <h3 className="font-medium">Installation sur macOS</h3>
-              <ol className="list-decimal pl-5 space-y-2 text-sm">
-                <li>Téléchargez Ollama pour macOS</li>
-                <li>Ouvrez le Terminal</li>
-                <li>Exécutez: <code className="bg-gray-200 px-1 rounded">curl -fsSL https://ollama.com/install.sh | sh</code></li>
-                <li>Une fois installé, redémarrez FileChat</li>
-              </ol>
+          <TabsContent value="local" className="space-y-4">
+            <div>
+              <h3 className="font-semibold mb-2">Serveur IA Local</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Exécutez des modèles plus grands et plus performants sur votre machine avec plus de contrôle.
+              </p>
+              
+              <div className="space-y-4">
+                <div className="border rounded-md p-4">
+                  <h4 className="font-medium mb-2 flex items-center gap-1">
+                    <img src="https://ollama.com/public/ollama.png" alt="Ollama" className="h-4 w-4" />
+                    Ollama (Recommandé)
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Solution simple pour exécuter des modèles localement sur Windows, Mac ou Linux.
+                  </p>
+                  <Button variant="default" className="flex gap-2" asChild>
+                    <a 
+                      href="https://ollama.com/download" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <ArrowDownToLine className="h-4 w-4" />
+                      Télécharger Ollama
+                    </a>
+                  </Button>
+                </div>
+                
+                <div className="border rounded-md p-4">
+                  <h4 className="font-medium mb-2">Script Python (utilisateurs avancés)</h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Exécutez directement le script Python inclus avec FileChat pour plus de contrôle.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" className="flex gap-2" asChild>
+                      <a 
+                        href="https://github.com/filechat-app/filechat-server/releases/latest" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        <ArrowDownToLine className="h-4 w-4" />
+                        Télécharger (Windows)
+                      </a>
+                    </Button>
+                    <Button variant="outline" className="flex gap-2" asChild>
+                      <a 
+                        href="https://github.com/filechat-app/filechat-server/releases/latest" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        <ArrowDownToLine className="h-4 w-4" />
+                        Télécharger (Mac/Linux)
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </TabsContent>
           
-          <TabsContent value="linux" className="space-y-4 mt-4">
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
-              <h3 className="font-medium">Installation sur Linux</h3>
-              <ol className="list-decimal pl-5 space-y-2 text-sm">
-                <li>Ouvrez un terminal</li>
-                <li>Exécutez: <code className="bg-gray-200 px-1 rounded">curl -fsSL https://ollama.com/install.sh | sh</code></li>
-                <li>Démarrez le service: <code className="bg-gray-200 px-1 rounded">ollama serve</code></li>
-                <li>Une fois installé, redémarrez FileChat</li>
-              </ol>
+          <TabsContent value="cloud" className="space-y-4">
+            <div>
+              <h3 className="font-semibold mb-2">Service Cloud</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Aucune installation requise. Les modèles s'exécutent sur nos serveurs cloud.
+              </p>
+              
+              <div className="text-sm space-y-1 mb-4">
+                <p className="font-medium">Avantages :</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Aucune configuration nécessaire</li>
+                  <li>Performances constantes quel que soit votre appareil</li>
+                  <li>Accès aux modèles les plus récents</li>
+                </ul>
+              </div>
+              
+              <div className="text-sm space-y-1 mb-4">
+                <p className="font-medium">Considérations :</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Nécessite une connexion Internet</li>
+                  <li>Les données transitent par nos serveurs</li>
+                </ul>
+              </div>
+              
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Utiliser le service cloud
+              </Button>
             </div>
           </TabsContent>
         </Tabs>
-        
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mt-4">
-          <h4 className="font-medium text-blue-800 mb-2">Après l'installation</h4>
-          <p className="text-sm text-gray-700">
-            Une fois installé, vous pourrez utiliser des modèles Ollama directement dans FileChat.
-            Configurez Ollama comme votre fournisseur d'IA local pour commencer.
-          </p>
-          <div className="flex mt-3">
-            <a 
-              href="https://ollama.com/library" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800 flex items-center mr-4"
-            >
-              Modèles disponibles
-              <ExternalLink className="h-3 w-3 ml-1" />
-            </a>
-            <a 
-              href="https://github.com/ollama/ollama" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
-            >
-              Documentation
-              <ExternalLink className="h-3 w-3 ml-1" />
-            </a>
-          </div>
-        </div>
-        
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Fermer
-          </Button>
-          <a 
-            href={getDownloadLink()}
-            download
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button className="gap-2" onClick={handleDownload}>
-              {downloadStatus === "downloading" ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : downloadStatus === "completed" ? (
-                <CheckCircle2 className="h-4 w-4" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}
-              {downloadStatus === "downloading" 
-                ? "Téléchargement..." 
-                : downloadStatus === "completed" 
-                  ? "Téléchargé" 
-                  : "Télécharger"
-              }
-            </Button>
-          </a>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
