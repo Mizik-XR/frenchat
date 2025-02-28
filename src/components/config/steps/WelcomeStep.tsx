@@ -1,6 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LogoImage } from "@/components/common/LogoImage";
 
 interface WelcomeStepProps {
   onNext: () => void;
@@ -11,11 +12,7 @@ export const WelcomeStep = ({ onNext }: WelcomeStepProps) => {
     <Card className="p-6 animate-fade-in">
       <CardContent className="space-y-4">
         <div className="flex items-center gap-2 mb-4">
-          <img 
-            src="/filechat-animation.gif" 
-            alt="FileChat Logo" 
-            className="h-6 w-6"
-          />
+          <LogoImage className="h-6 w-6" />
           <h2 className="text-2xl font-semibold">Bienvenue dans FileChat !</h2>
         </div>
         <p className="text-muted-foreground">
