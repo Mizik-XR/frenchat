@@ -6,29 +6,64 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
+import { toast } from "@/hooks/use-toast";
 
 export type ImportMethod = "drive" | "teams";
 
 interface ImportMethodSelectorProps {
   onMethodChange: (method: ImportMethod) => void;
   selectedMethod: ImportMethod;
+  onNavigate?: (path: string) => void;
 }
 
 export const ImportMethodSelector = ({
   onMethodChange,
   selectedMethod,
+  onNavigate
 }: ImportMethodSelectorProps) => {
   const navigate = useNavigate();
+  const { isConnected: isDriveConnected, connectGoogleDrive } = useGoogleDriveStatus();
 
   const handleMethodSelection = (method: ImportMethod) => {
     onMethodChange(method);
   };
 
   const handleNext = () => {
-    // Navigation en fonction de la méthode sélectionnée
-    if (selectedMethod === "drive") {
-      navigate("/config/google-drive");
-    } else if (selectedMethod === "teams") {
+    if (onNavigate) {
+      // Utiliser la fonction de navigation personnalisée si fournie
+      if (selectedMethod === "drive") {
+        onNavigate("/config/google-drive");
+      } else if (selectedMethod === "teams") {
+        onNavigate("/config/microsoft-teams");
+      }
+    } else {
+      // Navigation standard en utilisant useNavigate
+      if (selectedMethod === "drive") {
+        navigate("/config/google-drive");
+      } else if (selectedMethod === "teams") {
+        navigate("/config/microsoft-teams");
+      }
+    }
+  };
+
+  const handleConnectDrive = async () => {
+    try {
+      await connectGoogleDrive();
+    } catch (error) {
+      console.error("Erreur lors de la connexion à Google Drive:", error);
+      toast({
+        title: "Erreur de connexion",
+        description: "Impossible de se connecter à Google Drive. Veuillez réessayer.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleConnectTeams = () => {
+    if (onNavigate) {
+      onNavigate("/config/microsoft-teams");
+    } else {
       navigate("/config/microsoft-teams");
     }
   };
@@ -43,7 +78,10 @@ export const ImportMethodSelector = ({
         className="grid gap-4"
       >
         <div>
-          <Card className="relative p-4 cursor-pointer hover:border-primary transition-colors">
+          <Card 
+            className={`relative p-4 cursor-pointer hover:border-primary transition-colors ${selectedMethod === 'drive' ? 'border-primary' : ''}`}
+            onClick={() => handleMethodSelection('drive')}
+          >
             <RadioGroupItem value="drive" id="drive" className="absolute right-4 top-4" />
             <div className="flex items-start space-x-4">
               <Cloud className="h-6 w-6 text-primary" />
@@ -61,7 +99,10 @@ export const ImportMethodSelector = ({
         </div>
         
         <div>
-          <Card className="relative p-4 cursor-pointer hover:border-primary transition-colors">
+          <Card 
+            className={`relative p-4 cursor-pointer hover:border-primary transition-colors ${selectedMethod === 'teams' ? 'border-primary' : ''}`}
+            onClick={() => handleMethodSelection('teams')}
+          >
             <RadioGroupItem value="teams" id="teams" className="absolute right-4 top-4" />
             <div className="flex items-start space-x-4">
               <MessageSquare className="h-6 w-6 text-primary" />
@@ -79,8 +120,20 @@ export const ImportMethodSelector = ({
         </div>
       </RadioGroup>
 
-      <div className="flex justify-end mt-6">
-        <Button onClick={handleNext} className="w-32">
+      <div className="flex justify-between mt-6">
+        {selectedMethod === 'drive' && (
+          <Button onClick={handleConnectDrive} className="mr-2">
+            {isDriveConnected ? "Configurer Google Drive" : "Connecter Google Drive"}
+          </Button>
+        )}
+        
+        {selectedMethod === 'teams' && (
+          <Button onClick={handleConnectTeams} className="mr-2">
+            Configurer Microsoft Teams
+          </Button>
+        )}
+        
+        <Button onClick={handleNext} className="ml-auto">
           Suivant
         </Button>
       </div>

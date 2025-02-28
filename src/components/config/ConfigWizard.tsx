@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Steps } from "@/components/ui/steps";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ import { SummaryStep } from "./steps/SummaryStep";
 import { ImportMethodSelector, ImportMethod } from "./ImportMethod/ImportMethodSelector";
 import { LocalAIConfig } from "./llm/LocalAIConfig";
 import { ImageConfig } from "./ImageConfig";
+import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
 
 // Réduit à 4 étapes principales au lieu de 7
 const STEPS = [
@@ -21,13 +22,45 @@ const STEPS = [
 export const ConfigWizard = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
+  const googleDriveStatus = useGoogleDriveStatus();
+  
   const [configStatus, setConfigStatus] = useState({
-    googleDrive: false,
+    googleDrive: googleDriveStatus.isConnected,
     teams: false,
     llm: false,
     image: false
   });
+  
   const [importMethod, setImportMethod] = useState<ImportMethod>("drive");
+
+  // Mise à jour du statut Google Drive lorsqu'il change
+  useEffect(() => {
+    setConfigStatus(prev => ({
+      ...prev,
+      googleDrive: googleDriveStatus.isConnected
+    }));
+  }, [googleDriveStatus.isConnected]);
+
+  // Sauvegarde de l'état de la configuration dans sessionStorage
+  useEffect(() => {
+    // Sauvegarde de l'étape actuelle
+    sessionStorage.setItem('currentConfigStep', currentStep.toString());
+    // Sauvegarde de la méthode d'import sélectionnée
+    sessionStorage.setItem('selectedImportMethod', importMethod);
+  }, [currentStep, importMethod]);
+
+  // Récupération de l'état depuis sessionStorage lors de l'initialisation
+  useEffect(() => {
+    const savedStep = sessionStorage.getItem('currentConfigStep');
+    if (savedStep) {
+      setCurrentStep(Number(savedStep));
+    }
+
+    const savedMethod = sessionStorage.getItem('selectedImportMethod');
+    if (savedMethod) {
+      setImportMethod(savedMethod as ImportMethod);
+    }
+  }, []);
 
   const handleLLMSave = () => {
     setConfigStatus(prev => ({ ...prev, llm: true }));
@@ -40,6 +73,18 @@ export const ConfigWizard = () => {
 
   const handleImportMethodChange = (method: ImportMethod) => {
     setImportMethod(method);
+    sessionStorage.setItem('selectedImportMethod', method);
+  };
+
+  const handleDirectNavigation = (path: string) => {
+    // Sauvegarde de l'état actuel avant navigation
+    sessionStorage.setItem('lastConfigState', JSON.stringify({
+      step: currentStep,
+      method: importMethod,
+      status: configStatus
+    }));
+    
+    navigate(path);
   };
 
   const renderCurrentStep = () => {
@@ -53,6 +98,7 @@ export const ConfigWizard = () => {
             <ImportMethodSelector
               selectedMethod={importMethod}
               onMethodChange={handleImportMethodChange}
+              onNavigate={(path) => handleDirectNavigation(path)}
             />
           </div>
         );
@@ -91,8 +137,15 @@ export const ConfigWizard = () => {
 
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
-      setCurrentStep(prev => prev + 1);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      sessionStorage.setItem('currentConfigStep', nextStep.toString());
     } else {
+      // Nettoyage du sessionStorage lors de la finalisation
+      sessionStorage.removeItem('currentConfigStep');
+      sessionStorage.removeItem('selectedImportMethod');
+      sessionStorage.removeItem('lastConfigState');
+      
       navigate("/chat");
       toast({
         title: "Configuration terminée",
@@ -109,7 +162,10 @@ export const ConfigWizard = () => {
         <Steps
           steps={STEPS.map(s => s.title)}
           currentStep={currentStep}
-          onStepClick={setCurrentStep}
+          onStepClick={(step) => {
+            setCurrentStep(step);
+            sessionStorage.setItem('currentConfigStep', step.toString());
+          }}
         />
       </div>
 
@@ -119,7 +175,11 @@ export const ConfigWizard = () => {
         <div className="flex justify-between mt-6">
           <Button
             variant="outline"
-            onClick={() => setCurrentStep(prev => Math.max(prev - 1, 0))}
+            onClick={() => {
+              const prevStep = Math.max(currentStep - 1, 0);
+              setCurrentStep(prevStep);
+              sessionStorage.setItem('currentConfigStep', prevStep.toString());
+            }}
           >
             Précédent
           </Button>
