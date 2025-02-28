@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Cloud, MessageSquare } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 export type ImportMethod = "drive" | "teams";
@@ -21,11 +22,13 @@ export const ImportMethodSelector = ({
 
   const handleMethodSelection = (method: ImportMethod) => {
     onMethodChange(method);
-    
+  };
+
+  const handleNext = () => {
     // Navigation en fonction de la méthode sélectionnée
-    if (method === "drive") {
+    if (selectedMethod === "drive") {
       navigate("/config/google-drive");
-    } else if (method === "teams") {
+    } else if (selectedMethod === "teams") {
       navigate("/config/microsoft-teams");
     }
   };
@@ -75,6 +78,12 @@ export const ImportMethodSelector = ({
           </Card>
         </div>
       </RadioGroup>
+
+      <div className="flex justify-end mt-6">
+        <Button onClick={handleNext} className="w-32">
+          Suivant
+        </Button>
+      </div>
     </div>
   );
 };

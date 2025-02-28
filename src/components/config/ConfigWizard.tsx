@@ -7,11 +7,8 @@ import { toast } from "@/hooks/use-toast";
 import { WelcomeStep } from "./steps/WelcomeStep";
 import { SummaryStep } from "./steps/SummaryStep";
 import { ImportMethodSelector, ImportMethod } from "./ImportMethod/ImportMethodSelector";
-import { GoogleDriveConfig } from "./GoogleDrive/GoogleDriveConfig";
-import { MicrosoftTeamsConfig } from "./MicrosoftTeamsConfig";
 import { LocalAIConfig } from "./llm/LocalAIConfig";
 import { ImageConfig } from "./ImageConfig";
-import { supabase } from "@/integrations/supabase/client";
 
 // Réduit à 4 étapes principales au lieu de 7
 const STEPS = [
@@ -43,8 +40,6 @@ export const ConfigWizard = () => {
 
   const handleImportMethodChange = (method: ImportMethod) => {
     setImportMethod(method);
-    // Nous ne faisons pas la navigation ici, car elle est maintenant
-    // gérée dans le composant ImportMethodSelector
   };
 
   const renderCurrentStep = () => {
@@ -59,29 +54,6 @@ export const ConfigWizard = () => {
               selectedMethod={importMethod}
               onMethodChange={handleImportMethodChange}
             />
-            {importMethod === "drive" && (
-              <div className="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="text-lg font-medium mb-2">Google Drive</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Connectez votre Google Drive pour indexer et analyser vos documents.
-                </p>
-                <GoogleDriveConfig />
-              </div>
-            )}
-            {importMethod === "teams" && (
-              <div className="mt-4 bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-                <h3 className="text-lg font-medium mb-2">Microsoft Teams</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Connectez Microsoft Teams pour accéder à vos conversations et documents.
-                </p>
-                <MicrosoftTeamsConfig
-                  onSave={() => {
-                    setConfigStatus(prev => ({ ...prev, teams: true }));
-                    handleNext();
-                  }}
-                />
-              </div>
-            )}
           </div>
         );
       case 2:

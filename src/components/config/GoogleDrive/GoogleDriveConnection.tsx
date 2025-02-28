@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGoogleDriveConfig } from '@/hooks/useGoogleDriveConfig';
 import { GoogleDriveButton } from './GoogleDriveButton';
-import { FolderCheck, AlertTriangle } from 'lucide-react';
+import { FolderCheck, AlertTriangle, ArrowLeft } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -17,6 +17,7 @@ import { GoogleDriveAlert } from './GoogleDriveAlert';
 import { GoogleDriveConnectionProps } from '@/types/google-drive';
 import { AlertDescription, Alert } from '@/components/ui/alert';
 import { useGoogleDriveStatus } from '@/hooks/useGoogleDriveStatus';
+import { useNavigate } from 'react-router-dom';
 
 const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) => {
   const { googleConfig, saveConfig } = useGoogleDriveConfig();
@@ -24,6 +25,7 @@ const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) =
   const { folders, isLoading: loadingFolders } = useGoogleDriveFolders();
   const [selectedFolder, setSelectedFolder] = useState<string>('');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const navigate = useNavigate();
 
   // État pour tracker le progrès d'indexation
   const [isIndexing, setIsIndexing] = useState(false);
@@ -67,8 +69,24 @@ const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) =
     }
   };
 
+  const handleBackToConfig = () => {
+    navigate('/config');
+  };
+
   if (!isConnected) {
-    return <GoogleDriveButton />;
+    return (
+      <div className="space-y-4">
+        <GoogleDriveButton />
+        <Button 
+          variant="outline" 
+          className="w-full mt-4" 
+          onClick={handleBackToConfig}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Retour à la configuration
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -110,10 +128,11 @@ const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) =
           
           <div className="mt-4 flex justify-between">
             <Button
-              onClick={() => window.history.back()}
+              onClick={handleBackToConfig}
               variant="outline"
             >
-              Retour
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Retour à la configuration
             </Button>
             
             {!showConfirmation ? (
