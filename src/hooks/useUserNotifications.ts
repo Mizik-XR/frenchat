@@ -43,7 +43,7 @@ export function useUserNotifications() {
         const typedNotif: UserNotification = {
           ...notif,
           notification_type: (notif.notification_type as 'shared_folder' | 'indexing_complete' | 'system'),
-          data: notif.data || {}
+          data: notif.data ? (typeof notif.data === 'object' ? notif.data : {}) : {}
         };
         return typedNotif;
       });
