@@ -7,6 +7,7 @@ import { SettingsPanel } from "../SettingsPanel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Message, WebUIConfig, AIProvider, AnalysisMode } from "@/types/chat";
+import { NavigationControls } from "@/components/navigation/NavigationControls";
 
 interface ChatContainerProps {
   messages: Message[];
@@ -57,13 +58,16 @@ export const ChatContainer = ({
 }: ChatContainerProps) => {
   return (
     <Card className="h-full flex flex-col bg-white dark:bg-gray-800 shadow-sm">
-      <ChatHeader 
-        mode={webUIConfig.mode}
-        onModeChange={onModeChange}
-        showSettings={showSettings}
-        setShowSettings={setShowSettings}
-        onResetConversation={onResetConversation}
-      />
+      <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
+        <NavigationControls />
+        <ChatHeader 
+          mode={webUIConfig.mode}
+          onModeChange={onModeChange}
+          showSettings={showSettings}
+          setShowSettings={setShowSettings}
+          onResetConversation={onResetConversation}
+        />
+      </div>
 
       {llmStatus !== 'configured' && (
         <Alert variant="destructive" className="m-4">

@@ -1,110 +1,126 @@
 
-import React, { useEffect } from "react";
-import { ThemeProvider } from "@/components/ThemeProvider";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { Link } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useOnboarding } from "@/hooks/useOnboarding";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { ArrowRight } from "lucide-react";
+import { MessageCircle, FileText, Settings, BarChart3 } from "lucide-react";
+import { PageHeader } from "@/components/navigation/PageHeader";
 
-export default function Index() {
-  const navigate = useNavigate();
-  const { loading } = useOnboarding();
-  
-  useEffect(() => {
-    // Log pour le débogage
-    console.log("Page Index montée, état de chargement:", loading);
-    
-    return () => {
-      console.log("Page Index démontée");
-    };
-  }, [loading]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
-          <p className="text-gray-700 dark:text-gray-300">Chargement en cours...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Utilisation de import.meta.env.BASE_URL pour s'assurer que les chemins sont corrects
-  // en développement et en production
-  const logoPath = new URL('/filechat-animation.gif', import.meta.url).href;
-
+const Index = () => {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="absolute right-4 top-4">
-          <ThemeToggle />
-        </div>
-        
-        <div className="flex-1 flex flex-col items-center justify-center p-4">
-          <div className="max-w-3xl w-full mx-auto text-center">
-            <div className="inline-flex items-center mb-8 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg">
-              <img 
-                src={logoPath} 
-                alt="FileChat Logo" 
-                className="h-8 w-8"
-                onError={(e) => {
-                  console.error("Erreur de chargement du logo:", e);
-                  // Fallback en cas d'erreur de chargement
-                  e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
-                }}
-              />
-              <h1 className="text-3xl font-bold ml-2 text-gray-900 dark:text-white">FileChat</h1>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-2xl mb-8 max-w-3xl mx-auto">
-              <img 
-                src={logoPath} 
-                alt="FileChat Animation" 
-                className="w-full h-auto"
-                onError={(e) => {
-                  console.error("Erreur de chargement de l'animation:", e);
-                  // Fallback en cas d'erreur de chargement
-                  e.currentTarget.style.height = "200px";
-                  e.currentTarget.style.display = "flex";
-                  e.currentTarget.style.alignItems = "center";
-                  e.currentTarget.style.justifyContent = "center";
-                  e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%234F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
-                }}
-              />
-            </div>
-            
-            <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-              Solution d'intelligence artificielle conversationnelle pour l'analyse et l'indexation de documents.
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <PageHeader title="FileChat - Assistant IA pour documents" />
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              FileChat
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              Assistant IA conversationnel pour l'analyse et l'indexation de documents
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-              <Button 
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg"
-                onClick={() => navigate("/chat")}
-              >
-                Accéder au chat
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              
-              <Button 
-                size="lg"
-                variant="outline"
-                className="border-blue-400 text-blue-600 hover:bg-blue-50 px-8 py-6 text-lg"
-                onClick={() => navigate("/config")}
-              >
-                Configuration
-              </Button>
-            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-blue-500" />
+                  Chat IA
+                </CardTitle>
+                <CardDescription>
+                  Discutez avec vos documents
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>
+                  Posez des questions à vos documents et obtenez des réponses pertinentes grâce à notre technologie RAG avancée.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button asChild className="w-full">
+                  <Link to="/chat">Accéder au chat</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-green-500" />
+                  Documents
+                </CardTitle>
+                <CardDescription>
+                  Gérez vos documents
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>
+                  Importez, visualisez et analysez vos documents depuis Google Drive, Microsoft Teams ou votre ordinateur.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button asChild variant="outline" className="w-full">
+                  <Link to="/documents">Gérer les documents</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-purple-500" />
+                  Configuration
+                </CardTitle>
+                <CardDescription>
+                  Paramétrez l'application
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>
+                  Configurez les modèles IA, les sources de documents et les paramètres avancés.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button asChild variant="outline" className="w-full">
+                  <Link to="/config">Configurer</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-amber-500" />
+                  Monitoring
+                </CardTitle>
+                <CardDescription>
+                  Suivez les performances
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>
+                  Consultez les statistiques d'utilisation et les performances du système.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button asChild variant="outline" className="w-full">
+                  <Link to="/monitoring">Voir les statistiques</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+
+          <div className="mt-12 text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Version {import.meta.env.VITE_LOVABLE_VERSION || '1.0.0'} - Développé avec ❤️
+            </p>
           </div>
         </div>
-        
-        <footer className="py-4 text-center text-gray-500 dark:text-gray-400">
-          <p>FileChat — Solution IA pour vos documents</p>
-        </footer>
       </div>
-    </ThemeProvider>
+    </div>
   );
-}
+};
+
+export default Index;
