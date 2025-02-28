@@ -8,22 +8,40 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "@/hooks/use-toast";
 import { LLMProviderType } from "@/types/config";
 
-interface LocalAIConfigProps {
-  modelPath: string;
-  onModelPathChange: (path: string) => void;
-  provider: LLMProviderType;
-  onProviderChange: (provider: LLMProviderType) => void;
+export interface LocalAIConfigProps {
+  modelPath?: string;
+  onModelPathChange?: (path: string) => void;
+  provider?: LLMProviderType;
+  onProviderChange?: (provider: LLMProviderType) => void;
+  onSave?: () => void;
 }
 
 export function LocalAIConfig({
-  modelPath,
-  onModelPathChange,
-  provider,
-  onProviderChange
+  modelPath = "",
+  onModelPathChange = () => {},
+  provider = "huggingface",
+  onProviderChange = () => {},
+  onSave
 }: LocalAIConfigProps) {
   const [pathDialogOpen, setPathDialogOpen] = useState(false);
   const [companionDialogOpen, setCompanionDialogOpen] = useState(false);
   const defaultModelPath = `${process.env.APPDATA || process.env.HOME}/filechat/models`;
+  const [localModelPath, setLocalModelPath] = useState(modelPath || defaultModelPath);
+  const [localProvider, setLocalProvider] = useState<LLMProviderType>(provider);
+
+  const handleLocalPathChange = (path: string) => {
+    setLocalModelPath(path);
+    onModelPathChange(path);
+  };
+
+  const handleLocalProviderChange = (newProvider: LLMProviderType) => {
+    setLocalProvider(newProvider);
+    onProviderChange(newProvider);
+    toast({
+      title: `Fournisseur local changé pour ${newProvider}`,
+      description: "L'IA utilisera ce fournisseur pour les modèles locaux"
+    });
+  };
 
   const handlePathConfirm = () => {
     setPathDialogOpen(false);
@@ -31,18 +49,14 @@ export function LocalAIConfig({
       title: "Chemin d'installation mis à jour",
       description: "Les modèles seront installés dans ce dossier"
     });
+    
+    if (onSave) {
+      onSave();
+    }
   };
 
   const handleDownloadCompanion = () => {
     setCompanionDialogOpen(true);
-  };
-
-  const handleProviderChange = (newProvider: LLMProviderType) => {
-    onProviderChange(newProvider);
-    toast({
-      title: `Fournisseur local changé pour ${newProvider}`,
-      description: "L'IA utilisera ce fournisseur pour les modèles locaux"
-    });
   };
 
   return (
@@ -62,15 +76,15 @@ export function LocalAIConfig({
               </label>
               <div className="flex gap-2 pb-2">
                 <Button
-                  variant={provider === "huggingface" ? "default" : "outline"}
-                  onClick={() => handleProviderChange("huggingface")}
+                  variant={localProvider === "huggingface" ? "default" : "outline"}
+                  onClick={() => handleLocalProviderChange("huggingface")}
                   className="flex-1"
                 >
                   Hugging Face (intégré)
                 </Button>
                 <Button
-                  variant={provider === "ollama" ? "default" : "outline"}
-                  onClick={() => handleProviderChange("ollama")}
+                  variant={localProvider === "ollama" ? "default" : "outline"}
+                  onClick={() => handleLocalProviderChange("ollama")}
                   className="flex-1"
                 >
                   Ollama (Windows/Mac/Linux)
@@ -79,22 +93,30 @@ export function LocalAIConfig({
             </div>
 
             <ModelPathSelector
-              modelPath={modelPath}
+              modelPath={localModelPath}
               defaultModelPath={defaultModelPath}
-              onPathChange={onModelPathChange}
+              onPathChange={handleLocalPathChange}
               onPathSelect={() => setPathDialogOpen(true)}
               onDownloadCompanion={handleDownloadCompanion}
             />
           </div>
+          
+          {onSave && (
+            <div className="flex justify-end mt-4">
+              <Button onClick={onSave}>
+                Enregistrer la configuration
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <PathSelectionDialog
         open={pathDialogOpen}
         onOpenChange={setPathDialogOpen}
-        modelPath={modelPath}
+        modelPath={localModelPath}
         defaultModelPath={defaultModelPath}
-        onPathChange={onModelPathChange}
+        onPathChange={handleLocalPathChange}
         onConfirm={handlePathConfirm}
       />
 

@@ -10,6 +10,7 @@ import { ImportMethodSelector, ImportMethod } from "./ImportMethod/ImportMethodS
 import { LocalAIConfig } from "./llm/LocalAIConfig";
 import { ImageConfig } from "./ImageConfig";
 import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
+import { LLMProviderType } from "@/types/config";
 
 // Réduit à 4 étapes principales au lieu de 7
 const STEPS = [
@@ -32,6 +33,8 @@ export const ConfigWizard = () => {
   });
   
   const [importMethod, setImportMethod] = useState<ImportMethod>("drive");
+  const [modelPath, setModelPath] = useState("");
+  const [provider, setProvider] = useState<LLMProviderType>("huggingface");
 
   // Mise à jour du statut Google Drive lorsqu'il change
   useEffect(() => {
@@ -111,7 +114,13 @@ export const ConfigWizard = () => {
               <p className="text-sm text-gray-600 mb-4">
                 Configurez le modèle de langage qui sera utilisé pour comprendre et répondre à vos questions.
               </p>
-              <LocalAIConfig onSave={handleLLMSave} />
+              <LocalAIConfig 
+                modelPath={modelPath}
+                onModelPathChange={setModelPath}
+                provider={provider}
+                onProviderChange={setProvider}
+                onSave={handleLLMSave} 
+              />
             </div>
             
             <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">

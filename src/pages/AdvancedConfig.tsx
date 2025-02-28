@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
@@ -8,9 +8,12 @@ import { ArrowLeft } from "lucide-react";
 import { CloudAIConfig } from "@/components/config/CloudAIConfig";
 import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
 import { MicrosoftTeamsConfig } from "@/components/config/MicrosoftTeamsConfig";
+import { LLMProviderType } from "@/types/config";
 
 export default function AdvancedConfig() {
   const navigate = useNavigate();
+  const [modelPath, setModelPath] = useState("");
+  const [provider, setProvider] = useState<LLMProviderType>("huggingface");
 
   return (
     <div className="container mx-auto py-8">
@@ -44,7 +47,12 @@ export default function AdvancedConfig() {
             </TabsContent>
 
             <TabsContent value="local">
-              <LocalAIConfig />
+              <LocalAIConfig 
+                modelPath={modelPath}
+                onModelPathChange={setModelPath}
+                provider={provider}
+                onProviderChange={setProvider}
+              />
             </TabsContent>
           </Tabs>
         </CardContent>
