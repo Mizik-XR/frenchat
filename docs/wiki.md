@@ -1,5 +1,9 @@
 
-# Documentation filechat
+# Documentation FileChat
+
+## Vue d'ensemble
+
+FileChat est une solution d'intelligence artificielle conversationnelle conçue pour l'analyse et l'indexation de documents. Elle permet aux utilisateurs d'interagir avec leurs documents via une interface de chat intuitive, d'indexer des documents provenant de diverses sources (Google Drive, Microsoft Teams, upload manuel), et d'obtenir des réponses intelligentes basées sur le contenu de ces documents grâce à une architecture RAG (Retrieval Augmented Generation).
 
 ## Installation locale
 
@@ -105,6 +109,71 @@ cd filechat
 - `useChatMessages.ts` : Gestion des messages
 - `useChatLogic.ts` : Logique du dialogue avec l'IA
 
+## Fonctionnalités principales
+
+### 1. Authentication et gestion utilisateur
+- Connexion par email/mot de passe
+- Authentification OAuth (Google)
+- Gestion des profils utilisateurs
+- Gestion des préférences
+
+### 2. Chat IA
+- Interface de chat style "WhatsApp"
+- Conversations multiples avec historique
+- Possibilité de répondre à des messages spécifiques
+- Organisation en dossiers
+- Épinglage et archivage de conversations
+- Génération de réponses IA basées sur les documents
+
+### 3. Intégration et indexation de documents
+- Google Drive : connexion, indexation, suivi de progression
+- Microsoft Teams : intégration, indexation
+- Upload manuel : divers formats supportés
+- Prévisualisation des documents
+
+### 4. Moteur d'intelligence artificielle
+- Modèle par défaut : Hugging Face Transformers (local ou cloud)
+- Support pour d'autres fournisseurs d'IA (optionnel)
+- Configuration paramétrable (température, longueur, etc.)
+
+### 5. Génération et export de documents
+- Templates préformatés
+- Génération IA à partir de documents existants
+- Prévisualisation et modification
+- Export vers Google Drive ou Teams
+
+### 6. Visualisation et analyse
+- Génération de graphiques à partir de données CSV
+- Génération d'images descriptives
+- Visualisation de métriques et statistiques
+
+## Points forts pour les clients
+
+1. **Valorisation de la base documentaire**
+   - Exploitation intelligente des documents existants
+   - Recherche contextuelle rapide
+   - Synthèse automatique d'informations
+
+2. **Gain de temps**
+   - Réponses immédiates aux questions
+   - Génération automatisée de rapports
+   - Indexation et organisation automatique
+
+3. **Souveraineté des données**
+   - Option de traitement 100% local
+   - Contrôle total sur la confidentialité
+   - Indépendance des API externes payantes
+
+4. **Interface intuitive**
+   - Navigation familière style "WhatsApp"
+   - Organisation personnalisable
+   - Expérience utilisateur fluide
+
+5. **Extensibilité**
+   - Support de multiples sources de données
+   - Ajout facile de fournisseurs d'IA
+   - Templates personnalisables
+
 ## Bonnes pratiques
 
 ### Éviter les régressions
@@ -140,3 +209,31 @@ cd filechat
 ### upload-chat-file
 - Traite les fichiers uploadés directement dans le chat
 - Génère des embeddings et les stocke dans la base de données
+
+## Technologies d'indexation et RAG
+
+Le système utilise une approche sophistiquée pour l'indexation et la génération de réponses :
+
+1. **Découpage (Chunking)** : Les documents sont divisés en segments logiques
+2. **Embedding** : Transformation en vecteurs via des modèles comme BERT/Transformers
+3. **Indexation** : Stockage dans une base vectorielle permettant la recherche sémantique
+4. **Retrieval** : Recherche des chunks les plus pertinents pour une question
+5. **Augmentation** : Enrichissement du prompt avec le contexte récupéré
+6. **Generation** : Création d'une réponse cohérente et précise par l'IA
+
+## Maintenance et support
+
+### Déploiement
+- Utilisation de Docker pour la containerisation
+- Script de déploiement automatisé
+- Configuration NGINX pour le serveur web
+
+### Monitoring
+- Suivi des performances via le tableau de bord de monitoring
+- Alertes en cas de problèmes d'indexation ou de génération
+- Logs détaillés pour le débogage
+
+### Mises à jour
+- Processus de mise à jour documenté
+- Tests de non-régression automatisés
+- Sauvegarde des données avant mise à jour majeure
