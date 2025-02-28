@@ -21,7 +21,7 @@ export function FirstTimeSetup({ onActivate, isConfiguring }: FirstTimeSetupProp
           <div className="space-y-2">
             <h3 className="text-xl font-semibold text-purple-900">Premier démarrage</h3>
             <p className="text-purple-700">
-              Pour commencer, vous pouvez activer la configuration par défaut avec le modèle Mistral (recommandé).
+              Pour commencer, vous pouvez activer la configuration par défaut avec le modèle Mistral 7B (recommandé).
             </p>
           </div>
           

@@ -20,6 +20,11 @@ export interface AIModel {
 
 export const LOCAL_MODELS: AIModel[] = [
   {
+    id: "mistral-local",
+    name: "Mistral 7B",
+    description: "Modèle local performant, recommandé par défaut"
+  },
+  {
     id: "deepseek-local",
     name: "DeepSeek",
     description: "Modèle local DeepSeek optimisé pour le traitement rapide"

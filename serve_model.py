@@ -54,20 +54,33 @@ async def rate_limit_middleware(request: Request, call_next):
     
     return response
 
+# Définir le modèle à utiliser (Mistral 7B par défaut)
+DEFAULT_MODEL = "mistralai/Mistral-7B-Instruct-v0.1"
+
 try:
-    logger.info("Chargement du modèle...")
-    tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
-    model = AutoModelForCausalLM.from_pretrained("distilgpt2")
+    logger.info(f"Chargement du modèle {DEFAULT_MODEL}...")
+    tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL)
+    model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL, torch_dtype=torch.float16, device_map="auto")
     logger.info("Modèle chargé avec succès")
 except Exception as e:
-    logger.error(f"Erreur lors du chargement du modèle: {e}")
-    raise
+    logger.error(f"Erreur lors du chargement du modèle {DEFAULT_MODEL}. Tentative avec modèle de secours: {e}")
+    try:
+        # Modèle de secours plus léger si Mistral échoue
+        FALLBACK_MODEL = "distilgpt2"
+        logger.info(f"Chargement du modèle de secours {FALLBACK_MODEL}...")
+        tokenizer = AutoTokenizer.from_pretrained(FALLBACK_MODEL)
+        model = AutoModelForCausalLM.from_pretrained(FALLBACK_MODEL)
+        logger.info("Modèle de secours chargé avec succès")
+    except Exception as fallback_error:
+        logger.critical(f"Échec total du chargement des modèles: {fallback_error}")
+        raise
 
 class GenerationInput(BaseModel):
     prompt: str
-    max_length: Optional[int] = 100
+    max_length: Optional[int] = 800
     temperature: Optional[float] = 0.7
     top_p: Optional[float] = 0.9
+    system_prompt: Optional[str] = "You are a helpful AI assistant that provides detailed and accurate information."
 
 @app.post("/generate")
 async def generate_text(input_data: GenerationInput):
@@ -76,8 +89,8 @@ async def generate_text(input_data: GenerationInput):
         if not input_data.prompt or len(input_data.prompt.strip()) == 0:
             raise HTTPException(status_code=400, detail="Le prompt ne peut pas être vide")
             
-        if input_data.max_length > 2000:
-            raise HTTPException(status_code=400, detail="max_length ne peut pas dépasser 2000")
+        if input_data.max_length > 4000:
+            raise HTTPException(status_code=400, detail="max_length ne peut pas dépasser 4000")
             
         if input_data.temperature < 0.0 or input_data.temperature > 2.0:
             raise HTTPException(status_code=400, detail="temperature doit être entre 0.0 et 2.0")
@@ -87,19 +100,27 @@ async def generate_text(input_data: GenerationInput):
         
         logger.info(f"Génération pour le prompt: {input_data.prompt[:50]}...")
         
+        # Format du prompt pour Mistral-7B-Instruct
+        formatted_prompt = f"<s>[INST] {input_data.system_prompt}\n\n{input_data.prompt} [/INST]"
+        
         # Préparation des entrées pour le modèle
-        inputs = tokenizer(input_data.prompt, return_tensors="pt")
+        inputs = tokenizer(formatted_prompt, return_tensors="pt").to(model.device)
         
         generation_config = {
-            "max_length": input_data.max_length,
+            "max_length": inputs["input_ids"].shape[1] + input_data.max_length,
             "do_sample": True,
             "temperature": input_data.temperature,
-            "top_p": input_data.top_p
+            "top_p": input_data.top_p,
+            "pad_token_id": tokenizer.eos_token_id
         }
         
         # Génération de texte
         outputs = model.generate(**inputs, **generation_config)
         result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        
+        # Extraire uniquement la réponse (pas le prompt)
+        result = result.split("[/INST]")[-1].strip()
+        
         logger.info(f"Génération réussie, longueur: {len(result)}")
         
         return {"generated_text": result}
@@ -115,9 +136,27 @@ async def generate_text(input_data: GenerationInput):
 async def health_check():
     return {
         "status": "ok", 
-        "model": "distilgpt2",
-        "version": "1.0.1",
+        "model": DEFAULT_MODEL,
+        "version": "1.1.0",
         "timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/models")
+async def list_models():
+    return {
+        "default": DEFAULT_MODEL,
+        "available": [
+            {
+                "id": "mistralai/Mistral-7B-Instruct-v0.1",
+                "name": "Mistral 7B",
+                "description": "Modèle par défaut, équilibre performances et ressources"
+            },
+            {
+                "id": "distilgpt2",
+                "name": "DistilGPT2",
+                "description": "Modèle léger pour les systèmes avec ressources limitées"
+            }
+        ]
     }
 
 if __name__ == "__main__":

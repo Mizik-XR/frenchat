@@ -119,7 +119,7 @@ export function LocalAIConfig({ onSave }: LocalAIConfigProps) {
 
       toast({
         title: "Configuration par défaut activée",
-        description: "Le modèle Mistral a été configuré avec succès",
+        description: "Le modèle Mistral 7B a été configuré avec succès",
       });
 
       setHasConfiguration(true);
