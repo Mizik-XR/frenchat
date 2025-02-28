@@ -258,7 +258,7 @@ export const ChartGenerator = ({ data, onGenerate }: ChartGeneratorProps) => {
           <ul className="space-y-1">
             {validationMessages.map((message, idx) => (
               <li key={idx}>
-                <Badge variant="warning" className="w-fit">
+                <Badge variant="outline" className="w-fit text-amber-600 border-amber-300 bg-amber-50">
                   {message}
                 </Badge>
               </li>

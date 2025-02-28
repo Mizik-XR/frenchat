@@ -38,8 +38,18 @@ export function useUserNotifications() {
         
       if (error) throw error;
       
-      setNotifications(data || []);
-      setUnreadCount((data || []).filter(n => !n.is_read).length);
+      // Conversion des types pour s'assurer que notification_type est du bon type
+      const typedNotifications = (data || []).map(notif => {
+        const typedNotif: UserNotification = {
+          ...notif,
+          notification_type: (notif.notification_type as 'shared_folder' | 'indexing_complete' | 'system'),
+          data: notif.data || {}
+        };
+        return typedNotif;
+      });
+      
+      setNotifications(typedNotifications);
+      setUnreadCount(typedNotifications.filter(n => !n.is_read).length);
     } catch (error) {
       console.error('Erreur lors du chargement des notifications:', error);
     } finally {
@@ -66,7 +76,7 @@ export function useUserNotifications() {
           
           // Afficher une notification toast pour les nouvelles notifications
           if (payload.eventType === 'INSERT') {
-            const newNotif = payload.new as UserNotification;
+            const newNotif = payload.new as any;
             toast({
               title: newNotif.title,
               description: newNotif.message,

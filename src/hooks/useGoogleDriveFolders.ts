@@ -30,6 +30,25 @@ export function useGoogleDriveFolders() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSharedLoading, setIsSharedLoading] = useState(false);
 
+  // Fonction pour convertir un JSON en FolderPermissions
+  const convertToFolderPermissions = (data: any): FolderPermissions => {
+    const defaultPermissions: FolderPermissions = {
+      can_read: true,
+      can_query: true,
+      can_reindex: false
+    };
+
+    if (!data || typeof data !== 'object') {
+      return defaultPermissions;
+    }
+
+    return {
+      can_read: typeof data.can_read === 'boolean' ? data.can_read : defaultPermissions.can_read,
+      can_query: typeof data.can_query === 'boolean' ? data.can_query : defaultPermissions.can_query,
+      can_reindex: typeof data.can_reindex === 'boolean' ? data.can_reindex : defaultPermissions.can_reindex
+    };
+  };
+
   // Fonction optimisée pour récupérer les dossiers personnels
   const fetchFolders = useCallback(async () => {
     if (!user) return;
@@ -51,7 +70,7 @@ export function useGoogleDriveFolders() {
         metadata: folder.metadata as Record<string, any>,
         is_shared: folder.is_shared,
         shared_with: folder.shared_with,
-        permissions: folder.permissions as FolderPermissions
+        permissions: convertToFolderPermissions(folder.permissions)
       })));
     } catch (error) {
       console.error('Erreur lors du chargement des dossiers:', error);
@@ -104,7 +123,7 @@ export function useGoogleDriveFolders() {
         metadata: folder.metadata as Record<string, any>,
         is_shared: true,
         shared_with: folder.shared_with,
-        permissions: folder.permissions as FolderPermissions,
+        permissions: convertToFolderPermissions(folder.permissions),
         owner_email: ownerEmailMap[folder.user_id]
       })));
     } catch (error) {
@@ -138,8 +157,9 @@ export function useGoogleDriveFolders() {
       if (folderError) throw folderError;
       
       // Fusion des permissions existantes avec les nouvelles
+      const currentPermissions = convertToFolderPermissions(folderData.permissions);
       const updatedPermissions = {
-        ...folderData.permissions,
+        ...currentPermissions,
         ...permissions
       };
       

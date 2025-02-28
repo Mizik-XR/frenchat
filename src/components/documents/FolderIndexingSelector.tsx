@@ -8,7 +8,21 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Folder, Loader2, Share2, Users, BookOpen, RotateCw, Clock, HelpCircle } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Folder, 
+  Loader2, 
+  Share2, 
+  Users, 
+  BookOpen, 
+  RotateCw, 
+  Clock, 
+  HelpCircle,
+  Eye,
+  MessageSquare,
+  RefreshCcw,
+  Settings
+} from 'lucide-react';
 import { useGoogleDriveFolders, Folder as DriveFolder } from '@/hooks/useGoogleDriveFolders';
 import { useGoogleDriveStatus } from '@/hooks/useGoogleDriveStatus';
 import { useIndexingProgress } from '@/hooks/useIndexingProgress';
