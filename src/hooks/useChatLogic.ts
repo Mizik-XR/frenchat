@@ -12,18 +12,20 @@ export function useChatLogic(selectedConversationId: string | null) {
   const { 
     textGeneration, 
     serviceType, 
-    localAIUrl 
+    localAIUrl,
+    getEffectiveServiceType
   } = useHuggingFace();
 
   useEffect(() => {
     // Notification à l'utilisateur sur le type de service utilisé
-    if (serviceType === 'local' && localAIUrl) {
+    const effectiveType = getEffectiveServiceType();
+    if (effectiveType === 'local' && localAIUrl) {
       toast({
         title: "Service IA local détecté",
         description: "Utilisation du modèle IA local pour de meilleures performances",
       });
     }
-  }, [serviceType, localAIUrl]);
+  }, [serviceType, localAIUrl, getEffectiveServiceType]);
 
   const getSystemPrompt = (mode: string) => {
     switch (mode) {
@@ -86,9 +88,11 @@ export function useChatLogic(selectedConversationId: string | null) {
       }
 
       // Ajout d'information sur le type de service IA utilisé dans les métadonnées
+      const effectiveType = getEffectiveServiceType();
       const aiServiceInfo = {
-        type: serviceType,
-        endpoint: serviceType === 'local' ? localAIUrl : 'cloud'
+        type: effectiveType,
+        endpoint: effectiveType === 'local' ? localAIUrl : 
+                 effectiveType === 'browser' ? 'browser' : 'cloud'
       };
 
       let response;
@@ -124,8 +128,13 @@ export function useChatLogic(selectedConversationId: string | null) {
           });
       }
 
+      // Gérer le cas où response[0].generated_text n'existe pas
+      const generatedText = response[0] && response[0].generated_text 
+        ? response[0].generated_text 
+        : "Désolé, je n'ai pas pu générer une réponse. Veuillez réessayer.";
+
       await chatService.sendAssistantMessage(
-        response[0].generated_text,
+        generatedText,
         selectedConversationId,
         'text',
         documentId,
@@ -136,7 +145,7 @@ export function useChatLogic(selectedConversationId: string | null) {
         }
       );
 
-      return { content: response[0].generated_text };
+      return { content: generatedText };
     } catch (error: any) {
       toast({
         title: "Erreur",

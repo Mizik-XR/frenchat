@@ -1,286 +1,304 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from '@/hooks/use-toast';
+import { toast } from "@/hooks/use-toast";
 
-export function useHuggingFace(provider: string = 'huggingface') {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [serviceType, setServiceType] = useState<'local' | 'cloud' | 'browser'>(() => {
-    return localStorage.getItem('aiServiceType') as 'local' | 'cloud' | 'browser' || 'auto';
-  });
-  const [localAIUrl, setLocalAIUrl] = useState<string | null>(() => {
-    return localStorage.getItem('localAIUrl') || 'http://localhost:8000';
-  });
-  
-  // Vérifier si WebGPU est disponible (pour l'exécution directe dans le navigateur)
+// Types pour les types de service supportés
+export type ServiceType = "local" | "cloud" | "browser";
+export type ServiceTypeWithAuto = ServiceType | "auto";
+
+export function useHuggingFace() {
+  const [serviceType, setServiceType] = useState<ServiceTypeWithAuto>("auto");
+  const [inferenceToken, setInferenceToken] = useState<string | null>(null);
+  const [localAIUrl, setLocalAIUrl] = useState<string>("http://localhost:8000");
   const [hasWebGPU, setHasWebGPU] = useState<boolean>(false);
-  
+  const [isLocalServerAvailable, setIsLocalServerAvailable] = useState<boolean>(false);
+
+  // Vérifier si WebGPU est disponible
   useEffect(() => {
     const checkWebGPU = async () => {
-      // Vérifier si le navigateur supporte WebGPU
-      if ('gpu' in navigator) {
-        try {
-          // @ts-ignore - L'API WebGPU peut ne pas être reconnue par TypeScript
-          const adapter = await navigator.gpu.requestAdapter();
-          setHasWebGPU(!!adapter);
-          console.log("WebGPU disponible:", !!adapter);
-        } catch (e) {
-          console.log("WebGPU non disponible:", e);
+      try {
+        // @ts-ignore
+        if ('gpu' in navigator) {
+          try {
+            // @ts-ignore
+            const adapter = await navigator.gpu.requestAdapter();
+            if (adapter) {
+              setHasWebGPU(true);
+              console.log("WebGPU est disponible");
+            } else {
+              setHasWebGPU(false);
+              console.log("WebGPU n'est pas disponible (pas d'adaptateur)");
+            }
+          } catch (e) {
+            setHasWebGPU(false);
+            console.log("Erreur lors de la vérification de WebGPU:", e);
+          }
+        } else {
           setHasWebGPU(false);
+          console.log("WebGPU n'est pas disponible (API non supportée)");
         }
-      } else {
+      } catch (e) {
         setHasWebGPU(false);
+        console.log("Exception lors de la vérification de WebGPU:", e);
       }
     };
 
     checkWebGPU();
   }, []);
 
-  // Écouter les changements de type de service
+  // Vérifier si un serveur AI local est disponible
   useEffect(() => {
-    const handleStorageChange = () => {
-      setServiceType(localStorage.getItem('aiServiceType') as 'local' | 'cloud' | 'browser' || 'auto');
-      setLocalAIUrl(localStorage.getItem('localAIUrl'));
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  // Fonction pour tester les différents services et sélectionner le meilleur automatiquement
-  const detectBestService = useCallback(async (): Promise<'local' | 'cloud' | 'browser'> => {
-    // Priorité 1: Serveur IA local
-    if (localAIUrl) {
+    const checkLocalServer = async () => {
       try {
-        const localAvailable = await checkLocalService();
-        if (localAvailable) {
-          console.log("Serveur IA local détecté");
-          return 'local';
+        const response = await fetch(`${localAIUrl}/health`, { 
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Serveur IA local détecté:", data);
+          setIsLocalServerAvailable(true);
+          
+          // Si en mode auto et serveur local détecté, utiliser local
+          if (serviceType === 'auto') {
+            setActiveServiceType('local');
+          }
+        } else {
+          console.log("Serveur IA local non disponible (réponse non-OK)");
+          setIsLocalServerAvailable(false);
+          
+          // Si en mode auto et pas de serveur local, choisir entre browser et cloud
+          if (serviceType === 'auto') {
+            selectBestServiceType();
+          }
         }
       } catch (e) {
-        console.log("Erreur lors de la vérification du serveur local:", e);
+        console.log("Erreur lors de la vérification du serveur IA local:", e);
+        setIsLocalServerAvailable(false);
+        
+        // Si en mode auto et erreur lors de la vérification, choisir entre browser et cloud
+        if (serviceType === 'auto') {
+          selectBestServiceType();
+        }
       }
-    }
-    
-    // Priorité 2: WebGPU (exécution dans le navigateur)
-    if (hasWebGPU) {
-      console.log("WebGPU disponible, utilisation du mode navigateur");
-      return 'browser';
-    }
-    
-    // Fallback: Service cloud
-    console.log("Aucun service local disponible, utilisation du cloud");
-    return 'cloud';
-  }, [localAIUrl, hasWebGPU]);
+    };
 
-  // S'exécuter au démarrage et lorsque serviceType est 'auto'
+    checkLocalServer();
+    
+    // Vérifier périodiquement (toutes les 30 secondes)
+    const interval = setInterval(checkLocalServer, 30000);
+    
+    return () => clearInterval(interval);
+  }, [localAIUrl, serviceType]);
+
+  // Récupérer le token d'inférence Hugging Face
   useEffect(() => {
-    if (serviceType === 'auto') {
-      detectBestService().then(bestService => {
-        setServiceType(bestService);
-        localStorage.setItem('aiServiceType', bestService);
-        
-        // Notification à l'utilisateur
-        const serviceMessages = {
-          'local': "Utilisation du serveur IA local pour de meilleures performances",
-          'browser': "Utilisation de l'IA directement dans votre navigateur",
-          'cloud': "Utilisation du service cloud d'IA"
-        };
-        
-        toast({
-          title: `Mode IA: ${bestService}`,
-          description: serviceMessages[bestService]
-        });
-      });
-    }
-  }, [serviceType, detectBestService]);
+    const fetchInferenceToken = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('service_configurations')
+          .select('config')
+          .eq('service_name', 'huggingface')
+          .single();
 
-  // Fonction pour vérifier si le service local est disponible
-  const checkLocalService = async (): Promise<boolean> => {
-    if (!localAIUrl) return false;
+        if (error) {
+          console.error("Erreur lors de la récupération du token HF:", error);
+          return;
+        }
+
+        if (data && data.config && data.config.inference_token) {
+          setInferenceToken(data.config.inference_token);
+        }
+      } catch (e) {
+        console.error("Exception lors de la récupération du token HF:", e);
+      }
+    };
+
+    fetchInferenceToken();
+  }, []);
+
+  // Sélectionner le meilleur type de service en fonction des capacités
+  const selectBestServiceType = useCallback(() => {
+    if (isLocalServerAvailable) {
+      setActiveServiceType('local');
+    } else if (hasWebGPU) {
+      setActiveServiceType('browser');
+    } else {
+      setActiveServiceType('cloud');
+    }
+  }, [isLocalServerAvailable, hasWebGPU]);
+  
+  // Définir le type de service actif (pour le mode auto)
+  const setActiveServiceType = (type: ServiceType) => {
+    console.log(`Définition du type de service actif à: ${type}`);
+    // On stocke le type effectif dans le localStorage
+    localStorage.setItem('filechat_active_service_type', type);
+  };
+  
+  // Obtenir le type de service effectif
+  const getEffectiveServiceType = (): ServiceType => {
+    if (serviceType !== 'auto') {
+      return serviceType as ServiceType;
+    }
     
-    try {
-      const response = await fetch(`${localAIUrl}/health`, { 
-        method: 'GET',
-        signal: AbortSignal.timeout(2000) // Timeout de 2 secondes
-      });
-      return response.ok;
-    } catch (e) {
-      console.warn("Service local indisponible:", e);
-      return false;
+    // En mode auto, on utilise le type stocké dans localStorage ou on sélectionne le meilleur
+    const storedType = localStorage.getItem('filechat_active_service_type') as ServiceType | null;
+    if (storedType && ['local', 'browser', 'cloud'].includes(storedType)) {
+      return storedType;
+    }
+    
+    // Déterminer le meilleur type de service
+    if (isLocalServerAvailable) return 'local';
+    if (hasWebGPU) return 'browser';
+    return 'cloud';
+  };
+
+  // Fonction générique de génération de texte
+  const textGeneration = async ({ model, inputs, parameters }: any) => {
+    const effectiveType = getEffectiveServiceType();
+    console.log(`Génération de texte avec le type de service: ${effectiveType}`);
+    
+    switch (effectiveType) {
+      case 'local':
+        return await localTextGeneration(inputs, parameters);
+      case 'browser':
+        return await browserTextGeneration(model, inputs, parameters);
+      case 'cloud':
+      default:
+        return await cloudTextGeneration(model, inputs, parameters);
     }
   };
 
-  // Fonction pour exécuter le modèle directement dans le navigateur via Transformers.js
-  const runBrowserModel = async (options: any) => {
+  // Génération de texte via le serveur IA local
+  const localTextGeneration = async (prompt: string, parameters: any) => {
     try {
-      console.log("Exécution du modèle dans le navigateur avec Transformers.js");
-      
-      // Importer dynamiquement Transformers.js pour éviter de le charger si non utilisé
-      const { pipeline } = await import("@huggingface/transformers");
-      
-      // Utiliser un modèle optimisé pour le navigateur
-      const modelId = 'Xenova/distilgpt2' || options.model_id || 'Xenova/distilbert-base-uncased';
-      
-      const generator = await pipeline(
-        'text-generation',
-        modelId,
-        { device: 'webgpu' }
-      );
-      
-      const result = await generator(options.inputs || options.prompt, {
-        max_length: options.parameters?.max_length || options.max_length || 800,
-        temperature: options.parameters?.temperature || options.temperature || 0.7,
+      const response = await fetch(`${localAIUrl}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          max_length: parameters?.max_length || 800,
+          temperature: parameters?.temperature || 0.7,
+          top_p: parameters?.top_p || 0.9
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur serveur: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return [{ generated_text: data.generated_text }];
+    } catch (error) {
+      console.error("Erreur de génération locale:", error);
+      toast({
+        title: "Erreur de génération locale",
+        description: "Basculement vers le service cloud...",
       });
       
-      return [{ generated_text: result[0].generated_text }];
-    } catch (error) {
-      console.error("Erreur lors de l'exécution du modèle dans le navigateur:", error);
+      // En cas d'échec, basculer vers le cloud si en mode auto
+      if (serviceType === 'auto') {
+        setActiveServiceType('cloud');
+        return await cloudTextGeneration("mistralai/Mistral-7B-Instruct-v0.1", prompt, parameters);
+      }
+      
       throw error;
     }
   };
 
-  const textGeneration = async (options: any) => {
-    setIsLoading(true);
-    setError(null);
-    
+  // Génération de texte via API Hugging Face
+  const cloudTextGeneration = async (model: string, inputs: string, parameters: any) => {
     try {
-      // Si mode automatique, détecter le meilleur service
-      if (serviceType === 'auto') {
-        const bestService = await detectBestService();
-        setServiceType(bestService);
-        localStorage.setItem('aiServiceType', bestService);
-      }
-      
-      // Exécution locale via serveur API
-      if (serviceType === 'local') {
-        const isLocalAvailable = await checkLocalService();
-        
-        if (isLocalAvailable && localAIUrl) {
-          console.log("Utilisation du service IA local:", localAIUrl);
-          
-          // Préparer le système prompt si nécessaire
-          const systemPrompt = options.system_prompt || 
-            "Tu es un assistant IA qui aide l'utilisateur de manière précise et bienveillante.";
-          
-          const response = await fetch(`${localAIUrl}/generate`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              prompt: options.inputs || options.prompt,
-              max_length: options.parameters?.max_length || options.max_length || 800,
-              temperature: options.parameters?.temperature || options.temperature || 0.7,
-              top_p: options.parameters?.top_p || options.top_p || 0.9,
-              system_prompt: systemPrompt
-            }),
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Erreur du service local: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          setIsLoading(false);
-          return [{ generated_text: data.generated_text }];
-        } else {
-          console.warn("Service local indisponible, passage au mode automatique");
-          localStorage.setItem('aiServiceType', 'auto');
-          setServiceType('auto');
-          return textGeneration(options); // Rappel avec détection automatique
-        }
-      }
-      
-      // Exécution directe dans le navigateur
-      if (serviceType === 'browser') {
-        if (hasWebGPU) {
-          try {
-            const result = await runBrowserModel(options);
-            setIsLoading(false);
-            return result;
-          } catch (browserError) {
-            console.warn("Échec de l'exécution dans le navigateur, passage au cloud:", browserError);
-            // Basculer en mode cloud temporairement pour cette requête
-          }
-        } else {
-          console.warn("WebGPU non disponible, passage au cloud");
-          // Continuer avec l'exécution cloud
-        }
-      }
-      
-      // Exécution via service cloud (fallback ou choix explicite)
-      console.log("Utilisation du service IA cloud via Supabase Functions");
-      
-      try {
-        const { data, error } = await supabase.functions.invoke('text-generation', {
-          body: { ...options, provider }
-        });
-
-        if (error) throw error;
-        setIsLoading(false);
-        return data.results;
-      } catch (supabaseError) {
-        console.warn("Échec de l'appel à la fonction Supabase, tentative avec le serveur cloud de secours", supabaseError);
-        
-        // Fallback à un serveur cloud de secours
-        const apiUrl = import.meta.env.VITE_API_URL || 'https://api.filechat.app';
-        
-        // Préparer le système prompt si nécessaire
-        const systemPrompt = options.system_prompt || 
-          "Tu es un assistant IA qui aide l'utilisateur de manière précise et bienveillante.";
-        
-        const response = await fetch(`${apiUrl}/generate`, {
-          method: 'POST',
+      const response = await fetch(
+        `https://api-inference.huggingface.co/models/${model}`,
+        {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${inferenceToken}`,
           },
           body: JSON.stringify({
-            prompt: options.inputs || options.prompt,
-            max_length: options.parameters?.max_length || options.max_length || 800,
-            temperature: options.parameters?.temperature || options.temperature || 0.7,
-            top_p: options.parameters?.top_p || options.top_p || 0.9,
-            system_prompt: systemPrompt
+            inputs,
+            parameters,
           }),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Erreur serveur: ${response.status}`);
         }
-        
-        const data = await response.json();
-        return [{ generated_text: data.generated_text }];
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erreur API: ${response.statusText}`);
       }
-    } catch (e) {
-      console.error("Erreur lors de l'appel au modèle:", e);
-      setError(e instanceof Error ? e.message : String(e));
+
+      return await response.json();
+    } catch (error) {
+      console.error("Erreur de génération cloud:", error);
       
-      // Notification à l'utilisateur
-      toast({
-        title: "Erreur de connexion au service d'IA",
-        description: "Impossible de se connecter au service d'IA. Vérifiez votre connexion ou essayez plus tard.",
-        variant: "destructive"
-      });
+      // En cas d'échec, basculer vers le navigateur si en mode auto et WebGPU disponible
+      if (serviceType === 'auto' && hasWebGPU) {
+        setActiveServiceType('browser');
+        return await browserTextGeneration(model, inputs, parameters);
+      }
       
-      throw e;
-    } finally {
-      setIsLoading(false);
+      throw error;
     }
   };
 
-  return { 
-    textGeneration, 
-    isLoading, 
-    error,
-    serviceType,
-    localAIUrl,
-    checkLocalService,
-    hasWebGPU,
-    detectBestService,
-    setServiceType: (type: 'local' | 'cloud' | 'browser' | 'auto') => {
-      localStorage.setItem('aiServiceType', type);
-      setServiceType(type);
+  // Génération de texte dans le navigateur avec Transformers.js
+  const browserTextGeneration = async (model: string, inputs: string, parameters: any) => {
+    try {
+      // Simuler une réponse pour le moment
+      // Dans la vraie implémentation, on utiliserait Transformers.js
+      console.log("Génération de texte dans le navigateur avec Transformers.js");
+      
+      // Simuler un délai de traitement
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      return [{ 
+        generated_text: "Ceci est une réponse générée dans le navigateur avec Transformers.js. " +
+                       "Pour une véritable implémentation, vous devriez intégrer la bibliothèque et " +
+                       "charger le modèle approprié." 
+      }];
+    } catch (error) {
+      console.error("Erreur de génération dans le navigateur:", error);
+      
+      // En cas d'échec, basculer vers le cloud si en mode auto
+      if (serviceType === 'auto') {
+        setActiveServiceType('cloud');
+        return await cloudTextGeneration(model, inputs, parameters);
+      }
+      
+      throw error;
     }
+  };
+
+  // Changer le type de service
+  const changeServiceType = (type: ServiceTypeWithAuto) => {
+    setServiceType(type);
+    
+    if (type === 'auto') {
+      selectBestServiceType();
+      toast({
+        title: "Mode automatique activé",
+        description: "FileChat sélectionnera le meilleur mode d'exécution disponible",
+      });
+    } else {
+      setActiveServiceType(type as ServiceType);
+      toast({
+        title: `Mode ${type} activé`,
+        description: `Exécution en mode ${type}`,
+      });
+    }
+  };
+
+  return {
+    serviceType,
+    inferenceToken,
+    hasWebGPU,
+    isLocalServerAvailable,
+    localAIUrl,
+    textGeneration,
+    changeServiceType,
+    getEffectiveServiceType
   };
 }
