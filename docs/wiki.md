@@ -115,6 +115,12 @@ cd filechat
 - Validation automatique des données d'entrée
 - Export des graphiques en format image
 
+### Suivi des coûts et utilisation
+- `AIUsageMetrics.tsx` : Tableau de bord des coûts et utilisation de l'IA
+- Suivi des tokens par modèle d'IA et par fournisseur
+- Estimation des coûts basée sur les tarifs actuels
+- Visualisation de l'historique d'utilisation
+
 ## Fonctionnalités principales
 
 ### 1. Authentication et gestion utilisateur
@@ -141,6 +147,7 @@ cd filechat
 - Modèle par défaut : Hugging Face Transformers (local ou cloud)
 - Support pour d'autres fournisseurs d'IA (optionnel)
 - Configuration paramétrable (température, longueur, etc.)
+- Suivi des coûts et de l'utilisation
 
 ### 5. Visualisation de données
 - Génération de graphiques à partir de données CSV
@@ -158,6 +165,13 @@ cd filechat
 - Génération IA à partir de documents existants
 - Prévisualisation et modification
 - Export vers Google Drive ou Teams
+
+### 7. Transparence et contrôle des coûts
+- Tableau de bord des métriques d'utilisation
+- Suivi des tokens utilisés par modèle et fournisseur
+- Estimation des coûts basée sur les tarifs en vigueur
+- Historique d'utilisation avec filtres temporels
+- Comparaison des coûts entre différents modèles
 
 ## Points forts pour les clients
 
@@ -185,6 +199,11 @@ cd filechat
    - Analyse graphique instantanée des fichiers CSV
    - Multiples types de visualisations
    - Validation et correction automatique des données
+
+6. **Transparence des coûts**
+   - Visibilité complète sur l'utilisation des jetons
+   - Estimation précise des coûts par modèle
+   - Aide à la décision pour le choix optimal de modèles
 
 ## Bonnes pratiques
 
@@ -261,4 +280,3 @@ Le système utilise une approche sophistiquée pour l'indexation et la générat
 - Processus de mise à jour documenté
 - Tests de non-régression automatisés
 - Sauvegarde des données avant mise à jour majeure
-

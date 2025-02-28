@@ -5,6 +5,8 @@ import { isLocalDevelopment } from "@/services/apiConfig";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { AIUsageMetrics } from "@/components/config/AIUsageMetrics";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function Config() {
   const navigate = useNavigate();
@@ -28,7 +30,20 @@ export default function Config() {
         </Alert>
       )}
       
-      <ConfigWizard />
+      <Tabs defaultValue="config" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="config">Configuration</TabsTrigger>
+          <TabsTrigger value="usage">Utilisation & Coûts</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="config">
+          <ConfigWizard />
+        </TabsContent>
+        
+        <TabsContent value="usage">
+          <AIUsageMetrics />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

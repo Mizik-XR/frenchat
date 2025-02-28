@@ -140,6 +140,49 @@ const handleChartGenerated = (imageUrl) => {
 };
 ```
 
+## Suivi des coûts et utilisation
+
+FileChat fournit une interface de suivi des coûts pour les différents modèles d'IA:
+
+### 1. Suivi de l'utilisation des tokens
+
+- **Comptage automatique** des tokens utilisés par conversation
+- **Ventilation par modèle** et par fournisseur
+- **Historique d'utilisation** pour analyser les tendances
+
+### 2. Estimation des coûts
+
+- **Calcul des coûts** basé sur les tarifs actuels des fournisseurs
+- **Comparaison** entre différents modèles
+- **Prévisions** basées sur l'utilisation actuelle
+
+### 3. Dashboard intégré
+
+- **Tableau de bord** accessible depuis les paramètres
+- **Métriques clés** visibles en un coup d'œil
+- **Filtres temporels** (jour, semaine, mois)
+- **Export des données** pour analyse externe
+
+```typescript
+// Structure des données d'utilisation
+interface AIUsageMetric {
+  model_name: string;
+  provider: string;
+  tokens_input: number;
+  tokens_output: number;
+  estimated_cost: number;
+  operation_type: 'chat' | 'embedding' | 'indexing';
+  created_at: string;
+}
+```
+
+### 4. Alertes et limites
+
+- **Seuils d'alerte** configurables
+- **Notification** en cas d'utilisation élevée
+- **Limites mensuelles** paramétrables
+- **Mode économie** automatique
+
 ## Intégration de modèles alternatifs
 
 Pour configurer un modèle alternatif (comme OpenAI):
@@ -217,4 +260,3 @@ interface DocumentTemplate {
    - Génération IA des sections
    - Prévisualisation et édition manuelle
    - Export vers le format désiré (DOCX, PDF, Google Doc)
-
