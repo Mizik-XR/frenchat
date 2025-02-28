@@ -31,6 +31,10 @@ export default function Index() {
     );
   }
 
+  // Utilisation de import.meta.env.BASE_URL pour s'assurer que les chemins sont corrects
+  // en développement et en production
+  const logoPath = new URL('/filechat-animation.gif', import.meta.url).href;
+
   return (
     <ThemeProvider defaultTheme="light" storageKey="ui-theme">
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
@@ -42,18 +46,32 @@ export default function Index() {
           <div className="max-w-3xl w-full mx-auto text-center">
             <div className="inline-flex items-center mb-8 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg">
               <img 
-                src="/filechat-animation.gif" 
+                src={logoPath} 
                 alt="FileChat Logo" 
                 className="h-8 w-8"
+                onError={(e) => {
+                  console.error("Erreur de chargement du logo:", e);
+                  // Fallback en cas d'erreur de chargement
+                  e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
+                }}
               />
               <h1 className="text-3xl font-bold ml-2 text-gray-900 dark:text-white">FileChat</h1>
             </div>
             
             <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-2xl mb-8 max-w-3xl mx-auto">
               <img 
-                src="/filechat-animation.gif" 
+                src={logoPath} 
                 alt="FileChat Animation" 
                 className="w-full h-auto"
+                onError={(e) => {
+                  console.error("Erreur de chargement de l'animation:", e);
+                  // Fallback en cas d'erreur de chargement
+                  e.currentTarget.style.height = "200px";
+                  e.currentTarget.style.display = "flex";
+                  e.currentTarget.style.alignItems = "center";
+                  e.currentTarget.style.justifyContent = "center";
+                  e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%234F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
+                }}
               />
             </div>
             
