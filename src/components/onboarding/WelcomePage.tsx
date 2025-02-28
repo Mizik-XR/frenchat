@@ -48,20 +48,18 @@ export const WelcomePage = () => {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               
-              <div className="mt-4 text-center">
-                <div className="inline-flex items-center gap-2 text-sm text-gray-500">
-                  <span>Vous avez déjà un compte ?</span>
-                  <Button 
-                    variant="link" 
-                    className="text-purple-600 font-medium p-0 h-auto"
-                    onClick={() => navigate("/auth", { state: { tab: "signin" } })}
-                  >
-                    Se connecter
-                  </Button>
-                </div>
+              <div className="mt-4 flex justify-center">
+                <span className="text-sm text-gray-500">Vous avez déjà un compte ?</span>
+                <Button 
+                  variant="link" 
+                  className="text-purple-600 font-medium p-0 h-auto ml-1"
+                  onClick={() => navigate("/auth", { state: { tab: "signin" } })}
+                >
+                  Se connecter
+                </Button>
               </div>
               
-              <div className="mt-2 text-center">
+              <div className="mt-2 flex justify-center">
                 <Button 
                   variant="link" 
                   className="text-purple-600 font-medium h-auto"

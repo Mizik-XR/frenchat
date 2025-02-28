@@ -35,19 +35,14 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
           "filechat-animation.gif"
         ];
     
-    console.log(`Environnement: ${isDevEnvironment ? 'développement' : 'production'}`);
-    console.log(`Chemin de base: ${window.location.origin}`);
-    
     // Tester la charge de l'image avec chaque chemin
     const testImage = (path: string) => {
       return new Promise<boolean>((resolve) => {
         const img = new Image();
         img.onload = () => {
-          console.log(`Image chargée avec succès depuis: ${path}`);
           resolve(true);
         };
         img.onerror = () => {
-          console.log(`Échec du chargement depuis: ${path}`);
           resolve(false);
         };
         img.src = path;
@@ -90,88 +85,67 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
         setImageLoaded(true);
         return;
       }
-
-      console.error("Impossible de charger l'image depuis aucun chemin");
     };
 
     findWorkingPath();
   }, []);
 
-  // Fonction pour arrêter l'animation du GIF
+  // Fonction pour arrêter l'animation du GIF de manière définitive
   const stopAnimation = () => {
-    if (imageRef.current && imageRef.current.src) {
-      const img = imageRef.current;
-      const currentSrc = img.src;
+    if (imageRef.current && imageRef.current.src && imageLoaded) {
+      // Stocker la source actuelle
+      const currentSrc = imageRef.current.src;
       
-      // Technique pour arrêter l'animation: remplacer par une image vide puis remettre la source
-      img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      // Remplacer temporairement par une image vide pour arrêter l'animation
+      imageRef.current.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      
+      // Puis remettre la source originale (qui sera maintenant "gelée")
       setTimeout(() => {
-        img.src = currentSrc;
-      }, 50);
-      
-      setInitialAnimationPlayed(true);
+        if (imageRef.current) {
+          imageRef.current.src = currentSrc;
+          setInitialAnimationPlayed(true);
+        }
+      }, 30);
     }
   };
 
   // Gérer l'animation initiale une seule fois
   useEffect(() => {
-    if (imageLoaded && imageRef.current && !initialAnimationPlayed) {
-      console.log("Animation initiale en cours...");
-      
-      // Arrêter l'animation après un délai
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
-      }
-      
-      animationTimeoutRef.current = window.setTimeout(() => {
+    if (imageLoaded && !initialAnimationPlayed) {
+      // Arrêter l'animation après la durée souhaitée
+      const timer = setTimeout(() => {
         if (!isHovering) {
-          console.log("Arrêt de l'animation initiale");
           stopAnimation();
         }
-      }, 3000); // Durée de l'animation en ms
+      }, 2000); // Temps pour voir l'animation initiale
+      
+      return () => clearTimeout(timer);
     }
-    
-    return () => {
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
-      }
-    };
   }, [imageLoaded, initialAnimationPlayed, isHovering]);
 
   // Gestion du hover pour rejouer l'animation
   const handleMouseEnter = () => {
-    console.log("Curseur sur l'image");
     setIsHovering(true);
     
-    if (imageRef.current) {
-      // Recharger l'image pour relancer l'animation
-      const img = imageRef.current;
-      const currentSrc = img.src;
-      img.src = currentSrc + '?reload=' + new Date().getTime();
-    }
-    
-    // Annuler tout timeout d'arrêt en cours
-    if (animationTimeoutRef.current) {
-      clearTimeout(animationTimeoutRef.current);
-      animationTimeoutRef.current = null;
+    if (imageRef.current && imageLoaded) {
+      // Forcer le rechargement du GIF pour relancer l'animation
+      const currentSrc = imageRef.current.src;
+      const timestamp = new Date().getTime();
+      imageRef.current.src = currentSrc.split('?')[0] + '?t=' + timestamp;
     }
   };
 
   const handleMouseLeave = () => {
-    console.log("Curseur hors de l'image");
     setIsHovering(false);
     
-    // Programmer l'arrêt de l'animation après le départ du curseur
+    // Arrêter l'animation après un délai
     if (animationTimeoutRef.current) {
       clearTimeout(animationTimeoutRef.current);
     }
     
     animationTimeoutRef.current = window.setTimeout(() => {
-      if (!isHovering) {
-        console.log("Arrêt de l'animation après hover");
-        stopAnimation();
-      }
-    }, 3000); // Délai pour laisser l'animation se terminer
+      stopAnimation();
+    }, 2000); // Laisser l'animation se terminer avant de l'arrêter
   };
 
   // Utiliser une icône de secours si l'image ne charge pas
@@ -191,8 +165,18 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
       className={className}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onError={(e) => {
-        console.error("Erreur de chargement d'image");
+      onLoad={() => {
+        // Si c'est le premier chargement et pas un rechargement au hover
+        if (!initialAnimationPlayed) {
+          // On laisse l'animation initiale se jouer, puis on l'arrête
+          setTimeout(() => {
+            if (!isHovering) {
+              stopAnimation();
+            }
+          }, 2000);
+        }
+      }}
+      onError={() => {
         setImageLoaded(false);
       }}
     />
