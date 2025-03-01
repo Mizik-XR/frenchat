@@ -18,16 +18,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Ajout d'optimisations pour la production
+  // Ajustement des optimisations pour la production
   build: {
-    // Activer la minification et l'optimisation en production
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: mode === 'production',
-        drop_debugger: mode === 'production',
-      },
-    },
+    // Utilisation d'esbuild au lieu de terser pour la minification
+    minify: 'esbuild',
+    // Configuration d'esbuild pour la minification
+    target: 'es2015',
     rollupOptions: {
       output: {
         // Séparation du code en chunks pour un meilleur chargement

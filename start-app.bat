@@ -84,6 +84,20 @@ REM Configuration des origines autorisées pour CORS
 set "ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173,http://127.0.0.1:5173,*"
 echo [INFO] Origines CORS autorisées: %ALLOWED_ORIGINS%
 
+REM Vérifier si http-server est installé
+where http-server >nul 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [INFO] Installation de http-server...
+    call npm install -g http-server
+    if errorlevel 1 (
+        echo [ERREUR] Installation de http-server échouée
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
+)
+
 REM Démarrage du serveur IA dans une nouvelle fenêtre
 echo [INFO] Démarrage du serveur IA local...
 start "Serveur IA Local" cmd /c "set ALLOWED_ORIGINS=%ALLOWED_ORIGINS% && venv\Scripts\python.exe serve_model.py"
