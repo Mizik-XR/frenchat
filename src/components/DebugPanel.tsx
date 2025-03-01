@@ -66,7 +66,7 @@ export const DebugPanel = () => {
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Mode actuel:</span>
-                  <Badge variant={serviceType === 'local' ? "success" : serviceType === 'cloud' ? "default" : "outline"}>
+                  <Badge variant={serviceType === 'local' ? "default" : serviceType === 'cloud' ? "default" : "outline"} className={serviceType === 'local' ? "bg-green-500 hover:bg-green-600" : ""}>
                     {serviceType === 'local' ? 'Local' : serviceType === 'cloud' ? 'Cloud' : 'Hybride'}
                   </Badge>
                 </div>
@@ -110,13 +110,13 @@ export const DebugPanel = () => {
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Status:</span>
-                  <Badge variant={navigator.onLine ? "success" : "destructive"}>
+                  <Badge variant={navigator.onLine ? "default" : "destructive"} className={navigator.onLine ? "bg-green-500 hover:bg-green-600" : ""}>
                     {navigator.onLine ? 'Connecté' : 'Déconnecté'}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span>Type réseau:</span>
-                  <span>{(navigator.connection as any)?.effectiveType || 'Inconnu'}</span>
+                  <span>{typeof navigator !== 'undefined' && 'connection' in navigator ? (navigator as any).connection?.effectiveType || 'Inconnu' : 'Non disponible'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Hors-ligne:</span>
@@ -173,7 +173,7 @@ export const DebugPanel = () => {
                             <span className="font-medium">Local ({report.aiService.local.provider})</span>
                           </div>
                           {report.aiService.local.available ? (
-                            <Badge variant="success">Disponible</Badge>
+                            <Badge variant="default" className="bg-green-500 hover:bg-green-600">Disponible</Badge>
                           ) : (
                             <Badge variant="destructive">Indisponible</Badge>
                           )}
@@ -193,7 +193,7 @@ export const DebugPanel = () => {
                             <span className="font-medium">Cloud</span>
                           </div>
                           {report.aiService.cloud.available ? (
-                            <Badge variant="success">Disponible</Badge>
+                            <Badge variant="default" className="bg-green-500 hover:bg-green-600">Disponible</Badge>
                           ) : (
                             <Badge variant="destructive">Indisponible</Badge>
                           )}
@@ -207,7 +207,8 @@ export const DebugPanel = () => {
                       
                       <div className="text-sm">
                         <span className="font-medium">Mode recommandé: </span>
-                        <Badge className="ml-1" variant="outline">
+                        <Badge className="ml-1" variant="outline" 
+                          className={`ml-1 ${report.aiService.recommendedMode === 'local' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}>
                           {report.aiService.recommendedMode.charAt(0).toUpperCase() + report.aiService.recommendedMode.slice(1)}
                         </Badge>
                       </div>
@@ -230,8 +231,11 @@ export const DebugPanel = () => {
                       <div className="flex justify-between">
                         <span>Vitesse réseau:</span>
                         <Badge variant={
-                          report.system.networkSpeed === 'fast' ? 'success' :
+                          report.system.networkSpeed === 'fast' ? 'default' :
                           report.system.networkSpeed === 'medium' ? 'default' : 'outline'
+                        } className={
+                          report.system.networkSpeed === 'fast' ? 'bg-green-500 hover:bg-green-600' : 
+                          report.system.networkSpeed === 'medium' ? 'bg-yellow-500 hover:bg-yellow-600' : ''
                         }>
                           {report.system.networkSpeed === 'fast' ? 'Rapide' :
                            report.system.networkSpeed === 'medium' ? 'Moyenne' : 'Lente'}

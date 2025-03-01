@@ -46,12 +46,17 @@ export function useDiagnostics() {
   // Test de temps de réponse
   const testResponseTime = async (endpoint: string): Promise<number | null> => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      
       const start = performance.now();
       const response = await fetch(endpoint, { 
         method: 'HEAD',
-        timeout: 2000
+        signal: controller.signal
       }).catch(() => null);
       const end = performance.now();
+      
+      clearTimeout(timeoutId);
       
       if (!response) return null;
       return Math.round(end - start);
@@ -144,11 +149,17 @@ export function useDiagnostics() {
         memoryInfo.usedJSHeapSize = memory.usedJSHeapSize;
         memoryInfo.jsHeapSizeLimit = memory.jsHeapSizeLimit;
       }
-      
+
       // Vérifier la compatibilité du navigateur
-      const { compatible, issues, capabilities } = await import('./ai/requestAnalyzer').then(
+      const { compatible, issues, capabilities } = await import('./ai/analyzers/browserCompatibility').then(
         module => module.checkBrowserCompatibility()
       );
+      
+      // Détecter le type de réseau
+      let networkType = 'Non disponible';
+      if (typeof navigator !== 'undefined' && 'connection' in navigator) {
+        networkType = (navigator as any).connection?.effectiveType || 'Inconnu';
+      }
       
       // Déterminer le mode recommandé
       let recommendedMode: 'local' | 'cloud' | 'hybrid';
@@ -177,7 +188,7 @@ export function useDiagnostics() {
           browser: detectBrowser(),
           capabilities,
           memory: memoryInfo,
-          networkType: navigator.connection ? (navigator.connection as any).effectiveType : undefined,
+          networkType,
           networkSpeed: await estimateNetworkSpeed()
         },
         compatibility: {
