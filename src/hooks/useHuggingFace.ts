@@ -107,7 +107,7 @@ export function useHuggingFace() {
         }
 
         if (data && data.config) {
-          // Utiliser une assertion de type simplifiée pour éviter l'inférence récursive
+          // Use a simple type assertion to avoid deep type instantiation
           const token = (data.config as Record<string, unknown>)["inference_token"] as string | undefined;
           if (token) {
             setInferenceToken(token);
