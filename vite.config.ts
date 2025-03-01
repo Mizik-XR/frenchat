@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Ajustement des optimisations pour la production
+  // Configuration améliorée pour la production
   build: {
     // Utilisation d'esbuild au lieu de terser pour la minification
     minify: 'esbuild',
