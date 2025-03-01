@@ -10,8 +10,14 @@ python --version
 echo.
 
 echo [2] Vérification de Rust...
-rustc --version
-cargo --version
+rustc --version 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    echo Rust n'est pas installé. Mode léger activé.
+) else (
+    echo Rust est installé:
+    rustc --version
+    cargo --version
+)
 echo.
 
 echo [3] Vérification de l'environnement virtuel...
@@ -21,13 +27,18 @@ if exist "venv\" (
     echo.
     
     echo [4] Versions des packages installés:
-    pip list | findstr "torch transformers tokenizers"
+    pip list | findstr "torch transformers tokenizers fastapi"
     echo.
     
     echo [5] Test d'importation Python...
-    python -c "import torch; import transformers; import tokenizers; print('Import réussi!')"
+    python -c "import transformers; import tokenizers; import fastapi; print('Import réussi!')" 2>nul
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ERREUR] Certains packages ne sont pas correctement installés.
+        echo Exécutez 'scripts\setup-venv.bat' pour réinstaller les dépendances.
+    )
 ) else (
     echo Environnement virtuel non trouvé.
+    echo Exécutez 'scripts\setup-venv.bat' pour créer l'environnement.
 )
 
 echo.

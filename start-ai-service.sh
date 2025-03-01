@@ -6,16 +6,36 @@ echo "Démarrage du service IA FileChat"
 echo "================================"
 echo ""
 
+export NO_RUST_INSTALL=1
+
 # Rendre les scripts exécutables
 chmod +x scripts/unix/check-dependencies.sh
 chmod +x scripts/unix/setup-venv.sh
 chmod +x scripts/unix/check-npm.sh
 chmod +x scripts/unix/check-build.sh
 chmod +x scripts/unix/start-servers.sh
+chmod +x scripts/unix/diagnostic.sh
 
 # Vérification des dépendances
 source scripts/unix/check-dependencies.sh
 if [ $? -ne 0 ]; then exit 1; fi
+
+# Mode d'installation
+echo "================================"
+echo "Mode d'installation"
+echo "================================"
+echo "1. Mode léger (recommandé) - sans compilation de dépendances"
+echo "2. Mode complet - avec compilation (nécessite Rust)"
+echo ""
+read -p "Choisissez le mode d'installation [1/2] (1 par défaut): " INSTALL_MODE
+
+if [ "$INSTALL_MODE" = "2" ]; then
+    echo "[INFO] Mode complet sélectionné"
+    export NO_RUST_INSTALL=0
+else
+    echo "[INFO] Mode léger sélectionné (sans Rust)"
+    export NO_RUST_INSTALL=1
+fi
 
 # Configuration de l'environnement Python
 source scripts/unix/setup-venv.sh

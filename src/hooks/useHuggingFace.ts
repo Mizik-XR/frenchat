@@ -35,7 +35,7 @@ export function useHuggingFace(provider: string = 'huggingface') {
     localStorage.getItem('aiServiceType') as 'local' | 'cloud' || 'cloud'
   );
   const [localAIUrl, setLocalAIUrl] = useState<string | null>(
-    localStorage.getItem('localAIUrl') || null
+    localStorage.getItem('localAIUrl') || 'http://localhost:8000'
   );
   const [localProvider, setLocalProvider] = useState<LLMProviderType>(
     localStorage.getItem('localProvider') as LLMProviderType || 'huggingface'
@@ -45,7 +45,7 @@ export function useHuggingFace(provider: string = 'huggingface') {
   useEffect(() => {
     const handleStorageChange = () => {
       setServiceType(localStorage.getItem('aiServiceType') as 'local' | 'cloud' || 'cloud');
-      setLocalAIUrl(localStorage.getItem('localAIUrl'));
+      setLocalAIUrl(localStorage.getItem('localAIUrl') || 'http://localhost:8000');
       setLocalProvider(localStorage.getItem('localProvider') as LLMProviderType || 'huggingface');
     };
 
@@ -54,13 +54,28 @@ export function useHuggingFace(provider: string = 'huggingface') {
   }, []);
 
   // Fonction pour vérifier si le service local est disponible
-  const checkLocalService = async (): Promise<boolean> => {
-    if (!localAIUrl) return false;
+  const checkLocalService = async (url?: string): Promise<boolean> => {
+    const serviceUrl = url || localAIUrl;
+    if (!serviceUrl) return false;
     
     try {
+      // Vérifier d'abord si le service est Ollama
+      if (serviceUrl.includes('11434')) {
+        try {
+          const response = await fetch(`${serviceUrl}/api/version`, { 
+            method: 'GET',
+            signal: AbortSignal.timeout(2000) // Timeout de 2 secondes
+          });
+          return response.ok;
+        } catch (e) {
+          console.warn("Service Ollama indisponible:", e);
+        }
+      }
+      
+      // Sinon, essayer avec l'endpoint health de notre API locale
       const endpoint = localProvider === 'ollama' 
-        ? `${localAIUrl}/api/health` 
-        : `${localAIUrl}/health`;
+        ? `${serviceUrl}/api/health` 
+        : `${serviceUrl}/health`;
       
       const response = await fetch(endpoint, { 
         method: 'GET',
@@ -79,7 +94,7 @@ export function useHuggingFace(provider: string = 'huggingface') {
       throw new Error("URL du service Ollama non configurée");
     }
     
-    const modelName = options.model || 'llama2';
+    const modelName = options.model || 'mistral';
     
     const response = await fetch(`${localAIUrl}/api/generate`, {
       method: 'POST',
@@ -98,6 +113,40 @@ export function useHuggingFace(provider: string = 'huggingface') {
     });
     
     if (!response.ok) {
+      // Vérifier si c'est une erreur de modèle non trouvé
+      if (response.status === 404) {
+        const errorData = await response.json();
+        if (errorData.error && errorData.error.includes("model not found")) {
+          // Proposer de télécharger le modèle automatiquement
+          console.log("Le modèle n'existe pas, tentative de téléchargement...");
+          
+          try {
+            const pullResponse = await fetch(`${localAIUrl}/api/pull`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                name: modelName
+              }),
+            });
+            
+            if (pullResponse.ok) {
+              toast({
+                title: "Téléchargement du modèle",
+                description: `Le modèle ${modelName} est en cours de téléchargement. Veuillez réessayer dans quelques instants.`,
+              });
+              
+              throw new Error(`Le modèle ${modelName} est en cours de téléchargement. Veuillez réessayer dans quelques instants.`);
+            } else {
+              throw new Error(`Impossible de télécharger le modèle ${modelName}.`);
+            }
+          } catch (pullError) {
+            throw new Error(`Erreur lors du téléchargement du modèle: ${pullError.message}`);
+          }
+        }
+      }
+      
       throw new Error(`Erreur du service Ollama: ${response.status}`);
     }
     
@@ -118,8 +167,8 @@ export function useHuggingFace(provider: string = 'huggingface') {
         if (isLocalAvailable && localAIUrl) {
           console.log(`Utilisation du service IA local (${localProvider}):`, localAIUrl);
           
-          // Utiliser Ollama si c'est le fournisseur configuré
-          if (localProvider === 'ollama') {
+          // Utiliser Ollama si c'est le fournisseur configuré ou si l'URL contient 11434 (port standard d'Ollama)
+          if (localProvider === 'ollama' || localAIUrl.includes('11434')) {
             return await callOllamaService(options);
           }
           
@@ -150,6 +199,10 @@ export function useHuggingFace(provider: string = 'huggingface') {
         } else {
           console.warn("Service local indisponible, passage au service cloud");
           // Si le service local est indisponible, on passe automatiquement au service cloud
+          toast({
+            title: "Service local indisponible",
+            description: "Impossible de se connecter au service IA local. Utilisation du service cloud.",
+          });
           localStorage.setItem('aiServiceType', 'cloud');
           setServiceType('cloud');
         }
@@ -218,6 +271,37 @@ export function useHuggingFace(provider: string = 'huggingface') {
     setLocalProvider(provider);
   };
 
+  // Vérifier et mettre à jour le statut du service local automatiquement
+  const detectLocalServices = async () => {
+    // Vérifier d'abord Ollama qui est le plus simple
+    const ollamaUrl = 'http://localhost:11434';
+    const isOllamaAvailable = await checkLocalService(ollamaUrl);
+    
+    if (isOllamaAvailable) {
+      console.log("Ollama détecté automatiquement");
+      localStorage.setItem('localAIUrl', ollamaUrl);
+      localStorage.setItem('localProvider', 'ollama');
+      setLocalAIUrl(ollamaUrl);
+      setLocalProvider('ollama');
+      return true;
+    }
+    
+    // Sinon, vérifier notre serveur FileChat
+    const fileChatUrl = 'http://localhost:8000'; 
+    const isFileChatAvailable = await checkLocalService(fileChatUrl);
+    
+    if (isFileChatAvailable) {
+      console.log("Serveur FileChat détecté automatiquement");
+      localStorage.setItem('localAIUrl', fileChatUrl);
+      localStorage.setItem('localProvider', 'huggingface');
+      setLocalAIUrl(fileChatUrl);
+      setLocalProvider('huggingface');
+      return true;
+    }
+    
+    return false;
+  };
+
   return { 
     textGeneration, 
     isLoading, 
@@ -226,6 +310,7 @@ export function useHuggingFace(provider: string = 'huggingface') {
     localAIUrl,
     localProvider,
     checkLocalService,
-    setLocalProviderConfig
+    setLocalProviderConfig,
+    detectLocalServices
   };
 }

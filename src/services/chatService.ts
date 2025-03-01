@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Message, MessageType, MessageMetadata } from "@/types/chat";
 import { apiConfig } from "./apiConfig";
+import { toast } from "@/hooks/use-toast";
 
 export const chatService = {
   async sendUserMessage(
@@ -80,19 +81,68 @@ export const chatService = {
     };
   },
 
-  async generateResponse(prompt: string): Promise<string> {
-    const headers = await apiConfig.getHeaders();
-    const response = await fetch(`${apiConfig.baseURL}${apiConfig.endpoints.textGeneration}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ prompt }),
-    });
+  async generateResponse(prompt: string, systemPrompt?: string): Promise<string> {
+    try {
+      // Récupération de la config API
+      const headers = await apiConfig.getHeaders();
+      const baseURL = apiConfig.baseURL || 'http://localhost:8000';
+      
+      // Préparation des données avec support du prompt système
+      const requestData = {
+        prompt,
+        system_prompt: systemPrompt || "Tu es un assistant IA qui aide l'utilisateur de manière précise et bienveillante."
+      };
+      
+      // Envoi de la requête avec gestion des erreurs améliorée
+      console.log(`Envoi de la requête à ${baseURL}${apiConfig.endpoints.textGeneration}`);
+      
+      const response = await fetch(`${baseURL}${apiConfig.endpoints.textGeneration}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestData),
+        signal: AbortSignal.timeout(30000) // 30 secondes de timeout
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to generate response');
+      if (!response.ok) {
+        // Tentative de récupération du message d'erreur
+        try {
+          const errorData = await response.json();
+          throw new Error(`Erreur du serveur: ${errorData.detail || response.statusText}`);
+        } catch (parseError) {
+          throw new Error(`Erreur de connexion au serveur (${response.status})`);
+        }
+      }
+
+      const data = await response.json();
+      
+      // Vérification de la présence du texte généré
+      if (!data.generated_text) {
+        throw new Error("Réponse reçue mais sans contenu");
+      }
+      
+      return data.generated_text;
+    } catch (error: any) {
+      console.error("Erreur lors de la génération:", error);
+      
+      // Message d'erreur convivial pour l'utilisateur
+      if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+        toast({
+          title: "Temps de réponse dépassé",
+          description: "Le serveur IA met trop de temps à répondre. Essayez à nouveau ou vérifiez la configuration.",
+          variant: "destructive"
+        });
+        throw new Error("Le temps de réponse du serveur IA a été dépassé. Veuillez réessayer.");
+      }
+      
+      if (error.message?.includes('fetch') || error.message?.includes('connexion')) {
+        toast({
+          title: "Problème de connexion",
+          description: "Impossible de se connecter au serveur IA local. Vérifiez que le serveur est démarré.",
+          variant: "destructive"
+        });
+      }
+      
+      throw error;
     }
-
-    const data = await response.json();
-    return data.generated_text;
   }
 };

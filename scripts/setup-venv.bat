@@ -26,9 +26,15 @@ REM Installation de PyTorch avec l'URL correcte
 echo Installation de PyTorch...
 pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
-REM Installation des autres dépendances avec mécanisme de reprise
-echo Installation des autres dépendances...
-pip install --no-cache-dir -r requirements.txt
+REM Déterminer si on installe avec Rust ou mode léger
+if "%NO_RUST_INSTALL%"=="1" (
+    echo Mode d'installation léger, sans dépendances nécessitant Rust...
+    pip install --no-cache-dir fastapi uvicorn pydantic tokenizers transformers
+    echo Utilisation de modèles inférences via API - pas besoin de bitsandbytes
+) else (
+    echo Installation complète des dépendances...
+    pip install --no-cache-dir -r requirements.txt
+)
 
 echo ================================
 echo Installation terminée !
