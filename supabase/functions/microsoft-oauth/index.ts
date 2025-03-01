@@ -1,5 +1,5 @@
 
-// Google OAuth Handler for FileChat
+// Microsoft OAuth Handler for FileChat
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.14.0'
 
@@ -23,7 +23,6 @@ interface ExchangeCodeRequest {
 interface RefreshTokenRequest {
   action: 'refresh_token'
   userId: string
-  redirectUrl: string
 }
 
 interface RevokeTokenRequest {
@@ -31,7 +30,7 @@ interface RevokeTokenRequest {
   userId: string
 }
 
-type GoogleOAuthRequest = 
+type MicrosoftOAuthRequest = 
   | GetClientIdRequest
   | ExchangeCodeRequest
   | RefreshTokenRequest
@@ -50,17 +49,18 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
     
     // Récupération des secrets nécessaires
-    const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID')
-    const clientSecret = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET')
+    const clientId = Deno.env.get('MICROSOFT_CLIENT_ID')
+    const clientSecret = Deno.env.get('MICROSOFT_CLIENT_SECRET')
+    const tenantId = Deno.env.get('MICROSOFT_TENANT_ID') || 'common'
     
     if (!clientId || !clientSecret) {
-      throw new Error('Les identifiants OAuth Google ne sont pas configurés')
+      throw new Error('Les identifiants OAuth Microsoft ne sont pas configurés')
     }
 
     // Extraction du corps de la requête
-    const requestData = await req.json() as GoogleOAuthRequest
+    const requestData = await req.json() as MicrosoftOAuthRequest
     
-    console.log(`Traitement de l'action Google OAuth: ${requestData.action}`)
+    console.log(`Traitement de l'action Microsoft OAuth: ${requestData.action}`)
 
     // Traitement en fonction de l'action demandée
     switch (requestData.action) {
@@ -68,7 +68,10 @@ serve(async (req) => {
         // Retourner simplement l'ID client pour l'initialisation OAuth
         console.log(`Client ID fourni, URL de redirection: ${requestData.redirectUrl}`)
         return new Response(
-          JSON.stringify({ client_id: clientId }),
+          JSON.stringify({ 
+            client_id: clientId,
+            tenant_id: tenantId
+          }),
           { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
         )
       
@@ -86,8 +89,8 @@ serve(async (req) => {
           grant_type: 'authorization_code'
         })
         
-        // Faire la requête à l'API Google
-        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        // Faire la requête à l'API Microsoft
+        const tokenResponse = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: tokenParams
@@ -100,8 +103,8 @@ serve(async (req) => {
           throw new Error(`Erreur d'échange de tokens: ${tokenData.error_description || tokenData.error}`)
         }
         
-        // Récupérer les informations de l'utilisateur Google
-        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        // Récupérer les informations de l'utilisateur Microsoft
+        const userInfoResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
           headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
         })
         
@@ -130,14 +133,14 @@ serve(async (req) => {
           .from('oauth_tokens')
           .upsert({
             user_id: userId,
-            provider: 'google',
+            provider: 'microsoft',
             access_token: tokenData.access_token,
             refresh_token: tokenData.refresh_token,
             expires_at: expiresAt.toISOString(),
             metadata: {
-              email: userInfo.email,
-              name: userInfo.name,
-              picture: userInfo.picture,
+              email: userInfo.mail || userInfo.userPrincipalName,
+              name: userInfo.displayName,
+              id: userInfo.id,
               scope: tokenData.scope
             }
           })
@@ -148,7 +151,10 @@ serve(async (req) => {
         }
         
         return new Response(
-          JSON.stringify({ success: true, email: userInfo.email }),
+          JSON.stringify({ 
+            success: true, 
+            email: userInfo.mail || userInfo.userPrincipalName
+          }),
           { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
         )
       }
@@ -163,7 +169,7 @@ serve(async (req) => {
           .from('oauth_tokens')
           .select('refresh_token')
           .eq('user_id', userId)
-          .eq('provider', 'google')
+          .eq('provider', 'microsoft')
           .single()
         
         if (tokenError || !tokenData?.refresh_token) {
@@ -179,8 +185,8 @@ serve(async (req) => {
           grant_type: 'refresh_token'
         })
         
-        // Faire la requête à l'API Google
-        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        // Faire la requête à l'API Microsoft
+        const tokenResponse = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: refreshParams
@@ -203,11 +209,10 @@ serve(async (req) => {
           .update({
             access_token: refreshedTokenData.access_token,
             expires_at: expiresAt.toISOString(),
-            // Conserver l'ancien refresh_token si un nouveau n'est pas fourni
             ...(refreshedTokenData.refresh_token ? { refresh_token: refreshedTokenData.refresh_token } : {})
           })
           .eq('user_id', userId)
-          .eq('provider', 'google')
+          .eq('provider', 'microsoft')
         
         if (updateError) {
           console.error('Erreur lors de la mise à jour des tokens:', updateError)
@@ -221,54 +226,17 @@ serve(async (req) => {
       }
       
       case 'revoke_token': {
-        // Révoquer un token
+        // Note: Microsoft n'a pas d'endpoint standard pour révoquer les tokens
+        // Mais nous pouvons supprimer les tokens de notre base de données
         const { userId } = requestData
-        console.log(`Révocation du token pour l'utilisateur: ${userId}`)
-        
-        // Récupérer le token d'accès
-        const { data: tokenData, error: tokenError } = await supabase
-          .from('oauth_tokens')
-          .select('access_token')
-          .eq('user_id', userId)
-          .eq('provider', 'google')
-          .single()
-        
-        if (tokenError || !tokenData?.access_token) {
-          // Token déjà supprimé ou introuvable, considérer comme un succès
-          console.log('Token introuvable, considéré comme déjà révoqué')
-          return new Response(
-            JSON.stringify({ success: true }),
-            { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-          )
-        }
-        
-        // Révoquer le token auprès de Google
-        const revokeParams = new URLSearchParams({
-          token: tokenData.access_token
-        })
-        
-        try {
-          const revokeResponse = await fetch(`https://oauth2.googleapis.com/revoke?${revokeParams}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-          })
-          
-          if (!revokeResponse.ok) {
-            const errorData = await revokeResponse.json()
-            console.warn('Avertissement lors de la révocation du token:', errorData)
-            // Continuer même si la révocation échoue côté Google
-          }
-        } catch (revokeError) {
-          console.warn('Erreur lors de la tentative de révocation:', revokeError)
-          // Continuer même si la révocation échoue côté Google
-        }
+        console.log(`Suppression du token Microsoft pour l'utilisateur: ${userId}`)
         
         // Supprimer les tokens de la base de données
         const { error: deleteError } = await supabase
           .from('oauth_tokens')
           .delete()
           .eq('user_id', userId)
-          .eq('provider', 'google')
+          .eq('provider', 'microsoft')
         
         if (deleteError) {
           console.error('Erreur lors de la suppression des tokens:', deleteError)
@@ -285,7 +253,7 @@ serve(async (req) => {
         throw new Error(`Action non supportée: ${(requestData as any).action}`)
     }
   } catch (error) {
-    console.error('Erreur dans la fonction google-oauth:', error)
+    console.error('Erreur dans la fonction microsoft-oauth:', error)
     
     return new Response(
       JSON.stringify({

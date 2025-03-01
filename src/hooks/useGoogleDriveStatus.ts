@@ -1,17 +1,13 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { toast } from "@/hooks/use-toast";
 import { Json } from "@/types/database";
+import { getRedirectUrl } from '@/utils/environmentUtils';
 
 // Définir l'URL de redirection pour OAuth de manière dynamique
-export const getRedirectUrl = () => {
-  const baseUrl = typeof window !== 'undefined' 
-    ? window.location.origin
-    : process.env.VITE_SITE_URL || 'http://localhost:5173';
-  
-  return `${baseUrl}/auth/google/callback`;
+export const getGoogleRedirectUrl = () => {
+  return getRedirectUrl('auth/google/callback');
 };
 
 export const useGoogleDriveStatus = () => {
@@ -74,7 +70,7 @@ export const useGoogleDriveStatus = () => {
             body: { 
               action: 'refresh_token', 
               userId: user.id,
-              redirectUrl: getRedirectUrl()
+              redirectUrl: getGoogleRedirectUrl()
             }
           });
           
@@ -123,7 +119,7 @@ export const useGoogleDriveStatus = () => {
     }
 
     try {
-      const redirectUri = getRedirectUrl();
+      const redirectUri = getGoogleRedirectUrl();
       console.log("URL de redirection configurée:", redirectUri);
       
       const { data: authData, error: authError } = await supabase.functions.invoke<{

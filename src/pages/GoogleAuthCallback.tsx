@@ -1,105 +1,105 @@
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { getGoogleRedirectUrl } from '@/hooks/useGoogleDriveStatus';
+import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function GoogleAuthCallback() {
-  const [isProcessing, setIsProcessing] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    const processAuthCode = async () => {
+    const exchangeCodeForToken = async () => {
       try {
         // Extraire le code d'autorisation de l'URL
         const urlParams = new URLSearchParams(location.search);
         const code = urlParams.get('code');
         
         if (!code) {
-          throw new Error("Aucun code d'autorisation reçu");
+          throw new Error("Code d'autorisation manquant dans l'URL");
         }
 
-        // Log l'URL actuelle et l'origine pour le debugging
-        console.log("Origine actuelle:", window.location.origin);
-        console.log("URL actuelle:", window.location.href);
+        console.log("Code d'autorisation reçu, échange en cours...");
+
+        // Générer dynamiquement l'URL de redirection utilisée lors de l'autorisation
+        const redirectUrl = getGoogleRedirectUrl();
         
-        // Appeler la fonction Edge pour échanger le code contre des tokens
-        const { error } = await supabase.functions.invoke('google-oauth', {
-          body: { 
+        // Appeler la fonction Supabase Edge pour échanger le code
+        const { data, error } = await supabase.functions.invoke('google-oauth', {
+          body: {
+            action: 'exchange_code',
             code,
-            redirectUrl: `${window.location.origin}/auth/google/callback`
+            redirectUrl,
           }
         });
 
         if (error) {
-          throw error;
+          throw new Error(`Erreur lors de l'échange du code: ${error.message}`);
         }
 
-        // Rediriger vers la page de configuration Google Drive
-        toast({
-          title: "Connexion réussie",
-          description: "Votre compte Google Drive a été connecté avec succès"
-        });
+        if (!data || !data.success) {
+          throw new Error("Échec de l'échange du code d'autorisation");
+        }
+
+        console.log("Authentification Google réussie");
+        setSuccess(true);
         
-        navigate('/config/google-drive');
+        // Redirection après un court délai pour que l'utilisateur voie le message de succès
+        setTimeout(() => {
+          navigate('/config');
+        }, 2000);
       } catch (err) {
-        console.error("Erreur lors du traitement du callback Google:", err);
-        setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
-        
-        toast({
-          title: "Erreur de connexion",
-          description: err instanceof Error ? err.message : "Une erreur est survenue lors de la connexion à Google Drive",
-          variant: "destructive"
-        });
-        
-        // Rediriger vers la page de configuration en cas d'erreur
-        setTimeout(() => navigate('/config'), 3000);
+        console.error("Erreur lors du callback Google:", err);
+        setError(err instanceof Error ? err.message : "Une erreur inconnue s'est produite");
       } finally {
-        setIsProcessing(false);
+        setLoading(false);
       }
     };
 
-    processAuthCode();
-  }, [location, navigate]);
+    exchangeCodeForToken();
+  }, [location.search, navigate]);
+
+  if (loading) {
+    return <AuthLoadingScreen message="Traitement de l'authentification Google en cours..." />;
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
-      <div className="w-full max-w-md p-8 space-y-4 bg-white rounded-lg shadow-md">
-        <div className="flex flex-col items-center text-center">
-          {isProcessing ? (
-            <>
-              <Loader2 className="w-8 h-8 mb-4 text-blue-500 animate-spin" />
-              <h1 className="text-xl font-bold">Traitement de l'authentification Google Drive...</h1>
-              <p className="mt-2 text-gray-500">Veuillez patienter pendant que nous établissons la connexion.</p>
-            </>
-          ) : error ? (
-            <>
-              <div className="p-3 mb-4 text-red-500 bg-red-100 rounded-full">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Authentification Google Drive</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Erreur</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+              <div className="mt-4">
+                <Button onClick={() => navigate('/config')}>
+                  Retour aux paramètres
+                </Button>
               </div>
-              <h1 className="text-xl font-bold text-red-700">Erreur d'authentification</h1>
-              <p className="mt-2 text-gray-700">{error}</p>
-              <p className="mt-4 text-sm text-gray-500">Redirection vers la page de configuration...</p>
-            </>
+            </Alert>
           ) : (
-            <>
-              <div className="p-3 mb-4 text-green-500 bg-green-100 rounded-full">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </div>
-              <h1 className="text-xl font-bold text-green-700">Authentification réussie</h1>
-              <p className="mt-2 text-gray-700">Votre compte Google Drive a été connecté avec succès.</p>
-              <p className="mt-4 text-sm text-gray-500">Redirection en cours...</p>
-            </>
+            <Alert variant="default" className="bg-green-50 border-green-200">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <AlertTitle className="text-green-700">Succès</AlertTitle>
+              <AlertDescription>
+                Votre compte Google Drive a été connecté avec succès. Vous allez être redirigé...
+              </AlertDescription>
+            </Alert>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
