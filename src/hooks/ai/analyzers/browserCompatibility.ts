@@ -51,11 +51,23 @@ export const checkBrowserCompatibility = (): {
   
   // Vérifier si on devrait basculer vers le cloud automatiquement
   // Seulement si des fonctionnalités critiques manquent
-  const shouldFallbackToCloud = !capabilities.webAssembly || !capabilities.webWorkers;
+  const shouldFallbackToCloud = !capabilities.webAssembly || !capabilities.webWorkers || !browserInfo.isSupported;
+  
+  // Si le navigateur est reconnu comme compatible, ne pas afficher les avertissements mineurs
+  if (browserInfo.isSupported && capabilities.webAssembly && capabilities.webWorkers) {
+    // Si c'est un navigateur supporté avec les fonctionnalités essentielles,
+    // on retire les avertissements mineurs comme SharedArrayBuffer et WebGPU
+    return {
+      compatible: true,
+      issues: [],
+      capabilities,
+      shouldFallbackToCloud: false
+    };
+  }
   
   return {
     // Compatibilité minimale: Web Workers + WebAssembly sont essentiels
-    compatible: capabilities.webWorkers && capabilities.webAssembly,
+    compatible: capabilities.webWorkers && capabilities.webAssembly && browserInfo.isSupported,
     issues,
     capabilities,
     shouldFallbackToCloud
@@ -71,24 +83,34 @@ const detectBrowser = (userAgent: string): { name: string; version: string; isSu
   let version = "Version inconnue";
   let isSupported = true;
   
-  if (userAgent.includes("Chrome/")) {
+  // Amélioration de la détection de Chrome
+  if (userAgent.indexOf("Chrome") !== -1 && userAgent.indexOf("Edg") === -1 && userAgent.indexOf("OPR") === -1) {
     name = "Chrome";
-    version = userAgent.match(/Chrome\/(\d+)/)?.[1] || "?";
-    isSupported = parseInt(version) >= 89;
+    const match = userAgent.match(/Chrome\/(\d+)\.(\d+)\.(\d+)\.(\d+)/);
+    if (match && match[1]) {
+      version = match[1]; // Première partie de la version (ex: 89 dans 89.0.4389.82)
+      isSupported = parseInt(version) >= 89;
+    } else {
+      // Si on ne peut pas extraire la version précise, on suppose que c'est une version récente
+      isSupported = true;
+    }
   } 
-  else if (userAgent.includes("Firefox/")) {
+  else if (userAgent.indexOf("Firefox") !== -1) {
     name = "Firefox";
-    version = userAgent.match(/Firefox\/(\d+)/)?.[1] || "?";
+    const match = userAgent.match(/Firefox\/(\d+)/);
+    version = match?.[1] || "?";
     isSupported = parseInt(version) >= 90;
   }
-  else if (userAgent.includes("Safari/") && !userAgent.includes("Chrome/")) {
+  else if (userAgent.indexOf("Safari") !== -1 && userAgent.indexOf("Chrome") === -1) {
     name = "Safari";
-    version = userAgent.match(/Version\/(\d+)/)?.[1] || "?";
+    const match = userAgent.match(/Version\/(\d+)/);
+    version = match?.[1] || "?";
     isSupported = parseInt(version) >= 15;
   }
-  else if (userAgent.includes("Edg/")) {
+  else if (userAgent.indexOf("Edg") !== -1) {
     name = "Edge";
-    version = userAgent.match(/Edg\/(\d+)/)?.[1] || "?";
+    const match = userAgent.match(/Edg\/(\d+)/);
+    version = match?.[1] || "?";
     isSupported = parseInt(version) >= 89;
   }
   

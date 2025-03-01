@@ -25,13 +25,13 @@ export const BrowserCompatibilityAlert = ({ issues, forceShow = false }: Browser
       issue.includes("Web Workers")
     );
     
-    setShouldShow(forceShow || isDev || hasDebugParam || hasCriticalIssues);
+    setShouldShow(forceShow || isDev || hasDebugParam || (hasCriticalIssues && issues.length > 0));
   }, [forceShow, issues]);
 
   if (!isVisible || issues.length === 0 || !shouldShow) return null;
 
   // Déterminer si le navigateur est trop ancien ou incompatible
-  const isOldBrowser = issues.length > 1 || issues.some(issue => issue.includes("WebAssembly") || issue.includes("Web Workers"));
+  const isOldBrowser = issues.some(issue => issue.includes("WebAssembly") || issue.includes("Web Workers"));
 
   return (
     <div className="fixed bottom-20 right-4 max-w-sm bg-red-500 text-white rounded-lg shadow-lg z-50 overflow-hidden">
