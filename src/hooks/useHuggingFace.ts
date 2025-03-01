@@ -106,11 +106,15 @@ export function useHuggingFace() {
           return;
         }
 
-        if (data && data.config) {
-          // Use a simple type assertion to avoid deep type instantiation
-          const token = (data.config as Record<string, unknown>)["inference_token"] as string | undefined;
-          if (token) {
+        // Solution complètement simplifiée - traite config comme un objet générique
+        if (data && typeof data.config === 'object' && data.config !== null) {
+          // Accès direct à la propriété sans inférence de type complexe
+          const config = data.config as any;
+          const token = config.inference_token;
+          
+          if (typeof token === 'string') {
             setInferenceToken(token);
+            console.log("Token HF récupéré avec succès");
           }
         }
       } catch (e) {
