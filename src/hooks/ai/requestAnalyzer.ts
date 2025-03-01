@@ -112,9 +112,13 @@ export const estimateSystemCapabilities = async (): Promise<{
       
       // Si WebGL est disponible, vérifier quelques capacités supplémentaires
       if (gl) {
-        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        // Cast gl à WebGLRenderingContext pour accéder aux méthodes WebGL
+        const webGLContext = gl as WebGLRenderingContext;
+        
+        // WEBGL_debug_renderer_info est une extension WebGL
+        const debugInfo = webGLContext.getExtension('WEBGL_debug_renderer_info');
         if (debugInfo) {
-          const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+          const renderer = webGLContext.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
           // Log pour débogage
           console.debug(`GPU détecté: ${renderer}`);
           // Détecter si c'est une carte graphique dédiée
