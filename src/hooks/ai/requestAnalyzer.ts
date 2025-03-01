@@ -7,9 +7,18 @@
 import { analyzeRequest } from './analyzers/requestAnalysis';
 import { estimateSystemCapabilities } from './analyzers/systemCapabilities';
 import { checkBrowserCompatibility } from './analyzers/browserCompatibility';
+import { testResponseTime, estimateNetworkSpeed } from './analyzers/networkAnalyzer';
+import { detectBrowser, getNetworkType } from './analyzers/browserAnalyzer';
+import { testCloudService, determineRecommendedMode } from './analyzers/serviceAnalyzer';
 
 export { 
   analyzeRequest,
   estimateSystemCapabilities,
-  checkBrowserCompatibility
+  checkBrowserCompatibility,
+  testResponseTime,
+  estimateNetworkSpeed,
+  detectBrowser,
+  getNetworkType,
+  testCloudService,
+  determineRecommendedMode
 };

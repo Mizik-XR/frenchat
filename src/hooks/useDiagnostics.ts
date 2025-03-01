@@ -5,6 +5,10 @@ import { checkLocalService } from './ai/aiServiceUtils';
 import { estimateSystemCapabilities } from './ai/requestAnalyzer';
 import { useHuggingFace } from './useHuggingFace';
 import { supabase } from '@/integrations/supabase/client';
+import { checkBrowserCompatibility } from './ai/analyzers/browserCompatibility';
+import { testResponseTime, estimateNetworkSpeed } from './ai/analyzers/networkAnalyzer';
+import { detectBrowser, getNetworkType } from './ai/analyzers/browserAnalyzer';
+import { testCloudService, determineRecommendedMode } from './ai/analyzers/serviceAnalyzer';
 
 interface DiagnosticReport {
   timestamp: string;
@@ -43,86 +47,25 @@ export function useDiagnostics() {
   const [report, setReport] = useState<DiagnosticReport | null>(null);
   const { localProvider, localAIUrl } = useHuggingFace();
 
-  // Test de temps de réponse
-  const testResponseTime = async (endpoint: string): Promise<number | null> => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-      
-      const start = performance.now();
-      const response = await fetch(endpoint, { 
-        method: 'HEAD',
-        signal: controller.signal
-      }).catch(() => null);
-      const end = performance.now();
-      
-      clearTimeout(timeoutId);
-      
-      if (!response) return null;
-      return Math.round(end - start);
-    } catch (e) {
-      console.error("Erreur lors du test de temps de réponse:", e);
-      return null;
+  /**
+   * Collects memory information if available in the browser
+   * @returns Object with memory metrics
+   */
+  const collectMemoryInfo = (): Record<string, number> => {
+    const memoryInfo: Record<string, number> = {};
+    if (performance && 'memory' in performance) {
+      const memory = (performance as any).memory;
+      memoryInfo.totalJSHeapSize = memory.totalJSHeapSize;
+      memoryInfo.usedJSHeapSize = memory.usedJSHeapSize;
+      memoryInfo.jsHeapSizeLimit = memory.jsHeapSizeLimit;
     }
+    return memoryInfo;
   };
 
-  // Test du service cloud
-  const testCloudService = async (): Promise<{ available: boolean, responseTime: number | null }> => {
-    try {
-      const { data, error } = await supabase.functions.invoke('ping-cloud-service', { 
-        body: { timestamp: new Date().toISOString() }
-      });
-      
-      if (error) throw error;
-      
-      return {
-        available: true,
-        responseTime: data?.responseTime || null
-      };
-    } catch (e) {
-      console.error("Erreur lors du test du service cloud:", e);
-      return {
-        available: false,
-        responseTime: null
-      };
-    }
-  };
-
-  // Détection du navigateur
-  const detectBrowser = (): string => {
-    const userAgent = navigator.userAgent;
-    
-    if (userAgent.indexOf("Firefox") > -1) {
-      return "Firefox";
-    } else if (userAgent.indexOf("Chrome") > -1) {
-      return "Chrome";
-    } else if (userAgent.indexOf("Safari") > -1) {
-      return "Safari";
-    } else if (userAgent.indexOf("Edge") > -1) {
-      return "Edge";
-    } else {
-      return "Navigateur inconnu";
-    }
-  };
-
-  // Estimation de la vitesse réseau
-  const estimateNetworkSpeed = async (): Promise<'slow' | 'medium' | 'fast'> => {
-    // Simuler un petit téléchargement pour tester la vitesse
-    const startTime = performance.now();
-    try {
-      await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache: 'no-store' });
-      const duration = performance.now() - startTime;
-      
-      if (duration < 100) return 'fast';
-      if (duration < 500) return 'medium';
-      return 'slow';
-    } catch (e) {
-      console.error("Erreur lors de l'estimation de la vitesse réseau:", e);
-      return 'slow';
-    }
-  };
-
-  // Lancer le diagnostic complet
+  /**
+   * Runs a complete system diagnostic
+   * @returns DiagnosticReport or undefined on error
+   */
   const runDiagnostic = async () => {
     setIsRunning(true);
     toast({
@@ -142,34 +85,16 @@ export function useDiagnostics() {
       const systemCapabilities = await estimateSystemCapabilities();
       
       // Obtenir des informations sur la mémoire
-      const memoryInfo: any = {};
-      if (performance && 'memory' in performance) {
-        const memory = (performance as any).memory;
-        memoryInfo.totalJSHeapSize = memory.totalJSHeapSize;
-        memoryInfo.usedJSHeapSize = memory.usedJSHeapSize;
-        memoryInfo.jsHeapSizeLimit = memory.jsHeapSizeLimit;
-      }
+      const memoryInfo = collectMemoryInfo();
 
       // Vérifier la compatibilité du navigateur
-      const { compatible, issues, capabilities } = await import('./ai/analyzers/browserCompatibility').then(
-        module => module.checkBrowserCompatibility()
-      );
+      const { compatible, issues, capabilities } = await checkBrowserCompatibility();
       
       // Détecter le type de réseau
-      let networkType = 'Non disponible';
-      if (typeof navigator !== 'undefined' && 'connection' in navigator) {
-        networkType = (navigator as any).connection?.effectiveType || 'Inconnu';
-      }
+      const networkType = getNetworkType();
       
       // Déterminer le mode recommandé
-      let recommendedMode: 'local' | 'cloud' | 'hybrid';
-      if (isLocalAvailable && systemCapabilities.recommendLocalExecution) {
-        recommendedMode = 'local';
-      } else if (isLocalAvailable) {
-        recommendedMode = 'hybrid';
-      } else {
-        recommendedMode = 'cloud';
-      }
+      const recommendedMode = determineRecommendedMode(isLocalAvailable, systemCapabilities);
       
       // Créer le rapport
       const diagnosticReport: DiagnosticReport = {
