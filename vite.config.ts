@@ -49,4 +49,13 @@ export default defineConfig(({ mode }) => ({
   },
   // Configuration de la gestion des assets
   assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg'],
+  // Préserve le script gptengineer.js et empêche Vite de le manipuler
+  experimental: {
+    renderBuiltUrl(filename, { hostType }) {
+      if (filename.includes('gptengineer.js')) {
+        return 'https://cdn.gpteng.co/gptengineer.js';
+      }
+      return { relative: true };
+    }
+  }
 }));
