@@ -64,7 +64,7 @@ export const DebugPanel = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Alerte de compatibilité du navigateur */}
+      {/* Alerte de compatibilité du navigateur - uniquement en mode dev ou debug */}
       <BrowserCompatibilityAlert issues={compatibilityIssues} />
     </>
   );

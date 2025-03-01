@@ -18,7 +18,7 @@ import {
 import { executeAIRequest } from './ai/strategies/aiServiceStrategy';
 import { createSystemCapabilitiesManager } from './ai/strategies/systemCapabilitiesStrategy';
 import { useModelDownload } from './useModelDownload';
-import { checkBrowserCompatibility } from './ai/requestAnalyzer';
+import { checkBrowserCompatibility } from './ai/analyzers/browserCompatibility';
 
 export function useHuggingFace(provider: string = 'huggingface') {
   const [isLoading, setIsLoading] = useState(false);
@@ -58,15 +58,21 @@ export function useHuggingFace(provider: string = 'huggingface') {
   useEffect(() => {
     const checkCompatibility = () => {
       const browserCompatibility = checkBrowserCompatibility();
-      if (!browserCompatibility.compatible) {
+      
+      // Si le navigateur n'est pas compatible avec des fonctionnalités critiques,
+      // basculer automatiquement vers le mode cloud sans afficher d'alerte en production
+      if (browserCompatibility.shouldFallbackToCloud) {
         setServiceType('cloud');
         localStorage.setItem('aiServiceType', 'cloud');
         
-        toast({
-          title: "Fonctionnalités limitées",
-          description: `Votre navigateur ne supporte pas toutes les fonctionnalités requises pour l'exécution locale: ${browserCompatibility.issues.join(", ")}`,
-          variant: "destructive"
-        });
+        // N'afficher la notification que pour les développeurs
+        if (import.meta.env.DEV || window.location.search.includes('debug=true')) {
+          toast({
+            title: "Fonctionnalités limitées",
+            description: `Basculement automatique vers le mode cloud en raison de limitations du navigateur.`,
+            variant: "default"
+          });
+        }
       }
     };
     
