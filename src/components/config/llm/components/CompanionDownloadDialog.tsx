@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Windows, Apple, Award, Database, Server, ExternalLink } from "lucide-react";
+import { Monitor, Apple, Award, Database, Server, ExternalLink } from "lucide-react";
 
 interface CompanionDownloadDialogProps {
   open: boolean;
@@ -53,7 +53,7 @@ export function CompanionDownloadDialog({
                   rel="noopener noreferrer"
                 >
                   <Button className="w-44 h-32 flex flex-col justify-center items-center gap-2">
-                    <Windows className="h-8 w-8" />
+                    <Monitor className="h-8 w-8" />
                     <span>Windows</span>
                     <span className="text-xs opacity-75">Version 1.2.0</span>
                   </Button>

@@ -9,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { LLMProviderType } from "@/types/config";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { InfoCircle, Server, ExternalLink } from "lucide-react";
+import { Info, Server, ExternalLink } from "lucide-react";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
 
 export interface LocalAIConfigProps {
