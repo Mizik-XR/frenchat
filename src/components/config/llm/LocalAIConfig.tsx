@@ -35,6 +35,10 @@ export function LocalAIConfig({
   const [localProvider, setLocalProvider] = useState<LLMProviderType>(provider);
   const [serviceAvailable, setServiceAvailable] = useState<boolean | null>(null);
   const { checkLocalService, setLocalProviderConfig } = useHuggingFace();
+  
+  // Default model for companion download
+  const [selectedModelId, setSelectedModelId] = useState<string>("TheBloke/Mistral-7B-Instruct-v0.2-GGUF");
+  const [selectedModelName, setSelectedModelName] = useState<string>("Mistral 7B Instruct");
 
   useEffect(() => {
     // Vérifier si le service local est disponible au chargement
@@ -101,6 +105,13 @@ export function LocalAIConfig({
     });
   };
 
+  const handleDownloadSuccess = () => {
+    toast({
+      title: "Téléchargement terminé",
+      description: "Le modèle a été téléchargé avec succès et est prêt à être utilisé"
+    });
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -151,6 +162,9 @@ export function LocalAIConfig({
       <CompanionDownloadDialog
         open={companionDialogOpen}
         onOpenChange={setCompanionDialogOpen}
+        modelId={selectedModelId}
+        modelName={selectedModelName}
+        onSuccess={handleDownloadSuccess}
       />
 
       <ModelPathWizard 
