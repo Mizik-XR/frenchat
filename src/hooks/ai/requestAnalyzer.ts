@@ -79,8 +79,9 @@ export const estimateSystemCapabilities = async (): Promise<{
     
     // Essayer d'obtenir des informations sur la mémoire via l'API Navigator
     // Note: deviceMemory n'est pas disponible dans tous les navigateurs
+    // Utilisons une assertion de type pour accéder à cette propriété non-standard
     const memory = (navigator as any).deviceMemory;
-    if (memory) {
+    if (memory !== undefined) {
       // deviceMemory donne la RAM en GB (valeurs possibles: 0.25, 0.5, 1, 2, 4, 8)
       memoryScore = Math.min(memory / 8, 1);
     }
