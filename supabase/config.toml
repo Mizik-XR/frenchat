@@ -1,1 +1,22 @@
+
+# Config for function deployment
 project_id = "dbdueopvtlanxgumenpu"
+
+[functions.google-oauth]
+verify_jwt = false
+
+[functions.index-google-drive]
+verify_jwt = false
+
+[functions.batch-index-google-drive]
+verify_jwt = false
+
+[functions.test-summary]
+verify_jwt = false
+
+[functions.advanced-rag-generation]
+verify_jwt = false
+
+# Commented out to avoid exceeding function limits
+# [functions.cache-manager]
+# verify_jwt = false
