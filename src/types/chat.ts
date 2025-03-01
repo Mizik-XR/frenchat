@@ -1,69 +1,52 @@
 
-export type AIProvider = 'auto' | 'huggingface' | 'internet-search' | 'deepthink' | 'stable-diffusion';
+// Vérifiez si ce fichier existe, sinon il sera créé
 
-export type MessageType = 'text' | 'document' | 'image' | 'chart';
+export type MessageRole = 'user' | 'assistant' | 'system';
+export type MessageType = 'text' | 'image' | 'file' | 'audio' | 'video';
 
-export type AnalysisMode = 'default' | 'analysis' | 'summary' | 'action';
-
-export type MessageMetadata = {
-  provider?: AIProvider;
-  documentId?: string;
-  imageUrl?: string;
-  confidence?: number;
-  analysisMode?: AnalysisMode;
-  aiService?: {
-    type: 'local' | 'cloud' | 'browser';
-    endpoint: string;
-  };
+export interface MessageMetadata {
+  provider?: string;
+  analysisMode?: string;
   replyTo?: {
     id: string;
     content: string;
-    role: 'user' | 'assistant';
+    role: MessageRole;
   };
-};
+  aiService?: {
+    type: 'local' | 'cloud' | 'browser';
+    endpoint?: string;
+  };
+  [key: string]: any;
+}
 
-export type WebUIConfig = {
-  mode: 'auto' | 'manual';
-  model: AIProvider;
-  maxTokens: number;
-  temperature: number;
-  streamResponse: boolean;
-  analysisMode: AnalysisMode;
-  useMemory: boolean;
-};
-
-export type Message = {
+export interface Message {
   id: string;
-  role: 'user' | 'assistant';
+  role: MessageRole;
   content: string;
   type: MessageType;
-  context?: string;
+  context?: string | null;
   metadata?: MessageMetadata;
   conversationId: string;
   timestamp: Date;
-};
+}
 
-export type ConversationFolder = {
-  id: string;
-  name: string;
-  userId: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-export type Conversation = {
+export interface Conversation {
   id: string;
   title: string;
-  created_at: string;
-  updated_at: string;
-  folderId?: string;
-  isPinned: boolean;
-  isArchived: boolean;
-  archiveDate?: Date;
-  settings: {
-    model: AIProvider;
-    maxTokens: number;
-    temperature: number;
-    streamResponse: boolean;
-  };
-};
+  createdAt: Date;
+  updatedAt: Date;
+  messages?: Message[];
+  folderId?: string | null;
+  pinned?: boolean;
+}
+
+export interface WebUIConfig {
+  model: AIProvider;
+  maxTokens: number;
+  temperature: number;
+  useMemory: boolean;
+  analysisMode: string;
+  showSources?: boolean;
+}
+
+export type AIProvider = 'huggingface' | 'openai' | 'anthropic' | 'gemini' | 'perplexity' | 'internet-search';

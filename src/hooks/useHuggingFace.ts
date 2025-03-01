@@ -107,13 +107,10 @@ export function useHuggingFace() {
         }
 
         if (data && data.config) {
-          // Simplification: Utiliser une interface simple et explicite
-          interface HFConfig {
-            inference_token?: string;
-          }
-          const config = data.config as HFConfig;
-          if (config.inference_token) {
-            setInferenceToken(config.inference_token);
+          // Utiliser une assertion de type simplifiée pour éviter l'inférence récursive
+          const token = (data.config as Record<string, unknown>)["inference_token"] as string | undefined;
+          if (token) {
+            setInferenceToken(token);
           }
         }
       } catch (e) {
