@@ -207,8 +207,10 @@ export const DebugPanel = () => {
                       
                       <div className="text-sm">
                         <span className="font-medium">Mode recommandé: </span>
-                        <Badge className="ml-1" variant="outline" 
-                          className={`ml-1 ${report.aiService.recommendedMode === 'local' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}>
+                        <Badge
+                          variant="outline"
+                          className={`ml-1 ${report.aiService.recommendedMode === 'local' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}
+                        >
                           {report.aiService.recommendedMode.charAt(0).toUpperCase() + report.aiService.recommendedMode.slice(1)}
                         </Badge>
                       </div>
