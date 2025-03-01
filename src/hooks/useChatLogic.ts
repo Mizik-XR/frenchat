@@ -87,7 +87,7 @@ export function useChatLogic(selectedConversationId: string | null) {
 
       // Ajout d'information sur le type de service IA utilisé dans les métadonnées
       const aiServiceInfo = {
-        type: serviceType,
+        type: serviceType === 'hybrid' ? 'cloud' : serviceType,
         endpoint: serviceType === 'local' ? localAIUrl : 'cloud'
       };
 

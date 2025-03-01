@@ -78,9 +78,11 @@ export const estimateSystemCapabilities = async (): Promise<{
     let gpuAvailable = false;
     
     // Essayer d'obtenir des informations sur la mémoire via l'API Navigator
-    if (navigator && navigator.deviceMemory) {
+    // Note: deviceMemory n'est pas disponible dans tous les navigateurs
+    const memory = (navigator as any).deviceMemory;
+    if (memory) {
       // deviceMemory donne la RAM en GB (valeurs possibles: 0.25, 0.5, 1, 2, 4, 8)
-      memoryScore = Math.min(navigator.deviceMemory / 8, 1);
+      memoryScore = Math.min(memory / 8, 1);
     }
     
     // Essayer d'obtenir le nombre de cœurs logiques
