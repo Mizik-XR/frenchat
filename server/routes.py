@@ -1,81 +1,88 @@
-"""
-Routes API pour le serveur d'inférence IA
-"""
-from datetime import datetime
-from fastapi import FastAPI, HTTPException, Request, Depends, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any, Union
 
-from .config import logger, DEFAULT_MODEL, FALLBACK_MODE, MODEL_LOADED, ALLOWED_ORIGINS, ALLOWED_METHODS, ALLOWED_HEADERS
-from .cache_manager import init_cache, generate_cache_id, check_cache, update_cache, get_cache_stats
+"""
+Routes FastAPI pour le serveur d'inférence IA
+"""
+import os
+import time
+import asyncio
+import random
+from datetime import datetime
+from typing import Optional, List, Dict, Any, Union
+from fastapi import FastAPI, Request, Response, HTTPException, BackgroundTasks, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from .config import MODEL_LOADED, DEFAULT_MODEL, FALLBACK_MODE, logger, CACHE_ENABLED, CACHE_DIR
+from .model_manager import lazy_load_model, init_model_download, get_download_progress, fallback_generate
 from .system_analyzer import analyze_system_resources
-from .model_manager import lazy_load_model, fallback_generate, get_download_progress, init_model_download, save_model_config, load_model_config
+from .cache_manager import (
+    init_cache, check_cache, update_cache, generate_cache_id, 
+    get_cache_stats, clean_expired_entries, toggle_compression, 
+    set_cache_ttl, purge_cache
+)
+
+# Initialisation du cache
+init_cache()
 
 # Modèles de données
-class GenerationInput(BaseModel):
+class TextGenerationRequest(BaseModel):
     prompt: str
     max_length: Optional[int] = 800
     temperature: Optional[float] = 0.7
     top_p: Optional[float] = 0.9
-    system_prompt: Optional[str] = "You are a helpful AI assistant that provides detailed and accurate information."
-
-class SystemResourcesRequest(BaseModel):
-    analyzeSystem: bool = True
+    system_prompt: Optional[str] = "Tu es un assistant IA qui aide l'utilisateur de manière précise et bienveillante."
+    use_cache: Optional[bool] = True
 
 class ModelDownloadRequest(BaseModel):
     model: str
-    consent: bool = Field(..., description="Confirmation de consentement pour le téléchargement")
+    consent: bool = False
 
-# Création de l'application FastAPI
-app = FastAPI()
+class HealthResponse(BaseModel):
+    status: str
+    model: str
+    model_loaded: bool
+    fallback_mode: bool
+    system_info: dict
+    timestamp: str
 
-# Ajout du middleware CORS avec configuration sécurisée
+app = FastAPI(title="AI Model Server")
+
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],  # Pour le développement, à restreindre en production
     allow_credentials=True,
-    allow_methods=ALLOWED_METHODS,
-    allow_headers=ALLOWED_HEADERS,
-    max_age=600,  # Cache la prévalidation CORS pendant 10 minutes
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Middleware pour limiter le débit des requêtes (rate limiting simple)
-@app.middleware("http")
-async def rate_limit_middleware(request: Request, call_next):
-    # Dans une implémentation complète, utilisez Redis ou autre pour stocker les compteurs
-    # Cette implémentation simplifiée est pour démonstration
-    client_host = request.client.host
-    current_time = datetime.now()
+@app.get("/health")
+async def health_check():
+    """Route pour vérifier l'état du serveur"""
+    system_resources = analyze_system_resources()
     
-    # Journalisation des requêtes pour analyse
-    logger.info(f"Requête de {client_host} à {request.url.path} à {current_time}")
+    try:
+        # Essayer de charger le modèle paresseusement
+        if not FALLBACK_MODE and not MODEL_LOADED:
+            lazy_load_model()
+    except Exception as e:
+        logger.error(f"Erreur lors du chargement du modèle pour le health check: {str(e)}")
     
-    # Ajouter un header pour indiquer que le serveur est local
-    response = await call_next(request)
-    response.headers["X-FileChat-Server"] = "local"
-    
-    return response
+    return HealthResponse(
+        status="ok",
+        model=DEFAULT_MODEL,
+        model_loaded=MODEL_LOADED,
+        fallback_mode=FALLBACK_MODE,
+        system_info=system_resources,
+        timestamp=datetime.now().isoformat()
+    )
 
 @app.post("/generate")
-async def generate_text(input_data: GenerationInput, background_tasks: BackgroundTasks):
-    try:
-        # Validation des entrées
-        if not input_data.prompt or len(input_data.prompt.strip()) == 0:
-            raise HTTPException(status_code=400, detail="Le prompt ne peut pas être vide")
-            
-        if input_data.max_length > 4000:
-            input_data.max_length = 4000
-            
-        if input_data.temperature < 0.0 or input_data.temperature > 2.0:
-            input_data.temperature = max(0.0, min(input_data.temperature, 2.0))
-            
-        if input_data.top_p < 0.0 or input_data.top_p > 1.0:
-            input_data.top_p = max(0.0, min(input_data.top_p, 1.0))
-        
-        logger.info(f"Génération pour le prompt: {input_data.prompt[:50]}...")
-        
-        # Vérifier si la réponse est en cache
+async def generate_text(input_data: TextGenerationRequest):
+    """Génère du texte à partir d'un prompt"""
+    start_time = time.time()
+    
+    # Vérifier si la réponse est dans le cache
+    if CACHE_ENABLED and input_data.use_cache:
         cache_id = generate_cache_id(
             input_data.prompt, 
             input_data.system_prompt, 
@@ -87,223 +94,192 @@ async def generate_text(input_data: GenerationInput, background_tasks: Backgroun
         
         cached_response = check_cache(cache_id)
         if cached_response:
-            logger.info("Réponse trouvée en cache")
-            return {"generated_text": cached_response}
-        
-        # Analyser les ressources système pour les requêtes complexes
-        prompt_length = len(input_data.prompt)
-        if prompt_length > 1000:
-            system_resources = analyze_system_resources()
+            logger.info(f"Réponse récupérée du cache en {time.time() - start_time:.2f}s")
+            return {"generated_text": cached_response, "from_cache": True}
+    
+    # Si nous sommes en mode fallback, utiliser l'API externe
+    if FALLBACK_MODE:
+        logger.info("Génération via le service externe (mode fallback)")
+        try:
+            response = await fallback_generate(input_data)
             
-            # Si la requête est longue et les ressources système faibles, passer en fallback
-            if prompt_length > 2000 and not system_resources["can_run_local_model"]:
-                logger.info("Requête longue et ressources système insuffisantes, utilisation du fallback")
-                result = await fallback_generate(input_data)
-                
-                # Mettre à jour le cache en arrière-plan
-                background_tasks.add_task(
-                    update_cache,
-                    cache_id,
-                    input_data.prompt,
-                    input_data.system_prompt,
-                    DEFAULT_MODEL,
-                    result["generated_text"],
-                    input_data.temperature,
-                    input_data.top_p,
+            # Mettre en cache la réponse si la mise en cache est activée
+            if CACHE_ENABLED and input_data.use_cache and response.get("generated_text"):
+                cache_id = generate_cache_id(
+                    input_data.prompt, 
+                    input_data.system_prompt, 
+                    DEFAULT_MODEL, 
+                    input_data.temperature, 
+                    input_data.top_p, 
                     input_data.max_length
                 )
-                
-                return result
-        
-        # Si on est en mode fallback ou si le modèle n'est pas chargé, on utilise l'API externe
-        if FALLBACK_MODE or not lazy_load_model():
-            logger.info("Utilisation du mode API externe")
-            result = await fallback_generate(input_data)
+                update_cache(
+                    cache_id, 
+                    input_data.prompt, 
+                    input_data.system_prompt, 
+                    DEFAULT_MODEL, 
+                    response["generated_text"], 
+                    input_data.temperature, 
+                    input_data.top_p, 
+                    input_data.max_length
+                )
             
-            # Mettre à jour le cache en arrière-plan
-            background_tasks.add_task(
-                update_cache,
-                cache_id,
-                input_data.prompt,
-                input_data.system_prompt,
-                DEFAULT_MODEL,
-                result["generated_text"],
-                input_data.temperature,
-                input_data.top_p,
+            logger.info(f"Génération terminée en {time.time() - start_time:.2f}s")
+            return response
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de la génération en mode fallback: {str(e)}")
+            return {"error": f"Erreur lors de la génération: {str(e)}"}
+    
+    # Essayer de charger le modèle paresseusement
+    if not MODEL_LOADED:
+        if not lazy_load_model():
+            logger.error("Impossible de charger le modèle")
+            return {"error": "Impossible de charger le modèle"}
+    
+    try:
+        from .config import model, tokenizer
+        import torch
+        
+        # Créer le prompt complet avec le contexte système si fourni
+        full_prompt = f"<s>[INST] {input_data.system_prompt}\n\n{input_data.prompt} [/INST]"
+        
+        # Tokeniser l'entrée
+        inputs = tokenizer(full_prompt, return_tensors="pt")
+        
+        # Générer la réponse
+        with torch.no_grad():
+            output_sequences = model.generate(
+                **inputs,
+                max_length=input_data.max_length,
+                temperature=input_data.temperature,
+                top_p=input_data.top_p,
+            )
+        
+        # Décoder la sortie
+        generated_text = tokenizer.decode(output_sequences[0], skip_special_tokens=True)
+        
+        # Nettoyer la sortie pour extraire uniquement la réponse du modèle
+        if "[/INST]" in generated_text:
+            generated_text = generated_text.split("[/INST]", 1)[1].strip()
+        
+        # Mettre en cache la réponse si la mise en cache est activée
+        if CACHE_ENABLED and input_data.use_cache:
+            cache_id = generate_cache_id(
+                input_data.prompt, 
+                input_data.system_prompt, 
+                DEFAULT_MODEL, 
+                input_data.temperature, 
+                input_data.top_p, 
                 input_data.max_length
             )
-            
-            return result
-        
-        # Mode local - on utilise le modèle chargé
-        from .config import model, tokenizer
-        
-        formatted_prompt = f"<s>[INST] {input_data.system_prompt}\n\n{input_data.prompt} [/INST]"
-        
-        # Préparation des entrées pour le modèle
-        inputs = tokenizer(formatted_prompt, return_tensors="pt").to(model.device)
-        
-        generation_config = {
-            "max_length": inputs["input_ids"].shape[1] + input_data.max_length,
-            "do_sample": True,
-            "temperature": input_data.temperature,
-            "top_p": input_data.top_p,
-            "pad_token_id": tokenizer.eos_token_id
-        }
-        
-        # Génération de texte
-        outputs = model.generate(**inputs, **generation_config)
-        result = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        
-        # Extraire uniquement la réponse (pas le prompt)
-        result = result.split("[/INST]")[-1].strip()
-        
-        logger.info(f"Génération réussie, longueur: {len(result)}")
-        
-        # Mettre à jour le cache en arrière-plan
-        background_tasks.add_task(
-            update_cache,
-            cache_id,
-            input_data.prompt,
-            input_data.system_prompt,
-            DEFAULT_MODEL,
-            result,
-            input_data.temperature,
-            input_data.top_p,
-            input_data.max_length
-        )
-        
-        return {"generated_text": result}
-    except HTTPException as he:
-        # Relancer les exceptions HTTP déjà formatées
-        raise he
-    except Exception as e:
-        # Journal détaillé des erreurs pour faciliter le débogage
-        logger.error(f"Erreur lors de la génération: {e}", exc_info=True)
-        
-        # Essayer le mode fallback en cas d'erreur
-        logger.info("Tentative de génération via API externe suite à une erreur")
-        try:
-            return await fallback_generate(input_data)
-        except Exception as fallback_e:
-            logger.error(f"Échec également du fallback: {fallback_e}")
-            raise HTTPException(
-                status_code=500, 
-                detail=f"Erreur de génération et échec du fallback: {str(e)}"
+            update_cache(
+                cache_id, 
+                input_data.prompt, 
+                input_data.system_prompt, 
+                DEFAULT_MODEL, 
+                generated_text, 
+                input_data.temperature, 
+                input_data.top_p, 
+                input_data.max_length
             )
-
-@app.get("/health")
-async def health_check():
-    mode = "fallback" if FALLBACK_MODE else "local"
-    if not FALLBACK_MODE:
-        lazy_load_model()
-    
-    # Inclure les statistiques du cache
-    cache_stats = {"enabled": True, "stats": get_cache_stats()}
-    
-    # Inclure les informations sur les ressources système
-    system_resources = analyze_system_resources()
-    
-    # Inclure les informations sur le téléchargement du modèle
-    download_status = get_download_progress()
-    
-    return {
-        "status": "ok", 
-        "model": DEFAULT_MODEL,
-        "version": "1.3.0",
-        "timestamp": datetime.now().isoformat(),
-        "type": mode,
-        "fallback_mode": FALLBACK_MODE,
-        "model_loaded": MODEL_LOADED,
-        "cache": cache_stats,
-        "system_resources": system_resources,
-        "download": download_status
-    }
-
-@app.get("/models")
-async def list_models():
-    # Charger la configuration du modèle
-    model_config = load_model_config()
-    default_model = model_config.get("default_model", DEFAULT_MODEL)
-    
-    return {
-        "default": default_model,
-        "available": [
-            {
-                "id": "mistralai/Mistral-7B-Instruct-v0.1",
-                "name": "Mistral 7B",
-                "description": "Modèle par défaut, équilibre performances et ressources"
-            },
-            {
-                "id": "mistralai/Mixtral-8x7B-Instruct-v0.1",
-                "name": "Mixtral 8x7B",
-                "description": "Modèle plus puissant, nécessite plus de ressources"
-            },
-            {
-                "id": "local/fallback",
-                "name": "Mode léger (API)",
-                "description": "Utilise une API externe pour l'inférence en cas de problème local"
-            }
-        ]
-    }
-
-@app.post("/analyze-system")
-async def analyze_system(input_data: SystemResourcesRequest):
-    """Endpoint pour analyser les ressources système sans générer de texte"""
-    if input_data.analyzeSystem:
-        resources = analyze_system_resources()
         
-        # Ajouter des conseils basés sur les résultats
-        if resources["can_run_local_model"]:
-            resources["recommendation"] = "Votre système peut exécuter le modèle localement."
-        else:
-            resources["recommendation"] = "Votre système est limité. Utilisation du mode cloud recommandée."
+        logger.info(f"Génération terminée en {time.time() - start_time:.2f}s")
+        return {"generated_text": generated_text, "from_cache": False}
         
-        return resources
-    
-    return {"error": "Requête invalide"}
-
-@app.get("/cache-stats")
-async def get_cache_statistics():
-    """Endpoint pour obtenir les statistiques du cache"""
-    return get_cache_stats()
-
-@app.get("/download-progress")
-async def get_model_download_progress():
-    """Endpoint pour obtenir l'état du téléchargement du modèle"""
-    return get_download_progress()
+    except Exception as e:
+        logger.error(f"Erreur lors de la génération: {str(e)}")
+        return {"error": f"Erreur lors de la génération: {str(e)}"}
 
 @app.post("/download-model")
-async def start_model_download(request: ModelDownloadRequest):
-    """Endpoint pour démarrer le téléchargement d'un modèle"""
+async def download_model(request: ModelDownloadRequest):
+    """Démarre le téléchargement d'un modèle en arrière-plan"""
     if not request.consent:
-        raise HTTPException(
-            status_code=400, 
-            detail="Vous devez consentir au téléchargement du modèle"
-        )
+        raise HTTPException(status_code=400, detail="Le consentement pour le téléchargement est requis")
     
-    # Vérifier si le modèle est valide
-    valid_models = ["mistralai/Mistral-7B-Instruct-v0.1", "mistralai/Mixtral-8x7B-Instruct-v0.1"]
-    if request.model not in valid_models:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Modèle non supporté. Modèles valides: {', '.join(valid_models)}"
-        )
+    if not os.path.exists(CACHE_DIR):
+        os.makedirs(CACHE_DIR, exist_ok=True)
     
-    # Démarrer le téléchargement
-    download_status = init_model_download(request.model)
+    # Vérifier le statut actuel du téléchargement
+    current_status = get_download_progress()
+    if current_status["status"] == "downloading":
+        return current_status
     
-    # Sauvegarder la configuration du modèle
-    save_model_config(request.model)
-    
-    return {
-        "status": "downloading",
-        "model": request.model,
-        "progress": download_status["progress"],
-        "estimated_size_mb": download_status["size_mb"]
-    }
+    # Initialiser le téléchargement en arrière-plan
+    progress = init_model_download(request.model)
+    return progress
 
-def init_app():
-    # Initialiser le cache au démarrage
-    init_cache()
-    return app
+@app.get("/download-progress")
+async def check_download_progress():
+    """Récupère l'état actuel du téléchargement"""
+    return get_download_progress()
+
+@app.get("/cache-stats")
+async def cache_statistics():
+    """Récupère les statistiques du cache"""
+    return get_cache_stats()
+
+@app.post("/cache-clear")
+async def clear_cache():
+    """Vide complètement le cache"""
+    if purge_cache():
+        return {"status": "success", "message": "Cache vidé avec succès"}
+    return {"status": "error", "message": "Erreur lors de la purge du cache"}
+
+@app.post("/cache-config")
+async def configure_cache(ttl: Optional[int] = None, compression: Optional[bool] = None):
+    """Configure les paramètres du cache"""
+    results = {}
+    
+    if ttl is not None:
+        if ttl > 0:
+            if set_cache_ttl(ttl):
+                results["ttl"] = {"status": "success", "value": ttl}
+            else:
+                results["ttl"] = {"status": "error", "message": "Erreur lors de la modification du TTL"}
+        else:
+            results["ttl"] = {"status": "error", "message": "Le TTL doit être positif"}
+    
+    if compression is not None:
+        if toggle_compression(compression):
+            results["compression"] = {"status": "success", "enabled": compression}
+        else:
+            results["compression"] = {"status": "error", "message": "Erreur lors de la modification de la compression"}
+    
+    # Si aucun paramètre n'a été spécifié, retourner les paramètres actuels
+    if not results:
+        return get_cache_stats()
+    
+    return results
+
+@app.get("/models")
+async def list_available_models():
+    """Liste les modèles disponibles pour téléchargement ou utilisation"""
+    # Cette liste peut être étendue ou rendue dynamique à l'avenir
+    available_models = [
+        {
+            "id": "TheBloke/Mistral-7B-Instruct-v0.2-GGUF",
+            "name": "Mistral 7B Instruct",
+            "description": "Modèle de base recommandé (environ 4GB)"
+        },
+        {
+            "id": "TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF",
+            "name": "Mixtral 8x7B",
+            "description": "Modèle plus puissant mais plus lourd (environ 15GB)"
+        }
+    ]
+    
+    return {"available": available_models}
+
+@app.post("/clean-expired-cache")
+async def clean_cache(background_tasks: BackgroundTasks):
+    """Nettoie les entrées expirées du cache en arrière-plan"""
+    background_tasks.add_task(clean_expired_entries)
+    return {"status": "success", "message": "Nettoyage du cache en cours"}
+
+# Route OPTIONS pour gérer les requêtes CORS préflight
+@app.options("/{path:path}")
+async def options_route(request: Request, path: str):
+    """Gère les requêtes OPTIONS pour CORS"""
+    response = Response(status_code=204)
+    return response

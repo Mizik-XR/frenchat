@@ -34,7 +34,7 @@ export function LocalAIConfig({
   const [localModelPath, setLocalModelPath] = useState(modelPath || defaultModelPath);
   const [localProvider, setLocalProvider] = useState<LLMProviderType>(provider);
   const [serviceAvailable, setServiceAvailable] = useState<boolean | null>(null);
-  const { checkLocalService, setLocalProviderConfig } = useHuggingFace();
+  const { checkLocalService, setLocalProviderConfig, localAIUrl } = useHuggingFace();
   
   // Default model for companion download
   const [selectedModelId, setSelectedModelId] = useState<string>("TheBloke/Mistral-7B-Instruct-v0.2-GGUF");
@@ -137,6 +137,7 @@ export function LocalAIConfig({
               onPathSelect={() => setPathDialogOpen(true)}
               onDownloadCompanion={handleDownloadCompanion}
               onOpenWizard={handleOpenWizard}
+              localAIUrl={localAIUrl}
             />
           </div>
           
