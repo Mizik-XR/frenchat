@@ -27,8 +27,14 @@ then
     
     # Installation des dépendances
     pip install --upgrade pip
-    pip install torch==2.0.1 --index-url https://download.pytorch.org/whl/cpu
-    pip install transformers==4.36.2 accelerate==0.26.1 datasets==2.16.1 fastapi==0.109.0 uvicorn==0.27.0 pydantic==2.6.1
+    
+    # Installation de PyTorch avec l'URL correcte
+    echo "Installation de PyTorch..."
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+    
+    # Installation des autres dépendances
+    echo "Installation des autres dépendances..."
+    pip install -r requirements.txt
     
     if [ $? -ne 0 ]
     then

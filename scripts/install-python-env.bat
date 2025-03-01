@@ -19,11 +19,12 @@ REM Vérification de Rust
 where rustc >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo Installation de Rust...
-    curl -o rustup-init.exe https://win.rustup.rs/x86_64
-    rustup-init.exe -y --default-toolchain stable
-    del rustup-init.exe
+    powershell -Command "iwr -useb https://sh.rustup.rs | iex" -ArgumentList "-y"
+    echo Ajout de Rust au PATH...
     set PATH=%PATH%;%USERPROFILE%\.cargo\bin
     echo Rust installé avec succès
+    echo Redémarrage du shell pour mettre à jour PATH...
+    call refreshenv
 )
 
 exit /b 0
