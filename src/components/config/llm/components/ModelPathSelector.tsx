@@ -1,10 +1,10 @@
+
 import { Download, ExternalLink, Folder, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
-import { ModelPathWizard } from "./wizard/ModelPathWizard";
 
 interface ModelPathSelectorProps {
   modelPath: string;
@@ -12,6 +12,7 @@ interface ModelPathSelectorProps {
   onPathChange: (path: string) => void;
   onPathSelect: () => void;
   onDownloadCompanion?: () => void;
+  onOpenWizard?: () => void;
 }
 
 export function ModelPathSelector({ 
@@ -19,10 +20,10 @@ export function ModelPathSelector({
   defaultModelPath, 
   onPathChange, 
   onPathSelect,
-  onDownloadCompanion
+  onDownloadCompanion,
+  onOpenWizard
 }: ModelPathSelectorProps) {
   const [isOllamaAvailable, setIsOllamaAvailable] = useState<boolean | null>(null);
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
   
   useEffect(() => {
     const checkOllama = async () => {
@@ -38,18 +39,6 @@ export function ModelPathSelector({
     
     checkOllama();
   }, []);
-
-  const handleOpenWizard = () => {
-    setIsWizardOpen(true);
-  };
-
-  const handleCloseWizard = () => {
-    setIsWizardOpen(false);
-  };
-
-  const handlePathSelected = (path: string) => {
-    onPathChange(path);
-  };
 
   return (
     <div className="space-y-6">
@@ -117,7 +106,7 @@ export function ModelPathSelector({
           />
           <Button
             variant="default"
-            onClick={handleOpenWizard}
+            onClick={onOpenWizard}
             className="gap-2"
           >
             <Folder className="h-4 w-4" />
@@ -144,13 +133,6 @@ export function ModelPathSelector({
           </div>
         </div>
       </div>
-
-      <ModelPathWizard 
-        isOpen={isWizardOpen}
-        onClose={handleCloseWizard}
-        onPathSelected={handlePathSelected}
-        defaultPath={modelPath || defaultModelPath}
-      />
     </div>
   );
 }

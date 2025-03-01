@@ -10,6 +10,7 @@ import { CompanionDownloadDialog } from "./components/CompanionDownloadDialog";
 import { ServiceStatusAlert } from "./components/ServiceStatusAlert";
 import { ProviderSelector } from "./components/ProviderSelector";
 import { ConfigurationTabs } from "./components/ConfigurationTabs";
+import { ModelPathWizard } from "./components/wizard/ModelPathWizard";
 
 export interface LocalAIConfigProps {
   modelPath?: string;
@@ -28,6 +29,7 @@ export function LocalAIConfig({
 }: LocalAIConfigProps) {
   const [pathDialogOpen, setPathDialogOpen] = useState(false);
   const [companionDialogOpen, setCompanionDialogOpen] = useState(false);
+  const [wizardDialogOpen, setWizardDialogOpen] = useState(false);
   const defaultModelPath = `${process.env.APPDATA || process.env.HOME}/filechat/models`;
   const [localModelPath, setLocalModelPath] = useState(modelPath || defaultModelPath);
   const [localProvider, setLocalProvider] = useState<LLMProviderType>(provider);
@@ -80,6 +82,25 @@ export function LocalAIConfig({
     setCompanionDialogOpen(true);
   };
 
+  const handleOpenWizard = () => {
+    setWizardDialogOpen(true);
+  };
+
+  const handleCloseWizard = () => {
+    setWizardDialogOpen(false);
+  };
+
+  const handleWizardPathSelected = (path: string) => {
+    handleLocalPathChange(path);
+    if (onSave) {
+      onSave();
+    }
+    toast({
+      title: "Chemin d'installation mis à jour",
+      description: "Les modèles seront installés dans ce dossier"
+    });
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -104,6 +125,7 @@ export function LocalAIConfig({
               onPathChange={handleLocalPathChange}
               onPathSelect={() => setPathDialogOpen(true)}
               onDownloadCompanion={handleDownloadCompanion}
+              onOpenWizard={handleOpenWizard}
             />
           </div>
           
@@ -129,6 +151,13 @@ export function LocalAIConfig({
       <CompanionDownloadDialog
         open={companionDialogOpen}
         onOpenChange={setCompanionDialogOpen}
+      />
+
+      <ModelPathWizard 
+        isOpen={wizardDialogOpen}
+        onClose={handleCloseWizard}
+        onPathSelected={handleWizardPathSelected}
+        defaultPath={localModelPath || defaultModelPath}
       />
     </div>
   );

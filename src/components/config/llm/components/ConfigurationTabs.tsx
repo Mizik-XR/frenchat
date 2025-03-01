@@ -9,6 +9,7 @@ interface ConfigurationTabsProps {
   onPathChange: (path: string) => void;
   onPathSelect: () => void;
   onDownloadCompanion: () => void;
+  onOpenWizard: () => void;
 }
 
 export function ConfigurationTabs({
@@ -16,7 +17,8 @@ export function ConfigurationTabs({
   defaultModelPath,
   onPathChange,
   onPathSelect,
-  onDownloadCompanion
+  onDownloadCompanion,
+  onOpenWizard
 }: ConfigurationTabsProps) {
   return (
     <Tabs defaultValue="configuration" className="mt-4">
@@ -32,6 +34,7 @@ export function ConfigurationTabs({
           onPathChange={onPathChange}
           onPathSelect={onPathSelect}
           onDownloadCompanion={onDownloadCompanion}
+          onOpenWizard={onOpenWizard}
         />
       </TabsContent>
       
