@@ -107,8 +107,11 @@ export function useHuggingFace() {
         }
 
         if (data && data.config) {
-          // Correct approach: Use type assertions with specific primitive types
-          const config = data.config as { inference_token?: string };
+          // Simplification: Utiliser une interface simple et explicite
+          interface HFConfig {
+            inference_token?: string;
+          }
+          const config = data.config as HFConfig;
           if (config.inference_token) {
             setInferenceToken(config.inference_token);
           }
