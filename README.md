@@ -1,63 +1,35 @@
 
 # FileChat - Assistant IA Conversationnel pour Documents
 
-FileChat est une solution d'intelligence artificielle conversationnelle conçue pour l'analyse et l'indexation de documents via une interface de chat intuitive.
+FileChat est une application qui vous permet d'interroger vos documents avec l'intelligence artificielle pour obtenir des réponses précises.
+
+## Installation et Démarrage Rapide
+
+### Windows
+1. Double-cliquez sur `setup.bat` pour une installation automatique complète
+2. Après l'installation, utilisez le raccourci "FileChat" sur votre bureau pour démarrer l'application
+
+### macOS / Linux
+1. Ouvrez un terminal dans le dossier de l'application
+2. Exécutez la commande suivante:
+   ```
+   chmod +x start-ai-service.sh && ./start-ai-service.sh
+   ```
 
 ## Fonctionnalités
 
-- 🤖 **Chat IA** : Interface style "WhatsApp" pour discuter avec l'IA
-- 📁 **Indexation de documents** : Google Drive, Microsoft Teams, et upload manuel
-- 🔍 **Recherche contextuelle** : Architecture RAG pour des réponses pertinentes
-- 📊 **Visualisation de données** : Génération de graphiques et analyses
-- 📃 **Génération de documents** : Création de rapports et documents structurés
-- 🔒 **Traitement local** : Option 100% locale pour la confidentialité des données
+- **Chat IA** - Posez des questions et obtenez des réponses basées sur vos documents
+- **Intégration Google Drive** - Connectez-vous à Google Drive pour analyser vos documents
+- **Intégration Microsoft Teams** - Accédez aux fichiers partagés dans Teams (bientôt disponible)
+- **Génération de documents structurés** - Créez des rapports et résumés intelligents
+- **IA locale** - Fonctionne en local sur votre ordinateur, sans envoyer vos données à l'extérieur
 
-## Démarrage rapide
+## Configuration Requise
 
-### Windows
+- Windows 10/11 ou macOS 10.15+ ou Linux
+- 8 Go de RAM minimum (16 Go recommandés)
+- Connexion internet pour l'installation initiale et l'accès aux services cloud
 
-1. Exécutez `start-app.bat` pour installer les dépendances et démarrer les services
-2. Accédez à l'application sur http://localhost:8080
+## Support
 
-### macOS / Linux
-
-1. Installation du serveur IA :
-```bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python serve_model.py
-```
-
-2. Dans un nouveau terminal, démarrez l'application React :
-```bash
-npm install
-npm run dev
-```
-
-## Configuration requise
-
-- Node.js 18+
-- Python 3.9+
-- 4 Go de RAM minimum
-- Connexion internet (pour l'installation initiale)
-
-## Déploiement en production
-
-Pour un déploiement en production :
-
-1. Créez le build optimisé :
-```bash
-npm run build
-```
-
-2. Servez les fichiers statiques avec NGINX ou tout autre serveur web
-3. Déployez le serveur IA séparément ou utilisez un service cloud
-
-## Contribution
-
-Les contributions sont les bienvenues ! Veuillez consulter notre [guide de contribution](docs/CONTRIBUTING.md) pour plus d'informations.
-
-## Licence
-
-Ce projet est sous licence [MIT](LICENSE).
+Pour toute question ou assistance, veuillez contacter le support technique.

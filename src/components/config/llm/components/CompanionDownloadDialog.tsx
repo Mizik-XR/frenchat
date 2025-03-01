@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Monitor, Apple, Award, Database, Server, ExternalLink } from "lucide-react";
+import { Monitor, Apple, Award, Database, Server, ExternalLink, Download, Check } from "lucide-react";
 
 interface CompanionDownloadDialogProps {
   open: boolean;
@@ -22,6 +22,17 @@ export function CompanionDownloadDialog({
   open,
   onOpenChange,
 }: CompanionDownloadDialogProps) {
+  const [downloadStarted, setDownloadStarted] = React.useState<string | null>(null);
+
+  const handleDownload = (platform: string, url: string) => {
+    // Déclencher le téléchargement
+    window.open(url, "_blank");
+    // Mettre à jour l'état
+    setDownloadStarted(platform);
+    // Réinitialiser après 3 secondes
+    setTimeout(() => setDownloadStarted(null), 3000);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
@@ -47,28 +58,42 @@ export function CompanionDownloadDialog({
           <TabsContent value="download" className="py-4 space-y-4">
             <div className="flex flex-col gap-4">
               <div className="flex justify-center gap-4">
-                <a
-                  href="https://github.com/filechat-ai/filechat-companion/releases/latest/download/filechat-companion-windows.exe"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Button 
+                  className={`w-44 h-32 flex flex-col justify-center items-center gap-2 ${downloadStarted === "windows" ? "bg-green-600" : ""}`}
+                  onClick={() => handleDownload("windows", "https://github.com/filechat-ai/filechat-companion/releases/latest/download/filechat-companion-windows.exe")}
                 >
-                  <Button className="w-44 h-32 flex flex-col justify-center items-center gap-2">
-                    <Monitor className="h-8 w-8" />
-                    <span>Windows</span>
-                    <span className="text-xs opacity-75">Version 1.2.0</span>
-                  </Button>
-                </a>
-                <a
-                  href="https://github.com/filechat-ai/filechat-companion/releases/latest/download/filechat-companion-macos.dmg"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  {downloadStarted === "windows" ? (
+                    <>
+                      <Check className="h-8 w-8" />
+                      <span>Téléchargement lancé</span>
+                    </>
+                  ) : (
+                    <>
+                      <Monitor className="h-8 w-8" />
+                      <span>Windows</span>
+                      <span className="text-xs opacity-75">Version 1.2.0</span>
+                      <Download className="h-4 w-4 mt-1" />
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  className={`w-44 h-32 flex flex-col justify-center items-center gap-2 ${downloadStarted === "macos" ? "bg-green-600" : ""}`}
+                  onClick={() => handleDownload("macos", "https://github.com/filechat-ai/filechat-companion/releases/latest/download/filechat-companion-macos.dmg")}
                 >
-                  <Button className="w-44 h-32 flex flex-col justify-center items-center gap-2">
-                    <Apple className="h-8 w-8" />
-                    <span>macOS</span>
-                    <span className="text-xs opacity-75">Version 1.2.0</span>
-                  </Button>
-                </a>
+                  {downloadStarted === "macos" ? (
+                    <>
+                      <Check className="h-8 w-8" />
+                      <span>Téléchargement lancé</span>
+                    </>
+                  ) : (
+                    <>
+                      <Apple className="h-8 w-8" />
+                      <span>macOS</span>
+                      <span className="text-xs opacity-75">Version 1.2.0</span>
+                      <Download className="h-4 w-4 mt-1" />
+                    </>
+                  )}
+                </Button>
               </div>
               <div className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">
                 Ou utilisez{" "}
