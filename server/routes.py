@@ -1,4 +1,3 @@
-
 """
 Routes API pour le serveur d'inférence IA
 """

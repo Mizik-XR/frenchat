@@ -58,3 +58,17 @@ export interface BrowserCompatibility {
   compatible: boolean;
   issues: string[];
 }
+
+// Type pour la requête de téléchargement de modèle
+export interface ModelDownloadRequest {
+  model: string;
+  consent: boolean;
+}
+
+// Type pour la réponse de téléchargement de modèle
+export interface ModelDownloadResponse {
+  status: string;
+  model: string;
+  progress: number;
+  estimated_size_mb: number;
+}
