@@ -17,11 +17,23 @@ echo.
 REM Activer le mode cloud par défaut - moins invasif
 set "MODE_CLOUD=1"
 
+REM Option pour forcer la reconstruction
+set FORCE_REBUILD=0
+if "%1"=="--rebuild" (
+    set FORCE_REBUILD=1
+    echo [INFO] Option de reconstruction forcée activée
+)
+
 REM Vérification du dossier dist
 echo [INFO] Vérification des fichiers de l'application...
 if not exist "dist\" (
-    echo [ERREUR] Le dossier 'dist' n'existe pas.
+    set FORCE_REBUILD=1
+    echo [INFO] Le dossier 'dist' n'existe pas, reconstruction nécessaire.
+)
+
+if "%FORCE_REBUILD%"=="1" (
     echo [INFO] Construction de l'application en cours...
+    rmdir /s /q dist 2>nul
     call npm run build
     if errorlevel 1 (
         echo [ERREUR] Construction de l'application échouée
@@ -47,6 +59,23 @@ if not exist "dist\index.html" (
         exit /b 1
     )
     echo [OK] Application construite avec succès.
+    echo.
+)
+
+REM Vérification du contenu du fichier index.html
+findstr "gptengineer.js" "dist\index.html" >nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [ATTENTION] Le script Lovable manque dans index.html.
+    echo [INFO] Exécution de fix-blank-page.bat pour corriger...
+    call fix-blank-page.bat
+    if errorlevel 1 (
+        echo [ERREUR] Correction échouée.
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
+    echo [OK] Correction appliquée avec succès.
     echo.
 )
 
@@ -106,6 +135,8 @@ echo  - Utiliser l'IA cloud: Aucune configuration supplémentaire n'est nécessa
 echo.
 echo Cette fenêtre peut être minimisée. Ne la fermez pas tant que
 echo vous utilisez FileChat.
+echo.
+echo REMARQUE: Avec PowerShell, utilisez toujours .\script.bat pour exécuter les scripts
 echo.
 echo ===================================================
 

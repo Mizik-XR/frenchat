@@ -69,12 +69,12 @@ echo "    RÉPARATION TERMINÉE AVEC SUCCÈS"
 echo "==================================================="
 echo
 echo "Veuillez maintenant lancer l'application avec:"
-echo "- Sur Windows: start-app.bat"
+echo "- Sur Windows: ./start-app.bat"
 echo "- Sur Mac/Linux: ./scripts/unix/start-app-simplified.sh"
 echo
 echo "Si le problème persiste, essayez également:"
-echo "1. Vérifier avec scripts/unix/diagnostic.sh ou scripts/diagnostic.bat"
-echo "2. Lancer en mode cloud avec start-cloud-mode.bat"
+echo "1. Vérifier avec ./scripts/unix/diagnostic.sh ou ./scripts/diagnostic.bat"
+echo "2. Lancer en mode cloud avec ./start-cloud-mode.bat"
 echo
 read -p "Appuyez sur Entrée pour quitter..." -n1 -s
 exit 0

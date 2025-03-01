@@ -82,11 +82,11 @@ echo     RÉPARATION TERMINÉE AVEC SUCCÈS
 echo ===================================================
 echo.
 echo Veuillez maintenant lancer l'application avec la commande:
-echo start-app.bat
+echo .\start-app.bat
 echo.
 echo Si le problème persiste, essayez également:
-echo 1. Vérifier avec scripts\diagnostic.bat
-echo 2. Lancer en mode cloud avec start-cloud-mode.bat
+echo 1. Vérifier avec .\scripts\diagnostic.bat
+echo 2. Lancer en mode cloud avec .\start-cloud-mode.bat
 echo.
 pause
 exit /b 0

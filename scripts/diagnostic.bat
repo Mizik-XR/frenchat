@@ -63,19 +63,25 @@ if exist "dist\index.html" (
     ) else (
         echo [ATTENTION] Le script Lovable manque dans index.html.
         echo            Cela peut causer une page blanche.
+        echo            Utilisez .\fix-blank-page.bat pour réparer.
     )
 ) else (
     echo [ATTENTION] Le fichier dist\index.html est manquant.
     echo            Essayez de reconstruire l'application avec:
-    echo            start-app.bat --rebuild
+    echo            .\start-app.bat --rebuild ou .\fix-blank-page.bat
 )
 echo.
 
-echo [4] Vérification de l'environnement virtuel...
+echo [4] Vérification de PowerShell...
+echo [INFO] Mode de lancement des scripts correct avec PowerShell:
+echo        .\start-app.bat et non start-app.bat
+echo.
+
+echo [5] Vérification de l'environnement virtuel...
 if exist "venv\" (
     echo [OK] Environnement virtuel trouvé.
     
-    echo [5] Versions des packages installés:
+    echo [6] Versions des packages installés:
     call venv\Scripts\activate.bat >nul 2>nul
     pip list | findstr "torch transformers tokenizers fastapi" 
     if %ERRORLEVEL% NEQ 0 echo      Aucun package IA trouvé (mode cloud uniquement)
@@ -109,11 +115,14 @@ echo.
 echo Solution recommandée:
 echo -------------------
 echo 1. Si vous avez une page blanche, essayez:
-echo    start-app.bat --rebuild
+echo    .\fix-blank-page.bat
 echo.
-echo 2. En cas de problème persistant, vérifiez:
-echo    - Si le script gptengineer.js est présent dans index.html
-echo    - Si le dossier dist contient tous les fichiers nécessaires
+echo 2. Pour démarrer l'application avec PowerShell:
+echo    .\start-app.bat
+echo    .\start-cloud-mode.bat (plus léger, sans IA locale)
+echo.
+echo 3. En cas de problème dans l'invite de commande normale:
+echo    - Démarrer → cmd.exe → cd chemin_vers_filechat → start-app.bat
 echo.
 echo ===================================================
 echo Fin du diagnostic
