@@ -1,11 +1,10 @@
-
 import { Download, ExternalLink, Folder, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
-import { ModelPathWizard } from "./ModelPathWizard";
+import { ModelPathWizard } from "./wizard/ModelPathWizard";
 
 interface ModelPathSelectorProps {
   modelPath: string;
@@ -25,7 +24,6 @@ export function ModelPathSelector({
   const [isOllamaAvailable, setIsOllamaAvailable] = useState<boolean | null>(null);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   
-  // Vérifier si Ollama est disponible
   useEffect(() => {
     const checkOllama = async () => {
       try {
