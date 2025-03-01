@@ -6,7 +6,6 @@ import { toast } from "@/hooks/use-toast";
 // Interface simple pour la configuration HuggingFace
 interface HuggingFaceConfig {
   inference_token?: string;
-  [key: string]: any;
 }
 
 // Types pour les types de service supportés
@@ -112,13 +111,13 @@ export function useHuggingFace() {
           return;
         }
 
-        // Utiliser une approche explicite pour éviter l'inférence complexe
-        if (data && data.config) {
-          // Conversion simple pour éviter l'inférence de type problématique
-          const configObj = data.config as Record<string, unknown>;
+        // Simple extraction du token sans type complexe
+        if (data && typeof data.config === 'object' && data.config !== null) {
+          // Utilisons une approche plus directe pour éviter l'inférence de type
+          const token = (data.config as any).inference_token;
           
-          if (typeof configObj.inference_token === 'string') {
-            setInferenceToken(configObj.inference_token);
+          if (typeof token === 'string') {
+            setInferenceToken(token);
             console.log("Token HF récupéré avec succès");
           }
         }
