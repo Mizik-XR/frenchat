@@ -6,15 +6,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { 
   cachedUser, 
   isSessionLoading, 
-  PROTECTED_ROUTES 
+  PROTECTED_ROUTES,
+  updateCachedUser,
+  updateSessionLoading
 } from "./auth/authConstants";
-import { 
-  checkInitialSession,
-  handleAuthChange as handleAuthStateChange,
-  preloadAuthSession
-} from "./auth/sessionUtils";
 import { useSignOut } from "./auth/authActions";
-import { checkUserAndConfig } from "./auth/userProfileUtils";
 
 export function useAuthSession() {
   const navigate = useNavigate();
@@ -23,48 +19,131 @@ export function useAuthSession() {
   const [isLoading, setIsLoading] = useState(isSessionLoading);
   const signOut = useSignOut();
 
-  // Callback pour vérification du profil et config
-  const checkUserAndConfigCallback = useCallback(checkUserAndConfig, []);
-
   // Gérer les changements d'état d'authentification
   const handleAuthChange = useCallback(async (_event: string, session: any) => {
-    await handleAuthStateChange(
-      _event, 
-      session, 
-      navigate, 
-      location.pathname, 
-      setUser, 
-      setIsLoading
-    );
+    console.log("Auth state changed:", _event, "session:", session?.user?.id ? "User authenticated" : "No user");
+    
+    // Mettre à jour le cache global
+    updateCachedUser(session?.user ?? null);
+    setUser(session?.user ?? null);
+    
+    // Vérifier si l'utilisateur tente d'accéder à une route protégée sans être authentifié
+    if (!session?.user && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+      navigate('/auth', { state: { from: { pathname: location.pathname } } });
+      updateSessionLoading(false);
+      setIsLoading(false);
+      return;
+    }
+    
+    if (_event === 'SIGNED_IN') {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_first_login')
+        .eq('id', session.user.id)
+        .single();
+        
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error("Erreur lors de la récupération du profil:", profileError);
+      }
+
+      const { data: configs, error: configError } = await supabase
+        .from('service_configurations')
+        .select('service_type, status')
+        .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
+
+      if (configError) {
+        console.error("Erreur lors de la récupération des configurations:", configError);
+      }
+
+      const needsConfig = !configs || !configs.length || !configs.some(c => c.status === 'configured');
+
+      if (profile?.is_first_login || needsConfig) {
+        if (location.pathname !== '/config') {
+          navigate('/config');
+        }
+      } else if (location.pathname === '/auth' || location.pathname === '/' || location.pathname === '/index') {
+        navigate('/home');
+      }
+    } else if (_event === 'SIGNED_OUT') {
+      if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+        navigate('/');
+      }
+    }
+
+    updateSessionLoading(false);
+    setIsLoading(false);
   }, [navigate, location.pathname]);
 
   // Fonction de vérification initiale de la session
   const checkSession = useCallback(async () => {
-    await checkInitialSession(navigate, location.pathname);
-    setUser(cachedUser);
-    setIsLoading(isSessionLoading);
+    try {
+      console.log("Checking initial session...");
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log("Initial session check:", session?.user?.id ? "User authenticated" : "No user");
+      
+      if (session?.user) {
+        // Mettre à jour le cache global
+        updateCachedUser(session.user);
+        setUser(session.user);
+        
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_first_login')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error("Erreur lors de la récupération du profil:", profileError);
+        }
+
+        const { data: configs, error: configError } = await supabase
+          .from('service_configurations')
+          .select('service_type, status')
+          .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
+
+        if (configError) {
+          console.error("Erreur lors de la récupération des configurations:", configError);
+        }
+
+        const needsConfig = !configs || !configs.length || !configs.some(c => c.status === 'configured');
+
+        // Redirection selon l'état de l'utilisateur
+        if ((profile?.is_first_login || needsConfig) && location.pathname !== '/config') {
+          navigate('/config');
+        } else if ((location.pathname === '/' || location.pathname === '/auth' || location.pathname === '/index') && 
+                  !location.pathname.startsWith('/auth/google')) {
+          navigate('/home');
+        }
+      } else if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+        // Rediriger si l'utilisateur tente d'accéder à une route protégée sans être authentifié
+        navigate('/auth', { state: { from: { pathname: location.pathname } } });
+      }
+      
+      // Mettre à jour l'état de chargement global
+      updateSessionLoading(false);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Erreur lors de la vérification de la session:", error);
+      updateCachedUser(null);
+      updateSessionLoading(false);
+      setIsLoading(false);
+    }
   }, [navigate, location.pathname]);
 
-  // Configurer le listener d'authentification
+  // Configurer le listener d'authentification - utilisation uniforme des hooks
   useEffect(() => {
-    // Précharger la session si nécessaire
-    if (isSessionLoading) {
-      preloadAuthSession();
-    }
-    
     // Mettre en place le listener d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
     
-    // Vérifier la session initiale uniquement si nécessaire
-    if (isSessionLoading) {
-      checkSession();
-    }
-
+    // Toujours vérifier la session initiale au premier rendu
+    // évite les conditions d'utilisation des hooks
+    checkSession();
+    
     // Nettoyer le listener à la désinscription
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname, handleAuthChange, checkSession]);
+  }, [handleAuthChange, checkSession]);
 
   return { user, isLoading, signOut };
 }
