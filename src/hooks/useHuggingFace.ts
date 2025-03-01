@@ -107,10 +107,14 @@ export function useHuggingFace() {
         }
 
         if (data && data.config) {
-          // Fix: Safely access the inference_token property
+          // Fix: Safely access the inference_token property with explicit type casting
           const config = data.config;
-          if (typeof config === 'object' && config !== null && 'inference_token' in config) {
-            setInferenceToken((config as { inference_token: string }).inference_token);
+          if (typeof config === 'object' && config !== null) {
+            // Use a type guard to ensure we can access the property safely
+            const configObject = config as Record<string, any>;
+            if ('inference_token' in configObject) {
+              setInferenceToken(configObject.inference_token as string);
+            }
           }
         }
       } catch (e) {
