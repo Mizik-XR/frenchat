@@ -71,7 +71,7 @@ export function LocalAIConfig({
         <CardContent className="space-y-4">
           <div className="space-y-4">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Fournisseur local
               </label>
               <div className="flex gap-2 pb-2">

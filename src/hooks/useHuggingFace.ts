@@ -3,6 +3,25 @@ import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from '@/hooks/use-toast';
 
+interface TextGenerationParameters {
+  model: string;
+  inputs: string;
+  parameters?: {
+    max_length?: number;
+    temperature?: number;
+    top_p?: number;
+  };
+  system_prompt?: string;
+  max_length?: number;
+  temperature?: number;
+  top_p?: number;
+  prompt?: string;
+}
+
+interface TextGenerationResponse {
+  generated_text: string;
+}
+
 export function useHuggingFace(provider: string = 'huggingface') {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +59,7 @@ export function useHuggingFace(provider: string = 'huggingface') {
     }
   };
 
-  const textGeneration = async (options: any) => {
+  const textGeneration = async (options: TextGenerationParameters): Promise<TextGenerationResponse[]> => {
     setIsLoading(true);
     setError(null);
     
