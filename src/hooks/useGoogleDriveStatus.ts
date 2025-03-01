@@ -11,6 +11,9 @@ export const getGoogleRedirectUrl = () => {
   return getRedirectUrl('auth/google/callback');
 };
 
+// Export the getRedirectUrl function to fix import errors
+export { getRedirectUrl } from '@/utils/environmentUtils';
+
 export const useGoogleDriveStatus = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
