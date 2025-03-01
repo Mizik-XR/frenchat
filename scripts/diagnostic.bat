@@ -53,15 +53,21 @@ if %ERRORLEVEL% EQU 0 (
 )
 echo.
 
-echo [3] Vérification de Rust...
-where rustc >nul 2>nul
-if %ERRORLEVEL% EQU 0 (
-    echo [OK] Rust est correctement installé:
-    rustc --version
-    cargo --version
+echo [3] Vérification des fichiers de l'application...
+if exist "dist\index.html" (
+    echo [OK] Le fichier dist\index.html existe.
+    
+    findstr "gptengineer.js" "dist\index.html" >nul
+    if %ERRORLEVEL% EQU 0 (
+        echo [OK] Le script Lovable est présent dans index.html.
+    ) else (
+        echo [ATTENTION] Le script Lovable manque dans index.html.
+        echo            Cela peut causer une page blanche.
+    )
 ) else (
-    echo [INFO] Rust n'est pas installé.
-    echo        Ce n'est pas un problème si vous utilisez Ollama ou le mode cloud.
+    echo [ATTENTION] Le fichier dist\index.html est manquant.
+    echo            Essayez de reconstruire l'application avec:
+    echo            start-app.bat --rebuild
 )
 echo.
 
@@ -74,9 +80,6 @@ if exist "venv\" (
     pip list | findstr "torch transformers tokenizers fastapi" 
     if %ERRORLEVEL% NEQ 0 echo      Aucun package IA trouvé (mode cloud uniquement)
     echo.
-    
-    echo [6] Test d'importation Python...
-    python -c "try: import transformers; import tokenizers; import fastapi; print('[OK] Import réussi!'); except ImportError as e: print('[INFO] Certains packages ne sont pas installés:',e)" 2>nul
 ) else (
     echo [INFO] Environnement virtuel non trouvé.
     echo        Ce n'est pas un problème si vous utilisez le mode cloud uniquement.
@@ -105,8 +108,12 @@ echo [V] Mode Cloud (Toujours disponible)
 echo.
 echo Solution recommandée:
 echo -------------------
-echo 1. Utiliser Ollama pour l'IA locale (simple et efficace)
-echo 2. Utiliser le mode cloud si l'IA locale n'est pas nécessaire
+echo 1. Si vous avez une page blanche, essayez:
+echo    start-app.bat --rebuild
+echo.
+echo 2. En cas de problème persistant, vérifiez:
+echo    - Si le script gptengineer.js est présent dans index.html
+echo    - Si le dossier dist contient tous les fichiers nécessaires
 echo.
 echo ===================================================
 echo Fin du diagnostic
@@ -115,4 +122,3 @@ echo.
 echo Pour obtenir de l'aide supplémentaire, contactez le support technique.
 echo.
 pause
-

@@ -64,11 +64,21 @@ if not exist "node_modules\" (
     echo.
 )
 
-REM Vérification du dossier dist
-echo [INFO] Vérification des fichiers de l'application...
+REM Option pour forcer la reconstruction
+set FORCE_REBUILD=0
+if "%1"=="--rebuild" (
+    set FORCE_REBUILD=1
+    echo [INFO] Option de reconstruction forcée activée
+)
+
+REM Vérification du dossier dist ou reconstruction forcée
 if not exist "dist\" (
-    echo [ERREUR] Le dossier 'dist' n'existe pas.
-    echo [INFO] Construction de l'application en cours...
+    set FORCE_REBUILD=1
+)
+
+if "%FORCE_REBUILD%"=="1" (
+    echo [INFO] Reconstruction de l'application en cours...
+    rmdir /s /q dist 2>nul
     call npm run build
     if errorlevel 1 (
         echo [ERREUR] Construction de l'application échouée
@@ -94,6 +104,22 @@ if not exist "dist\index.html" (
         exit /b 1
     )
     echo [OK] Application construite avec succès.
+    echo.
+)
+
+REM Vérification du contenu du fichier index.html
+findstr "gptengineer.js" "dist\index.html" >nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [ATTENTION] Le script Lovable manque dans index.html, reconstruction...
+    call npm run build
+    if errorlevel 1 (
+        echo [ERREUR] Construction de l'application échouée
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
+    echo [OK] Application reconstruite avec succès.
     echo.
 )
 
@@ -147,7 +173,7 @@ timeout /t 3 /nobreak > nul
 
 REM Démarrage de l'application web
 echo [INFO] Démarrage de l'application web...
-start "Application Web FileChat" cmd /c "http-server dist -p 8080 -c-1"
+start "Application Web FileChat" cmd /c "http-server dist -p 8080 -c-1 --cors"
 timeout /t 2 /nobreak > nul
 
 REM Ouvrir le navigateur
@@ -164,6 +190,8 @@ echo [1] Serveur IA local: http://localhost:8000
 echo [2] Application Web: http://localhost:8080
 echo.
 echo [INFO] Pour arrêter les services, fermez cette fenêtre et les fenêtres associées
+echo.
+echo [INFO] Pour forcer une reconstruction, utilisez: start-app.bat --rebuild
 echo.
 echo Appuyez sur une touche pour fermer cette fenêtre...
 pause >nul

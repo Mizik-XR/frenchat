@@ -9,11 +9,17 @@ echo ""
 # Activer le mode cloud par défaut - moins invasif
 export MODE_CLOUD=1
 
+# Option pour forcer la reconstruction
+FORCE_REBUILD=0
+if [ "$1" == "--rebuild" ]; then
+    FORCE_REBUILD=1
+    echo "[INFO] Option de reconstruction forcée activée"
+fi
+
 # Vérification du dossier dist
-echo "[INFO] Vérification des fichiers de l'application..."
-if [ ! -d "dist" ]; then
-    echo "[ERREUR] Le dossier 'dist' n'existe pas."
+if [ ! -d "dist" ] || [ "$FORCE_REBUILD" == "1" ]; then
     echo "[INFO] Construction de l'application en cours..."
+    rm -rf dist 2>/dev/null
     npm run build
     if [ $? -ne 0 ]; then
         echo "[ERREUR] Construction de l'application échouée"
@@ -39,6 +45,21 @@ if [ ! -f "dist/index.html" ]; then
         exit 1
     fi
     echo "[OK] Application construite avec succès."
+    echo ""
+fi
+
+# Vérification du contenu du fichier index.html
+if ! grep -q "gptengineer.js" "dist/index.html"; then
+    echo "[ATTENTION] Le script Lovable manque dans index.html, reconstruction..."
+    npm run build
+    if [ $? -ne 0 ]; then
+        echo "[ERREUR] Construction de l'application échouée"
+        echo ""
+        echo "Appuyez sur Entrée pour quitter..."
+        read
+        exit 1
+    fi
+    echo "[OK] Application reconstruite avec succès."
     echo ""
 fi
 
@@ -76,7 +97,7 @@ echo ""
 
 # Démarrage de l'application web
 echo "[INFO] Démarrage de l'interface web..."
-http-server dist -p 8080 -c-1 &> /dev/null &
+http-server dist -p 8080 -c-1 --cors &> /dev/null &
 SERVER_PID=$!
 sleep 2
 
@@ -103,6 +124,8 @@ echo " - Utiliser l'IA cloud: Aucune configuration supplémentaire n'est nécess
 echo ""
 echo "Cette fenêtre peut être minimisée. Ne la fermez pas tant que"
 echo "vous utilisez FileChat."
+echo ""
+echo "Pour forcer une reconstruction, utilisez: ./start-app-simplified.sh --rebuild"
 echo ""
 echo "==================================================="
 
