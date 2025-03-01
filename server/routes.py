@@ -5,13 +5,13 @@ Routes API pour le serveur d'inférence IA
 from datetime import datetime
 from fastapi import FastAPI, HTTPException, Request, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any, Union
 
 from .config import logger, DEFAULT_MODEL, FALLBACK_MODE, MODEL_LOADED, ALLOWED_ORIGINS, ALLOWED_METHODS, ALLOWED_HEADERS
 from .cache_manager import init_cache, generate_cache_id, check_cache, update_cache, get_cache_stats
 from .system_analyzer import analyze_system_resources
-from .model_manager import lazy_load_model, fallback_generate
+from .model_manager import lazy_load_model, fallback_generate, get_download_progress, init_model_download, save_model_config, load_model_config
 
 # Modèles de données
 class GenerationInput(BaseModel):
@@ -23,6 +23,10 @@ class GenerationInput(BaseModel):
 
 class SystemResourcesRequest(BaseModel):
     analyzeSystem: bool = True
+
+class ModelDownloadRequest(BaseModel):
+    model: str
+    consent: bool = Field(..., description="Confirmation de consentement pour le téléchargement")
 
 # Création de l'application FastAPI
 app = FastAPI()
@@ -201,6 +205,9 @@ async def health_check():
     # Inclure les informations sur les ressources système
     system_resources = analyze_system_resources()
     
+    # Inclure les informations sur le téléchargement du modèle
+    download_status = get_download_progress()
+    
     return {
         "status": "ok", 
         "model": DEFAULT_MODEL,
@@ -210,18 +217,28 @@ async def health_check():
         "fallback_mode": FALLBACK_MODE,
         "model_loaded": MODEL_LOADED,
         "cache": cache_stats,
-        "system_resources": system_resources
+        "system_resources": system_resources,
+        "download": download_status
     }
 
 @app.get("/models")
 async def list_models():
+    # Charger la configuration du modèle
+    model_config = load_model_config()
+    default_model = model_config.get("default_model", DEFAULT_MODEL)
+    
     return {
-        "default": DEFAULT_MODEL,
+        "default": default_model,
         "available": [
             {
                 "id": "mistralai/Mistral-7B-Instruct-v0.1",
                 "name": "Mistral 7B",
                 "description": "Modèle par défaut, équilibre performances et ressources"
+            },
+            {
+                "id": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+                "name": "Mixtral 8x7B",
+                "description": "Modèle plus puissant, nécessite plus de ressources"
             },
             {
                 "id": "local/fallback",
@@ -251,6 +268,41 @@ async def analyze_system(input_data: SystemResourcesRequest):
 async def get_cache_statistics():
     """Endpoint pour obtenir les statistiques du cache"""
     return get_cache_stats()
+
+@app.get("/download-progress")
+async def get_model_download_progress():
+    """Endpoint pour obtenir l'état du téléchargement du modèle"""
+    return get_download_progress()
+
+@app.post("/download-model")
+async def start_model_download(request: ModelDownloadRequest):
+    """Endpoint pour démarrer le téléchargement d'un modèle"""
+    if not request.consent:
+        raise HTTPException(
+            status_code=400, 
+            detail="Vous devez consentir au téléchargement du modèle"
+        )
+    
+    # Vérifier si le modèle est valide
+    valid_models = ["mistralai/Mistral-7B-Instruct-v0.1", "mistralai/Mixtral-8x7B-Instruct-v0.1"]
+    if request.model not in valid_models:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Modèle non supporté. Modèles valides: {', '.join(valid_models)}"
+        )
+    
+    # Démarrer le téléchargement
+    download_status = init_model_download(request.model)
+    
+    # Sauvegarder la configuration du modèle
+    save_model_config(request.model)
+    
+    return {
+        "status": "downloading",
+        "model": request.model,
+        "progress": download_status["progress"],
+        "estimated_size_mb": download_status["size_mb"]
+    }
 
 def init_app():
     # Initialiser le cache au démarrage
