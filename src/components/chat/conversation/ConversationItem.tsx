@@ -38,10 +38,10 @@ export const ConversationItem = ({
   const { isConnected: isDriveConnected } = useGoogleDriveStatus();
 
   const handlePin = () => {
-    onUpdateConversation({ id: conversation.id, isPinned: !conversation.isPinned });
+    onUpdateConversation({ id: conversation.id, isPinned: !conversation.pinned });
     toast({
-      title: conversation.isPinned ? "Conversation désépinglée" : "Conversation épinglée",
-      description: conversation.isPinned ? 
+      title: conversation.pinned ? "Conversation désépinglée" : "Conversation épinglée",
+      description: conversation.pinned ? 
         "La conversation n'apparaîtra plus en haut de la liste" : 
         "La conversation apparaîtra en haut de la liste"
     });
@@ -84,7 +84,7 @@ export const ConversationItem = ({
       const { data, error } = await supabase.functions.invoke('export-to-google-drive', {
         body: { 
           conversationId: conversation.id,
-          title: conversation.title || `Conversation du ${format(new Date(conversation.created_at), 'dd/MM/yyyy', { locale: fr })}`
+          title: conversation.title || `Conversation du ${format(conversation.createdAt, 'dd/MM/yyyy', { locale: fr })}`
         }
       });
 
@@ -121,7 +121,7 @@ export const ConversationItem = ({
   };
 
   const formattedDate = format(
-    new Date(conversation.created_at), 
+    conversation.createdAt, 
     'dd MMM yyyy', 
     { locale: fr }
   );
@@ -132,7 +132,7 @@ export const ConversationItem = ({
         group relative rounded-lg p-3 cursor-pointer transition-all
         hover:bg-accent/50
         ${isSelected ? 'bg-accent text-accent-foreground' : 'hover:text-accent-foreground'}
-        ${conversation.isPinned ? 'border-l-4 border-primary' : ''}
+        ${conversation.pinned ? 'border-l-4 border-primary' : ''}
       `}
       onClick={onSelect}
     >
@@ -156,7 +156,7 @@ export const ConversationItem = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem onClick={handlePin}>
-              {conversation.isPinned ? (
+              {conversation.pinned ? (
                 <>
                   <PinOff className="h-4 w-4 mr-2" />
                   Désépingler

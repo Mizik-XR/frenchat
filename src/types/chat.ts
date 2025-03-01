@@ -2,7 +2,8 @@
 // Vérifiez si ce fichier existe, sinon il sera créé
 
 export type MessageRole = 'user' | 'assistant' | 'system';
-export type MessageType = 'text' | 'image' | 'file' | 'audio' | 'video';
+export type MessageType = 'text' | 'image' | 'file' | 'audio' | 'video' | 'document';
+export type AnalysisMode = 'default' | 'analysis' | 'summary' | 'action';
 
 export interface MessageMetadata {
   provider?: string;
@@ -38,6 +39,8 @@ export interface Conversation {
   messages?: Message[];
   folderId?: string | null;
   pinned?: boolean;
+  isArchived?: boolean;
+  archiveDate?: Date;
 }
 
 export interface WebUIConfig {
@@ -45,8 +48,17 @@ export interface WebUIConfig {
   maxTokens: number;
   temperature: number;
   useMemory: boolean;
-  analysisMode: string;
+  analysisMode: AnalysisMode;
   showSources?: boolean;
+  streamResponse?: boolean;
 }
 
 export type AIProvider = 'huggingface' | 'openai' | 'anthropic' | 'gemini' | 'perplexity' | 'internet-search';
+
+export interface ConversationFolder {
+  id: string;
+  name: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}

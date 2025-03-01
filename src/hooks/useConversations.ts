@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Conversation, WebUIConfig } from "@/types/chat";
@@ -20,13 +21,12 @@ export function useConversations() {
       return data.map((conv: any): Conversation => ({
         id: conv.id,
         title: conv.title,
-        created_at: conv.created_at,
-        updated_at: conv.updated_at,
+        createdAt: new Date(conv.created_at),
+        updatedAt: new Date(conv.updated_at),
         folderId: conv.folder_id,
-        isPinned: conv.is_pinned,
+        pinned: conv.is_pinned,
         isArchived: conv.is_archived,
         archiveDate: conv.archive_date ? new Date(conv.archive_date) : undefined,
-        settings: conv.settings
       }));
     }
   });
@@ -37,11 +37,20 @@ export function useConversations() {
       throw new Error("User not authenticated");
     }
 
+    // Conversion du WebUIConfig à JSON pour Supabase
+    const settingsJson = {
+      model: webUIConfig.model,
+      maxTokens: webUIConfig.maxTokens,
+      temperature: webUIConfig.temperature,
+      streamResponse: webUIConfig.streamResponse || false,
+      analysisMode: webUIConfig.analysisMode
+    };
+
     const { data, error } = await supabase
       .from('chat_conversations')
       .insert({
         title: "Nouvelle conversation",
-        settings: webUIConfig,
+        settings: settingsJson,
         user_id: user.user.id,
         is_archived: false
       })
