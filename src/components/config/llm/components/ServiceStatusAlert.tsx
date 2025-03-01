@@ -1,6 +1,6 @@
 
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Info, Server } from "lucide-react";
+import { Info, Server, AlertCircle } from "lucide-react";
 
 interface ServiceStatusAlertProps {
   serviceAvailable: boolean | null;
@@ -15,7 +15,10 @@ export function ServiceStatusAlert({ serviceAvailable }: ServiceStatusAlertProps
         ? "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800" 
         : "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800"}
     >
-      <Server className="h-4 w-4" />
+      {serviceAvailable 
+        ? <Server className="h-4 w-4" />
+        : <AlertCircle className="h-4 w-4" />
+      }
       <AlertTitle>
         {serviceAvailable 
           ? "Service IA local détecté" 

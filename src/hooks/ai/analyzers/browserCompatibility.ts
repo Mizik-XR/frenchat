@@ -35,7 +35,7 @@ export const checkBrowserCompatibility = (): {
   
   // Vérification du support WebGPU (optionnel mais recommandé pour les performances)
   if (!capabilities.webGPU) {
-    // C'est optionnel, donc juste un avertissement
+    // C'est optionnel, donc juste pour information
     console.log("WebGPU non supporté - l'accélération GPU ne sera pas disponible");
   }
   
