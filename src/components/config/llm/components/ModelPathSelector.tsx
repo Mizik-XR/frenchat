@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
+import { ModelPathWizard } from "./ModelPathWizard";
 
 interface ModelPathSelectorProps {
   modelPath: string;
@@ -22,6 +23,7 @@ export function ModelPathSelector({
   onDownloadCompanion
 }: ModelPathSelectorProps) {
   const [isOllamaAvailable, setIsOllamaAvailable] = useState<boolean | null>(null);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
   
   // Vérifier si Ollama est disponible
   useEffect(() => {
@@ -38,6 +40,18 @@ export function ModelPathSelector({
     
     checkOllama();
   }, []);
+
+  const handleOpenWizard = () => {
+    setIsWizardOpen(true);
+  };
+
+  const handleCloseWizard = () => {
+    setIsWizardOpen(false);
+  };
+
+  const handlePathSelected = (path: string) => {
+    onPathChange(path);
+  };
 
   return (
     <div className="space-y-6">
@@ -104,12 +118,12 @@ export function ModelPathSelector({
             className="flex-1 bg-white"
           />
           <Button
-            variant="outline"
-            onClick={onPathSelect}
+            variant="default"
+            onClick={handleOpenWizard}
             className="gap-2"
           >
             <Folder className="h-4 w-4" />
-            Parcourir
+            Assistant d'installation
           </Button>
         </div>
         
@@ -132,6 +146,13 @@ export function ModelPathSelector({
           </div>
         </div>
       </div>
+
+      <ModelPathWizard 
+        isOpen={isWizardOpen}
+        onClose={handleCloseWizard}
+        onPathSelected={handlePathSelected}
+        defaultPath={modelPath || defaultModelPath}
+      />
     </div>
   );
 }
