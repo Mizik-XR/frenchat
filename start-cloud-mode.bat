@@ -21,6 +21,39 @@ set "HIDE_DEBUG=1"
 set "VITE_DISABLE_DEV_MODE=1"
 set "VITE_DEBUG_AUTH_KEY=disabled-%random%%random%"
 
+REM Vérification du dossier dist
+echo [INFO] Vérification des fichiers de l'application...
+if not exist "dist\" (
+    echo [ERREUR] Le dossier 'dist' n'existe pas.
+    echo [INFO] Construction de l'application en cours...
+    call npm run build
+    if errorlevel 1 (
+        echo [ERREUR] Construction de l'application échouée
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
+    echo [OK] Application construite avec succès.
+    echo.
+)
+
+REM Vérification du fichier index.html dans dist
+if not exist "dist\index.html" (
+    echo [ERREUR] Le fichier 'dist\index.html' est manquant.
+    echo [INFO] Reconstruction de l'application en cours...
+    call npm run build
+    if errorlevel 1 (
+        echo [ERREUR] Construction de l'application échouée
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
+    echo [OK] Application construite avec succès.
+    echo.
+)
+
 REM Animation de chargement
 echo [INFO] Initialisation de FileChat en cours...
 for /L %%i in (1,1,20) do (

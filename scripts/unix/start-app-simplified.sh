@@ -9,6 +9,39 @@ echo ""
 # Activer le mode cloud par défaut - moins invasif
 export MODE_CLOUD=1
 
+# Vérification du dossier dist
+echo "[INFO] Vérification des fichiers de l'application..."
+if [ ! -d "dist" ]; then
+    echo "[ERREUR] Le dossier 'dist' n'existe pas."
+    echo "[INFO] Construction de l'application en cours..."
+    npm run build
+    if [ $? -ne 0 ]; then
+        echo "[ERREUR] Construction de l'application échouée"
+        echo ""
+        echo "Appuyez sur Entrée pour quitter..."
+        read
+        exit 1
+    fi
+    echo "[OK] Application construite avec succès."
+    echo ""
+fi
+
+# Vérification du fichier index.html dans dist
+if [ ! -f "dist/index.html" ]; then
+    echo "[ERREUR] Le fichier 'dist/index.html' est manquant."
+    echo "[INFO] Reconstruction de l'application en cours..."
+    npm run build
+    if [ $? -ne 0 ]; then
+        echo "[ERREUR] Construction de l'application échouée"
+        echo ""
+        echo "Appuyez sur Entrée pour quitter..."
+        read
+        exit 1
+    fi
+    echo "[OK] Application construite avec succès."
+    echo ""
+fi
+
 # Vérifier si http-server est installé
 if ! command -v http-server &> /dev/null; then
     echo "[INFO] Installation de http-server..."
