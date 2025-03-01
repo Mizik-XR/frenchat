@@ -3,6 +3,12 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+// Interface simple pour la configuration HuggingFace
+interface HuggingFaceConfig {
+  inference_token?: string;
+  [key: string]: any;
+}
+
 // Types pour les types de service supportés
 export type ServiceType = "local" | "cloud" | "browser";
 export type ServiceTypeWithAuto = ServiceType | "auto";
@@ -106,16 +112,13 @@ export function useHuggingFace() {
           return;
         }
 
-        // Solution plus directe qui évite l'inférence de type complexe
+        // Utiliser un typage direct et explicite
         if (data) {
-          // Convertir en type simple sans inférence complexe
-          const rawConfig = data.config as Record<string, unknown>;
+          // Définir le type explicitement pour éviter l'inférence complexe
+          const config: HuggingFaceConfig = data.config as any;
           
-          // Extraire spécifiquement la valeur du token
-          const token = rawConfig.inference_token;
-          
-          if (typeof token === 'string') {
-            setInferenceToken(token);
+          if (typeof config.inference_token === 'string') {
+            setInferenceToken(config.inference_token);
             console.log("Token HF récupéré avec succès");
           }
         }
