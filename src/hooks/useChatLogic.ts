@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
@@ -90,7 +89,7 @@ export function useChatLogic(selectedConversationId: string | null) {
       // Ajout d'information sur le type de service IA utilisé dans les métadonnées
       const effectiveType = getEffectiveServiceType();
       const aiServiceInfo = {
-        type: effectiveType as 'local' | 'cloud' | 'browser',
+        type: effectiveType,
         endpoint: effectiveType === 'local' ? localAIUrl : 
                  effectiveType === 'browser' ? 'browser' : 'cloud'
       };

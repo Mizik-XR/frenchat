@@ -106,8 +106,12 @@ export function useHuggingFace() {
           return;
         }
 
-        if (data && data.config && typeof data.config === 'object' && 'inference_token' in data.config) {
-          setInferenceToken(data.config.inference_token as string);
+        if (data && data.config) {
+          // Fix: Safely access the inference_token property
+          const config = data.config;
+          if (typeof config === 'object' && config !== null && 'inference_token' in config) {
+            setInferenceToken((config as { inference_token: string }).inference_token);
+          }
         }
       } catch (e) {
         console.error("Exception lors de la récupération du token HF:", e);
