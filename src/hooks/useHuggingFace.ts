@@ -107,14 +107,10 @@ export function useHuggingFace() {
         }
 
         if (data && data.config) {
-          // Fix: Use a more explicit approach to avoid deep type recursion
-          const config = data.config;
-          if (config && typeof config === 'object') {
-            // Explicitly cast to a simple Record type to avoid recursive typing
-            const configRecord = config as Record<string, unknown>;
-            if ('inference_token' in configRecord && typeof configRecord.inference_token === 'string') {
-              setInferenceToken(configRecord.inference_token);
-            }
+          // Correct approach: Use type assertions with specific primitive types
+          const config = data.config as { inference_token?: string };
+          if (config.inference_token) {
+            setInferenceToken(config.inference_token);
           }
         }
       } catch (e) {
