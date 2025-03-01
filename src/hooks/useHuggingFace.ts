@@ -60,16 +60,16 @@ export function useHuggingFace(provider: string = 'huggingface') {
       const browserCompatibility = checkBrowserCompatibility();
       
       // Si le navigateur n'est pas compatible avec des fonctionnalités critiques,
-      // basculer automatiquement vers le mode cloud sans afficher d'alerte en production
+      // basculer automatiquement vers le mode cloud
       if (browserCompatibility.shouldFallbackToCloud) {
         setServiceType('cloud');
         localStorage.setItem('aiServiceType', 'cloud');
         
-        // N'afficher la notification que pour les développeurs
+        // Notification uniquement en mode développement ou debug
         if (import.meta.env.DEV || window.location.search.includes('debug=true')) {
           toast({
-            title: "Fonctionnalités limitées",
-            description: `Basculement automatique vers le mode cloud en raison de limitations du navigateur.`,
+            title: "Compatibilité navigateur",
+            description: `Mode cloud automatiquement activé - votre navigateur ne supporte pas l'IA locale`,
             variant: "default"
           });
         }

@@ -21,17 +21,19 @@ export const DebugPanel = () => {
   const { isRunning, report, runDiagnostic } = useDiagnostics();
   const { serviceType, localAIUrl, localProvider } = useHuggingFace();
   const [compatibilityIssues, setCompatibilityIssues] = useState<string[]>([]);
+  const [isCritical, setIsCritical] = useState(false);
 
   // Uniquement en développement ou si l'URL contient un paramètre debug=true
   const shouldShow = import.meta.env.DEV || window.location.search.includes('debug=true');
   
   // Check compatibility on mount
   useEffect(() => {
-    const { issues } = checkBrowserCompatibility();
+    const { issues, compatible } = checkBrowserCompatibility();
     setCompatibilityIssues(issues);
+    setIsCritical(!compatible);
   }, []);
 
-  if (!shouldShow) return null;
+  if (!shouldShow && !isCritical) return null;
 
   return (
     <>
@@ -64,8 +66,11 @@ export const DebugPanel = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Alerte de compatibilité du navigateur - uniquement en mode dev ou debug */}
-      <BrowserCompatibilityAlert issues={compatibilityIssues} />
+      {/* Alerte de compatibilité du navigateur - toujours affichée si critique */}
+      <BrowserCompatibilityAlert 
+        issues={compatibilityIssues} 
+        forceShow={isCritical} 
+      />
     </>
   );
 };
