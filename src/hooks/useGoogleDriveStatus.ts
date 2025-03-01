@@ -3,21 +3,33 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { toast } from "@/hooks/use-toast";
-import { Json } from "@/types/database";
-import { getRedirectUrl } from '@/utils/environmentUtils';
+import { 
+  getGoogleRedirectUrl, 
+  initiateGoogleAuth, 
+  revokeGoogleDriveAccess,
+  refreshGoogleToken
+} from '@/utils/googleDriveUtils';
 
-// Définir l'URL de redirection pour OAuth de manière dynamique
-export const getGoogleRedirectUrl = () => {
-  return getRedirectUrl('auth/google/callback');
-};
+// Export these functions for backward compatibility
+export { 
+  getGoogleRedirectUrl,
+  initiateGoogleAuth, 
+  revokeGoogleDriveAccess 
+} from '@/utils/googleDriveUtils';
 
-// Export the getRedirectUrl function to fix import errors
+// Also re-export getRedirectUrl for backward compatibility
 export { getRedirectUrl } from '@/utils/environmentUtils';
+
+export interface ConnectionData {
+  email: string;
+  connectedSince: Date;
+  metadata: any;
+}
 
 export const useGoogleDriveStatus = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
-  const [connectionData, setConnectionData] = useState<any>(null);
+  const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
   const { user } = useAuth();
 
   const checkGoogleDriveConnection = useCallback(async () => {
@@ -70,21 +82,8 @@ export const useGoogleDriveStatus = () => {
           console.log("Le token est expiré, tentative de rafraîchissement...");
           
           // Tentative de rafraîchissement du token
-          const { data: refreshData, error: refreshError } = await supabase.functions.invoke('google-oauth', {
-            body: { 
-              action: 'refresh_token', 
-              userId: user.id,
-              redirectUrl: getGoogleRedirectUrl()
-            }
-          });
-          
-          if (refreshError || !refreshData?.success) {
-            console.error("Erreur lors du rafraîchissement du token:", refreshError || "Token non rafraîchi");
-            setIsConnected(false);
-          } else {
-            console.log("Token rafraîchi avec succès");
-            setIsConnected(true);
-          }
+          const refreshed = await refreshGoogleToken(user.id);
+          setIsConnected(refreshed);
         } else {
           setIsConnected(true);
         }
@@ -123,47 +122,12 @@ export const useGoogleDriveStatus = () => {
     }
 
     try {
-      const redirectUri = getGoogleRedirectUrl();
-      console.log("URL de redirection configurée:", redirectUri);
-      
-      const { data: authData, error: authError } = await supabase.functions.invoke<{
-        client_id: string;
-      }>('google-oauth', {
-        body: { 
-          action: 'get_client_id',
-          redirectUrl: redirectUri
-        }
-      });
-
-      if (authError || !authData?.client_id) {
-        throw new Error("Impossible de récupérer les informations d'authentification");
-      }
-
-      // Demande de scopes étendus pour l'accès aux fichiers
-      const scopes = encodeURIComponent(
-        'https://www.googleapis.com/auth/drive.file ' +
-        'https://www.googleapis.com/auth/drive.metadata.readonly ' +
-        'https://www.googleapis.com/auth/userinfo.email ' +
-        'https://www.googleapis.com/auth/userinfo.profile'
-      );
-      
-      const redirectUrl = encodeURIComponent(redirectUri);
-      
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=${authData.client_id}&` +
-        `redirect_uri=${redirectUrl}&` +
-        `response_type=code&` +
-        `scope=${scopes}&` +
-        `access_type=offline&` +
-        `prompt=consent`;
-
-      console.log("Redirection vers:", authUrl);
-      
-      // Afficher une notification avant la redirection
       toast({
         title: "Connexion à Google Drive",
         description: "Vous allez être redirigé vers Google pour autoriser l'accès",
       });
+      
+      const authUrl = await initiateGoogleAuth(user.id);
       
       // Rediriger après un court délai pour que l'utilisateur voie la notification
       setTimeout(() => {
@@ -186,38 +150,18 @@ export const useGoogleDriveStatus = () => {
     }
 
     try {
-      // Révoquer le token d'accès côté Google
-      const { error: revokeError } = await supabase.functions.invoke('google-oauth', {
-        body: { 
-          action: 'revoke_token',
-          userId: user.id
-        }
-      });
-
-      if (revokeError) {
-        console.error("Erreur lors de la révocation du token:", revokeError);
-        // On continue pour supprimer le token côté Supabase même si la révocation échoue chez Google
-      }
-
-      // Supprimer le token de la base de données
-      const { error: deleteError } = await supabase
-        .from('oauth_tokens')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('provider', 'google');
-
-      if (deleteError) {
-        throw new Error("Erreur lors de la suppression du token local");
-      }
-
-      // Mise à jour de l'état
-      setIsConnected(false);
-      setConnectionData(null);
+      const success = await revokeGoogleDriveAccess(user.id);
       
-      toast({
-        title: "Déconnexion réussie",
-        description: "Votre compte Google Drive a été déconnecté",
-      });
+      if (success) {
+        // Mise à jour de l'état
+        setIsConnected(false);
+        setConnectionData(null);
+        
+        toast({
+          title: "Déconnexion réussie",
+          description: "Votre compte Google Drive a été déconnecté",
+        });
+      }
     } catch (error) {
       console.error("Erreur lors de la déconnexion de Google Drive:", error);
       toast({
