@@ -18,6 +18,8 @@ REM Configuration en mode cloud uniquement (masquer les fonctionnalités techniq
 set "MODE_CLOUD=1"
 set "CLIENT_MODE=1"
 set "HIDE_DEBUG=1"
+set "VITE_DISABLE_DEV_MODE=1"
+set "VITE_DEBUG_AUTH_KEY=disabled-%random%%random%"
 
 REM Animation de chargement
 echo [INFO] Initialisation de FileChat en cours...
@@ -65,9 +67,9 @@ echo [INFO] Lancement de l'application...
 start "Application Web FileChat" /min cmd /c "http-server dist -p 8080"
 timeout /t 2 /nobreak > nul
 
-REM Ouvrir le navigateur
+REM Ouvrir le navigateur avec le mode client activé et debug désactivé
 echo [INFO] Ouverture dans votre navigateur...
-start http://localhost:8080?client=true
+start http://localhost:8080?client=true^&hideDebug=true
 
 echo.
 echo ===================================================

@@ -7,12 +7,14 @@ interface BrowserCompatibilityAlertProps {
   issues: string[];
   forceShow?: boolean;
   clientMode?: boolean; // Mode client (simplifié)
+  developerMode?: boolean; // Nouveau: Mode développeur (détaillé)
 }
 
 export const BrowserCompatibilityAlert = ({ 
   issues, 
   forceShow = false,
-  clientMode = true 
+  clientMode = true,
+  developerMode = false
 }: BrowserCompatibilityAlertProps) => {
   const [isVisible, setIsVisible] = useState(true);
   const [shouldShow, setShouldShow] = useState(false);
@@ -21,13 +23,14 @@ export const BrowserCompatibilityAlert = ({
     // N'afficher l'alerte que si:
     // 1. Les problèmes sont critiques (même en production)
     // 2. forceShow est true (pour des cas spécifiques)
+    // 3. Mode développeur activé (affiche toujours les alertes)
     const hasCriticalIssues = issues.some(issue => 
       issue.includes("WebAssembly") || 
       issue.includes("Web Workers")
     );
     
-    setShouldShow(forceShow || (hasCriticalIssues && issues.length > 0));
-  }, [forceShow, issues]);
+    setShouldShow(forceShow || developerMode || (hasCriticalIssues && issues.length > 0));
+  }, [forceShow, issues, developerMode]);
 
   if (!isVisible || issues.length === 0 || !shouldShow) return null;
 
@@ -38,7 +41,8 @@ export const BrowserCompatibilityAlert = ({
   );
 
   // Simplifier les messages pour l'utilisateur final (mode client)
-  const simplifiedIssues = issues.map(issue => {
+  // Mais afficher tous les détails en mode développeur
+  const displayIssues = developerMode ? issues : issues.map(issue => {
     if (issue.includes("WebAssembly")) {
       return "Votre navigateur ne prend pas en charge les technologies modernes requises";
     }
@@ -55,18 +59,17 @@ export const BrowserCompatibilityAlert = ({
   });
 
   // Filtrer les doublons
-  const uniqueIssues = [...new Set(simplifiedIssues)];
+  const uniqueIssues = [...new Set(displayIssues)];
 
   return (
-    <div className="fixed bottom-20 right-4 max-w-sm bg-red-500 text-white rounded-lg shadow-lg z-50 overflow-hidden">
+    <div className={`fixed bottom-20 right-4 max-w-sm ${developerMode ? 'bg-amber-600' : 'bg-red-500'} text-white rounded-lg shadow-lg z-50 overflow-hidden`}>
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5" />
             <h4 className="font-semibold">
-              {isOldBrowser 
-                ? "Navigateur non compatible" 
-                : "Fonctionnalités limitées"}
+              {developerMode ? "Diagnostic technique" : 
+                isOldBrowser ? "Navigateur non compatible" : "Fonctionnalités limitées"}
             </h4>
           </div>
           <button 
@@ -77,7 +80,22 @@ export const BrowserCompatibilityAlert = ({
           </button>
         </div>
         
-        {isOldBrowser ? (
+        {developerMode ? (
+          <>
+            <p className="text-sm font-medium">Problèmes détectés (mode développeur):</p>
+            <ul className="text-sm mt-1 list-disc pl-5 mb-2">
+              {uniqueIssues.map((issue, index) => (
+                <li key={index}>{issue}</li>
+              ))}
+            </ul>
+            {isOldBrowser && (
+              <div className="text-sm bg-amber-700/60 p-2 rounded mt-2">
+                <p className="font-semibold">⚠️ Incompatibilité critique détectée</p>
+                <p>Ce navigateur n'est pas compatible avec les fonctionnalités essentielles</p>
+              </div>
+            )}
+          </>
+        ) : isOldBrowser ? (
           <>
             <p className="text-sm">
               {clientMode

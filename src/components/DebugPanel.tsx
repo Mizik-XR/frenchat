@@ -25,6 +25,7 @@ export const DebugPanel = () => {
   const [isCritical, setIsCritical] = useState(false);
   const [authKey, setAuthKey] = useState<string | null>(null);
   const [authAttempted, setAuthAttempted] = useState(false);
+  const [isDeveloperMode, setIsDeveloperMode] = useState(false);
 
   // Restreindre l'accès uniquement en développement avec une clé d'authentification
   // Clé d'authentification encore plus sécurisée (plus longue, avec caractères spéciaux)
@@ -33,6 +34,7 @@ export const DebugPanel = () => {
   // Vérifier les paramètres d'URL
   const hasDebugParam = window.location.search.includes('debug=true');
   const urlAuthKey = new URLSearchParams(window.location.search).get('auth_key');
+  const forceDeveloperMode = new URLSearchParams(window.location.search).get('dev_mode') === 'true';
   
   // Vérifier si l'accès au débogage est autorisé - BEAUCOUP plus restrictif
   const isDevMode = import.meta.env.DEV;
@@ -45,10 +47,12 @@ export const DebugPanel = () => {
     setCompatibilityIssues(issues);
     setIsCritical(!compatible);
     
-    // Vérifier l'authentification
+    // Vérifier l'authentification et le mode développeur
     if (urlAuthKey) {
       if (urlAuthKey === validAuthKey) {
         setAuthKey(urlAuthKey);
+        // Activer le mode développeur si le paramètre est présent et l'authentification réussie
+        setIsDeveloperMode(forceDeveloperMode || isDevMode);
       } else if (!authAttempted) {
         // Enregistrer la tentative d'authentification échouée
         setAuthAttempted(true);
@@ -62,11 +66,14 @@ export const DebugPanel = () => {
         const newUrl = window.location.pathname;
         window.history.replaceState({}, document.title, newUrl);
       }
+    } else if (isDevMode) {
+      // En mode développement, activer automatiquement le mode développeur
+      setIsDeveloperMode(true);
     }
-  }, [urlAuthKey, validAuthKey, authAttempted]);
+  }, [urlAuthKey, validAuthKey, authAttempted, isDevMode, forceDeveloperMode]);
 
   // Ne rien afficher si l'accès n'est pas autorisé, sauf en cas de problème critique
-  if (!isDebugAllowed && !isCritical) return null;
+  if (!isDebugAllowed && !isDeveloperMode && !isCritical) return null;
 
   return (
     <>
@@ -101,11 +108,12 @@ export const DebugPanel = () => {
         </Dialog>
       )}
       
-      {/* Alerte de compatibilité du navigateur - toujours affichée si critique */}
+      {/* Alerte de compatibilité du navigateur - avec mode développeur */}
       <BrowserCompatibilityAlert 
         issues={compatibilityIssues} 
         forceShow={isCritical} 
         clientMode={!isDebugAllowed}
+        developerMode={isDeveloperMode && !isCritical} // Afficher en mode développeur sauf si critique
       />
     </>
   );
