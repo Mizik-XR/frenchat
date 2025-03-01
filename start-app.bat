@@ -77,6 +77,8 @@ if not exist "dist\" (
         pause >nul
         exit /b 1
     )
+    echo [OK] Application construite avec succès.
+    echo.
 )
 
 REM Vérification du fichier index.html dans dist
@@ -91,6 +93,8 @@ if not exist "dist\index.html" (
         pause >nul
         exit /b 1
     )
+    echo [OK] Application construite avec succès.
+    echo.
 )
 
 REM Vérification du serveur modèle IA
