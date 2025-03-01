@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { LLMProviderType } from '@/types/config';
@@ -17,7 +16,7 @@ import {
 
 import { executeAIRequest } from './ai/strategies/aiServiceStrategy';
 import { createSystemCapabilitiesManager } from './ai/strategies/systemCapabilitiesStrategy';
-import { useAIModelDownload } from './useAIModelDownload';
+import { useModelDownload } from './useModelDownload';
 import { checkBrowserCompatibility } from './ai/requestAnalyzer';
 
 export function useHuggingFace(provider: string = 'huggingface') {
@@ -33,19 +32,17 @@ export function useHuggingFace(provider: string = 'huggingface') {
     localStorage.getItem('localProvider') as LLMProviderType || 'huggingface'
   );
 
-  // Utiliser les hooks et managers extraits
   const { 
     getSystemCapabilities, 
     determineExecutionStrategy 
   } = createSystemCapabilitiesManager();
   
   const { 
-    modelDownloadStatus, 
-    modelsAvailable, 
-    downloadModel 
-  } = useAIModelDownload(serviceType, localAIUrl);
+    downloadStatus: modelDownloadStatus, 
+    startModelDownload: downloadModel,
+    fetchDownloadProgress
+  } = useModelDownload();
 
-  // Écouter les changements de type de service et de fournisseur local
   useEffect(() => {
     const handleStorageChange = () => {
       setServiceType(localStorage.getItem('aiServiceType') as AIServiceType || 'cloud');
@@ -57,7 +54,6 @@ export function useHuggingFace(provider: string = 'huggingface') {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Vérifier si le navigateur est compatible avec l'exécution locale
   useEffect(() => {
     const checkCompatibility = () => {
       const browserCompatibility = checkBrowserCompatibility();
@@ -76,16 +72,13 @@ export function useHuggingFace(provider: string = 'huggingface') {
     checkCompatibility();
   }, []);
 
-  // Fonction principale pour la génération de texte
   const textGeneration = async (options: TextGenerationParameters): Promise<TextGenerationResponse[]> => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Déterminer la stratégie d'exécution optimale (local ou cloud)
       const executionStrategy = await determineExecutionStrategy(options, serviceType);
       
-      // Exécuter la requête avec la stratégie déterminée
       const response = await executeAIRequest(
         options, 
         executionStrategy, 
@@ -95,7 +88,6 @@ export function useHuggingFace(provider: string = 'huggingface') {
         provider
       );
       
-      // Si nous avons basculé du local vers le cloud, mettre à jour le state temporairement
       if (serviceType === 'local' && executionStrategy === 'cloud') {
         console.log("Basculement temporaire vers le cloud");
       }
@@ -105,7 +97,6 @@ export function useHuggingFace(provider: string = 'huggingface') {
       console.error("Erreur lors de l'appel au modèle:", e);
       setError(e instanceof Error ? e.message : String(e));
       
-      // Notification à l'utilisateur
       notifyServiceChange(
         "Erreur de connexion au service d'IA",
         "Impossible de se connecter au service d'IA. Vérifiez votre connexion ou essayez plus tard.",
@@ -136,6 +127,6 @@ export function useHuggingFace(provider: string = 'huggingface') {
     detectLocalServices: detectServices,
     modelDownloadStatus,
     downloadModel,
-    modelsAvailable
+    modelsAvailable: []
   };
 }
