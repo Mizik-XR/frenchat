@@ -2,6 +2,7 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { LogoImage } from "@/components/common/LogoImage";
 
 interface Props {
   children: ReactNode;
@@ -11,6 +12,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+  errorInfo?: ErrorInfo;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -25,6 +27,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error("Erreur non gérée dans l'application:", error, errorInfo);
+    this.setState({ errorInfo });
+    
+    // On pourrait envoyer ces erreurs à un service de monitoring
+    // sendErrorToMonitoringService(error, errorInfo);
   }
 
   render() {
@@ -34,24 +40,20 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      // Sinon, afficher un fallback par défaut avec le GIF animé
+      // Sinon, afficher un fallback par défaut avec le logo
       return (
         <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-white to-blue-50">
           <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg text-center">
             <div className="flex justify-center mb-6">
-              <img 
-                src="/filechat-animation.gif" 
-                alt="FileChat Logo" 
-                className="h-24 w-24"
-              />
+              <LogoImage className="h-24 w-24" />
             </div>
             
             <h2 className="text-2xl font-bold text-red-500 mb-4">
-              Oooops !
+              Oooops ! Une erreur est survenue
             </h2>
             
             <p className="text-gray-700 mb-6">
-              Une erreur inattendue s'est produite. Nous vous prions de nous excuser pour ce désagrément.
+              L'application a rencontré un problème. Nous vous prions de nous excuser pour ce désagrément.
             </p>
             
             <div className="space-y-3">
@@ -69,19 +71,58 @@ export class ErrorBoundary extends Component<Props, State> {
               >
                 Réessayer
               </Button>
+              
+              <Button
+                variant="ghost"
+                onClick={() => window.location.href = "/"}
+                className="w-full"
+              >
+                Retour à l'accueil
+              </Button>
             </div>
             
             {this.state.error && (
-              <Alert className="mt-6 bg-gray-50 border-gray-200">
-                <AlertTitle className="text-sm font-medium text-gray-800">
-                  Détails techniques
-                </AlertTitle>
-                <AlertDescription className="mt-2">
-                  <div className="p-2 bg-gray-100 rounded text-xs text-gray-600 overflow-auto max-h-32 text-left">
-                    <pre>{this.state.error.message}</pre>
-                  </div>
-                </AlertDescription>
-              </Alert>
+              <div className="mt-6 space-y-2">
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    const detailsElement = document.getElementById('error-details');
+                    if (detailsElement) {
+                      detailsElement.style.display = 
+                        detailsElement.style.display === 'none' ? 'block' : 'none';
+                    }
+                  }}
+                  className="text-sm text-gray-500"
+                >
+                  Afficher/masquer les détails techniques
+                </Button>
+                
+                <Alert className="bg-gray-50 border-gray-200" id="error-details" style={{ display: 'none' }}>
+                  <AlertTitle className="text-sm font-medium text-gray-800">
+                    Détails de l'erreur
+                  </AlertTitle>
+                  <AlertDescription className="mt-2">
+                    <div className="p-2 bg-gray-100 rounded text-xs text-gray-600 overflow-auto max-h-32 text-left">
+                      <p className="font-semibold">Message:</p>
+                      <pre>{this.state.error.message}</pre>
+                      
+                      {this.state.error.stack && (
+                        <>
+                          <p className="font-semibold mt-2">Stack:</p>
+                          <pre>{this.state.error.stack}</pre>
+                        </>
+                      )}
+                      
+                      {this.state.errorInfo && (
+                        <>
+                          <p className="font-semibold mt-2">Composant:</p>
+                          <pre>{this.state.errorInfo.componentStack}</pre>
+                        </>
+                      )}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              </div>
             )}
           </div>
         </div>
