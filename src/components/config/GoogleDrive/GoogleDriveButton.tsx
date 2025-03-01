@@ -55,7 +55,7 @@ export const GoogleDriveButton = () => {
   // Afficher les informations de debug en développement
   React.useEffect(() => {
     console.log("Environnement:", process.env.NODE_ENV);
-    console.log("URL de redirection OAuth:", getRedirectUrl());
+    console.log("URL de redirection OAuth:", getRedirectUrl('auth/google/callback'));
   }, []);
 
   const handleGoogleAuth = async () => {

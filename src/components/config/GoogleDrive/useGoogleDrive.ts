@@ -81,7 +81,7 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
 
     try {
       setIsConnecting(true);
-      const redirectUri = getRedirectUrl();
+      const redirectUri = getRedirectUrl('auth/google/callback');
       console.log("URL de redirection OAuth configurée:", redirectUri);
       
       const { data: authData, error: authError } = await supabase.functions.invoke<{
