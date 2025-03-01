@@ -14,8 +14,10 @@ echo     DÉMARRAGE DE FILECHAT - MODE CLOUD
 echo ===================================================
 echo.
 
-REM Configuration en mode cloud uniquement
+REM Configuration en mode cloud uniquement (masquer les fonctionnalités techniques)
 set "MODE_CLOUD=1"
+set "CLIENT_MODE=1"
+set "HIDE_DEBUG=1"
 
 REM Animation de chargement
 echo [INFO] Initialisation de FileChat en cours...
@@ -65,7 +67,7 @@ timeout /t 2 /nobreak > nul
 
 REM Ouvrir le navigateur
 echo [INFO] Ouverture dans votre navigateur...
-start http://localhost:8080
+start http://localhost:8080?client=true
 
 echo.
 echo ===================================================

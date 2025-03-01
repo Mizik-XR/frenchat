@@ -15,6 +15,7 @@ import { useHuggingFace } from '@/hooks/useHuggingFace';
 import { DebugPanelContent } from './debug/DebugPanelContent';
 import { BrowserCompatibilityAlert } from './debug/BrowserCompatibilityAlert';
 import { checkBrowserCompatibility } from '@/hooks/ai/analyzers/browserCompatibility';
+import { toast } from '@/hooks/use-toast';
 
 export const DebugPanel = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,29 +24,46 @@ export const DebugPanel = () => {
   const [compatibilityIssues, setCompatibilityIssues] = useState<string[]>([]);
   const [isCritical, setIsCritical] = useState(false);
   const [authKey, setAuthKey] = useState<string | null>(null);
+  const [authAttempted, setAuthAttempted] = useState(false);
 
   // Restreindre l'accès uniquement en développement avec une clé d'authentification
-  const isDevMode = import.meta.env.DEV;
+  // Clé d'authentification encore plus sécurisée (plus longue, avec caractères spéciaux)
+  const validAuthKey = import.meta.env.VITE_DEBUG_AUTH_KEY || 'filechat-debug-j8H2p!9a7b3c$5dEx';
+  
+  // Vérifier les paramètres d'URL
   const hasDebugParam = window.location.search.includes('debug=true');
-  const hasAuthParam = new URLSearchParams(window.location.search).get('auth_key');
+  const urlAuthKey = new URLSearchParams(window.location.search).get('auth_key');
   
-  // La clé d'authentification correcte (en production, cela devrait être stocké de manière sécurisée)
-  const validAuthKey = import.meta.env.VITE_DEBUG_AUTH_KEY || 'filechat-debug-9a7b3c';
-  
-  // Vérifier si l'accès au débogage est autorisé
-  const isDebugAllowed = isDevMode || (hasDebugParam && hasAuthParam === validAuthKey);
+  // Vérifier si l'accès au débogage est autorisé - BEAUCOUP plus restrictif
+  const isDevMode = import.meta.env.DEV;
+  const isDebugAllowed = (isDevMode && urlAuthKey === validAuthKey) || 
+                         (hasDebugParam && urlAuthKey === validAuthKey);
   
   useEffect(() => {
-    // Stocker la clé d'authentification dans le state si elle est valide
-    if (hasAuthParam && hasAuthParam === validAuthKey) {
-      setAuthKey(hasAuthParam);
-    }
-    
     // Vérifier la compatibilité du navigateur
     const { issues, compatible } = checkBrowserCompatibility();
     setCompatibilityIssues(issues);
     setIsCritical(!compatible);
-  }, [hasAuthParam, validAuthKey]);
+    
+    // Vérifier l'authentification
+    if (urlAuthKey) {
+      if (urlAuthKey === validAuthKey) {
+        setAuthKey(urlAuthKey);
+      } else if (!authAttempted) {
+        // Enregistrer la tentative d'authentification échouée
+        setAuthAttempted(true);
+        toast({
+          title: "Accès refusé",
+          description: "Vous n'êtes pas autorisé à accéder aux outils de débogage.",
+          variant: "destructive"
+        });
+        
+        // Supprimer les paramètres d'URL pour cacher la tentative
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    }
+  }, [urlAuthKey, validAuthKey, authAttempted]);
 
   // Ne rien afficher si l'accès n'est pas autorisé, sauf en cas de problème critique
   if (!isDebugAllowed && !isCritical) return null;
@@ -87,6 +105,7 @@ export const DebugPanel = () => {
       <BrowserCompatibilityAlert 
         issues={compatibilityIssues} 
         forceShow={isCritical} 
+        clientMode={!isDebugAllowed}
       />
     </>
   );

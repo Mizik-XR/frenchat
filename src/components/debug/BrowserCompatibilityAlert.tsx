@@ -6,35 +6,38 @@ import { Button } from "@/components/ui/button";
 interface BrowserCompatibilityAlertProps {
   issues: string[];
   forceShow?: boolean;
+  clientMode?: boolean; // Mode client (simplifié)
 }
 
-export const BrowserCompatibilityAlert = ({ issues, forceShow = false }: BrowserCompatibilityAlertProps) => {
+export const BrowserCompatibilityAlert = ({ 
+  issues, 
+  forceShow = false,
+  clientMode = true 
+}: BrowserCompatibilityAlertProps) => {
   const [isVisible, setIsVisible] = useState(true);
   const [shouldShow, setShouldShow] = useState(false);
   
   useEffect(() => {
     // N'afficher l'alerte que si:
-    // 1. On est en mode développement, OU
-    // 2. L'URL contient debug=true avec auth_key valide, OU
-    // 3. forceShow est true (pour des cas spécifiques)
-    // 4. Les problèmes sont critiques (même en production)
-    const isDev = import.meta.env.DEV;
-    const hasDebugParam = window.location.search.includes('debug=true');
-    const hasValidAuthKey = window.location.search.includes('auth_key=' + (import.meta.env.VITE_DEBUG_AUTH_KEY || 'filechat-debug-9a7b3c'));
+    // 1. Les problèmes sont critiques (même en production)
+    // 2. forceShow est true (pour des cas spécifiques)
     const hasCriticalIssues = issues.some(issue => 
       issue.includes("WebAssembly") || 
       issue.includes("Web Workers")
     );
     
-    setShouldShow(forceShow || (isDev && hasValidAuthKey) || (hasDebugParam && hasValidAuthKey) || (hasCriticalIssues && issues.length > 0));
+    setShouldShow(forceShow || (hasCriticalIssues && issues.length > 0));
   }, [forceShow, issues]);
 
   if (!isVisible || issues.length === 0 || !shouldShow) return null;
 
   // Déterminer si le navigateur est trop ancien ou incompatible
-  const isOldBrowser = issues.some(issue => issue.includes("WebAssembly") || issue.includes("Web Workers"));
+  const isOldBrowser = issues.some(issue => 
+    issue.includes("WebAssembly") || 
+    issue.includes("Web Workers")
+  );
 
-  // Simplifier les messages pour l'utilisateur final
+  // Simplifier les messages pour l'utilisateur final (mode client)
   const simplifiedIssues = issues.map(issue => {
     if (issue.includes("WebAssembly")) {
       return "Votre navigateur ne prend pas en charge les technologies modernes requises";
@@ -50,6 +53,9 @@ export const BrowserCompatibilityAlert = ({ issues, forceShow = false }: Browser
     }
     return issue;
   });
+
+  // Filtrer les doublons
+  const uniqueIssues = [...new Set(simplifiedIssues)];
 
   return (
     <div className="fixed bottom-20 right-4 max-w-sm bg-red-500 text-white rounded-lg shadow-lg z-50 overflow-hidden">
@@ -74,13 +80,19 @@ export const BrowserCompatibilityAlert = ({ issues, forceShow = false }: Browser
         {isOldBrowser ? (
           <>
             <p className="text-sm">
-              Votre navigateur n'est pas compatible avec les fonctionnalités requises par FileChat:
+              {clientMode
+                ? "Ce navigateur n'est pas compatible avec FileChat."
+                : "Votre navigateur n'est pas compatible avec les fonctionnalités requises par FileChat:"}
             </p>
-            <ul className="text-sm mt-1 list-disc pl-5 mb-3">
-              {simplifiedIssues.map((issue, index) => (
-                <li key={index}>{issue}</li>
-              ))}
-            </ul>
+            
+            {!clientMode && (
+              <ul className="text-sm mt-1 list-disc pl-5 mb-3">
+                {uniqueIssues.map((issue, index) => (
+                  <li key={index}>{issue}</li>
+                ))}
+              </ul>
+            )}
+            
             <div className="text-sm">
               <p className="font-medium mb-2">Nous vous recommandons d'utiliser:</p>
               <ul className="list-disc pl-5 mb-3">
@@ -113,13 +125,18 @@ export const BrowserCompatibilityAlert = ({ issues, forceShow = false }: Browser
         ) : (
           <>
             <p className="text-sm">
-              Votre navigateur ne supporte pas toutes les fonctionnalités recommandées:
+              {clientMode
+                ? "Certaines fonctionnalités pourraient être limitées dans ce navigateur."
+                : "Votre navigateur ne supporte pas toutes les fonctionnalités recommandées:"}
             </p>
-            <ul className="text-sm mt-1 list-disc pl-5">
-              {simplifiedIssues.map((issue, index) => (
-                <li key={index}>{issue}</li>
-              ))}
-            </ul>
+            
+            {!clientMode && (
+              <ul className="text-sm mt-1 list-disc pl-5">
+                {uniqueIssues.map((issue, index) => (
+                  <li key={index}>{issue}</li>
+                ))}
+              </ul>
+            )}
           </>
         )}
       </div>
