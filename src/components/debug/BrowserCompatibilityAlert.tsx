@@ -20,19 +20,25 @@ export const BrowserCompatibilityAlert = ({
   const [shouldShow, setShouldShow] = useState(false);
   
   useEffect(() => {
-    // N'afficher l'alerte que si:
-    // 1. Les problèmes sont critiques (même en production)
-    // 2. forceShow est true (pour des cas spécifiques)
-    // 3. Mode développeur activé (affiche toujours les alertes)
-    const hasCriticalIssues = issues.some(issue => 
-      issue.includes("WebAssembly") || 
-      issue.includes("Web Workers")
-    );
-    
-    setShouldShow(forceShow || developerMode || (hasCriticalIssues && issues.length > 0));
+    try {
+      // N'afficher l'alerte que si:
+      // 1. Les problèmes sont critiques (même en production)
+      // 2. forceShow est true (pour des cas spécifiques)
+      // 3. Mode développeur activé (affiche toujours les alertes)
+      const hasCriticalIssues = issues.some(issue => 
+        issue.includes("WebAssembly") || 
+        issue.includes("Web Workers")
+      );
+      
+      setShouldShow(forceShow || developerMode || (hasCriticalIssues && issues.length > 0));
+    } catch (error) {
+      console.error("Erreur dans BrowserCompatibilityAlert:", error);
+      // Par défaut, ne pas afficher en cas d'erreur
+      setShouldShow(false);
+    }
   }, [forceShow, issues, developerMode]);
 
-  if (!isVisible || issues.length === 0 || !shouldShow) return null;
+  if (!isVisible || !issues || issues.length === 0 || !shouldShow) return null;
 
   // Déterminer si le navigateur est trop ancien ou incompatible
   const isOldBrowser = issues.some(issue => 

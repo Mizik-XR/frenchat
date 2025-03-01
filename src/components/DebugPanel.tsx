@@ -19,6 +19,8 @@ import { toast } from '@/hooks/use-toast';
 
 export const DebugPanel = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isComponentMounted, setIsComponentMounted] = useState(false);
   const { isRunning, report, runDiagnostic } = useDiagnostics();
   const { serviceType, localAIUrl, localProvider } = useHuggingFace();
   const [compatibilityIssues, setCompatibilityIssues] = useState<string[]>([]);
@@ -40,40 +42,54 @@ export const DebugPanel = () => {
   const isDevMode = import.meta.env.DEV;
   const isDebugAllowed = (isDevMode && urlAuthKey === validAuthKey) || 
                          (hasDebugParam && urlAuthKey === validAuthKey);
-  
+
+  // Protection contre les erreurs de rendu
   useEffect(() => {
-    // Vérifier la compatibilité du navigateur
-    const { issues, compatible } = checkBrowserCompatibility();
-    setCompatibilityIssues(issues);
-    setIsCritical(!compatible);
-    
-    // Vérifier l'authentification et le mode développeur
-    if (urlAuthKey) {
-      if (urlAuthKey === validAuthKey) {
-        setAuthKey(urlAuthKey);
-        // Activer le mode développeur si le paramètre est présent et l'authentification réussie
-        setIsDeveloperMode(forceDeveloperMode || isDevMode);
-      } else if (!authAttempted) {
-        // Enregistrer la tentative d'authentification échouée
-        setAuthAttempted(true);
-        toast({
-          title: "Accès refusé",
-          description: "Vous n'êtes pas autorisé à accéder aux outils de débogage.",
-          variant: "destructive"
-        });
-        
-        // Supprimer les paramètres d'URL pour cacher la tentative
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, document.title, newUrl);
+    try {
+      setIsComponentMounted(true);
+      
+      // Vérifier la compatibilité du navigateur
+      const { issues, compatible } = checkBrowserCompatibility();
+      setCompatibilityIssues(issues);
+      setIsCritical(!compatible);
+      
+      // Vérifier l'authentification et le mode développeur
+      if (urlAuthKey) {
+        if (urlAuthKey === validAuthKey) {
+          setAuthKey(urlAuthKey);
+          // Activer le mode développeur si le paramètre est présent et l'authentification réussie
+          setIsDeveloperMode(forceDeveloperMode || isDevMode);
+        } else if (!authAttempted) {
+          // Enregistrer la tentative d'authentification échouée
+          setAuthAttempted(true);
+          toast({
+            title: "Accès refusé",
+            description: "Vous n'êtes pas autorisé à accéder aux outils de débogage.",
+            variant: "destructive"
+          });
+          
+          // Supprimer les paramètres d'URL pour cacher la tentative
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        }
+      } else if (isDevMode) {
+        // En mode développement, activer automatiquement le mode développeur
+        setIsDeveloperMode(true);
       }
-    } else if (isDevMode) {
-      // En mode développement, activer automatiquement le mode développeur
-      setIsDeveloperMode(true);
+      
+      setIsInitialized(true);
+    } catch (error) {
+      console.error("Erreur lors de l'initialisation du DebugPanel:", error);
+      // Si une erreur se produit, ne pas bloquer le rendu de l'application
+      setIsInitialized(true);
     }
   }, [urlAuthKey, validAuthKey, authAttempted, isDevMode, forceDeveloperMode]);
 
+  // En cas d'erreur, retourner null pour ne pas bloquer le rendu
+  if (!isComponentMounted) return null;
+  
   // Ne rien afficher si l'accès n'est pas autorisé, sauf en cas de problème critique
-  if (!isDebugAllowed && !isDeveloperMode && !isCritical) return null;
+  if (!isInitialized || (!isDebugAllowed && !isDeveloperMode && !isCritical)) return null;
 
   return (
     <>
@@ -109,12 +125,14 @@ export const DebugPanel = () => {
       )}
       
       {/* Alerte de compatibilité du navigateur - avec mode développeur */}
-      <BrowserCompatibilityAlert 
-        issues={compatibilityIssues} 
-        forceShow={isCritical} 
-        clientMode={!isDebugAllowed}
-        developerMode={isDeveloperMode && !isCritical} // Afficher en mode développeur sauf si critique
-      />
+      {(isCritical || isDeveloperMode) && (
+        <BrowserCompatibilityAlert 
+          issues={compatibilityIssues} 
+          forceShow={isCritical} 
+          clientMode={!isDebugAllowed}
+          developerMode={isDeveloperMode && !isCritical} 
+        />
+      )}
     </>
   );
 };

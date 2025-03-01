@@ -31,13 +31,18 @@ export const checkLocalService = async (url?: string): Promise<boolean> => {
       ? `${serviceUrl}/api/health` 
       : `${serviceUrl}/health`;
     
-    const response = await fetch(endpoint, { 
-      method: 'GET',
-      signal: AbortSignal.timeout(2000) // Timeout de 2 secondes
-    });
-    return response.ok;
+    try {
+      const response = await fetch(endpoint, { 
+        method: 'GET',
+        signal: AbortSignal.timeout(2000) // Timeout de 2 secondes
+      });
+      return response.ok;
+    } catch (e) {
+      console.warn(`Service local indisponible (${endpoint}):`, e);
+      return false;
+    }
   } catch (e) {
-    console.warn("Service local indisponible:", e);
+    console.warn("Erreur lors de la vérification du service:", e);
     return false;
   }
 };
@@ -50,36 +55,45 @@ export const setLocalProviderConfig = (provider: LLMProviderType) => {
 
 // Vérifier et mettre à jour le statut du service local automatiquement
 export const detectLocalServices = async (): Promise<boolean> => {
-  // Vérifier d'abord Ollama qui est le plus simple
-  const ollamaUrl = 'http://localhost:11434';
-  const isOllamaAvailable = await checkLocalService(ollamaUrl);
-  
-  if (isOllamaAvailable) {
-    console.log("Ollama détecté automatiquement");
-    localStorage.setItem('localAIUrl', ollamaUrl);
-    localStorage.setItem('localProvider', 'ollama');
-    return true;
+  try {
+    // Vérifier d'abord Ollama qui est le plus simple
+    const ollamaUrl = 'http://localhost:11434';
+    const isOllamaAvailable = await checkLocalService(ollamaUrl);
+    
+    if (isOllamaAvailable) {
+      console.log("Ollama détecté automatiquement");
+      localStorage.setItem('localAIUrl', ollamaUrl);
+      localStorage.setItem('localProvider', 'ollama');
+      return true;
+    }
+    
+    // Sinon, vérifier notre serveur FileChat
+    const fileChatUrl = 'http://localhost:8000'; 
+    const isFileChatAvailable = await checkLocalService(fileChatUrl);
+    
+    if (isFileChatAvailable) {
+      console.log("Serveur FileChat détecté automatiquement");
+      localStorage.setItem('localAIUrl', fileChatUrl);
+      localStorage.setItem('localProvider', 'huggingface');
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("Erreur lors de la détection des services locaux:", error);
+    return false;
   }
-  
-  // Sinon, vérifier notre serveur FileChat
-  const fileChatUrl = 'http://localhost:8000'; 
-  const isFileChatAvailable = await checkLocalService(fileChatUrl);
-  
-  if (isFileChatAvailable) {
-    console.log("Serveur FileChat détecté automatiquement");
-    localStorage.setItem('localAIUrl', fileChatUrl);
-    localStorage.setItem('localProvider', 'huggingface');
-    return true;
-  }
-  
-  return false;
 };
 
 // Fonction pour notifier l'utilisateur d'un changement de service
 export const notifyServiceChange = (message: string, description: string, variant: 'default' | 'destructive' = 'default') => {
-  toast({
-    title: message,
-    description,
-    variant
-  });
+  try {
+    toast({
+      title: message,
+      description,
+      variant
+    });
+  } catch (error) {
+    console.error("Erreur lors de l'affichage d'une notification:", error);
+  }
 };
