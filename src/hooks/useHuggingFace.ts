@@ -112,13 +112,13 @@ export function useHuggingFace() {
           return;
         }
 
-        // Utiliser un typage direct et explicite
-        if (data) {
-          // Définir le type explicitement pour éviter l'inférence complexe
-          const config: HuggingFaceConfig = data.config as any;
+        // Utiliser une approche explicite pour éviter l'inférence complexe
+        if (data && data.config) {
+          // Conversion simple pour éviter l'inférence de type problématique
+          const configObj = data.config as Record<string, unknown>;
           
-          if (typeof config.inference_token === 'string') {
-            setInferenceToken(config.inference_token);
+          if (typeof configObj.inference_token === 'string') {
+            setInferenceToken(configObj.inference_token);
             console.log("Token HF récupéré avec succès");
           }
         }
