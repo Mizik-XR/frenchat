@@ -51,6 +51,8 @@ export function MainLayout({
           conversations={conversations}
           selectedId={selectedConversationId}
           onSelect={onConversationSelect}
+          onNew={onNewConversation}
+          onUpdateConversation={onUpdateConversation}
         />
       </div>
 

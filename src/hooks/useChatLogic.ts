@@ -90,7 +90,7 @@ export function useChatLogic(selectedConversationId: string | null) {
       // Ajout d'information sur le type de service IA utilisé dans les métadonnées
       const effectiveType = getEffectiveServiceType();
       const aiServiceInfo = {
-        type: effectiveType,
+        type: effectiveType as 'local' | 'cloud' | 'browser',
         endpoint: effectiveType === 'local' ? localAIUrl : 
                  effectiveType === 'browser' ? 'browser' : 'cloud'
       };

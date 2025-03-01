@@ -48,47 +48,45 @@ export function useHuggingFace() {
   }, []);
 
   // Vérifier si un serveur AI local est disponible
-  useEffect(() => {
-    const checkLocalServer = async () => {
-      try {
-        const response = await fetch(`${localAIUrl}/health`, { 
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
+  const checkLocalService = async (): Promise<boolean> => {
+    try {
+      const response = await fetch(`${localAIUrl}/health`, { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Serveur IA local détecté:", data);
-          setIsLocalServerAvailable(true);
-          
-          // Si en mode auto et serveur local détecté, utiliser local
-          if (serviceType === 'auto') {
-            setActiveServiceType('local');
-          }
-        } else {
-          console.log("Serveur IA local non disponible (réponse non-OK)");
-          setIsLocalServerAvailable(false);
-          
-          // Si en mode auto et pas de serveur local, choisir entre browser et cloud
-          if (serviceType === 'auto') {
-            selectBestServiceType();
-          }
-        }
-      } catch (e) {
-        console.log("Erreur lors de la vérification du serveur IA local:", e);
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Serveur IA local détecté:", data);
+        setIsLocalServerAvailable(true);
+        return true;
+      } else {
+        console.log("Serveur IA local non disponible (réponse non-OK)");
         setIsLocalServerAvailable(false);
-        
-        // Si en mode auto et erreur lors de la vérification, choisir entre browser et cloud
-        if (serviceType === 'auto') {
-          selectBestServiceType();
-        }
+        return false;
+      }
+    } catch (e) {
+      console.log("Erreur lors de la vérification du serveur IA local:", e);
+      setIsLocalServerAvailable(false);
+      return false;
+    }
+  };
+
+  // Vérifier si un serveur AI local est disponible au chargement
+  useEffect(() => {
+    const checkServer = async () => {
+      await checkLocalService();
+      
+      // Si en mode auto et serveur local détecté, utiliser local
+      if (serviceType === 'auto') {
+        selectBestServiceType();
       }
     };
 
-    checkLocalServer();
+    checkServer();
     
     // Vérifier périodiquement (toutes les 30 secondes)
-    const interval = setInterval(checkLocalServer, 30000);
+    const interval = setInterval(checkServer, 30000);
     
     return () => clearInterval(interval);
   }, [localAIUrl, serviceType]);
@@ -108,8 +106,8 @@ export function useHuggingFace() {
           return;
         }
 
-        if (data && data.config && data.config.inference_token) {
-          setInferenceToken(data.config.inference_token);
+        if (data && data.config && typeof data.config === 'object' && 'inference_token' in data.config) {
+          setInferenceToken(data.config.inference_token as string);
         }
       } catch (e) {
         console.error("Exception lors de la récupération du token HF:", e);
@@ -272,25 +270,6 @@ export function useHuggingFace() {
     }
   };
 
-  // Changer le type de service
-  const changeServiceType = (type: ServiceTypeWithAuto) => {
-    setServiceType(type);
-    
-    if (type === 'auto') {
-      selectBestServiceType();
-      toast({
-        title: "Mode automatique activé",
-        description: "FileChat sélectionnera le meilleur mode d'exécution disponible",
-      });
-    } else {
-      setActiveServiceType(type as ServiceType);
-      toast({
-        title: `Mode ${type} activé`,
-        description: `Exécution en mode ${type}`,
-      });
-    }
-  };
-
   return {
     serviceType,
     inferenceToken,
@@ -298,7 +277,9 @@ export function useHuggingFace() {
     isLocalServerAvailable,
     localAIUrl,
     textGeneration,
-    changeServiceType,
-    getEffectiveServiceType
+    changeServiceType: setServiceType,
+    getEffectiveServiceType,
+    checkLocalService,
+    setServiceType
   };
 }
