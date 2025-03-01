@@ -8,9 +8,9 @@ WEB_PORT=8080
 echo "[INFO] Démarrage du serveur web..."
 if ! command -v npx &> /dev/null; then
     npm install -g http-server
-    http-server dist -p $WEB_PORT &
+    http-server dist -p $WEB_PORT -c-1 &
 else
-    npx http-server dist -p $WEB_PORT &
+    npx http-server dist -p $WEB_PORT -c-1 &
 fi
 WEB_PID=$!
 

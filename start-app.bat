@@ -114,7 +114,7 @@ timeout /t 3 /nobreak > nul
 
 REM Démarrage de l'application web
 echo [INFO] Démarrage de l'application web...
-start "Application Web FileChat" cmd /c "http-server dist -p 8080"
+start "Application Web FileChat" cmd /c "http-server dist -p 8080 -c-1"
 timeout /t 2 /nobreak > nul
 
 REM Ouvrir le navigateur

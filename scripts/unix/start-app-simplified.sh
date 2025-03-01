@@ -43,7 +43,7 @@ echo ""
 
 # Démarrage de l'application web
 echo "[INFO] Démarrage de l'interface web..."
-http-server dist -p 8080 &> /dev/null &
+http-server dist -p 8080 -c-1 &> /dev/null &
 SERVER_PID=$!
 sleep 2
 

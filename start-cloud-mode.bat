@@ -64,7 +64,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 REM Démarrage de l'application web
 echo [INFO] Lancement de l'application...
-start "Application Web FileChat" /min cmd /c "http-server dist -p 8080"
+start "Application Web FileChat" /min cmd /c "http-server dist -p 8080 -c-1"
 timeout /t 2 /nobreak > nul
 
 REM Ouvrir le navigateur avec le mode client activé et debug désactivé
