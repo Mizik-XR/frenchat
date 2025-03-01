@@ -106,11 +106,16 @@ export function useHuggingFace() {
           return;
         }
 
-        // Approche simplifiée pour éviter une instantiation excessive des types
-        if (data && typeof data.config === 'object' && data.config !== null) {
-          const config = data.config as { inference_token?: string };
-          if (typeof config.inference_token === 'string') {
-            setInferenceToken(config.inference_token);
+        // Solution plus directe qui évite l'inférence de type complexe
+        if (data) {
+          // Convertir en type simple sans inférence complexe
+          const rawConfig = data.config as Record<string, unknown>;
+          
+          // Extraire spécifiquement la valeur du token
+          const token = rawConfig.inference_token;
+          
+          if (typeof token === 'string') {
+            setInferenceToken(token);
             console.log("Token HF récupéré avec succès");
           }
         }
