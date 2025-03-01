@@ -1,83 +1,144 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { ModelDownloadStatus } from './ai/types';
-import { 
-  fetchModelDownloadProgress, 
-  fetchAvailableModels, 
-  downloadModel 
-} from './ai/strategies/modelDownloadStrategy';
+import { ModelDownloadStatus, ModelDownloadRequest } from '@/hooks/ai/types';
+import { toast } from '@/hooks/use-toast';
 
-export function useAIModelDownload(
-  serviceType: string = 'cloud',
-  localAIUrl: string | null = null
-) {
-  const [modelDownloadStatus, setModelDownloadStatus] = useState<ModelDownloadStatus | null>(null);
-  const [modelsAvailable, setModelsAvailable] = useState<Array<{id: string, name: string, description: string}>>([]);
+const API_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:8000';
 
-  // Vérifier périodiquement l'état du téléchargement du modèle
+export function useModelDownload() {
+  const [downloadStatus, setDownloadStatus] = useState<ModelDownloadStatus>({
+    status: 'idle',
+    model: null,
+    progress: 0,
+    started_at: null,
+    completed_at: null,
+    error: null,
+    size_mb: 0,
+    downloaded_mb: 0
+  });
+
+  // Fonction pour récupérer l'état actuel du téléchargement
+  const fetchDownloadProgress = async () => {
+    try {
+      const response = await fetch(`${API_URL}/download-progress`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur lors de la récupération de la progression: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setDownloadStatus(data);
+      return data;
+    } catch (error) {
+      console.error("Erreur lors de la récupération de la progression:", error);
+      return null;
+    }
+  };
+
+  // Fonction pour démarrer un téléchargement de modèle
+  const startModelDownload = async (request: ModelDownloadRequest) => {
+    try {
+      const response = await fetch(`${API_URL}/download-model`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `Erreur ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Mettre à jour l'état local
+      setDownloadStatus({
+        status: 'downloading',
+        model: data.model,
+        progress: data.progress,
+        started_at: Date.now(),
+        completed_at: null,
+        error: null,
+        size_mb: data.estimated_size_mb,
+        downloaded_mb: 0
+      });
+
+      // Notification pour l'utilisateur
+      toast({
+        title: "Téléchargement démarré",
+        description: `Le modèle ${data.model} est en cours de téléchargement.`,
+      });
+
+      return data;
+    } catch (error: any) {
+      console.error("Erreur lors du démarrage du téléchargement:", error);
+      
+      // Notification d'erreur
+      toast({
+        title: "Erreur de téléchargement",
+        description: error.message,
+        variant: "destructive"
+      });
+      
+      setDownloadStatus(prev => ({
+        ...prev,
+        status: 'error',
+        error: error.message
+      }));
+      
+      throw error;
+    }
+  };
+
+  // Effet pour mettre à jour l'état du téléchargement périodiquement
   useEffect(() => {
-    let intervalId: number;
-    
-    const checkDownloadProgress = async () => {
-      if (serviceType === 'local' && localAIUrl) {
-        const status = await fetchModelDownloadProgress(localAIUrl);
-        if (status) {
-          setModelDownloadStatus(status);
+    let intervalId: number | undefined;
+
+    const updateProgress = async () => {
+      const status = await fetchDownloadProgress();
+      
+      // Si le téléchargement est terminé ou en erreur, arrêter les mises à jour
+      if (status && (status.status === 'completed' || status.status === 'error')) {
+        if (status.status === 'completed') {
+          toast({
+            title: "Téléchargement terminé",
+            description: `Le modèle ${status.model} a été téléchargé avec succès.`,
+          });
+        } else if (status.status === 'error') {
+          toast({
+            title: "Erreur de téléchargement",
+            description: status.error || "Une erreur est survenue lors du téléchargement.",
+            variant: "destructive"
+          });
+        }
+        
+        if (intervalId) {
+          clearInterval(intervalId);
         }
       }
     };
-    
-    // Vérifier immédiatement
-    checkDownloadProgress();
-    
-    // Puis vérifier périodiquement si le téléchargement est en cours
-    if (modelDownloadStatus?.status === 'downloading') {
-      intervalId = window.setInterval(checkDownloadProgress, 3000);
+
+    // Vérifier le statut initial
+    fetchDownloadProgress();
+
+    // Mettre en place la mise à jour périodique si un téléchargement est en cours
+    if (downloadStatus.status === 'downloading') {
+      intervalId = window.setInterval(updateProgress, 2000);
     }
-    
+
     return () => {
-      if (intervalId) window.clearInterval(intervalId);
-    };
-  }, [serviceType, localAIUrl, modelDownloadStatus?.status]);
-
-  // Récupérer la liste des modèles disponibles
-  useEffect(() => {
-    const loadModels = async () => {
-      const models = await fetchAvailableModels(serviceType, localAIUrl);
-      setModelsAvailable(models);
-    };
-    
-    loadModels();
-  }, [localAIUrl, serviceType]);
-
-  // Fonction pour télécharger un modèle
-  const startModelDownload = useCallback(async (modelId: string) => {
-    const success = await downloadModel(modelId, localAIUrl, serviceType);
-    
-    if (success) {
-      // Mettre à jour le statut local immédiatement pour une meilleure UX
-      const newStatus = await fetchModelDownloadProgress(localAIUrl);
-      if (newStatus) {
-        setModelDownloadStatus(newStatus);
+      if (intervalId) {
+        clearInterval(intervalId);
       }
-    }
-    
-    return success;
-  }, [localAIUrl, serviceType]);
+    };
+  }, [downloadStatus.status]);
 
   return {
-    modelDownloadStatus,
-    modelsAvailable,
-    downloadModel: startModelDownload,
-    refreshModelStatus: async () => {
-      const status = await fetchModelDownloadProgress(localAIUrl);
-      if (status) setModelDownloadStatus(status);
-      return status;
-    },
-    refreshAvailableModels: async () => {
-      const models = await fetchAvailableModels(serviceType, localAIUrl);
-      setModelsAvailable(models);
-      return models;
-    }
+    downloadStatus,
+    startModelDownload,
+    fetchDownloadProgress
   };
 }

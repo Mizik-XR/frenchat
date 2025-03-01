@@ -34,13 +34,23 @@ export const executeAIRequest = async (
         return await callCloudAPIService(options, provider);
       }
       
-      // Utiliser Ollama si c'est le fournisseur configuré ou si l'URL contient 11434 (port standard d'Ollama)
-      if (localProvider === 'ollama' || localAIUrl.includes('11434')) {
-        return await callOllamaService(options, localAIUrl);
+      try {
+        // Utiliser Ollama si c'est le fournisseur configuré ou si l'URL contient 11434 (port standard d'Ollama)
+        if (localProvider === 'ollama' || localAIUrl.includes('11434')) {
+          return await callOllamaService(options, localAIUrl);
+        }
+        
+        // Sinon, utiliser le serveur IA local standard (Hugging Face)
+        return await callLocalAPIService(options, localAIUrl);
+      } catch (error) {
+        console.error("Erreur avec le service local, passage au fallback cloud:", error);
+        notifyServiceChange(
+          "Problème avec le service local", 
+          "Une erreur est survenue avec le service IA local. Utilisation temporaire du service cloud.",
+          "destructive"
+        );
+        return await callCloudAPIService(options, provider);
       }
-      
-      // Sinon, utiliser le serveur IA local standard (Hugging Face)
-      return await callLocalAPIService(options, localAIUrl);
     } else {
       console.warn("Service local indisponible, passage au service cloud");
       // Si le service local est indisponible, on passe automatiquement au service cloud
