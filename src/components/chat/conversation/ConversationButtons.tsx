@@ -62,7 +62,7 @@ export const ConversationButtons = ({
                     className="h-6 w-6"
                     onClick={onPin}
                   >
-                    {conversation.pinned ? (
+                    {conversation.isPinned ? (
                       <PinOff className="h-4 w-4" />
                     ) : (
                       <Pin className="h-4 w-4" />
@@ -70,7 +70,7 @@ export const ConversationButtons = ({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{conversation.pinned ? "Désépingler" : "Épingler"}</p>
+                  <p>{conversation.isPinned ? "Désépingler" : "Épingler"}</p>
                 </TooltipContent>
               </Tooltip>
             )}

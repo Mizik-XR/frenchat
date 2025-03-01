@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ModelPathSelector } from "./components/ModelPathSelector";
@@ -37,17 +38,25 @@ export function LocalAIConfig({
     serviceType, 
     localAIUrl, 
     hasWebGPU, 
-    isLocalServerAvailable,
-    changeServiceType
+    checkLocalService,
+    setServiceType
   } = useHuggingFace();
 
   const [localServerAvailable, setLocalServerAvailable] = useState<boolean | null>(null);
   
   // Vérifier la disponibilité du serveur local au chargement
   useEffect(() => {
-    // Utiliser directement l'état du hook
-    setLocalServerAvailable(isLocalServerAvailable);
-  }, [isLocalServerAvailable]);
+    const checkServer = async () => {
+      const isAvailable = await checkLocalService();
+      setLocalServerAvailable(isAvailable);
+    };
+    
+    checkServer();
+    
+    // Vérifier périodiquement
+    const interval = setInterval(checkServer, 30000);
+    return () => clearInterval(interval);
+  }, [checkLocalService]);
 
   const handleLocalPathChange = (path: string) => {
     setLocalModelPath(path);
@@ -80,7 +89,7 @@ export function LocalAIConfig({
   };
 
   const handleServiceTypeChange = (type: 'local' | 'cloud' | 'browser' | 'auto') => {
-    changeServiceType(type);
+    setServiceType(type);
     toast({
       title: `Mode IA changé pour: ${type}`,
       description: type === 'auto' 

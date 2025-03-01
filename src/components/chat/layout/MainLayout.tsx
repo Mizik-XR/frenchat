@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import { ChatHeader } from "@/components/chat/ChatHeader";
-import { ChatContainer } from "@/components/chat/layout/ChatContainer";
-import { ChatInputContainer } from "@/components/chat/layout/ChatInputContainer";
+import { ChatContainer } from "@/components/chat/ChatContainer";
+import { ChatInputContainer } from "@/components/chat/ChatInputContainer";
 import { ConversationList } from "@/components/chat/ConversationList";
 import { DocumentList } from "@/components/chat/DocumentList";
 import { SettingsPanel } from "@/components/chat/SettingsPanel";
@@ -51,7 +50,7 @@ export function MainLayout({
           conversations={conversations}
           selectedId={selectedConversationId}
           onSelect={onConversationSelect}
-          onNew={onNewConversation}
+          onNewConversation={onNewConversation}
           onUpdateConversation={onUpdateConversation}
         />
       </div>
@@ -85,9 +84,7 @@ export function MainLayout({
       {showDocumentList && (
         <div className="hidden md:flex flex-col w-64 border-l">
           <DocumentList 
-            selectedDocumentId={selectedDocumentId}
-            documents={[]}
-            onDocumentSelect={() => {}}
+            selectedDocumentId={selectedDocumentId} 
           />
         </div>
       )}

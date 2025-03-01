@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
@@ -11,20 +12,18 @@ export function useChatLogic(selectedConversationId: string | null) {
   const { 
     textGeneration, 
     serviceType, 
-    localAIUrl,
-    getEffectiveServiceType
+    localAIUrl 
   } = useHuggingFace();
 
   useEffect(() => {
     // Notification à l'utilisateur sur le type de service utilisé
-    const effectiveType = getEffectiveServiceType();
-    if (effectiveType === 'local' && localAIUrl) {
+    if (serviceType === 'local' && localAIUrl) {
       toast({
         title: "Service IA local détecté",
         description: "Utilisation du modèle IA local pour de meilleures performances",
       });
     }
-  }, [serviceType, localAIUrl, getEffectiveServiceType]);
+  }, [serviceType, localAIUrl]);
 
   const getSystemPrompt = (mode: string) => {
     switch (mode) {
@@ -87,11 +86,9 @@ export function useChatLogic(selectedConversationId: string | null) {
       }
 
       // Ajout d'information sur le type de service IA utilisé dans les métadonnées
-      const effectiveType = getEffectiveServiceType();
       const aiServiceInfo = {
-        type: effectiveType,
-        endpoint: effectiveType === 'local' ? localAIUrl : 
-                 effectiveType === 'browser' ? 'browser' : 'cloud'
+        type: serviceType,
+        endpoint: serviceType === 'local' ? localAIUrl : 'cloud'
       };
 
       let response;
@@ -127,13 +124,8 @@ export function useChatLogic(selectedConversationId: string | null) {
           });
       }
 
-      // Gérer le cas où response[0].generated_text n'existe pas
-      const generatedText = response[0] && response[0].generated_text 
-        ? response[0].generated_text 
-        : "Désolé, je n'ai pas pu générer une réponse. Veuillez réessayer.";
-
       await chatService.sendAssistantMessage(
-        generatedText,
+        response[0].generated_text,
         selectedConversationId,
         'text',
         documentId,
@@ -144,7 +136,7 @@ export function useChatLogic(selectedConversationId: string | null) {
         }
       );
 
-      return { content: generatedText };
+      return { content: response[0].generated_text };
     } catch (error: any) {
       toast({
         title: "Erreur",

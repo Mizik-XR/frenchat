@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Plus, Search, Archive, ChevronDown, ChevronRight, Folder, X } from "lucide-react";
 import { Conversation } from "@/types/chat";
@@ -54,8 +55,8 @@ export const ConversationList = ({
 
   const activeConversations = conversations.filter(conv => !conv.isArchived);
   const archivedConversations = conversations.filter(conv => conv.isArchived);
-  const pinnedConversations = activeConversations.filter(conv => conv.pinned);
-  const unpinnedConversations = activeConversations.filter(conv => !conv.pinned);
+  const pinnedConversations = activeConversations.filter(conv => conv.isPinned);
+  const unpinnedConversations = activeConversations.filter(conv => !conv.isPinned);
 
   const filteredConversations = (convs: Conversation[]) => {
     if (!searchQuery.trim()) return convs;
@@ -83,6 +84,7 @@ export const ConversationList = ({
     setIsSearchFocused(false);
   };
 
+  // Focus sur la recherche avec raccourci clavier (Ctrl+F)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
@@ -95,6 +97,7 @@ export const ConversationList = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Rendu des icônes de toggle pour les sections
   const renderCollapsibleIcon = (isOpen: boolean) => {
     return isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />;
   };

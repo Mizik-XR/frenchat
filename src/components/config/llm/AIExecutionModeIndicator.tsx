@@ -12,10 +12,8 @@ interface AIExecutionModeIndicatorProps {
 export function AIExecutionModeIndicator({ className = "" }: AIExecutionModeIndicatorProps) {
   const { serviceType, hasWebGPU, localAIUrl } = useHuggingFace();
   
-  type ServiceTypeWithAuto = "local" | "cloud" | "browser" | "auto";
-  
   const getIcon = () => {
-    switch (serviceType as ServiceTypeWithAuto) {
+    switch (serviceType) {
       case 'local':
         return <Server className="h-3 w-3 mr-1" />;
       case 'cloud':
@@ -30,7 +28,7 @@ export function AIExecutionModeIndicator({ className = "" }: AIExecutionModeIndi
   };
   
   const getLabel = () => {
-    switch (serviceType as ServiceTypeWithAuto) {
+    switch (serviceType) {
       case 'local':
         return "IA Locale";
       case 'cloud':
@@ -45,7 +43,7 @@ export function AIExecutionModeIndicator({ className = "" }: AIExecutionModeIndi
   };
   
   const getTooltipContent = () => {
-    switch (serviceType as ServiceTypeWithAuto) {
+    switch (serviceType) {
       case 'local':
         return `Exécution sur serveur local: ${localAIUrl}`;
       case 'cloud':
@@ -60,7 +58,7 @@ export function AIExecutionModeIndicator({ className = "" }: AIExecutionModeIndi
   };
   
   const getBadgeColor = () => {
-    switch (serviceType as ServiceTypeWithAuto) {
+    switch (serviceType) {
       case 'local':
         return "bg-green-100 text-green-800 hover:bg-green-200";
       case 'cloud':

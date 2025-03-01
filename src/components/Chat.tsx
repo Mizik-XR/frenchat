@@ -18,6 +18,7 @@ export const Chat = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
 
   const [webUIConfig, setWebUIConfig] = useState<WebUIConfig>({
+    mode: 'auto',
     model: 'huggingface',
     maxTokens: 2000,
     temperature: 0.7,
@@ -142,7 +143,7 @@ export const Chat = () => {
       onConversationSelect={setSelectedConversationId}
       onNewConversation={handleNewConversation}
       onUpdateConversation={updateConversation}
-      onModeChange={(mode: any) => setWebUIConfig(prev => ({ ...prev, mode }))}
+      onModeChange={(mode) => setWebUIConfig(prev => ({ ...prev, mode }))}
       onWebUIConfigChange={(config) => setWebUIConfig(prev => ({ ...prev, ...config }))}
       onProviderChange={(provider) => setWebUIConfig(prev => ({ ...prev, model: provider }))}
       onReplyToMessage={handleReplyToMessage}

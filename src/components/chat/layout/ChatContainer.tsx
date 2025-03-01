@@ -1,53 +1,113 @@
 
-import { Message } from "@/types/chat";
+import { Card } from "@/components/ui/card";
+import { ChatHeader } from "../ChatHeader";
+import { MessageList } from "../MessageList";
+import { ChatInputContainer } from "./ChatInputContainer";
+import { SettingsPanel } from "../SettingsPanel";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Message, WebUIConfig, AIProvider, AnalysisMode } from "@/types/chat";
+import { NavigationControls } from "@/components/navigation/NavigationControls";
 
 interface ChatContainerProps {
   messages: Message[];
   isLoading: boolean;
+  llmStatus: string;
+  webUIConfig: WebUIConfig;
+  input: string;
+  selectedDocumentId: string | null;
+  showSettings: boolean;
+  showUploader: boolean;
+  replyToMessage: Message | null;
+  onClearReply: () => void;
+  onModeChange: (mode: 'auto' | 'manual') => void;
+  onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
+  onProviderChange: (provider: AIProvider) => void;
   onReplyToMessage: (message: Message) => void;
+  setInput: (input: string) => void;
+  setShowSettings: (show: boolean) => void;
+  setShowUploader: (show: boolean) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  onFilesSelected: (files: File[]) => Promise<void>;
+  onResetConversation: () => void;
+  onAnalysisModeChange: (mode: AnalysisMode) => void;
 }
 
-export function ChatContainer({ messages, isLoading, onReplyToMessage }: ChatContainerProps) {
+export const ChatContainer = ({
+  messages,
+  isLoading,
+  llmStatus,
+  webUIConfig,
+  input,
+  selectedDocumentId,
+  showSettings,
+  showUploader,
+  replyToMessage,
+  onClearReply,
+  onModeChange,
+  onWebUIConfigChange,
+  onProviderChange,
+  onReplyToMessage,
+  setInput,
+  setShowSettings,
+  setShowUploader,
+  onSubmit,
+  onFilesSelected,
+  onResetConversation,
+  onAnalysisModeChange
+}: ChatContainerProps) => {
   return (
-    <div className="flex-1 overflow-auto p-4 space-y-4">
-      {messages.length === 0 ? (
-        <div className="flex h-full items-center justify-center">
-          <p className="text-gray-500 text-center">
-            Commencez une nouvelle conversation ou sélectionnez-en une existante.
-          </p>
-        </div>
-      ) : (
-        messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${
-              message.role === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
-            <div
-              className={`max-w-3/4 rounded-lg p-3 ${
-                message.role === "user"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-100 text-gray-800"
-              }`}
-              onClick={() => onReplyToMessage(message)}
-            >
-              {message.content}
-            </div>
-          </div>
-        ))
+    <Card className="h-full flex flex-col bg-white dark:bg-gray-800 shadow-sm">
+      <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
+        <NavigationControls />
+        <ChatHeader 
+          mode={webUIConfig.mode}
+          onModeChange={onModeChange}
+          showSettings={showSettings}
+          setShowSettings={setShowSettings}
+          onResetConversation={onResetConversation}
+        />
+      </div>
+
+      {llmStatus !== 'configured' && (
+        <Alert variant="destructive" className="m-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Veuillez configurer un modèle de langage dans les paramètres pour utiliser le chat.
+          </AlertDescription>
+        </Alert>
       )}
-      {isLoading && (
-        <div className="flex justify-start">
-          <div className="bg-gray-100 text-gray-800 rounded-lg p-3">
-            <div className="flex space-x-2">
-              <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
-              <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce delay-100"></div>
-              <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce delay-200"></div>
-            </div>
-          </div>
+
+      {showSettings && (
+        <div className="absolute top-16 right-4 z-50 w-80">
+          <SettingsPanel
+            webUIConfig={webUIConfig}
+            onWebUIConfigChange={onWebUIConfigChange}
+            onProviderChange={onProviderChange}
+            onAnalysisModeChange={onAnalysisModeChange}
+          />
         </div>
       )}
-    </div>
+
+      <div className="flex-1 overflow-hidden">
+        <MessageList 
+          messages={messages} 
+          isLoading={isLoading}
+        />
+      </div>
+
+      <ChatInputContainer
+        input={input}
+        setInput={setInput}
+        isLoading={isLoading}
+        selectedDocumentId={selectedDocumentId}
+        onSubmit={onSubmit}
+        mode={webUIConfig.mode}
+        model={webUIConfig.model}
+        showUploader={showUploader}
+        setShowUploader={setShowUploader}
+        onFilesSelected={onFilesSelected}
+      />
+    </Card>
   );
-}
+};
