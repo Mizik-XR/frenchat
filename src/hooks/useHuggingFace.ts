@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from '@/hooks/use-toast';
+import { LLMProviderType } from '@/types/config';
 
 interface TextGenerationParameters {
   model: string;
@@ -22,6 +23,11 @@ interface TextGenerationResponse {
   generated_text: string;
 }
 
+interface OllamaGenerationResponse {
+  response: string;
+  done: boolean;
+}
+
 export function useHuggingFace(provider: string = 'huggingface') {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,12 +37,16 @@ export function useHuggingFace(provider: string = 'huggingface') {
   const [localAIUrl, setLocalAIUrl] = useState<string | null>(
     localStorage.getItem('localAIUrl') || null
   );
+  const [localProvider, setLocalProvider] = useState<LLMProviderType>(
+    localStorage.getItem('localProvider') as LLMProviderType || 'huggingface'
+  );
 
-  // Écouter les changements de type de service
+  // Écouter les changements de type de service et de fournisseur local
   useEffect(() => {
     const handleStorageChange = () => {
       setServiceType(localStorage.getItem('aiServiceType') as 'local' | 'cloud' || 'cloud');
       setLocalAIUrl(localStorage.getItem('localAIUrl'));
+      setLocalProvider(localStorage.getItem('localProvider') as LLMProviderType || 'huggingface');
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -48,7 +58,11 @@ export function useHuggingFace(provider: string = 'huggingface') {
     if (!localAIUrl) return false;
     
     try {
-      const response = await fetch(`${localAIUrl}/health`, { 
+      const endpoint = localProvider === 'ollama' 
+        ? `${localAIUrl}/api/health` 
+        : `${localAIUrl}/health`;
+      
+      const response = await fetch(endpoint, { 
         method: 'GET',
         signal: AbortSignal.timeout(2000) // Timeout de 2 secondes
       });
@@ -59,6 +73,39 @@ export function useHuggingFace(provider: string = 'huggingface') {
     }
   };
 
+  // Fonction spécifique pour appeler le service Ollama
+  const callOllamaService = async (options: TextGenerationParameters): Promise<TextGenerationResponse[]> => {
+    if (!localAIUrl) {
+      throw new Error("URL du service Ollama non configurée");
+    }
+    
+    const modelName = options.model || 'llama2';
+    
+    const response = await fetch(`${localAIUrl}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: modelName,
+        prompt: options.inputs || options.prompt,
+        system: options.system_prompt || "Tu es un assistant IA qui aide l'utilisateur de manière précise et bienveillante.",
+        temperature: options.parameters?.temperature || options.temperature || 0.7,
+        top_p: options.parameters?.top_p || options.top_p || 0.9,
+        max_tokens: options.parameters?.max_length || options.max_length || 800,
+        stream: false
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Erreur du service Ollama: ${response.status}`);
+    }
+    
+    const data = await response.json() as OllamaGenerationResponse;
+    return [{ generated_text: data.response }];
+  };
+
+  // Fonction principale pour la génération de texte
   const textGeneration = async (options: TextGenerationParameters): Promise<TextGenerationResponse[]> => {
     setIsLoading(true);
     setError(null);
@@ -69,9 +116,14 @@ export function useHuggingFace(provider: string = 'huggingface') {
         const isLocalAvailable = await checkLocalService();
         
         if (isLocalAvailable && localAIUrl) {
-          console.log("Utilisation du service IA local:", localAIUrl);
+          console.log(`Utilisation du service IA local (${localProvider}):`, localAIUrl);
           
-          // Préparer le système prompt si nécessaire
+          // Utiliser Ollama si c'est le fournisseur configuré
+          if (localProvider === 'ollama') {
+            return await callOllamaService(options);
+          }
+          
+          // Sinon, utiliser le serveur IA local standard (Hugging Face)
           const systemPrompt = options.system_prompt || 
             "Tu es un assistant IA qui aide l'utilisateur de manière précise et bienveillante.";
           
@@ -94,7 +146,6 @@ export function useHuggingFace(provider: string = 'huggingface') {
           }
           
           const data = await response.json();
-          setIsLoading(false);
           return [{ generated_text: data.generated_text }];
         } else {
           console.warn("Service local indisponible, passage au service cloud");
@@ -113,7 +164,6 @@ export function useHuggingFace(provider: string = 'huggingface') {
         });
 
         if (error) throw error;
-        setIsLoading(false);
         return data.results;
       } catch (supabaseError) {
         console.warn("Échec de l'appel à la fonction Supabase, tentative avec le serveur cloud de secours", supabaseError);
@@ -163,12 +213,19 @@ export function useHuggingFace(provider: string = 'huggingface') {
     }
   };
 
+  const setLocalProviderConfig = (provider: LLMProviderType) => {
+    localStorage.setItem('localProvider', provider);
+    setLocalProvider(provider);
+  };
+
   return { 
     textGeneration, 
     isLoading, 
     error,
     serviceType,
     localAIUrl,
-    checkLocalService
+    localProvider,
+    checkLocalService,
+    setLocalProviderConfig
   };
 }
