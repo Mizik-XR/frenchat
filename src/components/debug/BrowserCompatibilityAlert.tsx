@@ -15,23 +15,41 @@ export const BrowserCompatibilityAlert = ({ issues, forceShow = false }: Browser
   useEffect(() => {
     // N'afficher l'alerte que si:
     // 1. On est en mode développement, OU
-    // 2. L'URL contient debug=true, OU
+    // 2. L'URL contient debug=true avec auth_key valide, OU
     // 3. forceShow est true (pour des cas spécifiques)
     // 4. Les problèmes sont critiques (même en production)
     const isDev = import.meta.env.DEV;
     const hasDebugParam = window.location.search.includes('debug=true');
+    const hasValidAuthKey = window.location.search.includes('auth_key=' + (import.meta.env.VITE_DEBUG_AUTH_KEY || 'filechat-debug-9a7b3c'));
     const hasCriticalIssues = issues.some(issue => 
       issue.includes("WebAssembly") || 
       issue.includes("Web Workers")
     );
     
-    setShouldShow(forceShow || isDev || hasDebugParam || (hasCriticalIssues && issues.length > 0));
+    setShouldShow(forceShow || (isDev && hasValidAuthKey) || (hasDebugParam && hasValidAuthKey) || (hasCriticalIssues && issues.length > 0));
   }, [forceShow, issues]);
 
   if (!isVisible || issues.length === 0 || !shouldShow) return null;
 
   // Déterminer si le navigateur est trop ancien ou incompatible
   const isOldBrowser = issues.some(issue => issue.includes("WebAssembly") || issue.includes("Web Workers"));
+
+  // Simplifier les messages pour l'utilisateur final
+  const simplifiedIssues = issues.map(issue => {
+    if (issue.includes("WebAssembly")) {
+      return "Votre navigateur ne prend pas en charge les technologies modernes requises";
+    }
+    if (issue.includes("Web Workers")) {
+      return "Votre navigateur ne prend pas en charge le traitement en arrière-plan";
+    }
+    if (issue.includes("SharedArrayBuffer")) {
+      return "Performances réduites sur ce navigateur";
+    }
+    if (issue.includes("WebGPU")) {
+      return "Accélération graphique non disponible";
+    }
+    return issue;
+  });
 
   return (
     <div className="fixed bottom-20 right-4 max-w-sm bg-red-500 text-white rounded-lg shadow-lg z-50 overflow-hidden">
@@ -59,17 +77,17 @@ export const BrowserCompatibilityAlert = ({ issues, forceShow = false }: Browser
               Votre navigateur n'est pas compatible avec les fonctionnalités requises par FileChat:
             </p>
             <ul className="text-sm mt-1 list-disc pl-5 mb-3">
-              {issues.map((issue, index) => (
+              {simplifiedIssues.map((issue, index) => (
                 <li key={index}>{issue}</li>
               ))}
             </ul>
             <div className="text-sm">
               <p className="font-medium mb-2">Nous vous recommandons d'utiliser:</p>
               <ul className="list-disc pl-5 mb-3">
-                <li>Chrome (version 89+)</li>
-                <li>Edge (version 89+)</li>
-                <li>Firefox (version 90+)</li>
-                <li>Safari (version 15+)</li>
+                <li>Chrome (version récente)</li>
+                <li>Edge (version récente)</li>
+                <li>Firefox (version récente)</li>
+                <li>Safari (version récente)</li>
               </ul>
               
               <div className="flex gap-2 mt-3">
@@ -98,7 +116,7 @@ export const BrowserCompatibilityAlert = ({ issues, forceShow = false }: Browser
               Votre navigateur ne supporte pas toutes les fonctionnalités recommandées:
             </p>
             <ul className="text-sm mt-1 list-disc pl-5">
-              {issues.map((issue, index) => (
+              {simplifiedIssues.map((issue, index) => (
                 <li key={index}>{issue}</li>
               ))}
             </ul>
