@@ -1,29 +1,52 @@
 
 /**
- * Vérifie la compatibilité du navigateur avec les fonctionnalités requises
- * pour l'exécution locale des modèles AI
+ * Module d'analyse de la compatibilité du navigateur pour l'IA locale
  */
-export const checkBrowserCompatibility = (): {
-  compatible: boolean;
-  issues: string[];
+
+export const checkBrowserCompatibility = (): { 
+  compatible: boolean; 
+  issues: string[]; 
+  capabilities: Record<string, boolean>;
 } => {
   const issues: string[] = [];
+  const capabilities: Record<string, boolean> = {
+    webWorkers: 'Worker' in window,
+    webAssembly: typeof WebAssembly === 'object',
+    sharedArrayBuffer: typeof SharedArrayBuffer === 'function',
+    webGPU: 'gpu' in navigator,
+    serviceWorkers: 'serviceWorker' in navigator,
+    secureContext: window.isSecureContext
+  };
   
-  // Vérifier la compatibilité des API Web modernes
-  if (!window.fetch) issues.push("Fetch API non supportée");
-  if (!window.WebSocket) issues.push("WebSockets non supportés");
-  if (!window.indexedDB) issues.push("IndexedDB non supporté");
+  // Vérification du support WebAssembly
+  if (!capabilities.webAssembly) {
+    issues.push("WebAssembly non supporté");
+  }
   
-  // Vérifier la compatibilité des fonctionnalités ES6+ essentielles
-  try {
-    // Test des fonctions arrow, async/await, et destructuring
-    eval("const test = async () => { const {a, b} = {a: 1, b: 2}; await Promise.resolve(); }");
-  } catch (e) {
-    issues.push("JavaScript moderne (ES6+) non supporté");
+  // Vérification du support des Web Workers
+  if (!capabilities.webWorkers) {
+    issues.push("Web Workers non supportés");
+  }
+  
+  // Vérification du support des SharedArrayBuffers (nécessaire pour certaines opérations parallèles)
+  if (!capabilities.sharedArrayBuffer) {
+    issues.push("SharedArrayBuffer non supporté");
+  }
+  
+  // Vérification du support WebGPU (optionnel mais recommandé pour les performances)
+  if (!capabilities.webGPU) {
+    // C'est optionnel, donc juste un avertissement
+    console.log("WebGPU non supporté - l'accélération GPU ne sera pas disponible");
+  }
+  
+  // Vérification du contexte sécurisé (exigé pour certaines API)
+  if (!capabilities.secureContext) {
+    issues.push("Contexte non sécurisé (HTTPS requis pour certaines fonctionnalités)");
   }
   
   return {
-    compatible: issues.length === 0,
-    issues
+    compatible: issues.length === 0 || (issues.length === 1 && !capabilities.webGPU),
+    issues,
+    capabilities
   };
 };
