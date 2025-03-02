@@ -1,4 +1,3 @@
-
 @echo off
 chcp 65001
 setlocal enabledelayedexpansion
@@ -10,9 +9,6 @@ echo.
 echo [INFO] Note: Les fonctionnalités Microsoft Teams sont temporairement 
 echo [INFO] désactivées dans cette version de test pour respecter les 
 echo [INFO] limites du plan Supabase. Elles seront réactivées en Beta 1.1.
-echo.
-echo [INFO] Note: Certaines fonctionnalités RAG avancées peuvent être limitées
-echo [INFO] temporairement pour respecter les limites du plan Supabase.
 echo.
 
 REM Vérification et nettoyage des processus existants
