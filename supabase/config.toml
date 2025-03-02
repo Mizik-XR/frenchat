@@ -26,6 +26,10 @@ verify_jwt = false
 [functions.advanced-rag-generation]
 verify_jwt = false
 
+# Fonction de gestionnaire de cache (ajout récent)
+[functions.cache-manager]
+verify_jwt = false
+
 # Fonctions commentées pour rester dans la limite de 10 fonctions
 # [functions.google-oauth]
 # verify_jwt = false
