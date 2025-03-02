@@ -14,15 +14,13 @@
   to = "/index.html"
   status = 200
 
-# Redirection API pour le développement local (utile pour les tests)
+# Configuration pour rediriger les appels d'API vers les fonctions Netlify
 [[redirects]]
   from = "/api/*"
-  to = "http://localhost:8000/:splat"
+  to = "/.netlify/functions/:splat"
   status = 200
-  force = false
-  conditions = {Role = ["admin"]}
 
-# Configuration des fonctions Netlify (pour remplacer les fonctions Edge Supabase)
+# Configuration des fonctions Netlify
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"

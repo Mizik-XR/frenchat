@@ -6,7 +6,7 @@ setlocal enabledelayedexpansion
 title FileChat - Préparation du déploiement
 
 echo ===================================================
-echo     PRÉPARATION DU DÉPLOIEMENT FILECHAT
+echo    PRÉPARATION DU DÉPLOIEMENT FILECHAT
 echo ===================================================
 echo.
 echo Cette procédure va préparer le projet pour déploiement:
@@ -33,7 +33,7 @@ REM Vérifier et préparer les fichiers de configuration
 echo [ÉTAPE 2/4] Vérification des fichiers de configuration...
 if not exist "netlify.toml" (
     echo [ERREUR] Le fichier netlify.toml est manquant.
-    echo          Exécutez le script de génération de configuration.
+    echo         Exécutez le script de génération de configuration.
     echo.
     echo Appuyez sur une touche pour quitter...
     pause >nul
@@ -42,7 +42,7 @@ if not exist "netlify.toml" (
 
 REM Optimisation du build
 echo [ÉTAPE 3/4] Optimisation et build du projet...
-set "NODE_OPTIONS=--max-old-space-size=4096"
+set NODE_OPTIONS=--max-old-space-size=4096
 call npm run build
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] La construction du projet a échoué.
@@ -65,10 +65,10 @@ if not exist "dist\index.html" (
 )
 
 REM Vérifier que le script Lovable est bien présent
-findstr "gptengineer.js" "dist\index.html" >nul
+findstr /c:"gptengineer.js" "dist\index.html" >nul
 if %ERRORLEVEL% NEQ 0 (
     echo [ATTENTION] Le script Lovable manque dans index.html.
-    call fix-edit-issues.bat
+    call scripts\fix-blank-page.bat
     if %ERRORLEVEL% NEQ 0 (
         echo [ERREUR] Impossible de corriger le problème.
         echo.
@@ -81,7 +81,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo ===================================================
-echo     PRÉPARATION DU DÉPLOIEMENT TERMINÉE
+echo    PRÉPARATION DU DÉPLOIEMENT TERMINÉE
 echo ===================================================
 echo.
 echo Votre projet est prêt à être déployé!
@@ -93,5 +93,6 @@ echo  3. Utiliser le drag-and-drop du dossier 'dist' sur l'interface Netlify
 echo.
 echo Assurez-vous de configurer les variables d'environnement dans l'interface Netlify.
 echo.
-pause
+echo Appuyez sur une touche pour continuer...
+pause >nul
 exit /b 0

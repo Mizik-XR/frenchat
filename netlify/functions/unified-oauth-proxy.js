@@ -1,426 +1,487 @@
-
-// Netlify Function - unified-oauth-proxy.js
-// Alternative à la fonction Edge Supabase pour contourner les limitations du plan gratuit
-// Peut être utilisée une fois que FileChat sera hébergé sur Netlify
-
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 
-// Configuration de Supabase depuis les variables d'environnement Netlify
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Configuration de Supabase
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Récupération des secrets depuis les variables d'environnement Netlify
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
-const OAUTH_ENCRYPTION_KEY = process.env.OAUTH_ENCRYPTION_KEY;
+// Création du client Supabase avec la clé de service pour accéder à toutes les tables
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Configuration CORS
+// En-têtes CORS pour permettre les appels depuis le frontend
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
 
-// Fonctions de chiffrement/déchiffrement AES-256-CBC
-function encryptData(data) {
-  if (!OAUTH_ENCRYPTION_KEY) {
-    throw new Error("Clé d'encryption non configurée");
-  }
-  
+// Clé pour le chiffrement AES-256 (dérivée du secret)
+function getEncryptionKey() {
+  // Utiliser un secret d'environnement pour dériver une clé de chiffrement
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret-key';
+  return crypto.createHash('sha256').update(String(secret)).digest('base64').substring(0, 32);
+}
+
+// Fonction pour chiffrer les tokens avant stockage
+function encryptToken(token) {
   try {
-    // Générer un vecteur d'initialisation (IV) aléatoire
     const iv = crypto.randomBytes(16);
-    
-    // Créer le chiffreur
-    const cipher = crypto.createCipheriv(
-      'aes-256-cbc', 
-      Buffer.from(OAUTH_ENCRYPTION_KEY.substring(0, 32)), 
-      iv
-    );
-    
-    // Chiffrer les données
-    let encrypted = cipher.update(data, 'utf8', 'base64');
+    const key = Buffer.from(getEncryptionKey(), 'utf-8');
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+    let encrypted = cipher.update(token, 'utf8', 'base64');
     encrypted += cipher.final('base64');
-    
-    // Combiner l'IV et les données chiffrées
-    return iv.toString('base64') + ':' + encrypted;
+    return {
+      iv: iv.toString('hex'),
+      data: encrypted
+    };
   } catch (error) {
-    console.error("Erreur lors du chiffrement des données:", error);
+    console.error('Erreur de chiffrement:', error);
+    throw new Error('Impossible de sécuriser le token');
+  }
+}
+
+// Fonction pour déchiffrer les tokens stockés
+function decryptToken(encryptedData) {
+  try {
+    const key = Buffer.from(getEncryptionKey(), 'utf-8');
+    const iv = Buffer.from(encryptedData.iv, 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    let decrypted = decipher.update(encryptedData.data, 'base64', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (error) {
+    console.error('Erreur de déchiffrement:', error);
+    throw new Error('Impossible de déchiffrer le token');
+  }
+}
+
+// Fonction d'échange du code d'autorisation Google pour des tokens d'accès
+async function exchangeGoogleAuthCode(code, redirectUrl) {
+  const googleClientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const googleClientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+
+  if (!googleClientId || !googleClientSecret) {
+    throw new Error("Configurations OAuth manquantes");
+  }
+
+  const tokenUrl = 'https://oauth2.googleapis.com/token';
+  const params = new URLSearchParams({
+    code,
+    client_id: googleClientId,
+    client_secret: googleClientSecret,
+    redirect_uri: redirectUrl,
+    grant_type: 'authorization_code'
+  });
+
+  try {
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Google OAuth Error Response:', errorText);
+      throw new Error(`Erreur lors de l'échange du code: ${response.status} ${response.statusText}`);
+    }
+
+    const tokenData = await response.json();
+    return tokenData;
+  } catch (error) {
+    console.error('Erreur lors de l\'échange du code d\'autorisation:', error);
     throw error;
   }
 }
 
-function decryptData(encryptedData) {
-  if (!OAUTH_ENCRYPTION_KEY) {
-    throw new Error("Clé d'encryption non configurée");
-  }
-  
+// Fonction pour récupérer les informations de l'utilisateur Google
+async function getGoogleUserInfo(accessToken) {
   try {
-    // Séparer l'IV et les données chiffrées
-    const parts = encryptedData.split(':');
-    if (parts.length !== 2) {
-      throw new Error("Format de données chiffrées invalide");
+    const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur lors de la récupération des informations utilisateur: ${response.status}`);
     }
-    
-    const iv = Buffer.from(parts[0], 'base64');
-    const encryptedText = parts[1];
-    
-    // Créer le déchiffreur
-    const decipher = crypto.createDecipheriv(
-      'aes-256-cbc', 
-      Buffer.from(OAUTH_ENCRYPTION_KEY.substring(0, 32)), 
-      iv
-    );
-    
-    // Déchiffrer les données
-    let decrypted = decipher.update(encryptedText, 'base64', 'utf8');
-    decrypted += decipher.final('utf8');
-    
-    return decrypted;
+
+    return await response.json();
   } catch (error) {
-    console.error("Erreur lors du déchiffrement des données:", error);
-    throw new Error("Impossible de déchiffrer les données");
+    console.error('Erreur lors de la récupération des informations utilisateur:', error);
+    throw error;
   }
 }
 
-exports.handler = async function(event, context) {
+// Fonction pour sauvegarder les tokens dans la base de données
+async function saveOAuthTokens(userId, provider, tokens, userInfo) {
+  // Chiffrer les tokens sensibles
+  const encryptedAccessToken = encryptToken(tokens.access_token);
+  const encryptedRefreshToken = tokens.refresh_token ? encryptToken(tokens.refresh_token) : null;
+
+  try {
+    // Vérifier si l'utilisateur a déjà des tokens pour ce provider
+    const { data: existingTokens, error: fetchError } = await supabase
+      .from('oauth_tokens')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('provider', provider)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = not found
+      console.error('Erreur lors de la vérification des tokens existants:', fetchError);
+      throw fetchError;
+    }
+
+    // Préparer les données des tokens
+    const tokenData = {
+      user_id: userId,
+      provider,
+      access_token: JSON.stringify(encryptedAccessToken),
+      refresh_token: encryptedRefreshToken ? JSON.stringify(encryptedRefreshToken) : null,
+      expires_at: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null,
+      token_type: tokens.token_type,
+      scope: tokens.scope,
+      user_info: userInfo ? JSON.stringify(userInfo) : null,
+      is_valid: true,
+      metadata: {
+        updated_at: new Date().toISOString(),
+        ip_address: null // Optionnel: Vous pourriez récupérer l'IP du client
+      }
+    };
+
+    if (existingTokens) {
+      // Mise à jour des tokens existants
+      const { error: updateError } = await supabase
+        .from('oauth_tokens')
+        .update(tokenData)
+        .eq('id', existingTokens.id);
+
+      if (updateError) {
+        console.error('Erreur lors de la mise à jour des tokens:', updateError);
+        throw updateError;
+      }
+    } else {
+      // Insertion de nouveaux tokens
+      const { error: insertError } = await supabase
+        .from('oauth_tokens')
+        .insert([tokenData]);
+
+      if (insertError) {
+        console.error('Erreur lors de l\'insertion des tokens:', insertError);
+        throw insertError;
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Erreur lors de la sauvegarde des tokens:', error);
+    throw error;
+  }
+}
+
+// Fonction pour rafraîchir un token expiré
+async function refreshGoogleToken(userId) {
+  try {
+    // Récupérer le refresh token de l'utilisateur
+    const { data: tokenData, error: fetchError } = await supabase
+      .from('oauth_tokens')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('provider', 'google')
+      .single();
+
+    if (fetchError) {
+      console.error('Erreur lors de la récupération du refresh token:', fetchError);
+      throw new Error('Impossible de récupérer le refresh token');
+    }
+
+    if (!tokenData.refresh_token) {
+      throw new Error('Aucun refresh token disponible');
+    }
+
+    // Déchiffrer le refresh token
+    const encryptedRefreshToken = JSON.parse(tokenData.refresh_token);
+    const refreshToken = decryptToken(encryptedRefreshToken);
+
+    // Appeler l'API Google pour rafraîchir le token
+    const googleClientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+    const googleClientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+
+    const tokenUrl = 'https://oauth2.googleapis.com/token';
+    const params = new URLSearchParams({
+      client_id: googleClientId,
+      client_secret: googleClientSecret,
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token'
+    });
+
+    const response = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Google OAuth Refresh Error:', errorText);
+      
+      // Marquer le token comme invalide si le rafraîchissement échoue
+      await supabase
+        .from('oauth_tokens')
+        .update({ is_valid: false })
+        .eq('id', tokenData.id);
+        
+      throw new Error(`Erreur lors du rafraîchissement du token: ${response.status}`);
+    }
+
+    // Traiter la réponse
+    const newTokenData = await response.json();
+    
+    // Chiffrer le nouveau token d'accès
+    const encryptedAccessToken = encryptToken(newTokenData.access_token);
+    
+    // Mettre à jour le token dans la base de données
+    const { error: updateError } = await supabase
+      .from('oauth_tokens')
+      .update({
+        access_token: JSON.stringify(encryptedAccessToken),
+        expires_at: newTokenData.expires_in ? new Date(Date.now() + newTokenData.expires_in * 1000).toISOString() : null,
+        is_valid: true,
+        metadata: {
+          ...tokenData.metadata,
+          refreshed_at: new Date().toISOString()
+        }
+      })
+      .eq('id', tokenData.id);
+
+    if (updateError) {
+      console.error('Erreur lors de la mise à jour du token rafraîchi:', updateError);
+      throw updateError;
+    }
+
+    return {
+      success: true,
+      expires_in: newTokenData.expires_in
+    };
+  } catch (error) {
+    console.error('Erreur lors du rafraîchissement du token:', error);
+    throw error;
+  }
+}
+
+// Fonction pour vérifier le statut d'un token
+async function checkTokenStatus(userId) {
+  try {
+    // Récupérer le token de l'utilisateur
+    const { data: tokenData, error: fetchError } = await supabase
+      .from('oauth_tokens')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('provider', 'google')
+      .single();
+
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') { // Not found
+        return { isValid: false, message: "Aucun token trouvé" };
+      }
+      console.error('Erreur lors de la vérification du token:', fetchError);
+      throw fetchError;
+    }
+
+    // Vérifier si le token est marqué comme invalide
+    if (!tokenData.is_valid) {
+      return { isValid: false, message: "Token marqué comme invalide" };
+    }
+
+    // Vérifier si le token est expiré
+    const expiresAt = new Date(tokenData.expires_at);
+    const now = new Date();
+    
+    if (expiresAt <= now) {
+      return { 
+        isValid: false, 
+        message: "Token expiré", 
+        expired: true,
+        expiresAt: expiresAt.toISOString()
+      };
+    }
+
+    // Calculer le temps restant avant expiration (en secondes)
+    const expiresIn = Math.floor((expiresAt.getTime() - now.getTime()) / 1000);
+
+    return {
+      isValid: true,
+      expiresIn,
+      expiresAt: expiresAt.toISOString()
+    };
+  } catch (error) {
+    console.error('Erreur lors de la vérification du statut du token:', error);
+    throw error;
+  }
+}
+
+// Fonction pour révoquer un token Google
+async function revokeGoogleToken(userId) {
+  try {
+    // Récupérer le token de l'utilisateur
+    const { data: tokenData, error: fetchError } = await supabase
+      .from('oauth_tokens')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('provider', 'google')
+      .single();
+
+    if (fetchError) {
+      console.error('Erreur lors de la récupération du token à révoquer:', fetchError);
+      throw new Error('Impossible de récupérer le token');
+    }
+
+    // Déchiffrer le token d'accès
+    const encryptedAccessToken = JSON.parse(tokenData.access_token);
+    const accessToken = decryptToken(encryptedAccessToken);
+
+    // Appeler l'API Google pour révoquer le token
+    const revokeUrl = `https://oauth2.googleapis.com/revoke?token=${accessToken}`;
+    const response = await fetch(revokeUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+
+    // Même si la révocation échoue, marquer le token comme invalide localement
+    await supabase
+      .from('oauth_tokens')
+      .update({ 
+        is_valid: false,
+        metadata: {
+          ...tokenData.metadata,
+          revoked_at: new Date().toISOString()
+        }
+      })
+      .eq('id', tokenData.id);
+
+    if (!response.ok) {
+      console.warn(`La révocation du token a échoué avec le code ${response.status}, mais le token a été marqué comme invalide localement.`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Erreur lors de la révocation du token:', error);
+    throw error;
+  }
+}
+
+// Gestionnaire de requêtes principal
+exports.handler = async (event, context) => {
   // Gestion des requêtes OPTIONS pour CORS
   if (event.httpMethod === 'OPTIONS') {
     return {
-      statusCode: 200,
+      statusCode: 204,
       headers: corsHeaders,
       body: ''
     };
   }
-  
+
   try {
-    // Vérifier si les secrets requis sont présents
-    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+    // Vérification de la méthode HTTP
+    if (event.httpMethod !== 'POST') {
       return {
-        statusCode: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: "Erreur de configuration: Secrets OAuth manquants" })
+        statusCode: 405,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Méthode non autorisée' })
       };
     }
 
-    if (!OAUTH_ENCRYPTION_KEY || OAUTH_ENCRYPTION_KEY.length < 32) {
+    // Parsing du corps de la requête
+    const body = JSON.parse(event.body || '{}');
+    const { provider, code, redirectUrl, action, userId, state } = body;
+
+    // Validation des entrées
+    if (!provider) {
       return {
-        statusCode: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: "Erreur de configuration: Clé d'encryption manquante ou invalide (doit faire au moins 32 caractères)" })
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Provider manquant' })
       };
     }
-    
-    const body = JSON.parse(event.body);
-    const { provider = 'google', code, redirectUrl, state, action, userId } = body;
-    
-    // Router selon le fournisseur
+
+    // Gestion des différentes actions en fonction du provider
     if (provider === 'google') {
-      // Action pour récupérer l'ID client
+      // Récupération du client ID Google (action spécifique)
       if (action === 'get_client_id') {
         return {
           statusCode: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ client_id: GOOGLE_CLIENT_ID })
+          headers: corsHeaders,
+          body: JSON.stringify({ client_id: process.env.GOOGLE_OAUTH_CLIENT_ID })
         };
       }
-      
-      // Échange du code d'autorisation contre un token
+
+      // Échange du code d'autorisation contre des tokens
       if (code && redirectUrl) {
-        try {
-          console.log("Échange du code d'autorisation contre un token...");
-          
-          // Préparer les informations pour l'échange du code
-          const tokenEndpoint = 'https://oauth2.googleapis.com/token';
-          const params = new URLSearchParams({
-            code,
-            client_id: GOOGLE_CLIENT_ID,
-            client_secret: GOOGLE_CLIENT_SECRET,
-            redirect_uri: redirectUrl,
-            grant_type: 'authorization_code',
-          });
-          
-          // Faire la requête pour obtenir les tokens
-          const tokenResponse = await fetch(tokenEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: params.toString(),
-          });
-          
-          if (!tokenResponse.ok) {
-            const errorData = await tokenResponse.text();
-            console.error("Erreur lors de l'échange du code:", errorData);
-            throw new Error(`Échec de l'échange du code: ${tokenResponse.status} ${tokenResponse.statusText}`);
-          }
-          
-          const tokenData = await tokenResponse.json();
-          
-          // Obtenir les informations de l'utilisateur avec le token
-          const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-            headers: {
-              'Authorization': `Bearer ${tokenData.access_token}`
+        const tokenData = await exchangeGoogleAuthCode(code, redirectUrl);
+        const userInfo = await getGoogleUserInfo(tokenData.access_token);
+
+        // Si un userId est fourni, sauvegarder les tokens
+        if (userId) {
+          await saveOAuthTokens(userId, 'google', tokenData, userInfo);
+        }
+
+        return {
+          statusCode: 200,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            success: true,
+            user_info: userInfo,
+            token_status: { 
+              is_valid: true, 
+              expires_in: tokenData.expires_in 
             }
-          });
-          
-          if (!userInfoResponse.ok) {
-            throw new Error('Échec de la récupération des informations utilisateur');
-          }
-          
-          const userInfo = await userInfoResponse.json();
-          
-          // Chiffrer les tokens avant le stockage
-          const encryptedTokens = {
-            access_token: encryptData(tokenData.access_token),
-            refresh_token: tokenData.refresh_token ? encryptData(tokenData.refresh_token) : null,
-            id_token: tokenData.id_token ? encryptData(tokenData.id_token) : null
-          };
-          
-          // Sauvegarder les tokens dans la base de données
-          const { data: authUser, error: authError } = await supabase.auth.getUser(tokenData.id_token);
-          let currentUserId = authUser?.user?.id || userInfo.id;
-          
-          // Enregistrer les tokens
-          const { error: tokenError } = await supabase
-            .from('oauth_tokens')
-            .upsert({
-              user_id: currentUserId,
-              provider: 'google',
-              access_token: encryptedTokens.access_token,
-              refresh_token: encryptedTokens.refresh_token,
-              id_token: encryptedTokens.id_token,
-              expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
-              metadata: {
-                email: userInfo.email,
-                name: userInfo.name,
-                picture: userInfo.picture
-              },
-            }, { onConflict: 'user_id,provider' });
-          
-          if (tokenError) {
-            console.error("Erreur lors de l'enregistrement des tokens:", tokenError);
-            throw new Error("Échec de l'enregistrement des tokens");
-          }
-          
-          return {
-            statusCode: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ success: true, user_info: userInfo })
-          };
-        } catch (error) {
-          console.error("Erreur pendant l'authentification Google OAuth:", error);
-          return {
-            statusCode: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ success: false, error: error.message })
-          };
-        }
+          })
+        };
       }
-      
-      // Action pour vérifier l'état du token
+
+      // Vérification du statut du token
       if (action === 'check_token_status' && userId) {
-        try {
-          console.log(`Vérification du statut du token pour l'utilisateur ${userId}`);
-          
-          // Récupérer le token de la base de données
-          const { data: tokenData, error: tokenError } = await supabase
-            .from('oauth_tokens')
-            .select('access_token, expires_at')
-            .eq('user_id', userId)
-            .eq('provider', 'google')
-            .maybeSingle();
-          
-          if (tokenError || !tokenData) {
-            console.log("Aucun token trouvé ou erreur:", tokenError);
-            return {
-              statusCode: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ isValid: false })
-            };
-          }
-          
-          // Vérifier si le token est expiré
-          const expiresAt = new Date(tokenData.expires_at);
-          const now = new Date();
-          const isValid = expiresAt > now;
-          const expiresIn = Math.floor((expiresAt.getTime() - now.getTime()) / 1000);
-          
-          return {
-            statusCode: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ isValid, expiresIn })
-          };
-        } catch (error) {
-          console.error("Erreur lors de la vérification du token:", error);
-          return {
-            statusCode: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ isValid: false, error: error.message })
-          };
-        }
+        const tokenStatus = await checkTokenStatus(userId);
+        return {
+          statusCode: 200,
+          headers: corsHeaders,
+          body: JSON.stringify(tokenStatus)
+        };
       }
-      
-      // Action pour rafraîchir le token
+
+      // Rafraîchissement du token
       if (action === 'refresh_token' && userId) {
-        try {
-          console.log(`Rafraîchissement du token pour l'utilisateur ${userId}`);
-          
-          // Récupérer le refresh token
-          const { data: tokenData, error: tokenError } = await supabase
-            .from('oauth_tokens')
-            .select('refresh_token')
-            .eq('user_id', userId)
-            .eq('provider', 'google')
-            .maybeSingle();
-          
-          if (tokenError || !tokenData || !tokenData.refresh_token) {
-            console.log("Aucun refresh token trouvé ou erreur:", tokenError);
-            return {
-              statusCode: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ success: false, error: "Aucun refresh token disponible" })
-            };
-          }
-          
-          // Déchiffrer le refresh token
-          const refreshToken = decryptData(tokenData.refresh_token);
-          
-          // Préparer les données pour le rafraîchissement
-          const tokenEndpoint = 'https://oauth2.googleapis.com/token';
-          const params = new URLSearchParams({
-            refresh_token: refreshToken,
-            client_id: GOOGLE_CLIENT_ID,
-            client_secret: GOOGLE_CLIENT_SECRET,
-            grant_type: 'refresh_token',
-          });
-          
-          // Faire la requête pour obtenir un nouveau token
-          const tokenResponse = await fetch(tokenEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: params.toString(),
-          });
-          
-          if (!tokenResponse.ok) {
-            const errorData = await tokenResponse.text();
-            console.error("Erreur lors du rafraîchissement du token:", errorData);
-            throw new Error(`Échec du rafraîchissement: ${tokenResponse.status} ${tokenResponse.statusText}`);
-          }
-          
-          const newTokenData = await tokenResponse.json();
-          
-          // Chiffrer le nouveau token d'accès
-          const encryptedAccessToken = encryptData(newTokenData.access_token);
-          
-          // Mettre à jour le token en base de données
-          const { error: updateError } = await supabase
-            .from('oauth_tokens')
-            .update({
-              access_token: encryptedAccessToken,
-              expires_at: new Date(Date.now() + newTokenData.expires_in * 1000).toISOString(),
-            })
-            .eq('user_id', userId)
-            .eq('provider', 'google');
-          
-          if (updateError) {
-            console.error("Erreur lors de la mise à jour du token:", updateError);
-            throw new Error("Échec de la mise à jour du token");
-          }
-          
-          return {
-            statusCode: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ success: true })
-          };
-        } catch (error) {
-          console.error("Erreur lors du rafraîchissement du token:", error);
-          return {
-            statusCode: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ success: false, error: error.message })
-          };
-        }
+        const refreshResult = await refreshGoogleToken(userId);
+        return {
+          statusCode: 200,
+          headers: corsHeaders,
+          body: JSON.stringify(refreshResult)
+        };
       }
-      
-      // Action pour révoquer le token
+
+      // Révocation du token
       if (action === 'revoke_token' && userId) {
-        try {
-          console.log(`Révocation du token pour l'utilisateur ${userId}`);
-          
-          // Récupérer le token de la base de données
-          const { data: tokenData, error: tokenError } = await supabase
-            .from('oauth_tokens')
-            .select('access_token')
-            .eq('user_id', userId)
-            .eq('provider', 'google')
-            .maybeSingle();
-          
-          if (tokenError || !tokenData || !tokenData.access_token) {
-            console.log("Aucun token trouvé ou erreur:", tokenError);
-            return {
-              statusCode: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ success: false, error: "Aucun token à révoquer" })
-            };
-          }
-          
-          // Déchiffrer le token d'accès
-          const accessToken = decryptData(tokenData.access_token);
-          
-          // Révoquer le token
-          const revokeEndpoint = 'https://oauth2.googleapis.com/revoke';
-          const params = new URLSearchParams({ token: accessToken });
-          
-          const revokeResponse = await fetch(revokeEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: params.toString(),
-          });
-          
-          // Même si la révocation échoue, supprimez le token local
-          const { error: deleteError } = await supabase
-            .from('oauth_tokens')
-            .delete()
-            .eq('user_id', userId)
-            .eq('provider', 'google');
-          
-          if (deleteError) {
-            console.error("Erreur lors de la suppression du token:", deleteError);
-            throw new Error("Échec de la suppression du token local");
-          }
-          
-          return {
-            statusCode: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ success: true })
-          };
-        } catch (error) {
-          console.error("Erreur lors de la révocation du token:", error);
-          return {
-            statusCode: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ success: false, error: error.message })
-          };
-        }
+        const revokeResult = await revokeGoogleToken(userId);
+        return {
+          statusCode: 200,
+          headers: corsHeaders,
+          body: JSON.stringify(revokeResult)
+        };
       }
     }
-    
-    // Si aucune action valide n'est spécifiée
+
+    // Requête invalide si on arrive ici
     return {
       statusCode: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: false, error: "Action invalide ou paramètres manquants" })
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'Requête invalide ou incomplète' })
     };
   } catch (error) {
-    console.error('Erreur serveur:', error);
+    console.error('Erreur lors du traitement de la requête:', error);
     return {
       statusCode: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: error.message })
+      headers: corsHeaders,
+      body: JSON.stringify({ error: error.message || 'Erreur interne du serveur' })
     };
   }
 };

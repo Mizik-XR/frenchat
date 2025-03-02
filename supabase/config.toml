@@ -8,9 +8,6 @@ verify_jwt = false
 [functions.index-google-drive]
 verify_jwt = false
 
-[functions.batch-index-google-drive]
-verify_jwt = false
-
 [functions.test-summary]
 verify_jwt = false
 
@@ -21,6 +18,9 @@ verify_jwt = false
 verify_jwt = false
 
 # Fonctions temporairement désactivées pour respecter la limite du plan gratuit
+# [functions.batch-index-google-drive]
+# verify_jwt = false
+
 # [functions.microsoft-oauth]
 # verify_jwt = false
 
