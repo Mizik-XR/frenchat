@@ -1,68 +1,125 @@
 
-import { checkLocalService, notifyServiceChange } from '../aiServiceUtils';
-import { callCloudAPIService } from '../cloudAPIService';
+import { toast } from '@/hooks/use-toast';
+import { AIServiceType, ModelDownloadStatus, TextGenerationParameters, TextGenerationResponse } from '../types';
 import { callOllamaService } from '../ollamaService';
-import { callLocalAPIService } from '../localAPIService';
-import { TextGenerationParameters, TextGenerationResponse, ModelDownloadStatus } from '../types';
+import { LLMProviderType } from '@/types/config';
 
 /**
- * Utilitaire pour gérer les services d'IA et l'exécution des requêtes
+ * Stratégie pour exécuter la requête IA 
+ * Cette fonction centralise les décisions d'envoi des requêtes
  */
-export const executeAIRequest = async (
+export async function executeAIRequest(
   options: TextGenerationParameters,
-  serviceType: string,
+  executionStrategy: 'local' | 'cloud',
   localAIUrl: string | null,
-  localProvider: string,
-  modelDownloadStatus: ModelDownloadStatus | null,
-  provider = 'huggingface'
-): Promise<TextGenerationResponse[]> => {
-  // Vérifier d'abord si le service local est disponible si nous sommes en mode local
-  if (serviceType === 'local') {
-    const isLocalAvailable = await checkLocalService(localAIUrl || undefined);
-    
-    if (isLocalAvailable && localAIUrl) {
-      console.log(`Utilisation du service IA local (${localProvider}):`, localAIUrl);
-      
-      // Vérifier si un téléchargement est en cours
-      if (modelDownloadStatus?.status === 'downloading') {
-        console.log("Téléchargement de modèle en cours, utilisation du fallback cloud temporaire");
-        notifyServiceChange(
-          "Modèle en cours de téléchargement", 
-          `Le modèle est en cours de téléchargement (${modelDownloadStatus.progress}%). Utilisation temporaire du service cloud.`,
-          "default"
-        );
-        return await callCloudAPIService(options, provider);
-      }
-      
-      try {
-        // Utiliser Ollama si c'est le fournisseur configuré ou si l'URL contient 11434 (port standard d'Ollama)
-        if (localProvider === 'ollama' || localAIUrl.includes('11434')) {
-          return await callOllamaService(options, localAIUrl);
-        }
-        
-        // Sinon, utiliser le serveur IA local standard (Hugging Face)
-        return await callLocalAPIService(options, localAIUrl);
-      } catch (error) {
-        console.error("Erreur avec le service local, passage au fallback cloud:", error);
-        notifyServiceChange(
-          "Problème avec le service local", 
-          "Une erreur est survenue avec le service IA local. Utilisation temporaire du service cloud.",
-          "destructive"
-        );
-        return await callCloudAPIService(options, provider);
-      }
-    } else {
-      console.warn("Service local indisponible, passage au service cloud");
-      // Si le service local est indisponible, on passe automatiquement au service cloud
-      notifyServiceChange(
-        "Service local indisponible", 
-        "Impossible de se connecter au service IA local. Utilisation du service cloud."
-      );
-      return await callCloudAPIService(options, provider);
-    }
-  }
+  localProvider: LLMProviderType,
+  modelDownloadStatus: ModelDownloadStatus,
+  cloudProvider: string = 'huggingface'
+): Promise<TextGenerationResponse[]> {
+  console.log(`Exécution de la requête IA avec stratégie: ${executionStrategy}`);
   
-  // Si nous sommes ici, c'est que nous utilisons le service cloud
-  console.log("Utilisation du service IA cloud via Supabase Functions");
-  return await callCloudAPIService(options, provider);
-};
+  // Si la stratégie est locale mais qu'un téléchargement est en cours, notifier l'utilisateur
+  if (executionStrategy === 'local' && modelDownloadStatus.status === 'downloading') {
+    const modelName = modelDownloadStatus.model || 'IA';
+    const progress = Math.round(modelDownloadStatus.progress * 100);
+    
+    toast({
+      title: "Téléchargement du modèle en cours",
+      description: `Le modèle ${modelName} est en cours de téléchargement (${progress}%). Utilisation temporaire du mode cloud.`,
+    });
+    
+    // Basculer temporairement vers le cloud
+    executionStrategy = 'cloud';
+  }
+
+  try {
+    // Exécution locale via API locale
+    if (executionStrategy === 'local') {
+      if (!localAIUrl) {
+        throw new Error("URL du service IA local non configurée");
+      }
+      
+      // Log pour debugger
+      console.log(`Envoi de la requête au service local: ${localAIUrl}`);
+      console.log(`Provider local: ${localProvider}`);
+      
+      // Cas particulier pour Ollama
+      if (localProvider === 'ollama' || localAIUrl.includes('11434')) {
+        return await callOllamaService(options, localAIUrl);
+      }
+      
+      // Cas général: API locale Hugging Face / personnalisée
+      const response = await fetch(`${localAIUrl}/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: options.inputs || options.prompt,
+          system_prompt: options.system_prompt || "Tu es un assistant IA qui aide l'utilisateur de manière précise et bienveillante.",
+          temperature: options.parameters?.temperature || options.temperature || 0.7,
+          top_p: options.parameters?.top_p || options.top_p || 0.9,
+          max_length: options.parameters?.max_length || options.max_length || 800,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erreur du service local: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return [{ generated_text: data.generated_text || data.response || "" }];
+    } 
+    // Exécution cloud
+    else {
+      console.log("Exécution de la requête via service cloud");
+      
+      // Adapter l'URL en fonction du provider cloud
+      let apiUrl = "https://api-inference.huggingface.co/models/";
+      let model = options.model || "mistralai/Mistral-7B-Instruct-v0.1";
+      
+      // Construction de la requête cloud
+      const cloudResponse = await fetch(`${apiUrl}${model}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Ajouter l'API key si disponible dans les options
+          ...(options.api_key && { 'Authorization': `Bearer ${options.api_key}` })
+        },
+        body: JSON.stringify({
+          inputs: options.inputs || `<s>[INST] ${options.system_prompt || ""}\n\n${options.prompt} [/INST]`,
+          parameters: {
+            temperature: options.parameters?.temperature || options.temperature || 0.7,
+            top_p: options.parameters?.top_p || options.top_p || 0.9,
+            max_new_tokens: options.parameters?.max_length || options.max_length || 800,
+            return_full_text: false
+          }
+        }),
+      });
+      
+      if (!cloudResponse.ok) {
+        throw new Error(`Erreur du service cloud: ${cloudResponse.status} ${cloudResponse.statusText}`);
+      }
+      
+      return await cloudResponse.json();
+    }
+  } catch (error: any) {
+    console.error("Erreur d'exécution de la requête IA:", error);
+    
+    // Si l'erreur vient du mode local, on essaie de basculer vers le cloud automatiquement
+    if (executionStrategy === 'local' && error.message?.includes('local')) {
+      console.log("Tentative de basculement automatique vers le cloud suite à une erreur locale");
+      
+      toast({
+        title: "Problème avec le service local",
+        description: "Basculement automatique vers le service cloud. Vérifiez votre configuration locale.",
+        variant: "warning",
+      });
+      
+      // Appel récursif avec stratégie cloud
+      return executeAIRequest(options, 'cloud', localAIUrl, localProvider, modelDownloadStatus, cloudProvider);
+    }
+    
+    throw error;
+  }
+}

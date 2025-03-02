@@ -1,88 +1,81 @@
 
 """
-Routes FastAPI pour le serveur d'inférence IA
+Configuration des routes API pour le serveur d'inférence IA
 """
 import os
+import json
+import traceback
 import time
-import asyncio
-import random
-from datetime import datetime
-from typing import Optional, List, Dict, Any, Union
-from fastapi import FastAPI, Request, Response, HTTPException, BackgroundTasks, Depends
+from typing import Optional, Dict, List, Any, Union
+from pathlib import Path
+from fastapi import FastAPI, HTTPException, Request, Response, status, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from .config import MODEL_LOADED, DEFAULT_MODEL, FALLBACK_MODE, logger, CACHE_ENABLED, CACHE_DIR
-from .model_manager import lazy_load_model, init_model_download, get_download_progress, fallback_generate
+from pydantic import BaseModel, Field
+from datetime import datetime
+import asyncio
+import sys
+
+# Import des modules internes
+from .config import logger, DEFAULT_MODEL, FALLBACK_MODE, MODEL_LOADED
+from .model_manager import lazy_load_model, get_download_progress, init_model_download, fallback_generate
 from .system_analyzer import analyze_system_resources
-from .cache_manager import (
-    init_cache, check_cache, update_cache, generate_cache_id, 
-    get_cache_stats, clean_expired_entries, toggle_compression, 
-    set_cache_ttl, purge_cache
-)
+from .cache_manager import init_cache, check_cache, update_cache, generate_cache_id, get_cache_stats, clean_expired_entries, toggle_compression, set_cache_ttl, purge_cache
 
-# Initialisation du cache
-init_cache()
-
-# Modèles de données
+# Définitions Pydantic pour validation des requêtes
 class TextGenerationRequest(BaseModel):
     prompt: str
-    max_length: Optional[int] = 800
+    system_prompt: Optional[str] = "Tu es un assistant IA qui aide l'utilisateur de manière précise et bienveillante."
     temperature: Optional[float] = 0.7
     top_p: Optional[float] = 0.9
-    system_prompt: Optional[str] = "Tu es un assistant IA qui aide l'utilisateur de manière précise et bienveillante."
-    use_cache: Optional[bool] = True
+    max_length: Optional[int] = 800
+    stream: Optional[bool] = False
 
 class ModelDownloadRequest(BaseModel):
     model: str
     consent: bool = False
 
-class HealthResponse(BaseModel):
-    status: str
-    model: str
-    model_loaded: bool
-    fallback_mode: bool
-    system_info: dict
-    timestamp: str
-
-app = FastAPI(title="AI Model Server")
-
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Pour le développement, à restreindre en production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/health")
-async def health_check():
-    """Route pour vérifier l'état du serveur"""
-    system_resources = analyze_system_resources()
-    
-    try:
-        # Essayer de charger le modèle paresseusement
-        if not FALLBACK_MODE and not MODEL_LOADED:
-            lazy_load_model()
-    except Exception as e:
-        logger.error(f"Erreur lors du chargement du modèle pour le health check: {str(e)}")
-    
-    return HealthResponse(
-        status="ok",
-        model=DEFAULT_MODEL,
-        model_loaded=MODEL_LOADED,
-        fallback_mode=FALLBACK_MODE,
-        system_info=system_resources,
-        timestamp=datetime.now().isoformat()
+def init_app():
+    """Initialise l'application FastAPI avec middlewares et routes"""
+    app = FastAPI(
+        title="FileChat Inference API",
+        description="API d'inférence IA pour FileChat",
+        version="1.0.0"
     )
-
-@app.post("/generate")
-async def generate_text(input_data: TextGenerationRequest):
-    """Génère du texte à partir d'un prompt"""
-    start_time = time.time()
     
-    # Vérifier si la réponse est dans le cache
-    if CACHE_ENABLED and input_data.use_cache:
+    # Configuration CORS pour permettre les requêtes depuis les origines autorisées
+    allowed_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8080,http://127.0.0.1:8080,*").split(",")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    
+    # Initialisation du cache SQLite
+    init_cache()
+    
+    @app.get("/health")
+    async def health_check():
+        """Point de terminaison pour vérifier la santé du serveur"""
+        return {
+            "status": "ok",
+            "version": "1.0.0",
+            "model": DEFAULT_MODEL,
+            "model_loaded": MODEL_LOADED,
+            "fallback_mode": FALLBACK_MODE,
+            "timestamp": datetime.now().isoformat(),
+            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        }
+    
+    @app.get("/system-info")
+    async def system_info():
+        """Retourne des informations sur le système et ses capacités"""
+        return analyze_system_resources()
+    
+    @app.post("/generate")
+    async def generate_text(input_data: TextGenerationRequest):
+        """Génère du texte à partir d'un prompt"""
         cache_id = generate_cache_id(
             input_data.prompt, 
             input_data.system_prompt, 
@@ -92,194 +85,169 @@ async def generate_text(input_data: TextGenerationRequest):
             input_data.max_length
         )
         
+        # Vérifier le cache avant de générer
         cached_response = check_cache(cache_id)
         if cached_response:
-            logger.info(f"Réponse récupérée du cache en {time.time() - start_time:.2f}s")
-            return {"generated_text": cached_response, "from_cache": True}
-    
-    # Si nous sommes en mode fallback, utiliser l'API externe
-    if FALLBACK_MODE:
-        logger.info("Génération via le service externe (mode fallback)")
+            # Log pour le debugging
+            logger.debug(f"Résultat trouvé dans le cache pour: {input_data.prompt[:50]}...")
+            return {"generated_text": cached_response, "cached": True}
+        
+        # Si le modèle n'est pas chargé, tenter de le charger
+        if not MODEL_LOADED:
+            lazy_load_model()
+        
+        # Si le mode fallback est activé, utiliser l'API externe
+        if FALLBACK_MODE:
+            start_time = time.time()
+            result = await fallback_generate(input_data)
+            end_time = time.time()
+            
+            # Mise à jour du cache
+            update_cache(
+                cache_id,
+                input_data.prompt,
+                input_data.system_prompt,
+                DEFAULT_MODEL,
+                result["generated_text"],
+                input_data.temperature,
+                input_data.top_p,
+                input_data.max_length
+            )
+            
+            # Log de performance
+            logger.info(f"Génération via API externe en {(end_time - start_time):.2f}s")
+            
+            result["cached"] = False
+            return result
+        
+        # Sinon, utiliser le modèle local
         try:
-            response = await fallback_generate(input_data)
+            import torch
             
-            # Mettre en cache la réponse si la mise en cache est activée
-            if CACHE_ENABLED and input_data.use_cache and response.get("generated_text"):
-                cache_id = generate_cache_id(
-                    input_data.prompt, 
-                    input_data.system_prompt, 
-                    DEFAULT_MODEL, 
-                    input_data.temperature, 
-                    input_data.top_p, 
-                    input_data.max_length
-                )
-                update_cache(
-                    cache_id, 
-                    input_data.prompt, 
-                    input_data.system_prompt, 
-                    DEFAULT_MODEL, 
-                    response["generated_text"], 
-                    input_data.temperature, 
-                    input_data.top_p, 
-                    input_data.max_length
+            input_text = f"<s>[INST] {input_data.system_prompt}\n\n{input_data.prompt} [/INST]"
+            
+            # Tokenisation
+            input_ids = tokenizer.encode(input_text, return_tensors="pt")
+            
+            # Génération
+            start_time = time.time()
+            
+            with torch.no_grad():
+                output = model.generate(
+                    input_ids,
+                    max_new_tokens=input_data.max_length,
+                    do_sample=True,
+                    temperature=input_data.temperature,
+                    top_p=input_data.top_p,
+                    pad_token_id=tokenizer.eos_token_id
                 )
             
-            logger.info(f"Génération terminée en {time.time() - start_time:.2f}s")
-            return response
+            # Décodage
+            generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
+            
+            # Extraction de la réponse (après [/INST])
+            response_text = generated_text.split("[/INST]")[-1].strip()
+            
+            end_time = time.time()
+            
+            # Mise à jour du cache
+            update_cache(
+                cache_id,
+                input_data.prompt,
+                input_data.system_prompt,
+                DEFAULT_MODEL,
+                response_text,
+                input_data.temperature,
+                input_data.top_p,
+                input_data.max_length
+            )
+            
+            # Log de performance
+            logger.info(f"Génération locale en {(end_time - start_time):.2f}s")
+            
+            return {"generated_text": response_text, "cached": False}
             
         except Exception as e:
-            logger.error(f"Erreur lors de la génération en mode fallback: {str(e)}")
-            return {"error": f"Erreur lors de la génération: {str(e)}"}
-    
-    # Essayer de charger le modèle paresseusement
-    if not MODEL_LOADED:
-        if not lazy_load_model():
-            logger.error("Impossible de charger le modèle")
-            return {"error": "Impossible de charger le modèle"}
-    
-    try:
-        from .config import model, tokenizer
-        import torch
-        
-        # Créer le prompt complet avec le contexte système si fourni
-        full_prompt = f"<s>[INST] {input_data.system_prompt}\n\n{input_data.prompt} [/INST]"
-        
-        # Tokeniser l'entrée
-        inputs = tokenizer(full_prompt, return_tensors="pt")
-        
-        # Générer la réponse
-        with torch.no_grad():
-            output_sequences = model.generate(
-                **inputs,
-                max_length=input_data.max_length,
-                temperature=input_data.temperature,
-                top_p=input_data.top_p,
-            )
-        
-        # Décoder la sortie
-        generated_text = tokenizer.decode(output_sequences[0], skip_special_tokens=True)
-        
-        # Nettoyer la sortie pour extraire uniquement la réponse du modèle
-        if "[/INST]" in generated_text:
-            generated_text = generated_text.split("[/INST]", 1)[1].strip()
-        
-        # Mettre en cache la réponse si la mise en cache est activée
-        if CACHE_ENABLED and input_data.use_cache:
-            cache_id = generate_cache_id(
-                input_data.prompt, 
-                input_data.system_prompt, 
-                DEFAULT_MODEL, 
-                input_data.temperature, 
-                input_data.top_p, 
-                input_data.max_length
-            )
+            error_msg = f"Erreur lors de la génération: {str(e)}"
+            logger.error(error_msg)
+            traceback.print_exc()
+            
+            # Fallback vers l'API externe
+            logger.info("Fallback vers API externe après erreur locale")
+            result = await fallback_generate(input_data)
+            
+            # Mise à jour du cache
             update_cache(
-                cache_id, 
-                input_data.prompt, 
-                input_data.system_prompt, 
-                DEFAULT_MODEL, 
-                generated_text, 
-                input_data.temperature, 
-                input_data.top_p, 
+                cache_id,
+                input_data.prompt,
+                input_data.system_prompt,
+                DEFAULT_MODEL,
+                result["generated_text"],
+                input_data.temperature,
+                input_data.top_p,
                 input_data.max_length
             )
+            
+            result["cached"] = False
+            result["fallback"] = True
+            return result
+
+    @app.get("/download-progress")
+    async def download_progress():
+        """Retourne l'état du téléchargement du modèle en cours"""
+        return get_download_progress()
+    
+    @app.post("/download-model")
+    async def download_model(request: ModelDownloadRequest):
+        """Démarre le téléchargement d'un modèle"""
+        if not request.consent:
+            raise HTTPException(
+                status_code=400,
+                detail="Vous devez consentir au téléchargement du modèle"
+            )
         
-        logger.info(f"Génération terminée en {time.time() - start_time:.2f}s")
-        return {"generated_text": generated_text, "from_cache": False}
-        
-    except Exception as e:
-        logger.error(f"Erreur lors de la génération: {str(e)}")
-        return {"error": f"Erreur lors de la génération: {str(e)}"}
-
-@app.post("/download-model")
-async def download_model(request: ModelDownloadRequest):
-    """Démarre le téléchargement d'un modèle en arrière-plan"""
-    if not request.consent:
-        raise HTTPException(status_code=400, detail="Le consentement pour le téléchargement est requis")
+        # Estimation de la taille du modèle
+        progress = init_model_download(request.model)
+        return {
+            "status": "downloading",
+            "model": request.model,
+            "progress": 0,
+            "estimated_size_mb": progress["size_mb"]
+        }
     
-    if not os.path.exists(CACHE_DIR):
-        os.makedirs(CACHE_DIR, exist_ok=True)
-    
-    # Vérifier le statut actuel du téléchargement
-    current_status = get_download_progress()
-    if current_status["status"] == "downloading":
-        return current_status
-    
-    # Initialiser le téléchargement en arrière-plan
-    progress = init_model_download(request.model)
-    return progress
-
-@app.get("/download-progress")
-async def check_download_progress():
-    """Récupère l'état actuel du téléchargement"""
-    return get_download_progress()
-
-@app.get("/cache-stats")
-async def cache_statistics():
-    """Récupère les statistiques du cache"""
-    return get_cache_stats()
-
-@app.post("/cache-clear")
-async def clear_cache():
-    """Vide complètement le cache"""
-    if purge_cache():
-        return {"status": "success", "message": "Cache vidé avec succès"}
-    return {"status": "error", "message": "Erreur lors de la purge du cache"}
-
-@app.post("/cache-config")
-async def configure_cache(ttl: Optional[int] = None, compression: Optional[bool] = None):
-    """Configure les paramètres du cache"""
-    results = {}
-    
-    if ttl is not None:
-        if ttl > 0:
-            if set_cache_ttl(ttl):
-                results["ttl"] = {"status": "success", "value": ttl}
-            else:
-                results["ttl"] = {"status": "error", "message": "Erreur lors de la modification du TTL"}
-        else:
-            results["ttl"] = {"status": "error", "message": "Le TTL doit être positif"}
-    
-    if compression is not None:
-        if toggle_compression(compression):
-            results["compression"] = {"status": "success", "enabled": compression}
-        else:
-            results["compression"] = {"status": "error", "message": "Erreur lors de la modification de la compression"}
-    
-    # Si aucun paramètre n'a été spécifié, retourner les paramètres actuels
-    if not results:
+    @app.get("/cache-stats")
+    async def cache_stats():
+        """Retourne des statistiques sur le cache"""
         return get_cache_stats()
     
-    return results
-
-@app.get("/models")
-async def list_available_models():
-    """Liste les modèles disponibles pour téléchargement ou utilisation"""
-    # Cette liste peut être étendue ou rendue dynamique à l'avenir
-    available_models = [
-        {
-            "id": "TheBloke/Mistral-7B-Instruct-v0.2-GGUF",
-            "name": "Mistral 7B Instruct",
-            "description": "Modèle de base recommandé (environ 4GB)"
-        },
-        {
-            "id": "TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF",
-            "name": "Mixtral 8x7B",
-            "description": "Modèle plus puissant mais plus lourd (environ 15GB)"
-        }
-    ]
+    @app.post("/cache/clean")
+    async def clean_cache(background_tasks: BackgroundTasks):
+        """Nettoie le cache des entrées expirées"""
+        background_tasks.add_task(clean_expired_entries)
+        return {"status": "cleaning", "message": "Nettoyage du cache en cours"}
     
-    return {"available": available_models}
-
-@app.post("/clean-expired-cache")
-async def clean_cache(background_tasks: BackgroundTasks):
-    """Nettoie les entrées expirées du cache en arrière-plan"""
-    background_tasks.add_task(clean_expired_entries)
-    return {"status": "success", "message": "Nettoyage du cache en cours"}
-
-# Route OPTIONS pour gérer les requêtes CORS préflight
-@app.options("/{path:path}")
-async def options_route(request: Request, path: str):
-    """Gère les requêtes OPTIONS pour CORS"""
-    response = Response(status_code=204)
-    return response
+    @app.post("/cache/toggle-compression")
+    async def set_cache_compression(enabled: bool = True):
+        """Active ou désactive la compression du cache"""
+        success = toggle_compression(enabled)
+        return {"status": "ok" if success else "error", "compression_enabled": enabled}
+    
+    @app.post("/cache/set-ttl")
+    async def update_cache_ttl(ttl_seconds: int):
+        """Définit la durée de vie (TTL) des entrées du cache"""
+        if ttl_seconds <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="La durée de vie doit être positive"
+            )
+        
+        success = set_cache_ttl(ttl_seconds)
+        return {"status": "ok" if success else "error", "ttl_seconds": ttl_seconds}
+    
+    @app.post("/cache/purge")
+    async def clear_cache():
+        """Vide complètement le cache"""
+        success = purge_cache()
+        return {"status": "ok" if success else "error", "message": "Cache vidé avec succès"}
+    
+    return app

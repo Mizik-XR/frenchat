@@ -1,0 +1,33 @@
+
+# Configuration de build Netlify pour FileChat
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+# Configuration des variables d'environnement par défaut
+[build.environment]
+  NODE_VERSION = "18"
+
+# Configuration des redirections pour le routage SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Redirection API pour le développement local (utile pour les tests)
+[[redirects]]
+  from = "/api/*"
+  to = "http://localhost:8000/:splat"
+  status = 200
+  force = false
+  conditions = {Role = ["admin"]}
+
+# En-têtes pour améliorer la sécurité
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* ws://localhost:* https://* wss://*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*;"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"

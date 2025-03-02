@@ -1,100 +1,82 @@
 
-/**
- * Utilitaire pour la gestion des capacités système et le routage intelligent
- */
-import { estimateSystemCapabilities, analyzeRequest } from '../requestAnalyzer';
-import { TextGenerationParameters } from '../types';
-import { notifyServiceChange } from '../aiServiceUtils';
+import { 
+  estimateSystemCapabilities,
+  checkBrowserCompatibility,
+  testResponseTime,
+  detectBrowser,
+  getNetworkType,
+  testCloudService,
+  determineRecommendedMode
+} from '../requestAnalyzer';
 
-// Gestion des capacités système avec mise en cache
-export const createSystemCapabilitiesManager = () => {
-  let systemCapabilitiesCache: {
-    lastCheck: number;
-    capabilities: any;
-  } | null = null;
+import { TextGenerationParameters, AIServiceType } from '../types';
+
+/**
+ * Gestionnaire des capacités système pour déterminer la meilleure stratégie d'exécution
+ */
+export function createSystemCapabilitiesManager() {
+  // Cache des capacités système pour éviter les recalculs fréquents
+  let systemCapabilitiesCache: ReturnType<typeof estimateSystemCapabilities> | null = null;
+  let systemCapabilitiesCacheTime = 0;
+  const CACHE_LIFETIME_MS = 5 * 60 * 1000; // 5 minutes
   
-  // Nombre maximal de tentatives de basculement pour éviter les boucles infinies
-  const MAX_FALLBACK_ATTEMPTS = 3;
-  let fallbackAttempts = 0;
+  // Cache de la recommandation pour éviter de retester trop souvent
+  let recommendedModeCache: Awaited<ReturnType<typeof determineRecommendedMode>> | null = null;
+  let recommendedModeCacheTime = 0;
+  const RECOMMENDATION_CACHE_LIFETIME_MS = 30 * 1000; // 30 secondes
   
-  // Fonction pour obtenir les capacités système avec mise en cache
+  // Obtenir les capacités système avec cache
   const getSystemCapabilities = async () => {
     const now = Date.now();
-    
-    // Si nous avons des données récentes en cache (moins de 5 minutes), les utiliser
-    if (systemCapabilitiesCache && 
-        now - systemCapabilitiesCache.lastCheck < 5 * 60 * 1000) {
-      return systemCapabilitiesCache.capabilities;
+    if (
+      !systemCapabilitiesCache || 
+      now - systemCapabilitiesCacheTime > CACHE_LIFETIME_MS
+    ) {
+      systemCapabilitiesCache = await estimateSystemCapabilities();
+      systemCapabilitiesCacheTime = now;
     }
-    
-    // Sinon, obtenir de nouvelles données
-    const capabilities = await estimateSystemCapabilities();
-    
-    // Mettre à jour le cache
-    systemCapabilitiesCache = {
-      lastCheck: now,
-      capabilities
-    };
-    
-    return capabilities;
+    return systemCapabilitiesCache;
   };
   
-  // Fonction pour réinitialiser le compteur de tentatives de fallback
-  const resetFallbackCounter = () => {
-    fallbackAttempts = 0;
+  // Déterminer la stratégie d'exécution
+  const determineExecutionStrategy = async (
+    options: TextGenerationParameters,
+    serviceType: AIServiceType
+  ): Promise<'local' | 'cloud'> => {
+    // Si options.forceLocal est true, on exécute en local peu importe
+    if (options.forceLocal === true) {
+      console.log("Exécution locale forcée par les options");
+      return 'local';
+    }
+    
+    // Si options.forceCloud est true, on exécute en cloud peu importe
+    if (options.forceCloud === true) {
+      console.log("Exécution cloud forcée par les options");
+      return 'cloud';
+    }
+    
+    // Si le serviceType est spécifié et explicite, on le respecte
+    if (serviceType === 'local') {
+      return 'local';
+    } else if (serviceType === 'cloud') {
+      return 'cloud';
+    }
+    
+    // Si aucune préférence n'est spécifiée, on utilise les recommandations
+    const now = Date.now();
+    if (
+      !recommendedModeCache || 
+      now - recommendedModeCacheTime > RECOMMENDATION_CACHE_LIFETIME_MS
+    ) {
+      recommendedModeCache = await determineRecommendedMode();
+      recommendedModeCacheTime = now;
+    }
+    
+    return recommendedModeCache.recommendedMode === 'local' ? 'local' : 'cloud';
   };
   
-  // Fonction pour analyser une requête et déterminer le meilleur mode d'exécution
-  const determineExecutionStrategy = async (options: TextGenerationParameters, serviceType: string) => {
-    // Analyser la requête pour déterminer sa complexité
-    const requestProfile = analyzeRequest(options);
-    
-    // Vérifier les capacités du système si nécessaire
-    let forceCloudExecution = false;
-    
-    if (requestProfile.complexity === 'high' || requestProfile.complexity === 'medium') {
-      const systemCapabilities = await getSystemCapabilities();
-      
-      // Forcer l'exécution cloud si le système n'est pas assez puissant
-      if (!systemCapabilities.recommendLocalExecution) {
-        forceCloudExecution = true;
-        console.log("Capacités système insuffisantes, forçage du mode cloud");
-      }
-    }
-    
-    // Vérifier si nous risquons une boucle de fallback
-    if (fallbackAttempts >= MAX_FALLBACK_ATTEMPTS) {
-      console.warn(`Nombre maximal de tentatives de fallback atteint (${MAX_FALLBACK_ATTEMPTS}), utilisation du cloud par sécurité`);
-      notifyServiceChange(
-        "Utilisation forcée du service cloud", 
-        "Après plusieurs tentatives, le système utilise le service cloud pour assurer la stabilité.",
-        "default"
-      );
-      fallbackAttempts = 0; // Réinitialiser pour les futures requêtes
-      return "cloud";
-    }
-    
-    // Si la requête est complexe ou le système pas assez puissant, utiliser le cloud
-    // même si l'utilisateur a configuré le mode local
-    if ((requestProfile.recommendedExecution === 'cloud' || forceCloudExecution) && serviceType === 'local') {
-      fallbackAttempts++; // Incrémenter le compteur de tentatives
-      console.log(`Basculement automatique vers le cloud pour une requête complexe (${requestProfile.complexity}, ${requestProfile.estimatedTokens} tokens). Tentative ${fallbackAttempts}/${MAX_FALLBACK_ATTEMPTS}`);
-      
-      // Informer l'utilisateur du basculement (uniquement pour les requêtes complexes)
-      if (requestProfile.complexity === 'high') {
-        notifyServiceChange(
-          "Utilisation du service cloud",
-          "Cette requête complexe est traitée par le service cloud pour de meilleures performances.",
-          "default"
-        );
-      }
-      
-      return "cloud";
-    }
-    
-    fallbackAttempts = 0; // Réinitialiser si nous utilisons le service normalement
-    return serviceType;
+  return {
+    getSystemCapabilities,
+    determineExecutionStrategy,
   };
-  
-  return { getSystemCapabilities, determineExecutionStrategy, resetFallbackCounter };
-};
+}
