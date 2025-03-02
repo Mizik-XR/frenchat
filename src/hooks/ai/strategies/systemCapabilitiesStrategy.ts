@@ -38,6 +38,19 @@ export function createSystemCapabilitiesManager() {
     return systemCapabilitiesCache;
   };
   
+  // Déterminer si le mode hybride est activé via les URL params
+  const isHybridModeEnabled = () => {
+    // Vérifier si le paramètre hybrid=true est présent dans l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const hybridParam = urlParams.get('hybrid');
+    
+    // Vérifier également la variable d'environnement ou localStorage
+    const envHybrid = import.meta.env.VITE_HYBRID_MODE === 'true';
+    const localStorageHybrid = localStorage.getItem('hybridMode') === 'true';
+    
+    return hybridParam === 'true' || envHybrid || localStorageHybrid;
+  };
+  
   // Déterminer la stratégie d'exécution
   const determineExecutionStrategy = async (
     options: TextGenerationParameters,
@@ -53,6 +66,25 @@ export function createSystemCapabilitiesManager() {
     if (options.forceCloud === true) {
       console.log("Exécution cloud forcée par les options");
       return 'cloud';
+    }
+    
+    // Vérifier si le mode hybride est activé
+    const hybridMode = isHybridModeEnabled();
+    if (hybridMode && serviceType === 'hybrid') {
+      console.log("Mode hybride détecté, tentative d'utilisation du local d'abord");
+      
+      // En mode hybride, on va d'abord vérifier si le service local est disponible
+      const localAvailable = await fetch('http://localhost:8000/status')
+        .then(response => response.ok)
+        .catch(() => false);
+      
+      if (localAvailable) {
+        console.log("Service local disponible en mode hybride");
+        return 'local';
+      } else {
+        console.log("Service local non disponible en mode hybride, repli sur le cloud");
+        return 'cloud';
+      }
     }
     
     // Si le serviceType est spécifié et explicite, on le respecte
@@ -78,5 +110,6 @@ export function createSystemCapabilitiesManager() {
   return {
     getSystemCapabilities,
     determineExecutionStrategy,
+    isHybridModeEnabled
   };
 }

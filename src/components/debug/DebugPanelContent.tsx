@@ -1,8 +1,10 @@
 
 import { Button } from "@/components/ui/button";
-import { Terminal } from "lucide-react";
+import { Terminal, Cloud, Server, Cog } from "lucide-react";
 import { SystemStatusCard } from "./SystemStatusCard";
 import { DiagnosticReport } from "./DiagnosticReport";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface DebugPanelContentProps {
   isRunning: boolean;
@@ -11,6 +13,8 @@ interface DebugPanelContentProps {
   serviceType: string;
   localAIUrl: string | null;
   localProvider: string;
+  isHybridMode?: boolean;
+  onToggleHybridMode?: (enabled: boolean) => void;
 }
 
 export const DebugPanelContent = ({ 
@@ -19,7 +23,9 @@ export const DebugPanelContent = ({
   runDiagnostic,
   serviceType,
   localAIUrl,
-  localProvider
+  localProvider,
+  isHybridMode = false,
+  onToggleHybridMode
 }: DebugPanelContentProps) => {
   return (
     <div className="space-y-4 mt-4">
@@ -35,6 +41,41 @@ export const DebugPanelContent = ({
           <Terminal className="h-4 w-4" />
           {isRunning ? "Diagnostic en cours..." : "Lancer un diagnostic"}
         </Button>
+      </div>
+
+      <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg">
+        <div className="flex items-center gap-2">
+          {serviceType === 'hybrid' ? (
+            <>
+              <div className="flex bg-green-100 p-1 rounded-md">
+                <Server className="h-4 w-4 text-green-700" />
+                <Cloud className="h-4 w-4 text-blue-700 -ml-1" />
+              </div>
+              <span className="font-medium">Mode Hybride</span>
+            </>
+          ) : serviceType === 'local' ? (
+            <>
+              <Server className="h-4 w-4 text-green-700" />
+              <span className="font-medium">Mode Local</span>
+            </>
+          ) : (
+            <>
+              <Cloud className="h-4 w-4 text-blue-700" />
+              <span className="font-medium">Mode Cloud</span>
+            </>
+          )}
+        </div>
+        
+        {onToggleHybridMode && (
+          <div className="flex items-center gap-2">
+            <Label htmlFor="hybrid-mode" className="text-xs">Mode Hybride</Label>
+            <Switch 
+              id="hybrid-mode" 
+              checked={isHybridMode}
+              onCheckedChange={onToggleHybridMode}
+            />
+          </div>
+        )}
       </div>
 
       <SystemStatusCard 
