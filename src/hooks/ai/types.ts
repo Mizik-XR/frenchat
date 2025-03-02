@@ -1,3 +1,4 @@
+
 // Type pour les paramètres de génération de texte
 export interface TextGenerationParameters {
   inputs?: string;
