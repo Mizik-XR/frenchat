@@ -16,6 +16,9 @@ echo [INFO] Note: Les fonctionnalités Microsoft Teams sont
 echo [INFO] temporairement désactivées dans cette version 
 echo [INFO] de test (limites Supabase). Réactivation en Beta 1.1.
 echo.
+echo [INFO] Note: Certaines fonctionnalités RAG avancées peuvent être
+echo [INFO] limitées temporairement (limites Supabase).
+echo.
 
 REM Configuration en mode cloud uniquement (masquer les fonctionnalités techniques)
 set "MODE_CLOUD=1"

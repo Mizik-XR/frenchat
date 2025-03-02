@@ -22,8 +22,10 @@ verify_jwt = false
 [functions.test-summary]
 verify_jwt = false
 
-[functions.advanced-rag-generation]
-verify_jwt = false
+# Temporairement désactivé pour les tests en local (limite du nombre de functions Edge)
+# Sera réactivé dans la version Beta 1.1
+# [functions.advanced-rag-generation]
+# verify_jwt = false
 
 [functions.generate-system-report]
 verify_jwt = false
