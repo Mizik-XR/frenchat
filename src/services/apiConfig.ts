@@ -67,23 +67,30 @@ export const secureApiRequest = async <T>(
   try {
     const headers = await apiConfig.getHeaders();
     
-    // Utiliser la fonction unifiée pour proxyfier les requêtes API sensibles
-    const { data: response, error } = await supabase.functions.invoke('unified-oauth-proxy', {
-      body: {
-        target: `${apiConfig.baseURL}${endpoint}`,
-        method,
-        headers,
-        body: data
-      },
-      query: { service: 'proxy' }
-    });
+    // Ne pas envoyer de corps pour les requêtes GET
+    const options: RequestInit = {
+      method,
+      headers,
+      ...(method !== 'GET' && data ? { body: JSON.stringify(data) } : {})
+    };
     
-    if (error || !response || response.status >= 400) {
-      const errorMessage = error?.message || response?.statusText || `Request failed with status ${response?.status}`;
-      throw new Error(errorMessage);
+    // Log sécurisé (sans données sensibles)
+    if (!apiConfig.isProduction) {
+      console.log(`API Request to ${endpoint}:`, {
+        method,
+        ...(data ? { body: sanitizeForLogs(data) } : {})
+      });
     }
     
-    return response.data;
+    const url = `${apiConfig.baseURL}${endpoint}`;
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Request failed with status ${response.status}`);
+    }
+    
+    return await response.json();
   } catch (error: any) {
     console.error(`Error in API request to ${endpoint}:`, error.message);
     throw error;
