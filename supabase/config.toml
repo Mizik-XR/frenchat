@@ -23,13 +23,12 @@ verify_jwt = false
 [functions.advanced-rag-generation]
 verify_jwt = false
 
-[functions.generate-system-report]
-verify_jwt = false
+# [functions.generate-system-report]
+# verify_jwt = false
 
-[functions.export-to-google-drive]
-verify_jwt = false
+# [functions.export-to-google-drive]
+# verify_jwt = false
 
-# Pour libérer de l'espace, nous avons choisi de garder les fonctions essentielles 
-# et de commenter les moins critiques comme cache-manager
+# Commented out to avoid exceeding function limits
 # [functions.cache-manager]
 # verify_jwt = false
