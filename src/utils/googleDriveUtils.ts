@@ -164,8 +164,7 @@ export const refreshGoogleDriveToken = async (userId: string): Promise<boolean> 
     const { data: refreshData, error: refreshError } = await supabase.functions.invoke('google-oauth', {
       body: { 
         action: 'refresh_token', 
-        userId: userId,
-        redirectUrl: getGoogleRedirectUrl()
+        userId: userId
       }
     });
     
