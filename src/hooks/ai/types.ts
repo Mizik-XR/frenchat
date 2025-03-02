@@ -15,11 +15,21 @@ export type AIModel = {
 };
 
 export type ModelDownloadStatus = {
-  status: 'idle' | 'downloading' | 'success' | 'error';
+  status: 'idle' | 'downloading' | 'completed' | 'error';
   progress: number;
   model?: string;
   error?: string;
+  // Propriétés additionnelles pour le suivi du téléchargement
+  started_at?: number | null;
+  completed_at?: number | null;
+  size_mb?: number;
+  downloaded_mb?: number;
 };
+
+export interface ModelDownloadRequest {
+  model: string;
+  consent: boolean;
+}
 
 export interface TextGenerationParameters {
   model?: string;
