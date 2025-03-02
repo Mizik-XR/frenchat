@@ -15,7 +15,6 @@ export const getMicrosoftRedirectUrl = (): string => {
 /**
  * Initie le processus d'authentification Microsoft Teams
  * @param userId L'ID de l'utilisateur actuel
- * @param tenantId ID du tenant Microsoft
  * @returns Promise avec l'URL d'authentification Microsoft
  */
 export const initiateMicrosoftAuth = async (userId: string, tenantId: string): Promise<string> => {
@@ -26,12 +25,10 @@ export const initiateMicrosoftAuth = async (userId: string, tenantId: string): P
   const redirectUri = getMicrosoftRedirectUrl();
   console.log("URL de redirection configurée:", redirectUri);
   
-  // Utilisation de la nouvelle fonction OAuth unifiée avec le paramètre 'provider'
   const { data: authData, error: authError } = await supabase.functions.invoke<{
     client_id: string;
-  }>('unified-oauth', {
+  }>('microsoft-oauth', {
     body: { 
-      provider: 'microsoft',  // Spécifier le fournisseur
       action: 'get_client_id',
       redirectUrl: redirectUri
     }
@@ -76,10 +73,9 @@ export const revokeMicrosoftTeamsAccess = async (userId: string): Promise<boolea
     return false;
   }
 
-  // Appel sécurisé à l'Edge Function unifiée pour révoquer le token sans l'exposer côté client
-  const { error: revokeError } = await supabase.functions.invoke('unified-oauth', {
+  // Révoquer le token d'accès côté Microsoft
+  const { error: revokeError } = await supabase.functions.invoke('microsoft-oauth', {
     body: { 
-      provider: 'microsoft',  // Spécifier le fournisseur
       action: 'revoke_token',
       userId: userId
     }
@@ -87,39 +83,21 @@ export const revokeMicrosoftTeamsAccess = async (userId: string): Promise<boolea
 
   if (revokeError) {
     console.error("Erreur lors de la révocation du token:", revokeError);
-    throw new Error(`Erreur lors de la révocation: ${revokeError.message}`);
+    // On continue pour supprimer le token côté Supabase même si la révocation échoue
+  }
+
+  // Supprimer le token de la base de données
+  const { error: deleteError } = await supabase
+    .from('oauth_tokens')
+    .delete()
+    .eq('user_id', userId)
+    .eq('provider', 'microsoft');
+
+  if (deleteError) {
+    throw new Error("Erreur lors de la suppression du token local");
   }
   
   return true;
-};
-
-/**
- * Vérifie l'état du token Microsoft Teams et le rafraîchit si nécessaire
- * @param userId L'ID de l'utilisateur actuel
- * @returns Promise indiquant si le token est valide
- */
-export const checkMicrosoftTokenStatus = async (userId: string): Promise<{isValid: boolean, expiresIn?: number}> => {
-  if (!userId) return { isValid: false };
-  
-  try {
-    const { data, error } = await supabase.functions.invoke('unified-oauth', {
-      body: { 
-        provider: 'microsoft',  // Spécifier le fournisseur
-        action: 'check_token_status', 
-        userId: userId
-      }
-    });
-    
-    if (error) {
-      console.error("Erreur lors de la vérification du token:", error);
-      return { isValid: false };
-    }
-    
-    return data || { isValid: false };
-  } catch (e) {
-    console.error("Exception lors de la vérification du token:", e);
-    return { isValid: false };
-  }
 };
 
 /**
@@ -130,25 +108,19 @@ export const checkMicrosoftTokenStatus = async (userId: string): Promise<{isVali
 export const refreshMicrosoftToken = async (userId: string): Promise<boolean> => {
   if (!userId) return false;
   
-  try {
-    const { data: refreshData, error: refreshError } = await supabase.functions.invoke('unified-oauth', {
-      body: { 
-        provider: 'microsoft',  // Spécifier le fournisseur
-        action: 'refresh_token', 
-        userId: userId,
-        redirectUrl: getMicrosoftRedirectUrl()
-      }
-    });
-    
-    if (refreshError || !refreshData?.success) {
-      console.error("Erreur lors du rafraîchissement du token:", refreshError || "Token non rafraîchi");
-      return false;
+  const { data: refreshData, error: refreshError } = await supabase.functions.invoke('microsoft-oauth', {
+    body: { 
+      action: 'refresh_token', 
+      userId: userId,
+      redirectUrl: getMicrosoftRedirectUrl()
     }
-    
-    console.log("Token rafraîchi avec succès");
-    return true;
-  } catch (e) {
-    console.error("Exception lors du rafraîchissement du token:", e);
+  });
+  
+  if (refreshError || !refreshData?.success) {
+    console.error("Erreur lors du rafraîchissement du token:", refreshError || "Token non rafraîchi");
     return false;
   }
+  
+  console.log("Token rafraîchi avec succès");
+  return true;
 };

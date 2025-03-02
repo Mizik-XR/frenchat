@@ -1,92 +1,82 @@
 
-import { AIServiceType, TextGenerationParameters } from '../types';
-import { checkBrowserCompatibility } from '../analyzers/browserCompatibility';
-import { initializeOllama, checkOllamaInstalled } from '../../../utils/ollamaSetup';
+import { 
+  estimateSystemCapabilities,
+  checkBrowserCompatibility,
+  testResponseTime,
+  detectBrowser,
+  getNetworkType,
+  testCloudService,
+  determineRecommendedMode
+} from '../requestAnalyzer';
+
+import { TextGenerationParameters, AIServiceType } from '../types';
 
 /**
- * Crée un gestionnaire de capacités système pour déterminer la stratégie d'exécution optimale
+ * Gestionnaire des capacités système pour déterminer la meilleure stratégie d'exécution
  */
 export function createSystemCapabilitiesManager() {
-  // Détection initiale du mode hybride
-  const hybridModeEnabled = 
-    window.location.search.includes('hybrid=true') || 
-    localStorage.getItem('hybridMode') === 'true';
+  // Cache des capacités système pour éviter les recalculs fréquents
+  let systemCapabilitiesCache: Awaited<ReturnType<typeof estimateSystemCapabilities>> | null = null;
+  let systemCapabilitiesCacheTime = 0;
+  const CACHE_LIFETIME_MS = 5 * 60 * 1000; // 5 minutes
   
-  // Initialisation d'Ollama au démarrage de l'application si disponible
-  if (hybridModeEnabled) {
-    // On initialise Ollama en arrière-plan sans bloquer le chargement de l'application
-    setTimeout(async () => {
-      try {
-        await initializeOllama();
-      } catch (error) {
-        console.error("Erreur lors de l'initialisation d'Ollama:", error);
-      }
-    }, 2000);
-  }
+  // Cache de la recommandation pour éviter de retester trop souvent
+  let recommendedModeCache: Awaited<ReturnType<typeof determineRecommendedMode>> | null = null;
+  let recommendedModeCacheTime = 0;
+  const RECOMMENDATION_CACHE_LIFETIME_MS = 30 * 1000; // 30 secondes
   
-  /**
-   * Récupère les capacités du système (navigateur, matériel, etc.)
-   */
+  // Obtenir les capacités système avec cache
   const getSystemCapabilities = async () => {
-    // Vérifier la compatibilité du navigateur
-    const browserCompatibility = checkBrowserCompatibility();
-    
-    // Vérifier si Ollama est disponible
-    const ollamaAvailable = await checkOllamaInstalled().catch(() => false);
-    
-    return {
-      hybridModeAvailable: !browserCompatibility.shouldFallbackToCloud,
-      sharedBufferAvailable: browserCompatibility.capabilities?.["sharedArrayBuffer"] || false,
-      navigatorHardwareSupport: browserCompatibility.capabilities?.["hardwareConcurrency"] || false,
-      ollamaAvailable,
-      shouldFallbackToCloud: browserCompatibility.shouldFallbackToCloud
-    };
+    const now = Date.now();
+    if (
+      !systemCapabilitiesCache || 
+      now - systemCapabilitiesCacheTime > CACHE_LIFETIME_MS
+    ) {
+      systemCapabilitiesCache = await estimateSystemCapabilities();
+      systemCapabilitiesCacheTime = now;
+    }
+    return systemCapabilitiesCache;
   };
   
-  /**
-   * Détermine la stratégie d'exécution optimale en fonction des options et du type de service
-   */
+  // Déterminer la stratégie d'exécution
   const determineExecutionStrategy = async (
     options: TextGenerationParameters,
     serviceType: AIServiceType
   ): Promise<'local' | 'cloud'> => {
-    // Si l'utilisateur a spécifié une stratégie, l'utiliser
-    if (options.forceCloud) return 'cloud';
-    if (options.forceLocal) return 'local';
+    // Si options.forceLocal est true, on exécute en local peu importe
+    if (options.forceLocal === true) {
+      console.log("Exécution locale forcée par les options");
+      return 'local';
+    }
     
-    // Si nous sommes en mode spécifique, utiliser ce mode
-    if (serviceType === 'local') return 'local';
-    if (serviceType === 'cloud') return 'cloud';
-    
-    // En mode hybride, déterminer automatiquement la stratégie
-    if (serviceType === 'hybrid') {
-      // Vérifier si Ollama est disponible
-      const ollamaAvailable = await checkOllamaInstalled().catch(() => false);
-      
-      // Si Ollama est disponible, l'utiliser de préférence
-      if (ollamaAvailable) {
-        return 'local';
-      }
-      
-      // Par défaut, utiliser le cloud si nous sommes en mode hybride
-      // mais que le service local n'est pas disponible
+    // Si options.forceCloud est true, on exécute en cloud peu importe
+    if (options.forceCloud === true) {
+      console.log("Exécution cloud forcée par les options");
       return 'cloud';
     }
     
-    // Par défaut, utiliser le cloud
-    return 'cloud';
-  };
-  
-  /**
-   * Vérifie si le mode hybride est activé
-   */
-  const isHybridModeEnabled = () => {
-    return hybridModeEnabled;
+    // Si le serviceType est spécifié et explicite, on le respecte
+    if (serviceType === 'local') {
+      return 'local';
+    } else if (serviceType === 'cloud') {
+      return 'cloud';
+    }
+    
+    // Si aucune préférence n'est spécifiée, on utilise les recommandations
+    const now = Date.now();
+    if (
+      !recommendedModeCache || 
+      now - recommendedModeCacheTime > RECOMMENDATION_CACHE_LIFETIME_MS
+    ) {
+      recommendedModeCache = await determineRecommendedMode();
+      recommendedModeCacheTime = now;
+    }
+    
+    return recommendedModeCache.recommendedMode === 'local' ? 'local' : 'cloud';
   };
   
   return {
     getSystemCapabilities,
     determineExecutionStrategy,
-    isHybridModeEnabled
   };
 }

@@ -8,8 +8,10 @@ const API_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:8000';
 export function useModelDownload() {
   const [downloadStatus, setDownloadStatus] = useState<ModelDownloadStatus>({
     status: 'idle',
-    progress: 0,
     model: null,
+    progress: 0,
+    started_at: null,
+    completed_at: null,
     error: null,
     size_mb: 0,
     downloaded_mb: 0
@@ -91,7 +93,7 @@ export function useModelDownload() {
     }
   };
 
-  // Effet pour mettre à jour l'état du téléchargement
+  // Effet pour mettre à jour l'état du téléchargement périodiquement
   useEffect(() => {
     let intervalId: number | undefined;
 

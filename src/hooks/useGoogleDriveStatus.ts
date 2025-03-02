@@ -7,8 +7,7 @@ import {
   getGoogleRedirectUrl, 
   initiateGoogleAuth, 
   revokeGoogleDriveAccess,
-  refreshGoogleToken,
-  checkGoogleTokenStatus
+  refreshGoogleToken
 } from '@/utils/googleDriveUtils';
 
 // Export these functions for backward compatibility
@@ -26,9 +25,6 @@ export interface ConnectionData {
   connectedSince: Date;
   metadata: any;
 }
-
-// Temps en secondes avant l'expiration où nous considérons qu'un refresh est nécessaire
-const REFRESH_THRESHOLD_SECONDS = 300; // 5 minutes
 
 export const useGoogleDriveStatus = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -49,10 +45,9 @@ export const useGoogleDriveStatus = () => {
       setIsChecking(true);
       console.log('Vérification du statut Google Drive pour user:', user.id);
       
-      // Récupération des métadonnées du token (email, date de connexion)
       const { data, error } = await supabase
         .from('oauth_tokens')
-        .select('created_at, metadata')
+        .select('expires_at, created_at, access_token, metadata')
         .eq('user_id', user.id)
         .eq('provider', 'google')
         .maybeSingle();
@@ -65,37 +60,31 @@ export const useGoogleDriveStatus = () => {
         return;
       }
 
-      // Vérification si le token existe
+      // Vérification si le token existe et n'est pas expiré
       if (data) {
+        const expiresAt = new Date(data.expires_at);
+        const isExpired = expiresAt < new Date();
+        console.log('Token trouvé, expire le:', expiresAt, 'Expiré?', isExpired);
+        
         // Extraction de l'email avec vérification de type
         let userEmail = "Utilisateur Google";
         if (data.metadata && typeof data.metadata === 'object') {
           userEmail = (data.metadata as Record<string, any>).email || userEmail;
         }
         
-        // Mise à jour des données de connexion
         setConnectionData({
           email: userEmail,
           connectedSince: new Date(data.created_at),
           metadata: data.metadata
         });
         
-        // Vérification de la validité du token via l'Edge Function unifiée
-        const { isValid, expiresIn } = await checkGoogleTokenStatus(user.id);
-        
-        if (!isValid) {
+        if (isExpired) {
           console.log("Le token est expiré, tentative de rafraîchissement...");
           
           // Tentative de rafraîchissement du token
           const refreshed = await refreshGoogleToken(user.id);
           setIsConnected(refreshed);
         } else {
-          // Si le token est valide mais proche de l'expiration, le rafraîchir préventivement
-          if (expiresIn !== undefined && expiresIn < REFRESH_THRESHOLD_SECONDS) {
-            console.log(`Token valide mais expire bientôt (${expiresIn}s), rafraîchissement préventif...`);
-            await refreshGoogleToken(user.id);
-          }
-          
           setIsConnected(true);
         }
       } else {
