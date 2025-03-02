@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { useAuth } from "@/components/AuthProvider";
+import { initiateMicrosoftAuth } from '@/utils/microsoftTeamsUtils';
 
 export interface MicrosoftTeamsConfigProps {
   onSave?: () => void;
@@ -17,7 +19,9 @@ export const MicrosoftTeamsConfig = ({ onSave }: MicrosoftTeamsConfigProps) => {
   const { config, updateConfig } = useServiceConfiguration('microsoft_teams');
   const [clientId, setClientId] = useState(config?.clientId || '');
   const [tenantId, setTenantId] = useState(config?.tenantId || '');
+  const [isConnecting, setIsConnecting] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     // Mise à jour de l'état avec les données de configuration lorsqu'elles sont chargées
@@ -69,6 +73,58 @@ export const MicrosoftTeamsConfig = ({ onSave }: MicrosoftTeamsConfigProps) => {
         description: "Impossible de sauvegarder la configuration",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleConnect = async () => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour utiliser cette fonctionnalité",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!tenantId) {
+      toast({
+        title: "Erreur de validation",
+        description: "Veuillez saisir l'ID du tenant Microsoft",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsConnecting(true);
+      
+      // Sauvegarder d'abord la configuration
+      await updateConfig({
+        clientId,
+        tenantId
+      });
+
+      toast({
+        title: "Connexion à Microsoft Teams",
+        description: "Vous allez être redirigé vers Microsoft pour autoriser l'accès",
+      });
+      
+      const authUrl = await initiateMicrosoftAuth(user.id, tenantId);
+      
+      // Rediriger après un court délai pour que l'utilisateur voie la notification
+      setTimeout(() => {
+        window.location.href = authUrl;
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation de l\'auth Microsoft:', error);
+      toast({
+        title: "Erreur de configuration",
+        description: error instanceof Error ? error.message : "Impossible d'initialiser la connexion à Microsoft Teams",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -126,12 +182,20 @@ export const MicrosoftTeamsConfig = ({ onSave }: MicrosoftTeamsConfigProps) => {
             >
               Annuler
             </Button>
-            <Button 
-              onClick={handleSave}
-              className="ml-2"
-            >
-              Sauvegarder
-            </Button>
+            <div className="space-x-2">
+              <Button 
+                onClick={handleSave}
+                variant="outline"
+              >
+                Sauvegarder
+              </Button>
+              <Button 
+                onClick={handleConnect}
+                disabled={isConnecting || !clientId || !tenantId}
+              >
+                {isConnecting ? "Connexion..." : "Connecter Microsoft Teams"}
+              </Button>
+            </div>
           </div>
         </div>
       </Card>

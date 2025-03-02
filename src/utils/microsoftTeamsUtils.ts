@@ -5,29 +5,29 @@ import { getRedirectUrl } from '@/utils/environmentUtils';
 import { generateOAuthState } from '@/utils/oauthStateManager';
 
 /**
- * Récupère l'URL de redirection pour l'authentification OAuth Google Drive
- * @returns L'URL complète de redirection pour Google OAuth
+ * Récupère l'URL de redirection pour l'authentification OAuth Microsoft Teams
+ * @returns L'URL complète de redirection pour Microsoft OAuth
  */
-export const getGoogleRedirectUrl = (): string => {
-  return getRedirectUrl('auth/google/callback');
+export const getMicrosoftRedirectUrl = (): string => {
+  return getRedirectUrl('auth/microsoft/callback');
 };
 
 /**
- * Initie le processus d'authentification Google Drive
+ * Initie le processus d'authentification Microsoft Teams
  * @param userId L'ID de l'utilisateur actuel
- * @returns Promise avec l'URL d'authentification Google
+ * @returns Promise avec l'URL d'authentification Microsoft
  */
-export const initiateGoogleAuth = async (userId: string): Promise<string> => {
+export const initiateMicrosoftAuth = async (userId: string, tenantId: string): Promise<string> => {
   if (!userId) {
     throw new Error("Utilisateur non connecté");
   }
 
-  const redirectUri = getGoogleRedirectUrl();
+  const redirectUri = getMicrosoftRedirectUrl();
   console.log("URL de redirection configurée:", redirectUri);
   
   const { data: authData, error: authError } = await supabase.functions.invoke<{
     client_id: string;
-  }>('google-oauth', {
+  }>('microsoft-oauth', {
     body: { 
       action: 'get_client_id',
       redirectUrl: redirectUri
@@ -39,42 +39,42 @@ export const initiateGoogleAuth = async (userId: string): Promise<string> => {
   }
 
   // Génération d'un état OAuth sécurisé pour prévenir les attaques CSRF
-  const state = generateOAuthState('google');
+  const state = generateOAuthState('microsoft');
 
-  // Demande de scopes étendus pour l'accès aux fichiers
+  // Demande de scopes nécessaires pour Teams
   const scopes = encodeURIComponent(
-    'https://www.googleapis.com/auth/drive.file ' +
-    'https://www.googleapis.com/auth/drive.metadata.readonly ' +
-    'https://www.googleapis.com/auth/userinfo.email ' +
-    'https://www.googleapis.com/auth/userinfo.profile'
+    'user.read ' +
+    'Files.Read.All ' +
+    'Sites.Read.All ' +
+    'ChannelMessage.Read.All ' +
+    'offline_access'
   );
   
   const redirectUrl = encodeURIComponent(redirectUri);
   
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+  const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?` +
     `client_id=${authData.client_id}&` +
     `redirect_uri=${redirectUrl}&` +
     `response_type=code&` +
     `scope=${scopes}&` +
     `state=${encodeURIComponent(state)}&` +
-    `access_type=offline&` +
     `prompt=consent`;
 
   return authUrl;
 };
 
 /**
- * Révoque le token Google Drive et supprime les enregistrements locaux
+ * Révoque le token Microsoft Teams et supprime les enregistrements locaux
  * @param userId L'ID de l'utilisateur actuel
  * @returns Promise indiquant le succès de l'opération
  */
-export const revokeGoogleDriveAccess = async (userId: string): Promise<boolean> => {
+export const revokeMicrosoftTeamsAccess = async (userId: string): Promise<boolean> => {
   if (!userId) {
     return false;
   }
 
-  // Révoquer le token d'accès côté Google
-  const { error: revokeError } = await supabase.functions.invoke('google-oauth', {
+  // Révoquer le token d'accès côté Microsoft
+  const { error: revokeError } = await supabase.functions.invoke('microsoft-oauth', {
     body: { 
       action: 'revoke_token',
       userId: userId
@@ -83,7 +83,7 @@ export const revokeGoogleDriveAccess = async (userId: string): Promise<boolean> 
 
   if (revokeError) {
     console.error("Erreur lors de la révocation du token:", revokeError);
-    // On continue pour supprimer le token côté Supabase même si la révocation échoue chez Google
+    // On continue pour supprimer le token côté Supabase même si la révocation échoue
   }
 
   // Supprimer le token de la base de données
@@ -91,7 +91,7 @@ export const revokeGoogleDriveAccess = async (userId: string): Promise<boolean> 
     .from('oauth_tokens')
     .delete()
     .eq('user_id', userId)
-    .eq('provider', 'google');
+    .eq('provider', 'microsoft');
 
   if (deleteError) {
     throw new Error("Erreur lors de la suppression du token local");
@@ -101,18 +101,18 @@ export const revokeGoogleDriveAccess = async (userId: string): Promise<boolean> 
 };
 
 /**
- * Tente de rafraîchir un token Google Drive expiré
+ * Tente de rafraîchir un token Microsoft Teams expiré
  * @param userId L'ID de l'utilisateur actuel
  * @returns Promise indiquant le succès du rafraîchissement
  */
-export const refreshGoogleToken = async (userId: string): Promise<boolean> => {
+export const refreshMicrosoftToken = async (userId: string): Promise<boolean> => {
   if (!userId) return false;
   
-  const { data: refreshData, error: refreshError } = await supabase.functions.invoke('google-oauth', {
+  const { data: refreshData, error: refreshError } = await supabase.functions.invoke('microsoft-oauth', {
     body: { 
       action: 'refresh_token', 
       userId: userId,
-      redirectUrl: getGoogleRedirectUrl()
+      redirectUrl: getMicrosoftRedirectUrl()
     }
   });
   

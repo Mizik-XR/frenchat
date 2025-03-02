@@ -1,301 +1,242 @@
 
-// Google OAuth Handler for FileChat
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.14.0'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.5.0';
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
-// Types pour les requêtes
-interface GetClientIdRequest {
-  action: 'get_client_id'
-  redirectUrl: string
-}
+// Création du client Supabase
+const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-interface ExchangeCodeRequest {
-  action: 'exchange_code'
-  code: string
-  redirectUrl: string
-}
-
-interface RefreshTokenRequest {
-  action: 'refresh_token'
-  userId: string
-  redirectUrl: string
-}
-
-interface RevokeTokenRequest {
-  action: 'revoke_token'
-  userId: string
-}
-
-type GoogleOAuthRequest = 
-  | GetClientIdRequest
-  | ExchangeCodeRequest
-  | RefreshTokenRequest
-  | RevokeTokenRequest
+// Configuration OAuth
+const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID') || '';
+const GOOGLE_CLIENT_SECRET = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET') || '';
 
 serve(async (req) => {
-  // Gestion des requêtes CORS preflight
+  // Gestion CORS pour les requêtes préliminaires OPTIONS
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Initialisation du client Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    const supabase = createClient(supabaseUrl, supabaseKey)
-    
-    // Récupération des secrets nécessaires
-    const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID')
-    const clientSecret = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET')
-    
-    if (!clientId || !clientSecret) {
-      throw new Error('Les identifiants OAuth Google ne sont pas configurés')
+    // Récupération des données de la requête
+    const { action, code, redirectUrl, userId } = await req.json();
+
+    // Récupérer le client ID uniquement (sécurisé)
+    if (action === 'get_client_id') {
+      return new Response(JSON.stringify({ client_id: GOOGLE_CLIENT_ID }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Extraction du corps de la requête
-    const requestData = await req.json() as GoogleOAuthRequest
-    
-    console.log(`Traitement de l'action Google OAuth: ${requestData.action}`)
-
-    // Traitement en fonction de l'action demandée
-    switch (requestData.action) {
-      case 'get_client_id':
-        // Retourner simplement l'ID client pour l'initialisation OAuth
-        console.log(`Client ID fourni, URL de redirection: ${requestData.redirectUrl}`)
-        return new Response(
-          JSON.stringify({ client_id: clientId }),
-          { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-        )
+    // Échanger le code contre un token (TOUJOURS côté serveur)
+    if (action === 'exchange_code') {
+      console.log("Échange du code d'autorisation contre des tokens...");
       
-      case 'exchange_code': {
-        // Échanger le code d'autorisation contre des tokens
-        const { code, redirectUrl } = requestData
-        console.log(`Échange de code pour tokens avec redirection vers: ${redirectUrl}`)
-        
-        // Préparer les paramètres pour l'échange
-        const tokenParams = new URLSearchParams({
+      if (!code) {
+        return new Response(
+          JSON.stringify({ error: "Code d'autorisation manquant" }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!redirectUrl) {
+        return new Response(
+          JSON.stringify({ error: "URL de redirection manquante" }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
           code,
-          client_id: clientId,
-          client_secret: clientSecret,
+          client_id: GOOGLE_CLIENT_ID,
+          client_secret: GOOGLE_CLIENT_SECRET,
           redirect_uri: redirectUrl,
-          grant_type: 'authorization_code'
-        })
-        
-        // Faire la requête à l'API Google
-        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: tokenParams
-        })
-        
-        const tokenData = await tokenResponse.json()
-        
-        if (!tokenResponse.ok) {
-          console.error('Erreur lors de l\'échange de tokens:', tokenData)
-          throw new Error(`Erreur d'échange de tokens: ${tokenData.error_description || tokenData.error}`)
-        }
-        
-        // Récupérer les informations de l'utilisateur Google
-        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-          headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
-        })
-        
-        const userInfo = await userInfoResponse.json()
-        
-        if (!userInfoResponse.ok) {
-          console.error('Erreur lors de la récupération des infos utilisateur:', userInfo)
-          throw new Error('Impossible de récupérer les informations utilisateur')
-        }
-        
-        // Récupérer l'utilisateur Supabase actuel
-        const { data: { session }, error: authError } = await supabase.auth.getSession()
-        
-        if (authError || !session) {
-          throw new Error('Utilisateur non authentifié')
-        }
-        
-        const userId = session.user.id
-        
-        // Calculer la date d'expiration
-        const expiresAt = new Date()
-        expiresAt.setSeconds(expiresAt.getSeconds() + tokenData.expires_in)
-        
-        // Stocker les tokens dans la base de données
-        const { error: insertError } = await supabase
-          .from('oauth_tokens')
-          .upsert({
-            user_id: userId,
-            provider: 'google',
-            access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token,
-            expires_at: expiresAt.toISOString(),
-            metadata: {
-              email: userInfo.email,
-              name: userInfo.name,
-              picture: userInfo.picture,
-              scope: tokenData.scope
-            }
-          })
-        
-        if (insertError) {
-          console.error('Erreur lors du stockage des tokens:', insertError)
-          throw new Error('Impossible de stocker les informations d\'authentification')
-        }
-        
-        return new Response(
-          JSON.stringify({ success: true, email: userInfo.email }),
-          { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-        )
-      }
+          grant_type: 'authorization_code',
+        }),
+      });
+
+      const tokenData = await tokenResponse.json();
       
-      case 'refresh_token': {
-        // Rafraîchir un token expiré
-        const { userId } = requestData
-        console.log(`Rafraîchissement du token pour l'utilisateur: ${userId}`)
-        
-        // Récupérer le token de rafraîchissement
-        const { data: tokenData, error: tokenError } = await supabase
-          .from('oauth_tokens')
-          .select('refresh_token')
-          .eq('user_id', userId)
-          .eq('provider', 'google')
-          .single()
-        
-        if (tokenError || !tokenData?.refresh_token) {
-          console.error('Erreur lors de la récupération du refresh token:', tokenError)
-          throw new Error('Refresh token introuvable')
-        }
-        
-        // Préparer les paramètres pour le rafraîchissement
-        const refreshParams = new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
+      if (tokenData.error) {
+        console.error("Erreur lors de l'échange du code:", tokenData);
+        return new Response(
+          JSON.stringify({ error: tokenData.error_description || tokenData.error }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Récupérer les infos du profil
+      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+      
+      const userInfo = await userInfoResponse.json();
+      
+      // Récupérer l'ID utilisateur de la session
+      const { data: authData } = await supabase.auth.getUser(req.headers.get('Authorization')?.split(' ')[1] || '');
+      
+      const userID = authData?.user?.id;
+      if (!userID) {
+        return new Response(
+          JSON.stringify({ error: "Utilisateur non authentifié" }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Stocker les tokens dans la base de données
+      const { error: tokenError } = await supabase
+        .from('oauth_tokens')
+        .upsert({
+          user_id: userID,
+          provider: 'google',
+          access_token: tokenData.access_token,
           refresh_token: tokenData.refresh_token,
-          grant_type: 'refresh_token'
-        })
-        
-        // Faire la requête à l'API Google
-        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: refreshParams
-        })
-        
-        const refreshedTokenData = await tokenResponse.json()
-        
-        if (!tokenResponse.ok) {
-          console.error('Erreur lors du rafraîchissement de token:', refreshedTokenData)
-          throw new Error(`Erreur de rafraîchissement de token: ${refreshedTokenData.error_description || refreshedTokenData.error}`)
-        }
-        
-        // Calculer la nouvelle date d'expiration
-        const expiresAt = new Date()
-        expiresAt.setSeconds(expiresAt.getSeconds() + refreshedTokenData.expires_in)
-        
-        // Mettre à jour les tokens dans la base de données
-        const { error: updateError } = await supabase
-          .from('oauth_tokens')
-          .update({
-            access_token: refreshedTokenData.access_token,
-            expires_at: expiresAt.toISOString(),
-            // Conserver l'ancien refresh_token si un nouveau n'est pas fourni
-            ...(refreshedTokenData.refresh_token ? { refresh_token: refreshedTokenData.refresh_token } : {})
-          })
-          .eq('user_id', userId)
-          .eq('provider', 'google')
-        
-        if (updateError) {
-          console.error('Erreur lors de la mise à jour des tokens:', updateError)
-          throw new Error('Impossible de mettre à jour les informations d\'authentification')
-        }
-        
+          expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+          metadata: {
+            email: userInfo.email,
+            name: userInfo.name,
+            picture: userInfo.picture,
+          },
+        });
+
+      if (tokenError) {
+        console.error("Erreur lors du stockage des tokens:", tokenError);
         return new Response(
-          JSON.stringify({ success: true }),
-          { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-        )
+          JSON.stringify({ error: "Erreur lors du stockage des tokens" }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
-      
-      case 'revoke_token': {
-        // Révoquer un token
-        const { userId } = requestData
-        console.log(`Révocation du token pour l'utilisateur: ${userId}`)
-        
-        // Récupérer le token d'accès
-        const { data: tokenData, error: tokenError } = await supabase
-          .from('oauth_tokens')
-          .select('access_token')
-          .eq('user_id', userId)
-          .eq('provider', 'google')
-          .single()
-        
-        if (tokenError || !tokenData?.access_token) {
-          // Token déjà supprimé ou introuvable, considérer comme un succès
-          console.log('Token introuvable, considéré comme déjà révoqué')
-          return new Response(
-            JSON.stringify({ success: true }),
-            { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-          )
-        }
-        
-        // Révoquer le token auprès de Google
-        const revokeParams = new URLSearchParams({
-          token: tokenData.access_token
-        })
-        
-        try {
-          const revokeResponse = await fetch(`https://oauth2.googleapis.com/revoke?${revokeParams}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-          })
-          
-          if (!revokeResponse.ok) {
-            const errorData = await revokeResponse.json()
-            console.warn('Avertissement lors de la révocation du token:', errorData)
-            // Continuer même si la révocation échoue côté Google
-          }
-        } catch (revokeError) {
-          console.warn('Erreur lors de la tentative de révocation:', revokeError)
-          // Continuer même si la révocation échoue côté Google
-        }
-        
-        // Supprimer les tokens de la base de données
-        const { error: deleteError } = await supabase
-          .from('oauth_tokens')
-          .delete()
-          .eq('user_id', userId)
-          .eq('provider', 'google')
-        
-        if (deleteError) {
-          console.error('Erreur lors de la suppression des tokens:', deleteError)
-          throw new Error('Impossible de supprimer les informations d\'authentification')
-        }
-        
-        return new Response(
-          JSON.stringify({ success: true }),
-          { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-        )
-      }
-      
-      default:
-        throw new Error(`Action non supportée: ${(requestData as any).action}`)
+
+      return new Response(
+        JSON.stringify({ success: true, email: userInfo.email }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-  } catch (error) {
-    console.error('Erreur dans la fonction google-oauth:', error)
-    
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Une erreur inconnue s\'est produite'
-      }),
-      { 
-        status: 400, 
-        headers: { 'Content-Type': 'application/json', ...corsHeaders } 
+
+    // Rafraîchir un token expiré
+    if (action === 'refresh_token') {
+      const { data: tokens, error: fetchError } = await supabase
+        .from('oauth_tokens')
+        .select('refresh_token')
+        .eq('user_id', userId)
+        .eq('provider', 'google')
+        .single();
+
+      if (fetchError || !tokens?.refresh_token) {
+        console.error("Erreur lors de la récupération du refresh token:", fetchError);
+        return new Response(
+          JSON.stringify({ error: "Token de rafraîchissement introuvable" }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
-    )
+
+      const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: GOOGLE_CLIENT_ID,
+          client_secret: GOOGLE_CLIENT_SECRET,
+          refresh_token: tokens.refresh_token,
+          grant_type: 'refresh_token',
+        }),
+      });
+
+      const refreshData = await refreshResponse.json();
+
+      if (refreshData.error) {
+        console.error("Erreur lors du rafraîchissement du token:", refreshData);
+        return new Response(
+          JSON.stringify({ error: refreshData.error_description || refreshData.error }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Mettre à jour le token d'accès dans la base de données
+      const { error: updateError } = await supabase
+        .from('oauth_tokens')
+        .update({
+          access_token: refreshData.access_token,
+          expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId)
+        .eq('provider', 'google');
+
+      if (updateError) {
+        console.error("Erreur lors de la mise à jour du token:", updateError);
+        return new Response(
+          JSON.stringify({ error: "Erreur lors de la mise à jour du token" }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Révoquer un token
+    if (action === 'revoke_token') {
+      const { data: tokens, error: fetchError } = await supabase
+        .from('oauth_tokens')
+        .select('access_token')
+        .eq('user_id', userId)
+        .eq('provider', 'google')
+        .single();
+
+      if (fetchError || !tokens?.access_token) {
+        console.error("Erreur lors de la récupération du token à révoquer:", fetchError);
+        return new Response(
+          JSON.stringify({ error: "Token introuvable" }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Révoquer le token auprès de Google
+      await fetch(`https://oauth2.googleapis.com/revoke?token=${tokens.access_token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
+
+      // Supprimer le token de la base de données (même si la révocation échoue)
+      const { error: deleteError } = await supabase
+        .from('oauth_tokens')
+        .delete()
+        .eq('user_id', userId)
+        .eq('provider', 'google');
+
+      if (deleteError) {
+        console.error("Erreur lors de la suppression du token:", deleteError);
+        return new Response(
+          JSON.stringify({ error: "Erreur lors de la suppression du token" }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ error: "Action non reconnue" }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error("Erreur dans la fonction google-oauth:", error);
+    return new Response(
+      JSON.stringify({ error: "Erreur interne du serveur" }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
-})
+});

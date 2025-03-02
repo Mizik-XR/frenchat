@@ -1,55 +1,25 @@
 
-import React, { useState } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Config from '@/pages/Config';
+import AdvancedConfig from '@/pages/AdvancedConfig';
+import AIConfig from '@/pages/AIConfig';
 import { MicrosoftTeamsConfig } from '@/components/config/MicrosoftTeamsConfig';
-import { useGoogleDriveConfig } from '@/hooks/useGoogleDriveConfig';
 import { GoogleDriveConfig } from '@/components/config/GoogleDriveConfig';
-import { useNavigate } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
-import { GoogleConfig } from '@/types/config';
+import RagAdvancedSettings from '@/pages/RagAdvancedSettings';
+import GoogleAuthCallback from '@/pages/GoogleAuthCallback';
+import MicrosoftAuthCallback from '@/pages/MicrosoftAuthCallback';
 
-const GoogleDriveConfigWrapper = () => {
-  const { googleConfig, saveConfig } = useGoogleDriveConfig();
-  const navigate = useNavigate();
-  
-  const handleConfigChange = (config: GoogleConfig) => {
-    saveConfig(config);
-  };
-  
-  const handleSave = () => {
-    toast({
-      title: "Configuration sauvegardée",
-      description: "La configuration de Google Drive a été mise à jour avec succès",
-    });
-    
-    // Récupérer l'état de la configuration depuis sessionStorage
-    const lastConfigState = sessionStorage.getItem('lastConfigState');
-    if (lastConfigState) {
-      const { step } = JSON.parse(lastConfigState);
-      sessionStorage.setItem('currentConfigStep', step.toString());
-    }
-    
-    navigate('/config');
-  };
-  
-  return (
-    <GoogleDriveConfig 
-      config={googleConfig} 
-      onConfigChange={handleConfigChange}
-      onSave={handleSave}
-    />
-  );
-};
-
-const ConfigRoutes = () => {
+export default function ConfigRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Config />} />
+      <Route path="/advanced" element={<AdvancedConfig />} />
+      <Route path="/ai" element={<AIConfig />} />
       <Route path="/microsoft-teams" element={<MicrosoftTeamsConfig />} />
-      <Route path="/google-drive" element={<GoogleDriveConfigWrapper />} />
+      <Route path="/google-drive" element={<GoogleDriveConfig />} />
+      <Route path="/rag-advanced" element={<RagAdvancedSettings />} />
+      <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
+      <Route path="/auth/microsoft/callback" element={<MicrosoftAuthCallback />} />
     </Routes>
   );
-};
-
-export default ConfigRoutes;
+}

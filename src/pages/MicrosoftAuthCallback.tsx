@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { getGoogleRedirectUrl } from '@/hooks/useGoogleDriveStatus';
+import { getMicrosoftRedirectUrl } from '@/utils/microsoftTeamsUtils';
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { validateOAuthState } from '@/utils/oauthStateManager';
 
-export default function GoogleAuthCallback() {
+export default function MicrosoftAuthCallback() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -34,17 +34,17 @@ export default function GoogleAuthCallback() {
         }
         
         // Vérifier la validité du state pour protéger contre les attaques CSRF
-        if (!validateOAuthState('google', state)) {
+        if (!validateOAuthState('microsoft', state)) {
           throw new Error("Validation de sécurité échouée (state invalide)");
         }
 
         console.log("Code d'autorisation reçu, échange en cours...");
 
         // Générer dynamiquement l'URL de redirection utilisée lors de l'autorisation
-        const redirectUrl = getGoogleRedirectUrl();
+        const redirectUrl = getMicrosoftRedirectUrl();
         
         // Appeler la fonction Supabase Edge pour échanger le code
-        const { data, error } = await supabase.functions.invoke('google-oauth', {
+        const { data, error } = await supabase.functions.invoke('microsoft-oauth', {
           body: {
             action: 'exchange_code',
             code,
@@ -60,7 +60,7 @@ export default function GoogleAuthCallback() {
           throw new Error("Échec de l'échange du code d'autorisation");
         }
 
-        console.log("Authentification Google réussie");
+        console.log("Authentification Microsoft réussie");
         setSuccess(true);
         
         // Redirection après un court délai pour que l'utilisateur voie le message de succès
@@ -68,7 +68,7 @@ export default function GoogleAuthCallback() {
           navigate('/config');
         }, 2000);
       } catch (err) {
-        console.error("Erreur lors du callback Google:", err);
+        console.error("Erreur lors du callback Microsoft:", err);
         setError(err instanceof Error ? err.message : "Une erreur inconnue s'est produite");
       } finally {
         setLoading(false);
@@ -79,14 +79,14 @@ export default function GoogleAuthCallback() {
   }, [location.search, navigate]);
 
   if (loading) {
-    return <AuthLoadingScreen message="Traitement de l'authentification Google en cours..." />;
+    return <AuthLoadingScreen message="Traitement de l'authentification Microsoft en cours..." />;
   }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Authentification Google Drive</CardTitle>
+          <CardTitle>Authentification Microsoft Teams</CardTitle>
         </CardHeader>
         <CardContent>
           {error ? (
@@ -105,7 +105,7 @@ export default function GoogleAuthCallback() {
               <CheckCircle className="h-4 w-4 text-green-500" />
               <AlertTitle className="text-green-700">Succès</AlertTitle>
               <AlertDescription>
-                Votre compte Google Drive a été connecté avec succès. Vous allez être redirigé...
+                Votre compte Microsoft Teams a été connecté avec succès. Vous allez être redirigé...
               </AlertDescription>
             </Alert>
           )}
