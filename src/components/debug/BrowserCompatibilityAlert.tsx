@@ -1,5 +1,5 @@
 
-import { AlertCircle, X } from "lucide-react";
+import { AlertCircle, X, Check, Info, AlertTriangle, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -7,14 +7,18 @@ interface BrowserCompatibilityAlertProps {
   issues: string[];
   forceShow?: boolean;
   clientMode?: boolean; // Mode client (simplifié)
-  developerMode?: boolean; // Nouveau: Mode développeur (détaillé)
+  developerMode?: boolean; // Mode développeur (détaillé)
+  onDismiss?: () => void;
+  onRunDiagnostic?: () => void;
 }
 
 export const BrowserCompatibilityAlert = ({ 
   issues = [], // Valeur par défaut pour éviter les erreurs
   forceShow = false,
   clientMode = true,
-  developerMode = false
+  developerMode = false,
+  onDismiss,
+  onRunDiagnostic
 }: BrowserCompatibilityAlertProps) => {
   // Protection contre les erreurs catastrophiques
   try {
@@ -29,7 +33,8 @@ export const BrowserCompatibilityAlert = ({
         // 3. Mode développeur activé (affiche toujours les alertes)
         const hasCriticalIssues = issues && issues.length > 0 && issues.some(issue => 
           issue.includes("WebAssembly") || 
-          issue.includes("Web Workers")
+          issue.includes("Web Workers") ||
+          issue.includes("Fetch")
         );
         
         setShouldShow(forceShow || developerMode || (hasCriticalIssues && issues.length > 0));
@@ -40,13 +45,22 @@ export const BrowserCompatibilityAlert = ({
       }
     }, [forceShow, issues, developerMode]);
 
+    // Si l'alerte est invisible ou vide, ne rien afficher
     if (!isVisible || !issues || issues.length === 0 || !shouldShow) return null;
+
+    // Vérifier si on est dans un environnement Netlify / Preview
+    const isNetlifyOrPreview = window.location.hostname.includes('netlify') || 
+                              window.location.hostname.includes('lovableproject.com');
 
     // Déterminer si le navigateur est trop ancien ou incompatible
     const isOldBrowser = issues.some(issue => 
       issue.includes("WebAssembly") || 
-      issue.includes("Web Workers")
+      issue.includes("Web Workers") ||
+      issue.includes("Fetch")
     );
+
+    // Traiter l'environnement spécifique (Lovable preview, Netlify, local)
+    const isSpecialEnvironment = isNetlifyOrPreview;
 
     // Simplifier les messages pour l'utilisateur final (mode client)
     // Mais afficher tous les détails en mode développeur
@@ -63,30 +77,63 @@ export const BrowserCompatibilityAlert = ({
       if (issue.includes("WebGPU")) {
         return "Accélération graphique non disponible";
       }
+      if (issue.includes("Fetch")) {
+        return "Votre navigateur ne peut pas effectuer de requêtes réseau modernes";
+      }
       return issue;
     });
 
     // Filtrer les doublons
     const uniqueIssues = [...new Set(displayIssues)];
 
+    // Déterminer le message adapté à l'environnement
+    let title = isOldBrowser 
+      ? "Navigateur non compatible" 
+      : "Fonctionnalités limitées";
+    
+    let message = isOldBrowser
+      ? isSpecialEnvironment 
+        ? "Les limitations de cet environnement réduisent les fonctionnalités disponibles."
+        : "Ce navigateur n'est pas compatible avec certaines fonctionnalités avancées."
+      : "Certaines fonctionnalités avancées pourraient être limitées.";
+
+    // Si nous sommes dans un environnement Lovable, personnaliser le message
+    if (isNetlifyOrPreview) {
+      title = "Environnement de prévisualisation";
+      message = "Cette prévisualisation a des limitations techniques qui désactivent certaines fonctionnalités.";
+    }
+
+    const handleClose = () => {
+      setIsVisible(false);
+      if (onDismiss) {
+        onDismiss();
+      }
+    };
+
     return (
-      <div className={`fixed bottom-20 right-4 max-w-sm ${developerMode ? 'bg-amber-600' : 'bg-red-500'} text-white rounded-lg shadow-lg z-50 overflow-hidden`}>
+      <div className={`fixed bottom-4 right-4 max-w-md ${developerMode ? 'bg-amber-600' : (isOldBrowser ? 'bg-red-500' : 'bg-blue-500')} text-white rounded-lg shadow-lg z-50 overflow-hidden`}>
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
-              <h4 className="font-semibold">
-                {developerMode ? "Diagnostic technique" : 
-                  isOldBrowser ? "Navigateur non compatible" : "Fonctionnalités limitées"}
-              </h4>
+              {developerMode ? (
+                <Info className="h-5 w-5" />
+              ) : isOldBrowser ? (
+                <AlertCircle className="h-5 w-5" />
+              ) : (
+                <AlertTriangle className="h-5 w-5" />
+              )}
+              <h4 className="font-semibold">{title}</h4>
             </div>
             <button 
-              onClick={() => setIsVisible(false)}
+              onClick={handleClose}
               className="text-white hover:text-white/80 transition-colors"
+              aria-label="Fermer"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
+          
+          <p className="text-sm mb-3">{message}</p>
           
           {developerMode ? (
             <>
@@ -102,68 +149,82 @@ export const BrowserCompatibilityAlert = ({
                   <p>Ce navigateur n'est pas compatible avec les fonctionnalités essentielles</p>
                 </div>
               )}
+              {onRunDiagnostic && (
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="mt-3 bg-white text-amber-600 hover:bg-white/90 w-full"
+                  onClick={onRunDiagnostic}
+                >
+                  Lancer un diagnostic complet
+                </Button>
+              )}
             </>
           ) : isOldBrowser ? (
             <>
-              <p className="text-sm">
-                {clientMode
-                  ? "Ce navigateur n'est pas compatible avec FileChat."
-                  : "Votre navigateur n'est pas compatible avec les fonctionnalités requises par FileChat:"}
+              <p className="text-sm mb-2">
+                Dans un environnement de production, nous vous recommandons d'utiliser:
               </p>
               
-              {!clientMode && (
-                <ul className="text-sm mt-1 list-disc pl-5 mb-3">
-                  {uniqueIssues.map((issue, index) => (
-                    <li key={index}>{issue}</li>
-                  ))}
-                </ul>
-              )}
+              <ul className="text-sm mt-1 list-disc pl-5 mb-3">
+                <li>Chrome (version récente)</li>
+                <li>Edge (version récente)</li>
+                <li>Firefox (version récente)</li>
+                <li>Safari (version récente)</li>
+              </ul>
               
-              <div className="text-sm">
-                <p className="font-medium mb-2">Nous vous recommandons d'utiliser:</p>
-                <ul className="list-disc pl-5 mb-3">
-                  <li>Chrome (version récente)</li>
-                  <li>Edge (version récente)</li>
-                  <li>Firefox (version récente)</li>
-                  <li>Safari (version récente)</li>
-                </ul>
-                
-                <div className="flex gap-2 mt-3">
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
-                    className="bg-white text-red-500 hover:bg-white/90 w-full"
-                    onClick={() => window.open("https://www.google.com/chrome/", "_blank")}
-                  >
-                    Télécharger Chrome
-                  </Button>
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
-                    className="bg-white text-red-500 hover:bg-white/90 w-full"
-                    onClick={() => setIsVisible(false)}
-                  >
-                    Continuer quand même
-                  </Button>
+              {isNetlifyOrPreview ? (
+                <div className="text-sm bg-red-600/40 p-2 rounded mb-3">
+                  <p>Dans cet environnement de prévisualisation, certaines fonctionnalités ne seront pas disponibles.</p>
                 </div>
+              ) : null}
+              
+              <div className="flex gap-2 mt-3">
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="bg-white text-red-500 hover:bg-white/90 w-full flex items-center gap-1"
+                  onClick={() => window.open("https://www.google.com/chrome/", "_blank")}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Obtenir un navigateur compatible
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="bg-white text-red-500 hover:bg-white/90 w-full"
+                  onClick={handleClose}
+                >
+                  Continuer quand même
+                </Button>
               </div>
             </>
           ) : (
-            <>
-              <p className="text-sm">
-                {clientMode
-                  ? "Certaines fonctionnalités pourraient être limitées dans ce navigateur."
-                  : "Votre navigateur ne supporte pas toutes les fonctionnalités recommandées:"}
+            <div className="space-y-2">
+              <p className="text-sm text-white/90">
+                L'application fonctionnera, mais avec des fonctionnalités réduites:
               </p>
               
-              {!clientMode && (
-                <ul className="text-sm mt-1 list-disc pl-5">
-                  {uniqueIssues.map((issue, index) => (
+              <ul className="text-sm mt-1 list-disc pl-5 text-white/90">
+                {uniqueIssues.length > 0 ? 
+                  uniqueIssues.map((issue, index) => (
                     <li key={index}>{issue}</li>
-                  ))}
-                </ul>
-              )}
-            </>
+                  )) : 
+                  <li>Certaines fonctionnalités d'IA locale pourraient être limitées</li>
+                }
+              </ul>
+              
+              <div className="mt-3">
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="bg-white/20 text-white hover:bg-white/30 w-full"
+                  onClick={handleClose}
+                >
+                  J'ai compris
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </div>

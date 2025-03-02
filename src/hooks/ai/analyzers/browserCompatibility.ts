@@ -41,13 +41,30 @@ export function checkBrowserCompatibility(): {
     issues.push('IndexedDB n\'est pas supporté (nécessaire pour le stockage des modèles)');
   }
   
+  // Vérification de la Cross-Origin Isolation (pour SharedArrayBuffer)
+  try {
+    capabilities['CrossOriginIsolated'] = window.crossOriginIsolated;
+    if (!window.crossOriginIsolated && capabilities['SharedArrayBuffer']) {
+      issues.push('L\'isolation cross-origin n\'est pas activée (limite l\'utilisation de SharedArrayBuffer)');
+    }
+  } catch (e) {
+    capabilities['CrossOriginIsolated'] = false;
+    issues.push('Impossible de vérifier l\'isolation cross-origin');
+  }
+  
+  // Vérification de Secure Context (pour certaines APIs)
+  capabilities['SecureContext'] = window.isSecureContext;
+  if (!window.isSecureContext) {
+    issues.push('Le contexte sécurisé n\'est pas activé (nécessaire pour certaines APIs)');
+  }
+  
   // Déterminer si le navigateur est globalement compatible
-  const compatible = issues.length === 0;
+  const compatible = capabilities['WebAssembly'] && capabilities['WebWorkers'] && capabilities['Fetch'];
   
   // Déterminer si nous devrions basculer automatiquement vers le cloud
   // Si des problèmes critiques sont détectés
   const criticalIssues = issues.filter(issue => 
-    issue.includes('WebAssembly') || issue.includes('Fetch')
+    issue.includes('WebAssembly') || issue.includes('Web Workers') || issue.includes('Fetch')
   );
   const shouldFallbackToCloud = criticalIssues.length > 0;
   
