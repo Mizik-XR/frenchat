@@ -56,9 +56,24 @@ const handleLoadError = (error: any) => {
   }
 };
 
+// Vérifier si le navigateur est compatible (recommandation Chrome/Edge)
+const checkBrowserCompatibility = () => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isFirefox = userAgent.indexOf('firefox') > -1;
+  
+  if (isFirefox) {
+    console.warn("Firefox peut causer des problèmes avec certaines fonctionnalités. Chrome ou Edge sont recommandés.");
+  }
+  
+  return !isFirefox;
+};
+
 // Fonction pour démarrer l'application
 const startApp = async () => {
   try {
+    // Vérifier la compatibilité du navigateur
+    checkBrowserCompatibility();
+    
     // Vérification des paramètres Supabase
     const supabaseUrl = "https://dbdueopvtlanxgumenpu.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZHVlb3B2dGxhbnhndW1lbnB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NzQ0NTIsImV4cCI6MjA1NTU1MDQ1Mn0.lPPbNJANU8Zc7i5OB9_atgDZ84Yp5SBjXCiIqjA79Tk";
@@ -93,15 +108,28 @@ const startApp = async () => {
     
     console.log("Élément #root trouvé, montage de l'application React");
     
-    const root = createRoot(rootElement);
-    
-    root.render(
-      <ErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <App />
-        </QueryClientProvider>
-      </ErrorBoundary>
-    );
+    // S'assurer que le DOM est complètement chargé
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        const root = createRoot(rootElement);
+        root.render(
+          <ErrorBoundary>
+            <QueryClientProvider client={queryClient}>
+              <App />
+            </QueryClientProvider>
+          </ErrorBoundary>
+        );
+      });
+    } else {
+      const root = createRoot(rootElement);
+      root.render(
+        <ErrorBoundary>
+          <QueryClientProvider client={queryClient}>
+            <App />
+          </QueryClientProvider>
+        </ErrorBoundary>
+      );
+    }
     
     console.log("Application React montée avec succès");
     
