@@ -18,12 +18,16 @@ export function detectBrowser(): string {
  * Détermine le type de connexion (si disponible)
  */
 export function getNetworkType(): string {
-  // Vérification de l'API de connexion avec un type sécurisé
-  // @ts-ignore - Ignorer car la propriété connection n'est pas reconnue par TypeScript mais peut exister dans certains navigateurs
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  if (connection) {
-    // @ts-ignore - Pour gérer les navigateurs supportant l'API NetworkInformation
-    return connection.effectiveType || 'unknown';
+  // Vérification sécurisée de l'API de connexion
+  try {
+    // @ts-ignore - La propriété connection n'est pas reconnue par TypeScript
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (connection && typeof connection === 'object' && 'effectiveType' in connection) {
+      // @ts-ignore - Pour gérer les navigateurs supportant l'API NetworkInformation
+      return connection.effectiveType || 'unknown';
+    }
+  } catch (e) {
+    console.error("Erreur lors de la détection du type de réseau:", e);
   }
   return 'unknown';
 }

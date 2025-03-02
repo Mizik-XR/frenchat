@@ -43,8 +43,8 @@ export function LocalAIConfig({
   useEffect(() => {
     // Vérifier si le service local est disponible au chargement
     const checkService = async () => {
-      const isAvailable = await checkLocalService(localAIUrl || '');
-      setServiceAvailable(isAvailable);
+      const serviceResult = await checkLocalService(localAIUrl || '');
+      setServiceAvailable(serviceResult.available);
     };
     
     checkService();

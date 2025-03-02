@@ -9,9 +9,16 @@ export async function estimateSystemCapabilities(): Promise<{
   recommendLocalExecution: boolean;
 }> {
   // Vérification de mémoire avec typesafe check
-  // @ts-ignore - La propriété deviceMemory peut ne pas être reconnue par TypeScript
-  const deviceMemory = navigator.deviceMemory as number | undefined;
-  const memoryScore = deviceMemory ? Math.min(deviceMemory / 4, 1) : 0.5;
+  let memoryScore = 0.5; // Default score if deviceMemory is not available
+  try {
+    // @ts-ignore - La propriété deviceMemory n'est pas standard dans Navigator
+    const deviceMemory = navigator.deviceMemory;
+    if (typeof deviceMemory === 'number') {
+      memoryScore = Math.min(deviceMemory / 4, 1);
+    }
+  } catch (e) {
+    console.error("Erreur lors de la vérification de la mémoire:", e);
+  }
   
   // Estimation basique du CPU
   let cpuScore = 0.5;

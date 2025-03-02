@@ -116,7 +116,8 @@ export function useDiagnostics() {
     
     try {
       // Vérifier le service local
-      const isLocalAvailable = await checkLocalService(localAIUrl || '');
+      const localServiceResult = await checkLocalService(localAIUrl || '');
+      const isLocalAvailable = localServiceResult.available;
       const localResponseTime = isLocalAvailable ? await testResponseTime(localAIUrl || 'http://localhost:8000') : null;
       
       // Vérifier le service cloud
