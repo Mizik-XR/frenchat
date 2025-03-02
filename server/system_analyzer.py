@@ -13,11 +13,40 @@ def analyze_system_resources():
         "memory_available_gb": None,
         "memory_percent": None,
         "gpu_available": False,
+        "gpu_info": None,
         "system_score": 0.5,  # Score par défaut
         "can_run_local_model": True
     }
     
     try:
+        # Vérification GPU avec PyTorch si disponible
+        try:
+            import torch
+            result["gpu_available"] = torch.cuda.is_available()
+            
+            if result["gpu_available"]:
+                result["gpu_info"] = {
+                    "name": torch.cuda.get_device_name(0),
+                    "count": torch.cuda.device_count(),
+                    "memory_total": torch.cuda.get_device_properties(0).total_memory / (1024**3), # En GB
+                    "memory_allocated": torch.cuda.memory_allocated(0) / (1024**3) # En GB
+                }
+                logger.info(f"GPU détecté: {result['gpu_info']['name']}")
+            else:
+                logger.info("Aucun GPU compatible CUDA détecté")
+        except (ImportError, Exception) as e:
+            logger.warning(f"Impossible de vérifier le GPU via PyTorch: {str(e)}")
+            # Tentative de détection avec NVIDIA-SMI si PyTorch n'est pas disponible
+            try:
+                import subprocess
+                output = subprocess.check_output(['nvidia-smi', '--query-gpu=name,memory.total', '--format=csv,noheader'])
+                if output:
+                    result["gpu_available"] = True
+                    result["gpu_info"] = {"detection_method": "nvidia-smi", "output": output.decode('utf-8').strip()}
+                    logger.info(f"GPU détecté via nvidia-smi: {result['gpu_info']}")
+            except (FileNotFoundError, subprocess.SubprocessError) as gpu_e:
+                logger.info(f"Pas de GPU NVIDIA détecté: {str(gpu_e)}")
+            
         if PSUTIL_AVAILABLE:
             import psutil
             
@@ -32,7 +61,9 @@ def analyze_system_resources():
             # Calculer un score système (0-1)
             cpu_score = max(0, 1 - (result["cpu_percent"] / 100))
             memory_score = max(0, 1 - (memory.percent / 100))
-            result["system_score"] = (cpu_score + memory_score) / 2
+            # Tenir compte du GPU dans le score système
+            gpu_score = 0.8 if result["gpu_available"] else 0.3
+            result["system_score"] = (cpu_score + memory_score + gpu_score) / 3
             
             # Vérifier si le système peut exécuter le modèle local
             result["can_run_local_model"] = (

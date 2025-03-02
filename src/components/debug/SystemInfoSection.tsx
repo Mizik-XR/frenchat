@@ -1,6 +1,6 @@
 
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, X } from "lucide-react";
+import { CheckCircle, X, Cpu } from "lucide-react";
 
 interface SystemInfoSectionProps {
   system: {
@@ -13,6 +13,9 @@ interface SystemInfoSectionProps {
       usedJSHeapSize?: number;
       jsHeapSizeLimit?: number;
     };
+    gpuAvailable?: boolean;
+    gpuInfo?: string;
+    systemScore?: number;
   };
 }
 
@@ -43,6 +46,35 @@ export const SystemInfoSection = ({ system }: SystemInfoSectionProps) => {
             {system.networkSpeed === 'fast' ? 'Rapide' :
              system.networkSpeed === 'medium' ? 'Moyenne' : 'Lente'}
           </Badge>
+        </div>
+        
+        {/* Section GPU */}
+        <div className="border-t pt-2 mt-2">
+          <div className="flex items-center gap-2 mb-2">
+            <Cpu className="h-4 w-4 text-blue-500" />
+            <div className="font-medium">Processeur & GPU:</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex justify-between">
+              <span>GPU disponible:</span>
+              {system.gpuAvailable ? (
+                <Badge variant="default" className="bg-green-500 hover:bg-green-600">Oui</Badge>
+              ) : (
+                <Badge variant="outline">Non</Badge>
+              )}
+            </div>
+            {system.systemScore !== undefined && (
+              <div className="flex justify-between">
+                <span>Score système:</span>
+                <span className="font-semibold">{Math.round(system.systemScore * 100)}%</span>
+              </div>
+            )}
+          </div>
+          {system.gpuInfo && (
+            <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+              {system.gpuInfo}
+            </div>
+          )}
         </div>
         
         {system.memory.jsHeapSizeLimit && (

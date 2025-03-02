@@ -28,6 +28,9 @@ export interface DiagnosticReport {
     };
     networkType?: string;
     networkSpeed?: 'slow' | 'medium' | 'fast';
+    gpuAvailable?: boolean;
+    gpuInfo?: string;
+    systemScore?: number;
   };
   compatibility: {
     compatible: boolean;
@@ -47,4 +50,14 @@ export interface RecommendedModeResult {
   localAvailable: boolean;
   cloudAvailable: boolean;
   systemCapable: boolean;
+  systemScore?: number;
+  gpuAvailable?: boolean;
+}
+
+export interface SystemCapabilityResult {
+  hasGPU: boolean;
+  memoryScore: number;
+  cpuScore: number;
+  canRunLocalModel: boolean;
+  systemScore: number;
 }

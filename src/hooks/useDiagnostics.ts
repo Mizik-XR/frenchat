@@ -11,7 +11,8 @@ import {
   testCloudService, 
   determineRecommendedMode, 
   collectMemoryInfo, 
-  mapNetworkQuality 
+  mapNetworkQuality,
+  getSystemCapabilities
 } from './diagnostics/diagnosticServices';
 
 export function useDiagnostics() {
@@ -49,6 +50,9 @@ export function useDiagnostics() {
       // Déterminer le mode recommandé
       const recommendationResult = await determineRecommendedMode();
       
+      // Estimer les capacités système (y compris GPU)
+      const systemCaps = await getSystemCapabilities();
+      
       // Obtenir des informations sur la mémoire
       const memoryInfo = collectMemoryInfo();
       
@@ -77,7 +81,10 @@ export function useDiagnostics() {
           capabilities,
           memory: memoryInfo,
           networkType,
-          networkSpeed
+          networkSpeed,
+          gpuAvailable: systemCaps.hasGPU,
+          gpuInfo: systemCaps.hasGPU ? "GPU détecté compatible avec l'IA" : "Pas de GPU détecté",
+          systemScore: systemCaps.systemScore
         },
         compatibility: {
           compatible,
