@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogoImage } from "../common/LogoImage";
-import { ArrowRight, Download, Server } from "lucide-react";
+import { ArrowRight, Download, Server, Cloud, Lock } from "lucide-react";
 
 export const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +15,10 @@ export const WelcomePage: React.FC = () => {
   const handleLearnMore = () => {
     navigate("/home");
   };
+
+  // Vérifier si le mode cloud est forcé (pour adaptation de l'UI)
+  const isCloudModeForced = window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true' || 
+                           new URLSearchParams(window.location.search).get('forceCloud') === 'true';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col justify-center items-center p-4">
@@ -29,6 +33,12 @@ export const WelcomePage: React.FC = () => {
           <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
             Votre assistant d'intelligence documentaire qui facilite l'accès à vos documents et les rend conversationnels.
           </p>
+          {isCloudModeForced && (
+            <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+              <Cloud size={14} />
+              <span>Mode cloud activé</span>
+            </div>
+          )}
         </div>
 
         <div className="bg-white/70 backdrop-blur-sm rounded-xl shadow-lg p-6 md:p-8">
@@ -99,16 +109,26 @@ export const WelcomePage: React.FC = () => {
             <p className="text-sm text-gray-600 mb-3">
               Frenchat fonctionne également en mode local avec Ollama pour une confidentialité totale de vos données.
             </p>
+            {isCloudModeForced && (
+              <p className="text-xs text-blue-600">
+                Mode actuellement désactivé - vous pourrez l'activer après la configuration.
+              </p>
+            )}
           </div>
 
           <div className="bg-white/70 backdrop-blur-sm rounded-lg p-4 shadow-md transition hover:shadow-lg">
             <div className="flex items-center gap-3 mb-2">
-              <Download className="h-5 w-5 text-purple-500" />
-              <h3 className="font-medium">Installation facile</h3>
+              <Cloud className="h-5 w-5 text-blue-500" />
+              <h3 className="font-medium">Mode cloud prêt</h3>
             </div>
             <p className="text-sm text-gray-600 mb-3">
-              L'installation est guidée et automatisée pour vous permettre de commencer rapidement.
+              Utilisez Frenchat en mode cloud immédiatement, sans installation supplémentaire.
             </p>
+            {isCloudModeForced && (
+              <div className="flex items-center gap-2 text-xs text-green-600">
+                <Lock size={12} /> Mode actif par défaut
+              </div>
+            )}
           </div>
         </div>
 

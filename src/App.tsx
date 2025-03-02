@@ -44,7 +44,8 @@ const getUrlParams = () => {
   const params = new URLSearchParams(window.location.search);
   return {
     client: params.get('client') === 'true',
-    hideDebug: params.get('hideDebug') === 'true'
+    hideDebug: params.get('hideDebug') === 'true',
+    forceCloud: params.get('forceCloud') === 'true' || params.get('cloud') === 'true'
   };
 };
 
@@ -53,6 +54,13 @@ function AppWithAuth() {
   const urlParams = getUrlParams();
   
   useEffect(() => {
+    // Vérifier si mode cloud forcé
+    if (urlParams.forceCloud) {
+      console.log("Mode cloud forcé par paramètre URL");
+      window.localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+      window.localStorage.setItem('aiServiceType', 'cloud');
+    }
+    
     // Marquer l'application comme chargée après le premier rendu
     setAppLoaded(true);
     
@@ -60,7 +68,7 @@ function AppWithAuth() {
     window.requestIdleCallback 
       ? window.requestIdleCallback(preloadImportantPages) 
       : setTimeout(preloadImportantPages, 200);
-  }, []);
+  }, [urlParams.forceCloud]);
 
   if (!appLoaded) {
     return <LoadingScreen message="Initialisation de Frenchat" />;
@@ -109,7 +117,13 @@ function App() {
   // Log pour comprendre si l'app se charge
   console.log("App component rendering");
 
+  // Définir le mode cloud par défaut si non spécifié
   useEffect(() => {
+    if (!window.localStorage.getItem('aiServiceType')) {
+      console.log("Mode cloud défini par défaut (première utilisation)");
+      window.localStorage.setItem('aiServiceType', 'cloud');
+    }
+    
     // Précharger les routes importantes dès que possible
     preloadImportantPages();
     
@@ -126,16 +140,38 @@ function App() {
     const originalFetch = window.fetch;
     window.fetch = function(input, init) {
       const inputUrl = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
-      console.log(`Fetch request to: ${inputUrl}`);
+      
+      // Vérifier si c'est une requête API locale qui pourrait échouer
+      const isLocalAPIRequest = (
+        (inputUrl.includes('localhost:8000') || inputUrl.includes('127.0.0.1:8000')) &&
+        !inputUrl.includes('supabase')
+      );
+      
+      // Si c'est une requête locale et qu'on est en mode cloud forcé, annuler directement
+      if (isLocalAPIRequest && window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true') {
+        console.log(`Requête API locale ignorée (mode cloud forcé): ${inputUrl}`);
+        return Promise.reject(new Error('Mode cloud forcé activé'));
+      }
+      
+      // Debug uniquement pour les requêtes API importantes
+      if (inputUrl.includes('api') || inputUrl.includes('generate') || isLocalAPIRequest) {
+        console.log(`Fetch request to: ${inputUrl}`);
+      }
+      
       return originalFetch(input, init)
         .then(response => {
-          if (!response.ok) {
+          if (!response.ok && (inputUrl.includes('api') || isLocalAPIRequest)) {
             console.warn(`Fetch error ${response.status} for ${inputUrl}`);
           }
           return response;
         })
         .catch(error => {
-          console.error(`Fetch failed for ${inputUrl}:`, error);
+          if (isLocalAPIRequest) {
+            console.log(`Fetch failed for ${inputUrl}:`, error);
+            console.log("Aucun service d'IA local détecté, utilisation du service cloud");
+          } else if (inputUrl.includes('api')) {
+            console.error(`Fetch failed for ${inputUrl}:`, error);
+          }
           throw error;
         });
     };
