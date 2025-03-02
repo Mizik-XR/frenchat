@@ -26,7 +26,7 @@ export const AuthContainer: React.FC<AuthContainerProps> = ({ children }) => {
         
         <div className="w-full max-w-md px-4">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Alone Must</h1>
+            <h1 className="text-3xl font-bold text-gray-900">ChatAlone</h1>
             <p className="text-gray-600 mt-2">
               Connectez-vous pour accéder à votre assistant IA personnel
             </p>

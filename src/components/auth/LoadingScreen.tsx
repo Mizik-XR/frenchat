@@ -11,7 +11,7 @@ interface LoadingScreenProps {
 }
 
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({ 
-  message = "Chargement de Alone Must", 
+  message = "Chargement de ChatAlone", 
   showRetry = false,
   onRetry
 }) => {
@@ -74,7 +74,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
       </div>
       
       <p className="text-sm text-gray-500 mt-4">
-        Alone Must - Votre assistant d'intelligence documentaire
+        ChatAlone - Votre assistant d'intelligence documentaire
       </p>
     </div>
   );

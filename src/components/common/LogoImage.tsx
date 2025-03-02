@@ -90,7 +90,7 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
   if (!imageLoaded) {
     return (
       <div className={`flex items-center justify-center bg-blue-100 rounded-full ${className}`}>
-        <span className="text-blue-600 font-bold">FC</span>
+        <span className="text-blue-600 font-bold">CA</span>
       </div>
     );
   }
@@ -98,7 +98,7 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
   return (
     <img
       src={imagePath}
-      alt="FileChat Logo"
+      alt="ChatAlone Logo"
       className={className}
       onError={() => {
         setImageLoaded(false);

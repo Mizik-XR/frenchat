@@ -1,9 +1,9 @@
 
-# Présentation générale de FileChat
+# Présentation générale de ChatAlone
 
 ## Objectif du projet
 
-FileChat est une solution de chat intelligent (RAG - Retrieval Augmented Generation) conçue pour:
+ChatAlone est une solution de chat intelligent (RAG - Retrieval Augmented Generation) conçue pour:
 
 - **Indexer et analyser en temps réel** les documents provenant de Google Drive et Microsoft Teams
 - **Générer et prévisualiser** des documents structurés (dossiers de subvention, business plans, etc.)
@@ -56,7 +56,7 @@ FileChat est une solution de chat intelligent (RAG - Retrieval Augmented Generat
 
 ## Public cible
 
-FileChat s'adresse principalement aux équipes et entreprises souhaitant:
+ChatAlone s'adresse principalement aux équipes et entreprises souhaitant:
 
 - Valoriser leur base documentaire existante
 - Accélérer la recherche d'informations dans des documents volumineux

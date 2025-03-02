@@ -1,13 +1,13 @@
 
-# FileChat - Assistant IA Conversationnel pour Documents
+# ChatAlone - Assistant IA Conversationnel pour Documents
 
-FileChat est une application qui vous permet d'interroger vos documents avec l'intelligence artificielle pour obtenir des réponses précises.
+ChatAlone est une application qui vous permet d'interroger vos documents avec l'intelligence artificielle pour obtenir des réponses précises.
 
 ## Installation et Démarrage Rapide
 
 ### Windows
 1. Double-cliquez sur `setup.bat` pour une installation automatique complète
-2. Après l'installation, utilisez le raccourci "FileChat" sur votre bureau pour démarrer l'application
+2. Après l'installation, utilisez le raccourci "ChatAlone" sur votre bureau pour démarrer l'application
 
 ### macOS / Linux
 1. Ouvrez un terminal dans le dossier de l'application
