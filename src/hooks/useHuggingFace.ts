@@ -73,32 +73,51 @@ export function useHuggingFace(provider: string = 'huggingface') {
   }, [isCloudModeForced, serviceType]);
 
   useEffect(() => {
+    // Pour s'assurer qu'un mode est toujours sélectionné
+    if (!localStorage.getItem('aiServiceType')) {
+      console.log("Définition du mode cloud par défaut (première utilisation)");
+      localStorage.setItem('aiServiceType', 'cloud');
+      setServiceType('cloud');
+    }
+
     const checkCompatibility = () => {
       // Si le mode cloud est forcé, ignorer la vérification de compatibilité
       if (isCloudModeForced) {
         return;
       }
       
-      const browserCompatibility = checkBrowserCompatibility();
-      
-      // Si le navigateur n'est pas compatible avec des fonctionnalités critiques,
-      // basculer automatiquement vers le mode cloud
-      if (browserCompatibility.shouldFallbackToCloud) {
+      try {
+        const browserCompatibility = checkBrowserCompatibility();
+        
+        // Si le navigateur n'est pas compatible avec des fonctionnalités critiques,
+        // basculer automatiquement vers le mode cloud
+        if (browserCompatibility.shouldFallbackToCloud) {
+          setServiceType('cloud');
+          localStorage.setItem('aiServiceType', 'cloud');
+          
+          // Notification uniquement en mode développement ou debug
+          if (import.meta.env.DEV || window.location.search.includes('debug=true')) {
+            toast({
+              title: "Compatibilité navigateur",
+              description: `Mode cloud automatiquement activé - votre navigateur ne supporte pas l'IA locale`,
+              variant: "default"
+            });
+          }
+        }
+      } catch (error) {
+        console.warn("Erreur lors de la vérification de compatibilité:", error);
+        // En cas d'erreur, passer au mode cloud par défaut
         setServiceType('cloud');
         localStorage.setItem('aiServiceType', 'cloud');
-        
-        // Notification uniquement en mode développement ou debug
-        if (import.meta.env.DEV || window.location.search.includes('debug=true')) {
-          toast({
-            title: "Compatibilité navigateur",
-            description: `Mode cloud automatiquement activé - votre navigateur ne supporte pas l'IA locale`,
-            variant: "default"
-          });
-        }
       }
     };
     
-    checkCompatibility();
+    // Exécuter avec un léger délai pour ne pas bloquer le rendu initial
+    const timer = setTimeout(() => {
+      checkCompatibility();
+    }, 1000);
+    
+    return () => clearTimeout(timer);
   }, [isCloudModeForced]);
 
   const textGeneration = async (options: TextGenerationParameters): Promise<TextGenerationResponse[]> => {
@@ -108,7 +127,10 @@ export function useHuggingFace(provider: string = 'huggingface') {
     try {
       // Si mode cloud forcé, toujours utiliser la stratégie cloud
       const executionStrategy = isCloudModeForced ? 'cloud' : 
-        await determineExecutionStrategy(options, serviceType);
+        await determineExecutionStrategy(options, serviceType).catch(err => {
+          console.warn("Erreur lors de la détermination de la stratégie:", err);
+          return 'cloud' as const; // Fallback en cas d'erreur
+        });
       
       console.log(`Exécution avec la stratégie: ${executionStrategy} (forceCloud: ${isCloudModeForced})`);
       
@@ -139,7 +161,8 @@ export function useHuggingFace(provider: string = 'huggingface') {
         );
       }
       
-      throw e;
+      // Toujours renvoyer une réponse même en cas d'erreur pour éviter le blocage de l'UI
+      return [{ generated_text: "Désolé, je n'ai pas pu générer de réponse en raison d'une erreur de connexion. Veuillez réessayer." }];
     } finally {
       setIsLoading(false);
     }
