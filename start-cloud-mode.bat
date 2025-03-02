@@ -1,3 +1,4 @@
+
 @echo off
 chcp 65001 >nul
 setlocal enabledelayedexpansion
@@ -11,10 +12,6 @@ color 1F
 echo ===================================================
 echo     DÉMARRAGE DE FILECHAT - MODE CLOUD
 echo ===================================================
-echo.
-echo [INFO] Note: Les fonctionnalités Microsoft Teams sont
-echo [INFO] temporairement désactivées dans cette version 
-echo [INFO] de test (limites Supabase). Réactivation en Beta 1.1.
 echo.
 
 REM Configuration en mode cloud uniquement (masquer les fonctionnalités techniques)

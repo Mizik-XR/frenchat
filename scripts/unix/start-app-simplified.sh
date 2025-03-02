@@ -5,9 +5,6 @@ echo "==================================================="
 echo "            DÉMARRAGE DE FILECHAT"
 echo "==================================================="
 echo ""
-echo "[INFO] Note: Les fonctionnalités Microsoft Teams sont"
-echo "[INFO] temporairement désactivées dans cette version de test"
-echo "[INFO] pour respecter les limites du plan Supabase."
 
 # Activer le mode cloud par défaut - moins invasif
 export MODE_CLOUD=1
