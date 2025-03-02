@@ -23,14 +23,12 @@ verify_jwt = false
 [functions.advanced-rag-generation]
 verify_jwt = false
 
-# Fonctions désactivées pour rester sous la limite du plan
-# Décommenter au besoin lors du passage à un plan supérieur
+[functions.generate-system-report]
+verify_jwt = false
 
-# [functions.generate-system-report]
-# verify_jwt = false
+[functions.export-to-google-drive]
+verify_jwt = false
 
-# [functions.export-to-google-drive]
-# verify_jwt = false
+[functions.cache-manager]
+verify_jwt = false
 
-# [functions.cache-manager]
-# verify_jwt = false
