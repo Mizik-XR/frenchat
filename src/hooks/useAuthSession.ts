@@ -29,7 +29,8 @@ export function useAuthSession() {
     
     // Vérifier si l'utilisateur tente d'accéder à une route protégée sans être authentifié
     if (!session?.user && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
-      navigate('/auth', { state: { from: { pathname: location.pathname } } });
+      // Rediriger vers la page d'authentification avec l'origine stockée
+      navigate('/auth', { state: { from: location.pathname } });
       updateSessionLoading(false);
       setIsLoading(false);
       return;
@@ -57,6 +58,7 @@ export function useAuthSession() {
 
       const needsConfig = !configs || !configs.length || !configs.some(c => c.status === 'configured');
 
+      // Redirection basée sur le statut de l'utilisateur
       if (profile?.is_first_login || needsConfig) {
         if (location.pathname !== '/config') {
           navigate('/config');
@@ -65,6 +67,7 @@ export function useAuthSession() {
         navigate('/home');
       }
     } else if (_event === 'SIGNED_OUT') {
+      // Rediriger vers la page d'accueil si l'utilisateur est déconnecté sur une page protégée
       if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
         navigate('/');
       }
@@ -116,7 +119,7 @@ export function useAuthSession() {
         }
       } else if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
         // Rediriger si l'utilisateur tente d'accéder à une route protégée sans être authentifié
-        navigate('/auth', { state: { from: { pathname: location.pathname } } });
+        navigate('/auth', { state: { from: location.pathname } });
       }
       
       // Mettre à jour l'état de chargement global
@@ -130,13 +133,12 @@ export function useAuthSession() {
     }
   }, [navigate, location.pathname]);
 
-  // Configurer le listener d'authentification - utilisation uniforme des hooks
+  // Configurer le listener d'authentification
   useEffect(() => {
     // Mettre en place le listener d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
     
-    // Toujours vérifier la session initiale au premier rendu
-    // évite les conditions d'utilisation des hooks
+    // Vérifier la session initiale au premier rendu
     checkSession();
     
     // Nettoyer le listener à la désinscription

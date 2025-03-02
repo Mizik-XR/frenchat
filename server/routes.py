@@ -1,4 +1,4 @@
-# Laissons le code existant mais modifions les imports pour ModelManager
+# Laissons le code existant mais ajoutons la route /health
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -25,6 +25,11 @@ class GenerationInput(BaseModel):
 class ModelConfigInput(BaseModel):
     model_name: str = Field(..., description="Nom du modèle à configurer")
     config: dict = Field({}, description="Configuration supplémentaire")
+
+@router.get("/health")
+async def get_health():
+    """Endpoint simple pour vérifier que le serveur est en ligne"""
+    return {"status": "ok", "message": "Service is running"}
 
 @router.get("/status")
 async def get_status():

@@ -1,6 +1,6 @@
 
 import { BrowserRouter } from "react-router-dom";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import { AuthProvider } from "./components/AuthProvider";
 import { Toaster } from "@/components/ui/toaster";
 import { OnboardingIntro } from "./components/onboarding/OnboardingIntro";
@@ -52,18 +52,30 @@ function AppWithAuth() {
         <OnboardingIntro />
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
+            {/* Routes de base avec redirections cohérentes */}
             <Route path="/" element={<WelcomePage />} />
-            <Route path="/index" element={<WelcomePage />} />
+            <Route path="/index" element={<Navigate to="/" replace />} />
             <Route path="/home" element={<Index />} />
+            
+            {/* Routes d'authentification */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
+            
+            {/* Routes principales */}
             <Route path="/chat" element={<Chat />} />
+            
+            {/* Routes de configuration */}
             <Route path="/config" element={<Config />} />
             <Route path="/advanced-config" element={<AdvancedConfig />} />
             <Route path="/rag-advanced-settings" element={<RagAdvancedSettings />} />
-            <Route path="/documents" element={<Documents />} />
-            <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
-            <Route path="/monitoring" element={<Monitoring />} />
             <Route path="/ai-config" element={<AIConfig />} />
+            
+            {/* Autres routes */}
+            <Route path="/documents" element={<Documents />} />
+            <Route path="/monitoring" element={<Monitoring />} />
+            
+            {/* Redirection pour les routes inconnues */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
         <Toaster />
