@@ -1,4 +1,3 @@
-
 """
 Gestion du modèle d'IA pour le serveur d'inférence
 """
