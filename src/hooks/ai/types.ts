@@ -1,4 +1,3 @@
-
 // Type pour les paramètres de génération de texte
 export interface TextGenerationParameters {
   inputs?: string;
@@ -16,6 +15,9 @@ export interface TextGenerationParameters {
     top_p?: number;
     top_k?: number;
   };
+  forceLocal?: boolean;
+  forceCloud?: boolean;
+  api_key?: string;
 }
 
 // Type pour la réponse de génération de texte

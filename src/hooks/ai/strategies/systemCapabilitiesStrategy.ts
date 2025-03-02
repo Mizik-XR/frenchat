@@ -16,7 +16,7 @@ import { TextGenerationParameters, AIServiceType } from '../types';
  */
 export function createSystemCapabilitiesManager() {
   // Cache des capacités système pour éviter les recalculs fréquents
-  let systemCapabilitiesCache: ReturnType<typeof estimateSystemCapabilities> | null = null;
+  let systemCapabilitiesCache: Awaited<ReturnType<typeof estimateSystemCapabilities>> | null = null;
   let systemCapabilitiesCacheTime = 0;
   const CACHE_LIFETIME_MS = 5 * 60 * 1000; // 5 minutes
   

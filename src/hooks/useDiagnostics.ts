@@ -94,7 +94,7 @@ export function useDiagnostics() {
       const networkType = getNetworkType();
       
       // Déterminer le mode recommandé
-      const recommendedMode = determineRecommendedMode(isLocalAvailable, systemCapabilities);
+      const recommendedMode = await determineRecommendedMode();
       
       // Créer le rapport
       const diagnosticReport: DiagnosticReport = {
@@ -106,8 +106,11 @@ export function useDiagnostics() {
             responseTime: localResponseTime,
             provider: localProvider
           },
-          cloud: cloudService,
-          recommendedMode
+          cloud: {
+            available: cloudService.available,
+            responseTime: cloudService.responseTimeMs || null
+          },
+          recommendedMode: recommendedMode.recommendedMode
         },
         system: {
           browser: detectBrowser(),
@@ -127,7 +130,7 @@ export function useDiagnostics() {
       // Notifier l'utilisateur
       toast({
         title: "Diagnostic terminé",
-        description: `Mode recommandé: ${recommendedMode}. Consulter le rapport pour plus de détails.`,
+        description: `Mode recommandé: ${recommendedMode.recommendedMode}. Consulter le rapport pour plus de détails.`,
       });
       
       // Logger le rapport dans la console pour référence

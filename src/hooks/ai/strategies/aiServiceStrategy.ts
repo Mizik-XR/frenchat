@@ -83,7 +83,7 @@ export async function executeAIRequest(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Ajouter l'API key si disponible dans les options
+          // Utiliser l'API key si disponible dans les options
           ...(options.api_key && { 'Authorization': `Bearer ${options.api_key}` })
         },
         body: JSON.stringify({
@@ -113,7 +113,7 @@ export async function executeAIRequest(
       toast({
         title: "Problème avec le service local",
         description: "Basculement automatique vers le service cloud. Vérifiez votre configuration locale.",
-        variant: "warning",
+        variant: "default", // Changé de "warning" à "default" pour correspondre aux types autorisés
       });
       
       // Appel récursif avec stratégie cloud
