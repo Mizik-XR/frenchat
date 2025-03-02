@@ -19,7 +19,7 @@ export default function ConfigRoutes() {
       {/* Pass empty functions and objects as props to satisfy type requirements */}
       <Route path="/google-drive" element={
         <GoogleDriveConfig 
-          config={{}} 
+          config={{ clientId: '', apiKey: '' }} 
           onConfigChange={() => {}} 
           onSave={() => {}}
         />
