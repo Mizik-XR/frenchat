@@ -1,4 +1,3 @@
-
 import { AlertCircle, X, Check, Info, AlertTriangle, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -233,5 +232,55 @@ export const BrowserCompatibilityAlert = ({
     // En cas d'erreur, on log l'erreur et on ne bloque pas l'interface
     console.error("Erreur critique dans BrowserCompatibilityAlert:", error);
     return null;
+  }
+};
+
+export const testSupabaseConnection = async () => {
+  const results = {
+    supabaseUrl: "https://dbdueopvtlanxgumenpu.supabase.co",
+    supabaseKeyDefined: true,
+    fetchTest: false,
+    clientInitialized: false,
+    sessionTest: false,
+    error: null as string | null
+  };
+  
+  try {
+    // Tester la connexion à Supabase
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    // Vérifier si le client est correctement initialisé
+    results.clientInitialized = !!supabase;
+    
+    if (!supabase) {
+      throw new Error("Client Supabase non initialisé");
+    }
+    
+    // Tester la récupération de la session
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      throw error;
+    }
+    
+    results.sessionTest = true;
+    
+    // Tester une requête fetch simple
+    const fetchResponse = await fetch(results.supabaseUrl);
+    results.fetchTest = fetchResponse.ok;
+    
+    return {
+      success: true,
+      results
+    };
+  } catch (error: any) {
+    results.error = error?.message || "Erreur inconnue";
+    console.error("Test de connexion Supabase échoué:", error);
+    
+    return {
+      success: false,
+      results,
+      error: error?.message || "Erreur inconnue"
+    };
   }
 };

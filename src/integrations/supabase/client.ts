@@ -13,10 +13,30 @@ export const SITE_URL = getBaseUrl();
 // Préchargement de la session Supabase
 export const preloadSession = async () => {
   try {
-    await supabase.auth.getSession();
-    console.log("Session Supabase préchargée");
+    console.log("Tentative de préchargement de la session Supabase...");
+    console.log("URL Supabase:", SUPABASE_URL);
+    console.log("Clé Supabase définie:", !!SUPABASE_PUBLISHABLE_KEY);
+    
+    if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+      throw new Error("Configuration Supabase incomplète");
+    }
+    
+    // Vérifier d'abord si le client est défini
+    if (!supabase) {
+      throw new Error("Client Supabase non initialisé");
+    }
+    
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      throw error;
+    }
+    
+    console.log("Session Supabase préchargée avec succès:", data.session ? "Session active" : "Pas de session");
+    return data;
   } catch (error) {
     console.error("Erreur de préchargement de session Supabase:", error);
+    throw error;
   }
 };
 
@@ -74,43 +94,75 @@ export const detectLocalAIService = async () => {
   }
 };
 
-// Création du client avec des options optimisées
-export const supabase = createClient<Database>(
-  SUPABASE_URL, 
-  SUPABASE_PUBLISHABLE_KEY,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-      storageKey: 'supabase.auth.token'
-    },
-    global: {
-      fetch: (...args) => {
-        // Correction de l'opérateur spread pour traiter correctement les arguments typés
-        const request = args[0];
-        const options = args[1] || {};
-        
-        // Ajout conditionnel des options de cache
-        const updatedOptions = {
-          ...options,
-          cache: request.toString().includes('auth/') ? 'no-cache' : 'default'
-        };
-        
-        return fetch(request, updatedOptions);
+// Tester la validation des paramètres Supabase
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  console.error("ERREUR CRITIQUE: Configuration Supabase manquante!");
+  if (typeof window !== 'undefined') {
+    // Afficher une alerte dans la console du navigateur
+    console.error(
+      "%c⚠️ ERREUR DE CONFIGURATION SUPABASE ⚠️",
+      "background: #f44336; color: white; font-size: 16px; padding: 8px;"
+    );
+    console.error(
+      "%cURL Supabase ou clé d'API manquante. Vérifiez votre configuration.",
+      "font-size: 14px;"
+    );
+  }
+}
+
+// Création du client avec des options optimisées et gestion des erreurs
+let supabaseClient: any = null;
+try {
+  // Création du client avec des options optimisées
+  supabaseClient = createClient<Database>(
+    SUPABASE_URL, 
+    SUPABASE_PUBLISHABLE_KEY,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storageKey: 'supabase.auth.token'
+      },
+      global: {
+        fetch: (...args) => {
+          // Correction de l'opérateur spread pour traiter correctement les arguments typés
+          const request = args[0];
+          const options = args[1] || {};
+          
+          // Ajout conditionnel des options de cache
+          const updatedOptions = {
+            ...options,
+            cache: request.toString().includes('auth/') ? 'no-cache' : 'default'
+          };
+          
+          return fetch(request, updatedOptions);
+        }
       }
     }
-  }
-);
+  );
+  console.log("Client Supabase initialisé avec succès");
+} catch (error) {
+  console.error("ERREUR CRITIQUE: Échec d'initialisation du client Supabase:", error);
+  supabaseClient = null;
+}
+
+// Export du client Supabase
+export const supabase = supabaseClient;
 
 // Précharger la session dès que possible si nous sommes dans un navigateur
 if (typeof window !== 'undefined') {
   // Préchargement non-bloquant
-  setTimeout(preloadSession, 0);
+  setTimeout(() => {
+    preloadSession().catch(err => {
+      console.warn("Préchargement de session échoué:", err);
+    });
+  }, 0);
   
   // Détection du service d'IA local au démarrage de l'application
-  setTimeout(detectLocalAIService, 1000);
-  
-  // Réessayer périodiquement la détection du service local (toutes les 30 secondes)
-  setInterval(detectLocalAIService, 30000);
+  setTimeout(() => {
+    detectLocalAIService().catch(err => {
+      console.warn("Détection du service d'IA local échouée:", err);
+    });
+  }, 1000);
 }

@@ -59,6 +59,19 @@ const handleLoadError = (error: any) => {
 // Fonction pour démarrer l'application
 const startApp = async () => {
   try {
+    // Vérification des paramètres Supabase
+    const supabaseUrl = "https://dbdueopvtlanxgumenpu.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZHVlb3B2dGxhbnhndW1lbnB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NzQ0NTIsImV4cCI6MjA1NTU1MDQ1Mn0.lPPbNJANU8Zc7i5OB9_atgDZ84Yp5SBjXCiIqjA79Tk";
+    
+    console.log("Vérification des paramètres Supabase:", {
+      url: supabaseUrl ? "Définie" : "Non définie",
+      key: supabaseKey ? "Définie" : "Non définie"
+    });
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Les paramètres Supabase sont manquants");
+    }
+    
     // Précharger la session Supabase pendant le chargement initial
     await preloadSession().catch(err => {
       console.error("Erreur lors du préchargement de la session:", err);

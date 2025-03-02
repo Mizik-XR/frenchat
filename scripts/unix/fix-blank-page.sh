@@ -10,6 +10,7 @@ echo
 echo "[1] Page blanche après chargement"
 echo "[2] Erreur \"AI edits didn't result in any changes\""
 echo "[3] Problèmes d'édition avec Lovable"
+echo "[4] Erreurs liées à Supabase ou variables d'environnement"
 echo
 echo "==================================================="
 echo
@@ -17,7 +18,7 @@ read -p "Appuyez sur Entrée pour démarrer la réparation..." -n1 -s
 echo
 
 # Nettoyer le dossier dist
-echo "[ÉTAPE 1/4] Nettoyage du dossier dist..."
+echo "[ÉTAPE 1/5] Nettoyage du dossier dist..."
 if [ -d "dist" ]; then
     rm -rf dist
     echo "[OK] Dossier dist supprimé avec succès."
@@ -27,7 +28,7 @@ fi
 echo
 
 # Vérifier et corriger index.html
-echo "[ÉTAPE 2/4] Vérification du fichier index.html..."
+echo "[ÉTAPE 2/5] Vérification du fichier index.html..."
 if [ -f "index.html" ]; then
     echo "[INFO] Vérification de la présence du script gptengineer.js..."
     if ! grep -q "gptengineer.js" "index.html"; then
@@ -36,46 +37,19 @@ if [ -f "index.html" ]; then
         # Sauvegarde du fichier original
         cp index.html index.html.backup
         
-        # Vérifier l'emplacement du script main.tsx et ajouter gptengineer.js avant
-        sed -i '/<script type="module" src="\/src\/main.tsx"><\/script>/i \    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->\n    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>' index.html
+        # Ajouter le script manquant
+        awk '/<script type="module" src="\/src\/main.tsx"><\/script>/{print "    <!-- Script requis pour Lovable fonctionnant comme \"Pick and Edit\" -->\n    <script src=\"https://cdn.gpteng.co/gptengineer.js\" type=\"module\"></script>"}1' index.html > index.html.temp
         
+        mv index.html.temp index.html
         echo "[OK] Script gptengineer.js ajouté dans index.html."
     else
-        echo "[INFO] Vérifions l'ordre des scripts..."
-        
-        # Vérifier si le script gptengineer.js est correctement placé avant main.tsx
-        ENGINEER_LINE=$(grep -n "gptengineer.js" index.html | cut -d':' -f1)
-        MAIN_LINE=$(grep -n "main.tsx" index.html | cut -d':' -f1)
-        
-        if [ -n "$ENGINEER_LINE" ] && [ -n "$MAIN_LINE" ]; then
-            if [ "$ENGINEER_LINE" -gt "$MAIN_LINE" ]; then
-                echo "[ATTENTION] Le script gptengineer.js doit être avant main.tsx, correction..."
-                
-                # Sauvegarde du fichier original
-                cp index.html index.html.backup
-                
-                # Créer un fichier temporaire corrigé
-                awk '
-                    {print}
-                    /main.tsx/ && !printed {
-                        print "    <!-- Script requis pour Lovable fonctionnant comme \"Pick and Edit\" -->";
-                        print "    <script src=\"https://cdn.gpteng.co/gptengineer.js\" type=\"module\"></script>";
-                        printed=1
-                    }
-                ' index.html | grep -v "gptengineer.js" > index.html.temp
-                
-                mv index.html.temp index.html
-                echo "[OK] Ordre des scripts corrigé dans index.html."
-            else
-                echo "[OK] L'ordre des scripts est déjà correct."
-            fi
-        fi
+        echo "[OK] Le script gptengineer.js est déjà présent dans index.html."
     fi
 else
     echo "[ATTENTION] Le fichier index.html est manquant dans le répertoire racine."
     echo "             Création d'un fichier index.html basique..."
     
-    cat > index.html << EOL
+    cat > index.html << EOF
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -92,41 +66,41 @@ else
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-EOL
+EOF
     
     echo "[OK] Fichier index.html créé avec succès."
 fi
 echo
 
-# Vérification du node_modules
-echo "[ÉTAPE 3/4] Vérification des dépendances..."
-if [ ! -d "node_modules" ]; then
-    echo "[ATTENTION] Le dossier node_modules est manquant."
-    echo "[INFO] Installation des dépendances..."
-    npm install
-    if [ $? -ne 0 ]; then
-        echo "[ERREUR] Installation des dépendances échouée."
-        echo "         Essai avec --legacy-peer-deps..."
-        npm install --legacy-peer-deps
-    fi
-else
-    echo "[OK] Le dossier node_modules existe."
-fi
+# Vérification des variables d'environnement
+echo "[ÉTAPE 3/5] Vérification de la configuration Supabase..."
+echo "[INFO] Création d'un fichier .env.local de secours avec configuration Supabase..."
+
+cat > .env.local << EOF
+VITE_SUPABASE_URL=https://dbdueopvtlanxgumenpu.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZHVlb3B2dGxhbnhndW1lbnB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NzQ0NTIsImV4cCI6MjA1NTU1MDQ1Mn0.lPPbNJANU8Zc7i5OB9_atgDZ84Yp5SBjXCiIqjA79Tk
+VITE_API_URL=http://localhost:8000
+VITE_ENVIRONMENT=development
+VITE_SITE_URL=http://localhost:8080
+EOF
+
+echo "[OK] Fichier .env.local créé avec la configuration Supabase."
 echo
 
 # Reconstruction de l'application
-echo "[ÉTAPE 4/4] Reconstruction complète de l'application..."
+echo "[ÉTAPE 4/5] Reconstruction complète de l'application..."
+echo "[INFO] Utilisation de NODE_OPTIONS=--max-old-space-size=4096..."
+export NODE_OPTIONS=--max-old-space-size=4096
 npm run build
 if [ $? -ne 0 ]; then
     echo "[ERREUR] Reconstruction de l'application échouée."
-    echo "         Essai avec NODE_OPTIONS=--max-old-space-size=4096..."
-    export NODE_OPTIONS="--max-old-space-size=4096"
+    echo "         Tentative avec NO_RUST_INSTALL=1..."
+    export NO_RUST_INSTALL=1
     npm run build
     if [ $? -ne 0 ]; then
         echo "[ERREUR] Reconstruction de l'application échouée."
-        echo "          Vérifiez les messages d'erreur ci-dessus."
+        echo "         Veuillez vérifier les erreurs de compilation."
         echo
-        echo "Réparation terminée avec erreurs. Veuillez contacter le support technique."
         read -p "Appuyez sur Entrée pour quitter..." -n1 -s
         exit 1
     fi
@@ -134,33 +108,44 @@ else
     echo "[OK] Application reconstruite avec succès."
 fi
 
-# Vérification finale du fichier dist/index.html
+# Vérification finale et démarrage du serveur
+echo "[ÉTAPE 5/5] Vérification finale et démarrage..."
 if [ -f "dist/index.html" ]; then
-    echo "[INFO] Vérification finale du fichier dist/index.html..."
+    echo "[INFO] Vérification de dist/index.html..."
     if ! grep -q "gptengineer.js" "dist/index.html"; then
-        echo "[ATTENTION] Le script gptengineer.js est absent du fichier dist/index.html."
-        echo "             Cela est probablement dû à une configuration de build incorrecte."
-        echo "             Copie manuelle du fichier index.html vers dist..."
-        
+        echo "[ATTENTION] Le script gptengineer.js est absent de dist/index.html."
+        echo "            Application d'une correction manuelle..."
         cp index.html dist/index.html
-        echo "[OK] Fichier index.html copié manuellement vers dist."
+        echo "[OK] Correction appliquée."
     else
-        echo "[OK] Le fichier dist/index.html contient le script gptengineer.js."
+        echo "[OK] Le fichier dist/index.html contient le script requis."
     fi
+    
+    echo "[INFO] Démarrage du serveur web..."
+    echo "[INFO] Serveur démarré sur http://localhost:8080"
+    if command -v http-server >/dev/null 2>&1; then
+        http-server dist -p 8080 -c-1 --cors
+    else
+        echo "[INFO] Installation de http-server..."
+        npm install -g http-server
+        http-server dist -p 8080 -c-1 --cors
+    fi
+else
+    echo "[ERREUR] Le fichier dist/index.html n'existe pas après la reconstruction."
+    echo "         Veuillez vérifier les erreurs de compilation."
+    echo
+    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+    exit 1
 fi
-echo
 
 echo "==================================================="
-echo "    RÉPARATION TERMINÉE AVEC SUCCÈS"
+echo "           RÉPARATION TERMINÉE"
 echo "==================================================="
 echo
-echo "Veuillez maintenant lancer l'application avec:"
-echo "- Sur Windows: ./start-app.bat"
-echo "- Sur Mac/Linux: ./scripts/unix/start-app-simplified.sh"
-echo
-echo "Si le problème persiste:"
-echo "1. Vérifiez avec ./scripts/unix/diagnostic.sh ou ./scripts/diagnostic.bat"
-echo "2. Essayez le mode compatible: ./start-cloud-mode.bat"
+echo "Si l'application ne s'affiche pas correctement:"
+echo " 1. Essayez de vider le cache de votre navigateur"
+echo " 2. Utilisez le mode incognito"
+echo " 3. Essayez un navigateur différent"
 echo
 read -p "Appuyez sur Entrée pour quitter..." -n1 -s
 exit 0
