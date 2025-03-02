@@ -26,10 +26,12 @@ export const initiateMicrosoftAuth = async (userId: string, tenantId: string): P
   const redirectUri = getMicrosoftRedirectUrl();
   console.log("URL de redirection configurée:", redirectUri);
   
+  // Utilisation de la nouvelle fonction OAuth unifiée avec le paramètre 'provider'
   const { data: authData, error: authError } = await supabase.functions.invoke<{
     client_id: string;
-  }>('microsoft-oauth', {
+  }>('unified-oauth', {
     body: { 
+      provider: 'microsoft',  // Spécifier le fournisseur
       action: 'get_client_id',
       redirectUrl: redirectUri
     }
@@ -74,9 +76,10 @@ export const revokeMicrosoftTeamsAccess = async (userId: string): Promise<boolea
     return false;
   }
 
-  // Appel sécurisé à l'Edge Function pour révoquer le token sans l'exposer côté client
-  const { error: revokeError } = await supabase.functions.invoke('microsoft-oauth', {
+  // Appel sécurisé à l'Edge Function unifiée pour révoquer le token sans l'exposer côté client
+  const { error: revokeError } = await supabase.functions.invoke('unified-oauth', {
     body: { 
+      provider: 'microsoft',  // Spécifier le fournisseur
       action: 'revoke_token',
       userId: userId
     }
@@ -99,8 +102,9 @@ export const checkMicrosoftTokenStatus = async (userId: string): Promise<{isVali
   if (!userId) return { isValid: false };
   
   try {
-    const { data, error } = await supabase.functions.invoke('microsoft-oauth', {
+    const { data, error } = await supabase.functions.invoke('unified-oauth', {
       body: { 
+        provider: 'microsoft',  // Spécifier le fournisseur
         action: 'check_token_status', 
         userId: userId
       }
@@ -127,8 +131,9 @@ export const refreshMicrosoftToken = async (userId: string): Promise<boolean> =>
   if (!userId) return false;
   
   try {
-    const { data: refreshData, error: refreshError } = await supabase.functions.invoke('microsoft-oauth', {
+    const { data: refreshData, error: refreshError } = await supabase.functions.invoke('unified-oauth', {
       body: { 
+        provider: 'microsoft',  // Spécifier le fournisseur
         action: 'refresh_token', 
         userId: userId,
         redirectUrl: getMicrosoftRedirectUrl()

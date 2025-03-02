@@ -80,7 +80,7 @@ export const useGoogleDriveStatus = () => {
           metadata: data.metadata
         });
         
-        // Vérification de la validité du token via l'Edge Function
+        // Vérification de la validité du token via l'Edge Function unifiée
         const { isValid, expiresIn } = await checkGoogleTokenStatus(user.id);
         
         if (!isValid) {

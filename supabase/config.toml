@@ -2,26 +2,36 @@
 # Config for function deployment
 project_id = "dbdueopvtlanxgumenpu"
 
-[functions.google-oauth]
+# Fonction OAuth unifiée qui remplace google-oauth et microsoft-oauth
+[functions.unified-oauth]
 verify_jwt = false
 
-[functions.microsoft-oauth]
-verify_jwt = false
-
+# Fonction d'API proxy sécurisée
 [functions.secure-api-proxy]
 verify_jwt = false
 
+# Fonction d'indexation Google Drive
 [functions.index-google-drive]
 verify_jwt = false
 
+# Fonction d'indexation par lots Google Drive
 [functions.batch-index-google-drive]
 verify_jwt = false
 
+# Fonction de résumé de test
 [functions.test-summary]
 verify_jwt = false
 
+# Fonction RAG avancée
 [functions.advanced-rag-generation]
 verify_jwt = false
+
+# Fonctions commentées pour rester dans la limite de 10 fonctions
+# [functions.google-oauth]
+# verify_jwt = false
+
+# [functions.microsoft-oauth]
+# verify_jwt = false
 
 # [functions.generate-system-report]
 # verify_jwt = false
@@ -29,6 +39,5 @@ verify_jwt = false
 # [functions.export-to-google-drive]
 # verify_jwt = false
 
-# Commented out to avoid exceeding function limits
 # [functions.cache-manager]
 # verify_jwt = false
