@@ -11,6 +11,7 @@ echo "[1] Page blanche après chargement"
 echo "[2] Erreur \"AI edits didn't result in any changes\""
 echo "[3] Problèmes d'édition avec Lovable"
 echo "[4] Erreurs liées à Supabase ou variables d'environnement"
+echo "[5] Erreurs de typage TypeScript"
 echo
 echo "==================================================="
 echo
@@ -18,7 +19,7 @@ read -p "Appuyez sur Entrée pour démarrer la réparation..." -n1 -s
 echo
 
 # Nettoyer le dossier dist
-echo "[ÉTAPE 1/5] Nettoyage du dossier dist..."
+echo "[ÉTAPE 1/6] Nettoyage du dossier dist..."
 if [ -d "dist" ]; then
     rm -rf dist
     echo "[OK] Dossier dist supprimé avec succès."
@@ -28,7 +29,7 @@ fi
 echo
 
 # Vérifier et corriger index.html
-echo "[ÉTAPE 2/5] Vérification du fichier index.html..."
+echo "[ÉTAPE 2/6] Vérification du fichier index.html..."
 if [ -f "index.html" ]; then
     echo "[INFO] Vérification de la présence du script gptengineer.js..."
     if ! grep -q "gptengineer.js" "index.html"; then
@@ -73,7 +74,7 @@ fi
 echo
 
 # Vérification des variables d'environnement
-echo "[ÉTAPE 3/5] Vérification de la configuration Supabase..."
+echo "[ÉTAPE 3/6] Vérification de la configuration Supabase..."
 echo "[INFO] Création d'un fichier .env.local de secours avec configuration Supabase..."
 
 cat > .env.local << EOF
@@ -87,8 +88,26 @@ EOF
 echo "[OK] Fichier .env.local créé avec la configuration Supabase."
 echo
 
+# Vérification des erreurs de typage
+echo "[ÉTAPE 4/6] Vérification des erreurs TypeScript..."
+echo "[INFO] Exécution du vérificateur de types..."
+
+# Vérifier si tsc est disponible
+if command -v npx >/dev/null 2>&1; then
+    npx tsc --noEmit
+    if [ $? -ne 0 ]; then
+        echo "[ATTENTION] Des erreurs de typage TypeScript ont été détectées."
+        echo "            Ces erreurs peuvent être ignorées pour la compilation mais pourraient causer des problèmes."
+    else
+        echo "[OK] Aucune erreur de typage TypeScript détectée."
+    fi
+else
+    echo "[INFO] TypeScript n'est pas disponible, étape ignorée."
+fi
+echo
+
 # Reconstruction de l'application
-echo "[ÉTAPE 4/5] Reconstruction complète de l'application..."
+echo "[ÉTAPE 5/6] Reconstruction complète de l'application..."
 echo "[INFO] Utilisation de NODE_OPTIONS=--max-old-space-size=4096..."
 export NODE_OPTIONS=--max-old-space-size=4096
 npm run build
@@ -109,7 +128,7 @@ else
 fi
 
 # Vérification finale et démarrage du serveur
-echo "[ÉTAPE 5/5] Vérification finale et démarrage..."
+echo "[ÉTAPE 6/6] Vérification finale et démarrage..."
 if [ -f "dist/index.html" ]; then
     echo "[INFO] Vérification de dist/index.html..."
     if ! grep -q "gptengineer.js" "dist/index.html"; then

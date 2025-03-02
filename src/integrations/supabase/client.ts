@@ -150,6 +150,17 @@ try {
 // Export du client Supabase
 export const supabase = supabaseClient;
 
+// Type helper pour les retours des Edge Functions
+export type EdgeFunctionResponse<T> = {
+  data: T;
+  error: null;
+} | {
+  data: null;
+  error: {
+    message: string;
+  };
+};
+
 // Précharger la session dès que possible si nous sommes dans un navigateur
 if (typeof window !== 'undefined') {
   // Préchargement non-bloquant

@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, EdgeFunctionResponse } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { getRedirectUrl } from '@/utils/environmentUtils';
 import { generateOAuthState, validateOAuthState } from '@/utils/oauthStateManager';
@@ -25,15 +25,15 @@ export const initiateGoogleDriveAuth = async (userId: string): Promise<string> =
   const redirectUri = getGoogleRedirectUrl();
   console.log("URL de redirection configurée:", redirectUri);
   
-  const { data: authData, error: authError } = await supabase.functions.invoke<{
-    client_id: string;
-  }>('unified-oauth-proxy', {
+  type ClientIdResponse = { client_id: string };
+  
+  const { data: authData, error: authError } = await supabase.functions.invoke('unified-oauth-proxy', {
     body: { 
       provider: 'google',
       action: 'get_client_id',
       redirectUrl: redirectUri
     }
-  });
+  }) as EdgeFunctionResponse<ClientIdResponse>;
 
   if (authError || !authData?.client_id) {
     throw new Error("Impossible de récupérer les informations d'authentification");
@@ -136,13 +136,15 @@ export const checkGoogleDriveTokenStatus = async (userId: string): Promise<{isVa
   if (!userId) return { isValid: false };
   
   try {
+    type TokenStatusResponse = {isValid: boolean, expiresIn?: number};
+    
     const { data, error } = await supabase.functions.invoke('unified-oauth-proxy', {
       body: { 
         provider: 'google',
         action: 'check_token_status', 
         userId: userId
       }
-    });
+    }) as EdgeFunctionResponse<TokenStatusResponse>;
     
     if (error) {
       console.error("Erreur lors de la vérification du token:", error);
@@ -165,6 +167,8 @@ export const refreshGoogleDriveToken = async (userId: string): Promise<boolean> 
   if (!userId) return false;
   
   try {
+    type RefreshResponse = {success: boolean};
+    
     const { data: refreshData, error: refreshError } = await supabase.functions.invoke('unified-oauth-proxy', {
       body: { 
         provider: 'google',
@@ -172,7 +176,7 @@ export const refreshGoogleDriveToken = async (userId: string): Promise<boolean> 
         userId: userId,
         redirectUrl: getGoogleRedirectUrl()
       }
-    });
+    }) as EdgeFunctionResponse<RefreshResponse>;
     
     if (refreshError || !refreshData?.success) {
       console.error("Erreur lors du rafraîchissement du token:", refreshError || "Token non rafraîchi");
