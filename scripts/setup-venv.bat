@@ -32,8 +32,19 @@ if "%NO_RUST_INSTALL%"=="1" (
     pip install --no-cache-dir fastapi uvicorn pydantic tokenizers transformers
     echo Utilisation de modèles inférences via API - pas besoin de bitsandbytes
 ) else (
-    echo Installation complète des dépendances...
-    pip install --no-cache-dir -r requirements.txt
+    REM Vérifier si Rust/Cargo est installé
+    where rustc >nul 2>nul
+    where cargo >nul 2>nul
+    if %ERRORLEVEL% NEQ 0 (
+        echo Rust/Cargo n'est pas installé ou n'est pas dans le PATH.
+        echo Installation en mode léger, sans dépendances nécessitant Rust...
+        set NO_RUST_INSTALL=1
+        pip install --no-cache-dir fastapi uvicorn pydantic tokenizers transformers
+        echo Utilisation de modèles inférences via API - pas besoin de bitsandbytes
+    ) else (
+        echo Installation complète des dépendances avec Rust...
+        pip install --no-cache-dir -r requirements.txt
+    )
 )
 
 echo ================================

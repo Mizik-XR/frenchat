@@ -31,9 +31,17 @@ Si vous rencontrez des problèmes lors de l'installation de FileChat, voici quel
 - Problèmes avec l'installation de `tokenizers` ou `bitsandbytes`
 
 ### Solution
-1. Installation manuelle de Rust:
-   - Windows: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh` dans PowerShell
-   - Linux/Mac: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+1. Installation manuelle de Rust (méthode automatique):
+   - Windows: 
+     ```
+     curl -O https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
+     rustup-init.exe -y
+     ```
+   - Linux/Mac: 
+     ```
+     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+     source "$HOME/.cargo/env"
+     ```
 
 2. Après l'installation, redémarrez votre terminal et vérifiez:
    ```
@@ -45,6 +53,12 @@ Si vous rencontrez des problèmes lors de l'installation de FileChat, voici quel
    ```
    pip install -r requirements.txt
    ```
+
+4. Alternative sans Rust (mode léger):
+   - Définissez la variable d'environnement `NO_RUST_INSTALL=1`
+   - Relancez le script d'installation:
+     - Windows: `set NO_RUST_INSTALL=1 && scripts\setup-venv.bat`
+     - Linux/Mac: `NO_RUST_INSTALL=1 bash scripts/unix/setup-venv.sh`
 
 ## Problème 3: Mémoire insuffisante lors du chargement des modèles
 
@@ -67,6 +81,19 @@ Si vous rencontrez des problèmes lors de l'installation de FileChat, voici quel
        device_map="auto"
    )
    ```
+
+## Problème 4: Utilisation alternative avec Ollama
+
+Si vous rencontrez des difficultés avec l'installation complète, vous pouvez utiliser Ollama comme alternative:
+
+1. Téléchargez et installez Ollama depuis [https://ollama.ai/download](https://ollama.ai/download)
+2. Exécutez Ollama et téléchargez un modèle adapté:
+   ```
+   ollama pull llama2
+   ```
+3. Lancez FileChat en mode cloud uniquement:
+   - Windows: `start-cloud-mode.bat`
+   - Linux/Mac: `MODE_CLOUD=1 bash scripts/unix/start-app-simplified.sh`
 
 ## Besoin d'aide supplémentaire?
 Si les problèmes persistent, lancez l'outil de diagnostic et partagez les résultats pour obtenir une assistance plus précise.
