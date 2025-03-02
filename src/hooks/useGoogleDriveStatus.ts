@@ -5,16 +5,16 @@ import { useAuth } from "@/components/AuthProvider";
 import { toast } from "@/hooks/use-toast";
 import { 
   getGoogleRedirectUrl, 
-  initiateGoogleAuth, 
+  initiateGoogleDriveAuth, 
   revokeGoogleDriveAccess,
-  refreshGoogleToken,
-  checkGoogleTokenStatus
+  refreshGoogleDriveToken,
+  checkGoogleDriveTokenStatus
 } from '@/utils/googleDriveUtils';
 
 // Export these functions for backward compatibility
 export { 
   getGoogleRedirectUrl,
-  initiateGoogleAuth, 
+  initiateGoogleDriveAuth, 
   revokeGoogleDriveAccess 
 } from '@/utils/googleDriveUtils';
 
@@ -81,19 +81,19 @@ export const useGoogleDriveStatus = () => {
         });
         
         // Vérification de la validité du token via l'Edge Function
-        const { isValid, expiresIn } = await checkGoogleTokenStatus(user.id);
+        const { isValid, expiresIn } = await checkGoogleDriveTokenStatus(user.id);
         
         if (!isValid) {
           console.log("Le token est expiré, tentative de rafraîchissement...");
           
           // Tentative de rafraîchissement du token
-          const refreshed = await refreshGoogleToken(user.id);
+          const refreshed = await refreshGoogleDriveToken(user.id);
           setIsConnected(refreshed);
         } else {
           // Si le token est valide mais proche de l'expiration, le rafraîchir préventivement
           if (expiresIn !== undefined && expiresIn < REFRESH_THRESHOLD_SECONDS) {
             console.log(`Token valide mais expire bientôt (${expiresIn}s), rafraîchissement préventif...`);
-            await refreshGoogleToken(user.id);
+            await refreshGoogleDriveToken(user.id);
           }
           
           setIsConnected(true);
@@ -138,7 +138,7 @@ export const useGoogleDriveStatus = () => {
         description: "Vous allez être redirigé vers Google pour autoriser l'accès",
       });
       
-      const authUrl = await initiateGoogleAuth(user.id);
+      const authUrl = await initiateGoogleDriveAuth(user.id);
       
       // Rediriger après un court délai pour que l'utilisateur voie la notification
       setTimeout(() => {
