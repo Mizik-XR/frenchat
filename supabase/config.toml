@@ -26,7 +26,7 @@ verify_jwt = false
 [functions.advanced-rag-generation]
 verify_jwt = false
 
-# Fonction de gestionnaire de cache (ajout récent)
+# Fonction de gestionnaire de cache
 [functions.cache-manager]
 verify_jwt = false
 
@@ -41,7 +41,4 @@ verify_jwt = false
 # verify_jwt = false
 
 # [functions.export-to-google-drive]
-# verify_jwt = false
-
-# [functions.cache-manager]
 # verify_jwt = false
