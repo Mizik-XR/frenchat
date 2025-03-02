@@ -15,6 +15,7 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
     supabase: true,
   });
   const [isCheckingServices, setIsCheckingServices] = useState(true);
+  const [checkAttempted, setCheckAttempted] = useState(false);
 
   useEffect(() => {
     // Détection de l'environnement de prévisualisation (Lovable, Netlify, etc.)
@@ -27,19 +28,27 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
 
     setIsPreviewEnvironment(isPreview);
 
-    // Si nous sommes dans un environnement de prévisualisation, vérifier les services
+    // Dans un environnement de prévisualisation, la vérification est optionnelle
+    // et ne doit pas bloquer le chargement de l'application
+    if (isPreview && hostname !== 'localhost') {
+      setIsCheckingServices(false);
+      return;
+    }
+
+    // Pour localhost, nous vérifions de façon non-bloquante
     if (isPreview) {
-      checkServices();
+      setTimeout(() => {
+        checkServices();
+      }, 1000); // Légèrement différé pour permettre le chargement initial
     }
   }, []);
 
   const checkServices = async () => {
     setIsCheckingServices(true);
     
-    // Vérification du service d'IA local
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const timeoutId = setTimeout(() => controller.abort(), 1500); // Timeout plus court
       
       const response = await fetch("http://localhost:8000/health", { 
         signal: controller.signal 
@@ -51,21 +60,24 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
       console.log("Service IA local non disponible:", error);
       setServices(prev => ({ ...prev, localAI: false }));
       
-      // Afficher l'alerte uniquement si nous sommes sur localhost
-      if (window.location.hostname === 'localhost') {
+      // Afficher l'alerte uniquement si nous sommes sur localhost et après connexion
+      if (window.location.hostname === 'localhost' && 
+          window.location.pathname !== '/' && 
+          window.location.pathname !== '/auth') {
         setShowAlert(true);
       }
+    } finally {
+      setIsCheckingServices(false);
+      setCheckAttempted(true);
     }
-    
-    setIsCheckingServices(false);
   };
 
-  // Dans un environnement de prévisualisation sans accès au service IA local,
-  // nous voulons toujours afficher l'interface normalement
-  if (isPreviewEnvironment && !services.localAI && !window.location.hostname.includes('localhost')) {
+  // Ne jamais bloquer le rendu initial de l'application
+  if (!checkAttempted || isPreviewEnvironment) {
     return <>{children}</>;
   }
 
+  // Afficher l'alerte seulement si explicitement demandé et sur localhost
   if (showAlert && window.location.hostname === 'localhost') {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">

@@ -2,76 +2,120 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { LogoImage } from "@/components/common/LogoImage";
-import { ArrowRight } from "lucide-react";
+import { LogoImage } from "../common/LogoImage";
+import { ArrowRight, Download, Server } from "lucide-react";
 
-export const WelcomePage = () => {
+export const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
 
+  const handleGetStarted = () => {
+    navigate("/auth");
+  };
+
+  const handleLearnMore = () => {
+    navigate("/home");
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 p-4">
-      <Card className="w-full max-w-md border-purple-200 shadow-xl overflow-hidden animate-fade-in">
-        <CardContent className="p-8">
-          <div className="flex flex-col items-center text-center space-y-6">
-            <div className="flex flex-col items-center gap-4">
-              <LogoImage className="h-24 w-24" />
-              <h1 className="text-4xl font-bold text-purple-900 tracking-tight">
-                Frenchat
-              </h1>
-            </div>
-            
-            <p className="text-lg text-purple-700">
-              La seule application qui indexe l'intégralité de vos documents en un clic
-            </p>
-            
-            <div className="bg-purple-100 rounded-lg p-4 text-sm text-purple-800 leading-relaxed">
-              <p className="font-medium mb-2">
-                Contrairement à d'autres solutions, Frenchat est unique :
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col justify-center items-center p-4">
+      <div className="max-w-4xl w-full px-4 py-8 md:py-12 space-y-8">
+        <div className="text-center space-y-2">
+          <div className="flex justify-center">
+            <LogoImage className="w-16 h-16 md:w-24 md:h-24" />
+          </div>
+          <h1 className="mt-4 text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            Frenchat
+          </h1>
+          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+            Votre assistant d'intelligence documentaire qui facilite l'accès à vos documents et les rend conversationnels.
+          </p>
+        </div>
+
+        <div className="bg-white/70 backdrop-blur-sm rounded-xl shadow-lg p-6 md:p-8">
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <h2 className="text-2xl font-semibold text-gray-800">Commencez à utiliser Frenchat</h2>
+              <p className="text-gray-600">
+                Pour exploiter pleinement les capacités de Frenchat, créez un compte pour configurer 
+                vos sources documentaires et commencer à discuter avec vos documents.
               </p>
-              <p className="mb-2">
-                Frenchat indexe automatiquement tous vos documents depuis Google Drive 
-                et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre 
-                base documentaire sans sélection manuelle préalable.
-              </p>
-              <p className="font-medium text-purple-900">
-                100% local et open source : vos données restent privées et sous votre contrôle
-              </p>
-            </div>
-            
-            <div className="w-full pt-4">
-              <Button 
-                onClick={() => navigate("/auth")}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-6"
-              >
-                Commencer
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
               
-              <div className="mt-4 flex justify-center">
-                <span className="text-sm text-gray-500">Vous avez déjà un compte ?</span>
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button 
-                  variant="link" 
-                  className="text-purple-600 font-medium p-0 h-auto ml-1"
-                  onClick={() => navigate("/auth", { state: { tab: "signin" } })}
+                  onClick={handleGetStarted} 
+                  size="lg"
+                  className="gap-2"
                 >
-                  Se connecter
+                  Créer un compte <ArrowRight className="h-4 w-4" />
+                </Button>
+                <Button 
+                  onClick={handleLearnMore} 
+                  variant="outline" 
+                  size="lg"
+                >
+                  En savoir plus
                 </Button>
               </div>
-              
-              <div className="mt-2 flex justify-center">
-                <Button 
-                  variant="link" 
-                  className="text-purple-600 font-medium h-auto"
-                  onClick={() => navigate("/auth", { state: { tab: "signup" } })}
-                >
-                  Créez un compte
-                </Button>
-              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-800">Fonctionnalités principales :</h3>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-2">
+                  <div className="bg-blue-100 text-blue-700 p-1 rounded-full mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-gray-700">Indexation et analyse de documents à partir de Google Drive et Microsoft Teams</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="bg-purple-100 text-purple-700 p-1 rounded-full mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-gray-700">Chat conversationnel avec vos documents pour obtenir des réponses précises</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="bg-green-100 text-green-700 p-1 rounded-full mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-gray-700">Génération de documents structurés et export vers Google Drive/Teams</span>
+                </li>
+              </ul>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white/70 backdrop-blur-sm rounded-lg p-4 shadow-md transition hover:shadow-lg">
+            <div className="flex items-center gap-3 mb-2">
+              <Server className="h-5 w-5 text-orange-500" />
+              <h3 className="font-medium">IA locale disponible</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">
+              Frenchat fonctionne également en mode local avec Ollama pour une confidentialité totale de vos données.
+            </p>
+          </div>
+
+          <div className="bg-white/70 backdrop-blur-sm rounded-lg p-4 shadow-md transition hover:shadow-lg">
+            <div className="flex items-center gap-3 mb-2">
+              <Download className="h-5 w-5 text-purple-500" />
+              <h3 className="font-medium">Installation facile</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">
+              L'installation est guidée et automatisée pour vous permettre de commencer rapidement.
+            </p>
+          </div>
+        </div>
+
+        <div className="text-center text-sm text-gray-500">
+          <p>Frenchat - Version {import.meta.env.VITE_LOVABLE_VERSION || '1.0.0'}</p>
+        </div>
+      </div>
     </div>
   );
 };

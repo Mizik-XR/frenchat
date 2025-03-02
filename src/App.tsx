@@ -7,7 +7,7 @@ import { OnboardingIntro } from "./components/onboarding/OnboardingIntro";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { WelcomePage } from "./components/onboarding/WelcomePage";
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { DebugPanel } from "./components/DebugPanel";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
 import { EnvironmentDetection } from "@/components/debug/EnvironmentDetection";
@@ -38,13 +38,33 @@ const preloadImportantPages = () => {
   );
 };
 
+// Paramètres de la requête URL
+const getUrlParams = () => {
+  if (typeof window === 'undefined') return {};
+  const params = new URLSearchParams(window.location.search);
+  return {
+    client: params.get('client') === 'true',
+    hideDebug: params.get('hideDebug') === 'true'
+  };
+};
+
 function AppWithAuth() {
+  const [appLoaded, setAppLoaded] = useState(false);
+  const urlParams = getUrlParams();
+  
   useEffect(() => {
+    // Marquer l'application comme chargée après le premier rendu
+    setAppLoaded(true);
+    
     // Précharger les pages principales après le montage initial
     window.requestIdleCallback 
       ? window.requestIdleCallback(preloadImportantPages) 
       : setTimeout(preloadImportantPages, 200);
   }, []);
+
+  if (!appLoaded) {
+    return <LoadingScreen message="Initialisation de Frenchat" />;
+  }
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="ui-theme">
@@ -79,7 +99,7 @@ function AppWithAuth() {
           </Routes>
         </Suspense>
         <Toaster />
-        <DebugPanel />
+        {!urlParams.hideDebug && <DebugPanel />}
       </AuthProvider>
     </ThemeProvider>
   );
