@@ -25,12 +25,10 @@ export const initiateGoogleAuth = async (userId: string): Promise<string> => {
   const redirectUri = getGoogleRedirectUrl();
   console.log("URL de redirection configurée:", redirectUri);
   
-  // Utilisation de la nouvelle fonction OAuth unifiée avec le paramètre 'provider'
   const { data: authData, error: authError } = await supabase.functions.invoke<{
     client_id: string;
-  }>('unified-oauth', {
+  }>('google-oauth', {
     body: { 
-      provider: 'google',  // Spécifier le fournisseur
       action: 'get_client_id',
       redirectUrl: redirectUri
     }
@@ -75,10 +73,9 @@ export const revokeGoogleDriveAccess = async (userId: string): Promise<boolean> 
     return false;
   }
 
-  // Appel sécurisé à l'Edge Function unifiée pour révoquer le token sans l'exposer côté client
-  const { error: revokeError } = await supabase.functions.invoke('unified-oauth', {
+  // Appel sécurisé à l'Edge Function pour révoquer le token sans l'exposer côté client
+  const { error: revokeError } = await supabase.functions.invoke('google-oauth', {
     body: { 
-      provider: 'google',  // Spécifier le fournisseur
       action: 'revoke_token',
       userId: userId
     }
@@ -101,9 +98,8 @@ export const checkGoogleTokenStatus = async (userId: string): Promise<{isValid: 
   if (!userId) return { isValid: false };
   
   try {
-    const { data, error } = await supabase.functions.invoke('unified-oauth', {
+    const { data, error } = await supabase.functions.invoke('google-oauth', {
       body: { 
-        provider: 'google',  // Spécifier le fournisseur
         action: 'check_token_status', 
         userId: userId
       }
@@ -130,9 +126,8 @@ export const refreshGoogleToken = async (userId: string): Promise<boolean> => {
   if (!userId) return false;
   
   try {
-    const { data: refreshData, error: refreshError } = await supabase.functions.invoke('unified-oauth', {
+    const { data: refreshData, error: refreshError } = await supabase.functions.invoke('google-oauth', {
       body: { 
-        provider: 'google',  // Spécifier le fournisseur
         action: 'refresh_token', 
         userId: userId,
         redirectUrl: getGoogleRedirectUrl()

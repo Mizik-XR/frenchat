@@ -14,36 +14,13 @@
   to = "/index.html"
   status = 200
 
-# Redirection API pour les fonctions Edge
+# Redirection API pour le développement local (utile pour les tests)
 [[redirects]]
-  from = "/api/oauth/*"
-  to = "https://dbdueopvtlanxgumenpu.supabase.co/functions/v1/unified-oauth"
+  from = "/api/*"
+  to = "http://localhost:8000/:splat"
   status = 200
-  force = true
-
-[[redirects]]
-  from = "/api/drive/*"
-  to = "https://dbdueopvtlanxgumenpu.supabase.co/functions/v1/index-google-drive"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/api/batch-drive/*"
-  to = "https://dbdueopvtlanxgumenpu.supabase.co/functions/v1/batch-index-google-drive"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/api/secure-proxy/*"
-  to = "https://dbdueopvtlanxgumenpu.supabase.co/functions/v1/secure-api-proxy"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/api/rag/*"
-  to = "https://dbdueopvtlanxgumenpu.supabase.co/functions/v1/advanced-rag-generation"
-  status = 200
-  force = true
+  force = false
+  conditions = {Role = ["admin"]}
 
 # En-têtes pour améliorer la sécurité
 [[headers]]

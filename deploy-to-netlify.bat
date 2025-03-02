@@ -15,8 +15,7 @@ echo d'être connecté à votre compte Netlify.
 echo.
 echo Étapes:
 echo 1. Préparation du build pour déploiement
-echo 2. Configuration des variables d'environnement Netlify
-echo 3. Déploiement vers Netlify
+echo 2. Déploiement vers Netlify
 echo.
 echo ===================================================
 echo.
@@ -67,23 +66,9 @@ if %ERRORLEVEL% NEQ 0 (
 echo [OK] Connecté à Netlify.
 echo.
 
-REM Configuration des variables d'environnement
-echo [INFO] Configuration des variables d'environnement...
-set /p SUPABASE_URL="Entrez l'URL Supabase (https://dbdueopvtlanxgumenpu.supabase.co): "
-if "!SUPABASE_URL!"=="" set SUPABASE_URL=https://dbdueopvtlanxgumenpu.supabase.co
-
-set /p SUPABASE_KEY="Entrez la clé anonyme Supabase: "
-if "!SUPABASE_KEY!"=="" (
-    echo [ERREUR] La clé Supabase est requise.
-    echo.
-    echo Appuyez sur une touche pour quitter...
-    pause >nul
-    exit /b 1
-)
-
 REM Déployer vers Netlify
 echo [ÉTAPE 3/3] Déploiement vers Netlify...
-netlify deploy --prod --dir=dist --env.VITE_SUPABASE_URL=!SUPABASE_URL! --env.VITE_SUPABASE_ANON_KEY=!SUPABASE_KEY!
+netlify deploy --prod --dir=dist
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] Le déploiement a échoué.
     echo.
@@ -98,10 +83,13 @@ echo ===================================================
 echo     DÉPLOIEMENT TERMINÉ
 echo ===================================================
 echo.
-echo N'oubliez pas de vérifier les variables d'environnement
+echo N'oubliez pas de configurer les variables d'environnement
 echo dans l'interface Netlify pour les fonctionnalités avancées.
 echo.
-echo Pour continuer à configurer votre site, allez sur le tableau de bord Netlify.
+echo Variables à configurer:
+echo - VITE_SUPABASE_URL: URL de votre projet Supabase
+echo - VITE_SUPABASE_ANON_KEY: Clé anonyme de votre projet Supabase
+echo - VITE_CLOUD_API_URL: URL de l'API cloud (optionnel)
 echo.
 echo ===================================================
 pause

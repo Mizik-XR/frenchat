@@ -20,7 +20,6 @@ set "CLIENT_MODE=1"
 set "HIDE_DEBUG=1"
 set "VITE_DISABLE_DEV_MODE=1"
 set "VITE_DEBUG_AUTH_KEY=disabled-%random%%random%"
-set "VITE_ENVIRONMENT=production"
 
 REM Vérification du dossier dist
 echo [INFO] Vérification des fichiers de l'application...
@@ -112,7 +111,7 @@ echo          MODE CLOUD UNIQUEMENT
 echo ===================================================
 echo.
 echo L'application utilise l'IA en mode cloud uniquement.
-echo Toutes les fonctions Edge sont hébergées sur Supabase.
+echo Aucune installation locale n'est nécessaire.
 echo.
 echo Cette fenêtre peut être minimisée. Ne la fermez pas tant que
 echo vous utilisez FileChat.
