@@ -43,7 +43,7 @@ export function LocalAIConfig({
   useEffect(() => {
     // Vérifier si le service local est disponible au chargement
     const checkService = async () => {
-      const isAvailable = await checkLocalService();
+      const isAvailable = await checkLocalService(localAIUrl || '');
       setServiceAvailable(isAvailable);
     };
     
@@ -52,7 +52,7 @@ export function LocalAIConfig({
     // Vérifier le service toutes les 30 secondes
     const interval = setInterval(checkService, 30000);
     return () => clearInterval(interval);
-  }, [checkLocalService]);
+  }, [checkLocalService, localAIUrl]);
 
   const handleLocalPathChange = (path: string) => {
     setLocalModelPath(path);

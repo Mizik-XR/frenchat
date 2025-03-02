@@ -8,8 +8,10 @@ export async function estimateSystemCapabilities(): Promise<{
   gpuAvailable: boolean;
   recommendLocalExecution: boolean;
 }> {
-  // Vérification de mémoire
-  const memoryScore = navigator.deviceMemory ? Math.min(navigator.deviceMemory / 4, 1) : 0.5;
+  // Vérification de mémoire avec typesafe check
+  // @ts-ignore - La propriété deviceMemory peut ne pas être reconnue par TypeScript
+  const deviceMemory = navigator.deviceMemory as number | undefined;
+  const memoryScore = deviceMemory ? Math.min(deviceMemory / 4, 1) : 0.5;
   
   // Estimation basique du CPU
   let cpuScore = 0.5;

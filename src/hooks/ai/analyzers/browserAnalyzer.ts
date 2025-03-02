@@ -18,9 +18,12 @@ export function detectBrowser(): string {
  * Détermine le type de connexion (si disponible)
  */
 export function getNetworkType(): string {
-  if (navigator.connection) {
-    // @ts-ignore - La propriété effectiveType peut ne pas être reconnue par TypeScript
-    return navigator.connection.effectiveType || 'unknown';
+  // Vérification de l'API de connexion avec un type sécurisé
+  // @ts-ignore - Ignorer car la propriété connection n'est pas reconnue par TypeScript mais peut exister dans certains navigateurs
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (connection) {
+    // @ts-ignore - Pour gérer les navigateurs supportant l'API NetworkInformation
+    return connection.effectiveType || 'unknown';
   }
   return 'unknown';
 }
