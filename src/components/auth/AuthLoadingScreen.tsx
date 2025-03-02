@@ -74,7 +74,7 @@ export const AuthLoadingScreen: React.FC<AuthLoadingScreenProps> = ({
       </div>
       
       <p className="text-sm text-gray-500 mt-4">
-        FileChat - Votre assistant d'intelligence documentaire
+        Alone Must - Votre assistant d'intelligence documentaire
       </p>
     </div>
   );

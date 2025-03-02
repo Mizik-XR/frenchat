@@ -33,10 +33,10 @@ export const ChatHeader = ({
         <div className="flex items-center gap-2">
           <img 
             src="/filechat-animation.gif" 
-            alt="FileChat Logo" 
+            alt="Alone Must Logo" 
             className="h-6 w-6"
           />
-          <h2 className="text-lg font-semibold text-gray-900">FileChat</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Alone Must</h2>
         </div>
 
         <div className="flex items-center gap-2">
