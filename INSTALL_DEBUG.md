@@ -29,9 +29,14 @@ Si vous rencontrez des problèmes lors de l'installation de FileChat, voici quel
 ### Symptômes
 - Erreur: "Cargo, the Rust package manager, is not installed or is not on PATH"
 - Problèmes avec l'installation de `tokenizers` ou `bitsandbytes`
+- Messages "error: subprocess-exited-with-error" lors de l'installation des packages Python
 
 ### Solution
-1. Installation manuelle de Rust (méthode automatique):
+1. Méthode automatique (recommandée):
+   - Réexécutez simplement le script `setup-venv.bat` qui tentera d'installer Rust automatiquement
+   - Ou exécutez `scripts\prepare-deployment.bat` qui inclut cette fonctionnalité
+
+2. Installation manuelle de Rust:
    - Windows: 
      ```
      curl -O https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
@@ -43,15 +48,10 @@ Si vous rencontrez des problèmes lors de l'installation de FileChat, voici quel
      source "$HOME/.cargo/env"
      ```
 
-2. Après l'installation, redémarrez votre terminal et vérifiez:
+3. Après l'installation, redémarrez votre terminal et vérifiez:
    ```
    rustc --version
    cargo --version
-   ```
-
-3. Réinstallez les dépendances:
-   ```
-   pip install -r requirements.txt
    ```
 
 4. Alternative sans Rust (mode léger):
@@ -95,5 +95,31 @@ Si vous rencontrez des difficultés avec l'installation complète, vous pouvez u
    - Windows: `start-cloud-mode.bat`
    - Linux/Mac: `MODE_CLOUD=1 bash scripts/unix/start-app-simplified.sh`
 
+## Problème 5: Échec de compilation des packages Python
+
+### Symptômes
+- Erreurs lors de la compilation des packages Python
+- Messages d'erreur "error: subprocess-exited-with-error"
+- Messages indiquant que des outils de développement sont manquants
+
+### Solution pour Windows
+1. Installez les Visual C++ Build Tools:
+   - Téléchargez et installez [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+   - Lors de l'installation, sélectionnez "Développement Desktop en C++"
+
+2. Réinstallez les packages Python:
+   ```
+   pip install -r requirements.txt
+   ```
+
+3. Si les problèmes persistent, utilisez le mode léger:
+   ```
+   set NO_RUST_INSTALL=1
+   scripts\setup-venv.bat
+   ```
+
 ## Besoin d'aide supplémentaire?
 Si les problèmes persistent, lancez l'outil de diagnostic et partagez les résultats pour obtenir une assistance plus précise.
+```
+scripts\diagnostic.bat
+```

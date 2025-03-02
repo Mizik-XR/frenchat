@@ -4,8 +4,6 @@ echo ================================
 echo Installation Python et environnement IA
 echo ================================
 
-set NO_RUST_INSTALL=1
-
 REM Vérification de Python
 where python >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
@@ -36,12 +34,24 @@ if "%INSTALL_MODE%"=="2" (
     where rustc >nul 2>nul
     if %ERRORLEVEL% NEQ 0 (
         echo Installation de Rust...
-        powershell -Command "iwr -useb https://sh.rustup.rs | iex" -ArgumentList "-y"
+        curl -O https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
+        rustup-init.exe -y
         echo Ajout de Rust au PATH...
         set PATH=%PATH%;%USERPROFILE%\.cargo\bin
         echo Rust installé avec succès
         echo Redémarrage du shell pour mettre à jour PATH...
-        call refreshenv
+        call refreshenv 2>nul || echo Commande refreshenv non disponible, redémarrez votre terminal après l'installation.
+    ) else (
+        echo [INFO] Rust est déjà installé: 
+        rustc --version
+    )
+    
+    REM Vérifier l'installation de cargo
+    where cargo >nul 2>nul
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ATTENTION] Cargo n'est pas disponible malgré l'installation de Rust
+        echo              Passage en mode léger...
+        set NO_RUST_INSTALL=1
     )
 ) else (
     echo.

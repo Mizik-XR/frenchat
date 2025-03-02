@@ -36,29 +36,39 @@ where rustc >nul 2>nul
 where cargo >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo [INFO] Rust/Cargo n'est pas installé ou n'est pas dans le PATH.
-    echo [INFO] Installation de Rust en cours...
     
-    REM Télécharger le programme d'installation de Rust
-    curl -O https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
+    echo [CHOIX] Souhaitez-vous:
+    echo 1. Installer Rust automatiquement (recommandé pour le développement local)
+    echo 2. Utiliser le mode léger sans Rust (recommandé pour Netlify)
+    choice /C 12 /N /M "Choisissez une option (1 ou 2): "
     
-    REM Exécuter l'installateur avec les options par défaut
-    rustup-init.exe -y
-    
-    REM Mettre à jour le PATH pour cette session
-    set PATH=%PATH%;%USERPROFILE%\.cargo\bin
-    
-    REM Vérifier l'installation
-    where rustc >nul 2>nul
-    where cargo >nul 2>nul
-    if %ERRORLEVEL% NEQ 0 (
-        echo [ATTENTION] L'installation automatique de Rust a échoué.
-        echo             Vous pouvez continuer en mode sans Rust.
-        echo             Définissez NO_RUST_INSTALL=1 pour l'installation Python.
-        set NO_RUST_INSTALL=1
+    if %ERRORLEVEL% EQU 1 (
+        echo [INFO] Installation de Rust en cours...
+        
+        REM Télécharger le programme d'installation de Rust
+        curl -O https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
+        
+        REM Exécuter l'installateur avec les options par défaut
+        rustup-init.exe -y
+        
+        REM Mettre à jour le PATH pour cette session
+        set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+        
+        REM Vérifier l'installation
+        where rustc >nul 2>nul
+        where cargo >nul 2>nul
+        if %ERRORLEVEL% NEQ 0 (
+            echo [ATTENTION] L'installation automatique de Rust a échoué.
+            echo             Passage au mode sans Rust.
+            set NO_RUST_INSTALL=1
+        ) else (
+            echo [OK] Rust et Cargo installés avec succès:
+            rustc --version
+            cargo --version
+        )
     ) else (
-        echo [OK] Rust et Cargo installés avec succès:
-        rustc --version
-        cargo --version
+        echo [INFO] Mode sans Rust sélectionné.
+        set NO_RUST_INSTALL=1
     )
 ) else (
     echo [OK] Rust et Cargo sont déjà installés:
@@ -129,7 +139,13 @@ echo  1. Déployer sur Netlify en connectant votre dépôt GitHub
 echo  2. Déployer via la CLI Netlify: netlify deploy
 echo  3. Utiliser le drag-and-drop du dossier 'dist' sur l'interface Netlify
 echo.
-echo Assurez-vous de configurer les variables d'environnement dans l'interface Netlify.
+echo Assurez-vous de configurer les variables d'environnement dans l'interface Netlify:
+echo  - VITE_SUPABASE_URL
+echo  - VITE_SUPABASE_ANON_KEY
+echo  - VITE_CLOUD_API_URL (optionnel)
+echo.
+echo [IMPORTANT] Pour le déploiement Netlify, NO_RUST_INSTALL=1 est activé par défaut
+echo            dans le fichier netlify.toml pour éviter les problèmes de compilation.
 echo.
 echo Appuyez sur une touche pour continuer...
 pause >nul
