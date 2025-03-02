@@ -112,7 +112,7 @@ export async function executeAIRequest(
       toast({
         title: "Problème avec le service local",
         description: "Basculement automatique vers le service cloud. Vérifiez votre configuration locale.",
-        variant: "default", // Changé de "warning" à "default" pour correspondre aux types autorisés
+        variant: "default",
       });
       
       // Appel récursif avec stratégie cloud
