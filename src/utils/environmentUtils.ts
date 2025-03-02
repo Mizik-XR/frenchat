@@ -62,6 +62,17 @@ export const isDevelopment = (): boolean => {
  */
 export const isLovableEnvironment = (): boolean => {
   if (typeof window === 'undefined') return false;
-  return window.location.host.includes('lovable.dev') || 
-         window.location.host.includes('lovable.app');
+  
+  // Vérifier le hostname pour Lovable
+  const isLovableDomain = window.location.host.includes('lovable.dev') || 
+                         window.location.host.includes('lovable.app');
+  
+  // Vérifier si nous sommes dans un iframe (probable dans Lovable)
+  const isInIframe = window !== window.parent;
+  
+  // Vérifier si nous sommes sur la plateforme Lovable avec un paramètre d'URL 
+  const hasLovableParam = new URLSearchParams(window.location.search).get('lovable') === 'true' ||
+                          window.location.search.includes('forceHideBadge=true');
+  
+  return isLovableDomain || (isInIframe && hasLovableParam);
 };

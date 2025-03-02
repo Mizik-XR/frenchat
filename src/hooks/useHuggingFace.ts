@@ -19,11 +19,14 @@ import { executeAIRequest } from './ai/strategies/aiServiceStrategy';
 import { createSystemCapabilitiesManager } from './ai/strategies/systemCapabilitiesStrategy';
 import { useModelDownload } from './useModelDownload';
 import { checkBrowserCompatibility } from './ai/analyzers/browserCompatibility';
+import { isLovableEnvironment } from '@/utils/environmentUtils';
 
 export function useHuggingFace(provider: string = 'huggingface') {
   // Vérifier immédiatement si le mode cloud est forcé
-  const isCloudModeForced = window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true' ||
-                           new URLSearchParams(window.location.search).get('forceCloud') === 'true';
+  const isCloudModeForced = 
+    window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true' ||
+    new URLSearchParams(window.location.search).get('forceCloud') === 'true' ||
+    isLovableEnvironment(); // Force le mode cloud dans l'environnement Lovable
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
