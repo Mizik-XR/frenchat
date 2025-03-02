@@ -1,36 +1,26 @@
 
 /**
- * Browser analysis utilities for diagnostic reporting
+ * Détecte le navigateur utilisé
  */
-
-/**
- * Detects the user's browser based on user agent
- * @returns String identifying the browser
- */
-export const detectBrowser = (): string => {
+export function detectBrowser(): string {
   const userAgent = navigator.userAgent;
   
-  if (userAgent.indexOf("Firefox") > -1) {
-    return "Firefox";
-  } else if (userAgent.indexOf("Chrome") > -1) {
-    return "Chrome";
-  } else if (userAgent.indexOf("Safari") > -1) {
-    return "Safari";
-  } else if (userAgent.indexOf("Edge") > -1) {
-    return "Edge";
-  } else {
-    return "Navigateur inconnu";
-  }
-};
+  if (userAgent.includes('Chrome')) return 'Chrome';
+  if (userAgent.includes('Firefox')) return 'Firefox';
+  if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) return 'Safari';
+  if (userAgent.includes('Edge')) return 'Edge';
+  if (userAgent.includes('MSIE') || userAgent.includes('Trident/')) return 'Internet Explorer';
+  
+  return 'Unknown';
+}
 
 /**
- * Gets network connection information if available
- * @returns Connection type or 'Non disponible' if not available
+ * Détermine le type de connexion (si disponible)
  */
-export const getNetworkType = (): string => {
-  let networkType = 'Non disponible';
-  if (typeof navigator !== 'undefined' && 'connection' in navigator) {
-    networkType = (navigator as any).connection?.effectiveType || 'Inconnu';
+export function getNetworkType(): string {
+  if (navigator.connection) {
+    // @ts-ignore - La propriété effectiveType peut ne pas être reconnue par TypeScript
+    return navigator.connection.effectiveType || 'unknown';
   }
-  return networkType;
-};
+  return 'unknown';
+}

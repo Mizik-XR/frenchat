@@ -3,97 +3,88 @@ import { toast } from '@/hooks/use-toast';
 import { LLMProviderType } from '@/types/config';
 
 /**
- * Utility functions for AI service detection and configuration
+ * Utilitaires pour les services d'IA
  */
 
-// Vérifier si le service local est disponible
-export const checkLocalService = async (url?: string): Promise<boolean> => {
-  const serviceUrl = url || localStorage.getItem('localAIUrl') || 'http://localhost:8000';
-  if (!serviceUrl) return false;
-  
+/**
+ * Vérifie la disponibilité d'un service local
+ */
+export async function checkLocalService(
+  url: string, 
+  timeout: number = 5000
+): Promise<{ available: boolean; message: string }> {
   try {
-    // Vérifier d'abord si le service est Ollama
-    if (serviceUrl.includes('11434')) {
-      try {
-        const response = await fetch(`${serviceUrl}/api/version`, { 
-          method: 'GET',
-          signal: AbortSignal.timeout(2000) // Timeout de 2 secondes
-        });
-        return response.ok;
-      } catch (e) {
-        console.warn("Service Ollama indisponible:", e);
-      }
-    }
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     
-    // Sinon, essayer avec l'endpoint health de notre API locale
-    const localProvider = localStorage.getItem('localProvider') as LLMProviderType || 'huggingface';
-    const endpoint = localProvider === 'ollama' 
-      ? `${serviceUrl}/api/health` 
-      : `${serviceUrl}/health`;
+    const response = await fetch(`${url}/health`, {
+      method: 'GET',
+      signal: controller.signal
+    });
     
-    try {
-      const response = await fetch(endpoint, { 
-        method: 'GET',
-        signal: AbortSignal.timeout(2000) // Timeout de 2 secondes
-      });
-      return response.ok;
-    } catch (e) {
-      console.warn(`Service local indisponible (${endpoint}):`, e);
-      return false;
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      return { 
+        available: true, 
+        message: "Service local disponible et fonctionnel" 
+      };
+    } else {
+      return { 
+        available: false, 
+        message: `Erreur du service: ${response.status} ${response.statusText}` 
+      };
     }
-  } catch (e) {
-    console.warn("Erreur lors de la vérification du service:", e);
-    return false;
+  } catch (error) {
+    return { 
+      available: false, 
+      message: error instanceof Error ? error.message : "Erreur inconnue" 
+    };
   }
-};
+}
 
-// Configurer le fournisseur local
-export const setLocalProviderConfig = (provider: LLMProviderType) => {
+/**
+ * Configure le fournisseur local
+ */
+export function setLocalProviderConfig(provider: LLMProviderType): LLMProviderType {
   localStorage.setItem('localProvider', provider);
   return provider;
-};
+}
 
-// Vérifier et mettre à jour le statut du service local automatiquement
-export const detectLocalServices = async (): Promise<boolean> => {
-  try {
-    // Vérifier d'abord Ollama qui est le plus simple
-    const ollamaUrl = 'http://localhost:11434';
-    const isOllamaAvailable = await checkLocalService(ollamaUrl);
-    
-    if (isOllamaAvailable) {
-      console.log("Ollama détecté automatiquement");
-      localStorage.setItem('localAIUrl', ollamaUrl);
-      localStorage.setItem('localProvider', 'ollama');
-      return true;
-    }
-    
-    // Sinon, vérifier notre serveur FileChat
-    const fileChatUrl = 'http://localhost:8000'; 
-    const isFileChatAvailable = await checkLocalService(fileChatUrl);
-    
-    if (isFileChatAvailable) {
-      console.log("Serveur FileChat détecté automatiquement");
-      localStorage.setItem('localAIUrl', fileChatUrl);
-      localStorage.setItem('localProvider', 'huggingface');
-      return true;
-    }
-    
-    return false;
-  } catch (error) {
-    console.error("Erreur lors de la détection des services locaux:", error);
-    return false;
-  }
-};
+/**
+ * Détecte les services locaux disponibles
+ */
+export async function detectLocalServices(): Promise<{
+  huggingface: boolean;
+  ollama: boolean;
+  custom: boolean;
+}> {
+  const huggingfaceAvailable = await checkLocalService('http://localhost:8000')
+    .then(result => result.available)
+    .catch(() => false);
+  
+  const ollamaAvailable = await checkLocalService('http://localhost:11434')
+    .then(result => result.available)
+    .catch(() => false);
+  
+  return {
+    huggingface: huggingfaceAvailable,
+    ollama: ollamaAvailable,
+    custom: false // Par défaut, pas de service personnalisé détecté
+  };
+}
 
-// Fonction pour notifier l'utilisateur d'un changement de service
-export const notifyServiceChange = (message: string, description: string, variant: 'default' | 'destructive' = 'default') => {
-  try {
-    toast({
-      title: message,
-      description,
-      variant
-    });
-  } catch (error) {
-    console.error("Erreur lors de l'affichage d'une notification:", error);
-  }
-};
+/**
+ * Notifie l'utilisateur d'un changement de service
+ */
+export function notifyServiceChange(
+  title: string,
+  message: string,
+  variant: "default" | "destructive" = "default"
+): void {
+  toast({
+    title,
+    description: message,
+    variant
+  });
+}

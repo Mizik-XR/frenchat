@@ -54,54 +54,7 @@ if exist "index.html" (
         move /y index.html.temp index.html >nul
         echo [OK] Script gptengineer.js ajouté dans index.html.
     ) else (
-        echo [INFO] Vérifions l'ordre des scripts...
-        
-        REM Vérifie si le script gptengineer.js est avant le script main.tsx
-        findstr /B /C:"    <script src=\"https://cdn.gpteng.co/gptengineer.js\" type=\"module\"></script>" index.html >nul
-        set FOUND_SCRIPT=!errorlevel!
-        
-        findstr /B /C:"    <script type=\"module\" src=\"/src/main.tsx\"></script>" index.html >nul
-        set FOUND_MAIN=!errorlevel!
-        
-        if !FOUND_SCRIPT! EQU 0 if !FOUND_MAIN! EQU 0 (
-            echo [INFO] Les deux scripts sont présents, vérifions leur ordre...
-            
-            REM Sauvegarde du fichier original
-            copy index.html index.html.backup >nul
-            
-            REM Créer un fichier temporaire pour réorganiser les scripts si nécessaire
-            type nul > index.html.temp
-            set SCRIPT_FOUND=0
-            set MAIN_FOUND=0
-            set NEED_REORGANIZE=0
-            
-            for /f "delims=" %%i in (index.html) do (
-                echo %%i | findstr /C:"gptengineer.js" >nul
-                if !errorlevel! EQU 0 (
-                    set SCRIPT_FOUND=1
-                )
-                
-                echo %%i | findstr /C:"main.tsx" >nul
-                if !errorlevel! EQU 0 (
-                    set MAIN_FOUND=1
-                    if !SCRIPT_FOUND! EQU 0 (
-                        set NEED_REORGANIZE=1
-                        echo     ^<!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" --^> >> index.html.temp
-                        echo     ^<script src="https://cdn.gpteng.co/gptengineer.js" type="module"^>^</script^> >> index.html.temp
-                    )
-                )
-                
-                echo %%i >> index.html.temp
-            )
-            
-            if !NEED_REORGANIZE! EQU 1 (
-                move /y index.html.temp index.html >nul
-                echo [OK] Ordre des scripts corrigé dans index.html.
-            ) else (
-                del index.html.temp
-                echo [OK] L'ordre des scripts est déjà correct.
-            )
-        )
+        echo [OK] Le script gptengineer.js est déjà présent dans index.html.
     )
 ) else (
     echo [ATTENTION] Le fichier index.html est manquant dans le répertoire racine.
@@ -130,24 +83,8 @@ if exist "index.html" (
 )
 echo.
 
-REM Vérification du node_modules
-echo [ÉTAPE 3/4] Vérification des dépendances...
-if not exist "node_modules\" (
-    echo [ATTENTION] Le dossier node_modules est manquant.
-    echo [INFO] Installation des dépendances...
-    call npm install
-    if errorlevel 1 (
-        echo [ERREUR] Installation des dépendances échouée.
-        echo         Essai avec --legacy-peer-deps...
-        call npm install --legacy-peer-deps
-    )
-) else (
-    echo [OK] Le dossier node_modules existe.
-)
-echo.
-
 REM Reconstruction de l'application
-echo [ÉTAPE 4/4] Reconstruction complète de l'application...
+echo [ÉTAPE 3/4] Reconstruction complète de l'application...
 call npm run build
 if errorlevel 1 (
     echo [ERREUR] Reconstruction de l'application échouée.
@@ -156,44 +93,45 @@ if errorlevel 1 (
     call npm run build
     if errorlevel 1 (
         echo [ERREUR] Reconstruction de l'application échouée.
-        echo          Vérifiez les messages d'erreur ci-dessus.
-        echo.
-        echo Réparation terminée avec erreurs. Veuillez contacter le support technique.
-        pause >nul
+        echo          Veuillez vérifier les erreurs de compilation.
+        pause
         exit /b 1
     )
 ) else (
     echo [OK] Application reconstruite avec succès.
 )
 
-REM Vérification finale du fichier dist/index.html
+REM Vérification finale et démarrage du serveur
+echo [ÉTAPE 4/4] Vérification finale et démarrage...
 if exist "dist\index.html" (
-    echo [INFO] Vérification finale du fichier dist\index.html...
+    echo [INFO] Vérification de dist\index.html...
     findstr "gptengineer.js" "dist\index.html" >nul
     if !errorlevel! NEQ 0 (
-        echo [ATTENTION] Le script gptengineer.js est absent du fichier dist\index.html.
-        echo             Cela est probablement dû à une configuration de build incorrecte.
-        echo             Copie manuelle du fichier index.html vers dist...
-        
+        echo [ATTENTION] Le script gptengineer.js est absent de dist\index.html.
+        echo             Application d'une correction manuelle...
         copy index.html dist\index.html >nul
-        echo [OK] Fichier index.html copié manuellement vers dist.
+        echo [OK] Correction appliquée.
     ) else (
-        echo [OK] Le fichier dist\index.html contient le script gptengineer.js.
+        echo [OK] Le fichier dist\index.html contient le script requis.
     )
+    
+    echo [INFO] Démarrage du serveur web...
+    http-server dist -p 8080 -c-1 --cors
+) else (
+    echo [ERREUR] Le fichier dist\index.html n'existe pas après la reconstruction.
+    echo          Veuillez vérifier les erreurs de compilation.
+    pause
+    exit /b 1
 )
-echo.
 
 echo ===================================================
-echo     RÉPARATION TERMINÉE AVEC SUCCÈS
+echo             RÉPARATION TERMINÉE
 echo ===================================================
 echo.
-echo Veuillez maintenant lancer l'application avec la commande:
-echo .\start-app.bat
-echo.
-echo Si le problème persiste:
-echo 1. Vérifiez avec .\scripts\diagnostic.bat
-echo 2. Essayez le mode compatible: .\start-cloud-mode.bat
-echo 3. Essayez le lancement en tant qu'administrateur
+echo Si l'application ne s'affiche pas correctement:
+echo  1. Essayez de vider le cache de votre navigateur
+echo  2. Utilisez le mode incognito
+echo  3. Essayez un navigateur différent
 echo.
 pause
 exit /b 0

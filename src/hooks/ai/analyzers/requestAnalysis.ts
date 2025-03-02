@@ -1,73 +1,43 @@
 
 import { TextGenerationParameters } from '../types';
 
-interface RequestProfile {
-  complexity: 'low' | 'medium' | 'high';
-  estimatedTokens: number;
-  recommendedExecution: 'local' | 'cloud';
-}
-
 /**
- * Analyse une requête pour déterminer sa complexité et le meilleur mode d'exécution
+ * Analyse une requête pour déterminer sa complexité
  */
-export const analyzeRequest = (options: TextGenerationParameters): RequestProfile => {
-  // Récupérer le texte à analyser (prompt ou inputs)
-  const text = options.inputs || options.prompt || '';
+export function analyzeRequest(params: TextGenerationParameters): {
+  complexity: 'simple' | 'moderate' | 'complex';
+  estimatedTokens: number;
+  recommendedMode: 'local' | 'cloud';
+} {
+  // Obtenir le texte à traiter
+  const prompt = params.prompt || params.inputs || '';
+  const systemPrompt = params.system_prompt || '';
   
-  // 1. Estimation améliorée de la longueur en tokens
-  // Utilisation d'un ratio plus précis pour l'estimation (4 caractères = ~1 token en moyenne)
-  const estimatedTokens = Math.ceil(text.length / 4);
+  // Estimation grossière du nombre de tokens (environ 4 caractères par token)
+  const totalText = prompt + systemPrompt;
+  const estimatedTokens = Math.ceil(totalText.length / 4);
   
-  // 2. Analyse de complexité basée sur plusieurs facteurs
-  let complexity: 'low' | 'medium' | 'high' = 'low';
+  // Évaluation de la complexité basée sur la longueur
+  let complexity: 'simple' | 'moderate' | 'complex';
+  if (estimatedTokens < 200) complexity = 'simple';
+  else if (estimatedTokens < 1000) complexity = 'moderate';
+  else complexity = 'complex';
   
-  // Analyse basée sur la longueur
-  if (estimatedTokens > 8000) {
-    complexity = 'high';
-  } else if (estimatedTokens > 2000) {
-    complexity = 'medium';
+  // Recommandation basée sur la complexité et les paramètres
+  const temperature = params.temperature || params.parameters?.temperature || 0.7;
+  const isCreative = temperature > 0.8;
+  
+  let recommendedMode: 'local' | 'cloud';
+  
+  if (complexity === 'complex' || isCreative || estimatedTokens > 1500) {
+    recommendedMode = 'cloud';
+  } else {
+    recommendedMode = 'local';
   }
-  
-  // Analyse basée sur des marqueurs de complexité dans le texte
-  const complexityMarkers = [
-    // Marqueurs d'analyse approfondie
-    "analyse", "résumé", "synthèse", "expliquer en détail",
-    "comparer", "différence entre", "expliquer pourquoi",
-    // Requêtes complexes
-    "rédiger", "écrire un", "générer un", "créer un document",
-    // Traitement multilingue
-    "traduire", "translation", "translate",
-    // Requêtes de code
-    "code", "function", "algorithm", "programming"
-  ];
-  
-  // Si le texte contient des marqueurs de complexité, augmenter le niveau
-  if (complexity !== 'high' && 
-      complexityMarkers.some(marker => text.toLowerCase().includes(marker))) {
-    complexity = complexity === 'low' ? 'medium' : 'high';
-  }
-  
-  // 3. Déterminer le mode d'exécution recommandé avec seuils ajustés
-  let recommendedExecution: 'local' | 'cloud' = 'local';
-  
-  // Règles de routage affinées
-  if (complexity === 'high') {
-    // Requêtes complexes → cloud
-    recommendedExecution = 'cloud';
-  } else if (complexity === 'medium' && estimatedTokens > 2000) {
-    // Requêtes moyennes volumineuses → cloud
-    recommendedExecution = 'cloud';
-  } else if (estimatedTokens > 6000) {
-    // Requêtes très longues même si pas complexes → cloud
-    recommendedExecution = 'cloud';
-  }
-  
-  // Log pour débogage
-  console.debug(`Analyse de requête: ${estimatedTokens} tokens, complexité ${complexity}, exécution recommandée: ${recommendedExecution}`);
   
   return {
     complexity,
     estimatedTokens,
-    recommendedExecution
+    recommendedMode
   };
-};
+}
