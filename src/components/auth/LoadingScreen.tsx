@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Info } from "lucide-react";
 import { LogoImage } from "@/components/common/LogoImage";
 
 interface LoadingScreenProps {
@@ -17,8 +17,17 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
 }) => {
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [loadingTime, setLoadingTime] = useState(0);
+  const [isPreviewEnvironment, setIsPreviewEnvironment] = useState(false);
   
   useEffect(() => {
+    // Détecter l'environnement de prévisualisation
+    const hostname = window.location.hostname;
+    setIsPreviewEnvironment(
+      hostname.includes('lovableproject.com') || 
+      hostname.includes('preview') || 
+      hostname.includes('netlify')
+    );
+    
     const timer = setInterval(() => {
       setLoadingTime(prev => prev + 1);
     }, 1000);
@@ -40,6 +49,18 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         <p className="text-gray-600 text-sm text-center mb-4">
           {loadingTime > 5 ? "Le chargement prend plus de temps que prévu..." : "Initialisation de l'application..."}
         </p>
+        
+        {isPreviewEnvironment && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-md w-full">
+            <div className="flex items-center gap-2 text-blue-700 mb-1">
+              <Info className="h-5 w-5" />
+              <p className="font-medium">Environnement de prévisualisation</p>
+            </div>
+            <p className="text-sm text-blue-600">
+              Dans cet environnement, les fonctionnalités d'IA locale et certaines intégrations sont désactivées.
+            </p>
+          </div>
+        )}
         
         {shouldShowRetry && (
           <div className="flex flex-col items-center mt-2">
@@ -69,6 +90,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             <p>User Agent: {navigator.userAgent}</p>
             <p>Timestamp: {new Date().toISOString()}</p>
             <p>Mode: {import.meta.env.MODE || "production"}</p>
+            <p>Environnement de prévisualisation: {isPreviewEnvironment ? "Oui" : "Non"}</p>
           </div>
         )}
       </div>

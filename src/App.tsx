@@ -10,6 +10,7 @@ import { WelcomePage } from "./components/onboarding/WelcomePage";
 import { Suspense, lazy, useEffect } from "react";
 import { DebugPanel } from "./components/DebugPanel";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
+import { EnvironmentDetection } from "@/components/debug/EnvironmentDetection";
 
 // Lazy load pages pour améliorer le temps de chargement initial
 const Auth = lazy(() => import("./pages/Auth"));
@@ -115,7 +116,9 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <AppWithAuth />
+        <EnvironmentDetection>
+          <AppWithAuth />
+        </EnvironmentDetection>
       </BrowserRouter>
     </ErrorBoundary>
   );
