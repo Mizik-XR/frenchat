@@ -2,16 +2,11 @@
 # Config for function deployment
 project_id = "dbdueopvtlanxgumenpu"
 
-[functions.google-oauth]
+[functions.unified-oauth-proxy]
 verify_jwt = false
 
-# Temporairement désactivé pour les tests en local
-# Sera réactivé dans la version Beta 1.1
-# [functions.microsoft-oauth]
+# [functions.microsoft-oauth] - Temporairement désactivé pour les tests en local
 # verify_jwt = false
-
-[functions.secure-api-proxy]
-verify_jwt = false
 
 [functions.index-google-drive]
 verify_jwt = false
@@ -33,4 +28,3 @@ verify_jwt = false
 
 [functions.cache-manager]
 verify_jwt = false
-
