@@ -70,6 +70,15 @@ if ! grep -q "gptengineer.js" "dist/index.html"; then
     echo "[OK] Correction appliquée avec succès."
 fi
 
+# Vérification des chemins relatifs dans index.html
+if grep -q "href=\"/assets" "dist/index.html" || grep -q "src=\"/assets" "dist/index.html"; then
+    echo "[ATTENTION] Chemins absolus détectés dans index.html, conversion en chemins relatifs..."
+    sed -i.bak 's|href="/assets|href="./assets|g' dist/index.html
+    sed -i.bak 's|src="/assets|src="./assets|g' dist/index.html
+    rm -f dist/index.html.bak
+    echo "[OK] Chemins convertis avec succès."
+fi
+
 echo
 echo "==================================================="
 echo "    PRÉPARATION DU DÉPLOIEMENT TERMINÉE"

@@ -14,8 +14,9 @@ echo Assurez-vous d'avoir installé la CLI Netlify et
 echo d'être connecté à votre compte Netlify.
 echo.
 echo Étapes:
-echo 1. Préparation du build pour déploiement
-echo 2. Déploiement vers Netlify
+echo 1. Vérification de l'environnement
+echo 2. Préparation du build pour déploiement
+echo 3. Déploiement vers Netlify
 echo.
 echo ===================================================
 echo.
@@ -25,14 +26,19 @@ pause >nul
 REM Vérifier si netlify CLI est installé
 where netlify >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERREUR] La CLI Netlify n'est pas installée.
-    echo.
-    echo Pour l'installer, exécutez:
-    echo npm install -g netlify-cli
-    echo.
-    echo Appuyez sur une touche pour quitter...
-    pause >nul
-    exit /b 1
+    echo [INFO] La CLI Netlify n'est pas installée, installation en cours...
+    call npm install -g netlify-cli
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ERREUR] L'installation de la CLI Netlify a échoué.
+        echo.
+        echo Pour l'installer manuellement, exécutez:
+        echo npm install -g netlify-cli
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
+    echo [OK] CLI Netlify installée avec succès.
 )
 
 REM Préparer le build
@@ -68,7 +74,19 @@ echo.
 
 REM Déployer vers Netlify
 echo [ÉTAPE 3/3] Déploiement vers Netlify...
-netlify deploy --prod --dir=dist
+echo [INFO] Voulez-vous:
+echo 1. Déployer une prévisualisation (preview)
+echo 2. Déployer en production
+choice /C 12 /N /M "Choisissez une option (1 ou 2): "
+
+if %ERRORLEVEL% EQU 1 (
+    echo [INFO] Déploiement d'une prévisualisation...
+    netlify deploy --dir=dist
+) else (
+    echo [INFO] Déploiement en production...
+    netlify deploy --prod --dir=dist
+)
+
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] Le déploiement a échoué.
     echo.
@@ -92,5 +110,8 @@ echo - VITE_SUPABASE_ANON_KEY: Clé anonyme de votre projet Supabase
 echo - VITE_CLOUD_API_URL: URL de l'API cloud (optionnel)
 echo.
 echo ===================================================
+echo.
+echo Vous pouvez maintenant partager le lien de déploiement avec le client.
+echo.
 pause
 exit /b 0

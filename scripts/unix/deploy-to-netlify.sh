@@ -10,8 +10,9 @@ echo "Assurez-vous d'avoir installé la CLI Netlify et"
 echo "d'être connecté à votre compte Netlify."
 echo
 echo "Étapes:"
-echo "1. Préparation du build pour déploiement"
-echo "2. Déploiement vers Netlify"
+echo "1. Vérification de l'environnement"
+echo "2. Préparation du build pour déploiement"
+echo "3. Déploiement vers Netlify"
 echo
 echo "==================================================="
 echo
@@ -20,18 +21,23 @@ echo
 
 # Vérifier si netlify CLI est installé
 if ! command -v netlify &> /dev/null; then
-    echo "[ERREUR] La CLI Netlify n'est pas installée."
-    echo
-    echo "Pour l'installer, exécutez:"
-    echo "npm install -g netlify-cli"
-    echo
-    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
-    exit 1
+    echo "[INFO] La CLI Netlify n'est pas installée, installation en cours..."
+    npm install -g netlify-cli
+    if [ $? -ne 0 ]; then
+        echo "[ERREUR] L'installation de la CLI Netlify a échoué."
+        echo
+        echo "Pour l'installer manuellement, exécutez:"
+        echo "npm install -g netlify-cli"
+        echo
+        read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+        exit 1
+    fi
+    echo "[OK] CLI Netlify installée avec succès."
 fi
 
 # Préparer le build
 echo "[ÉTAPE 1/3] Préparation du build pour déploiement..."
-bash scripts/unix/prepare-deployment.sh > /dev/null
+bash scripts/unix/prepare-deployment.sh
 if [ $? -ne 0 ]; then
     echo "[ERREUR] La préparation du déploiement a échoué."
     echo
@@ -60,7 +66,19 @@ echo
 
 # Déployer vers Netlify
 echo "[ÉTAPE 3/3] Déploiement vers Netlify..."
-netlify deploy --prod --dir=dist
+echo "[INFO] Voulez-vous:"
+echo "1. Déployer une prévisualisation (preview)"
+echo "2. Déployer en production"
+read -p "Choisissez une option (1 ou 2): " choice
+
+if [ "$choice" = "1" ]; then
+    echo "[INFO] Déploiement d'une prévisualisation..."
+    netlify deploy --dir=dist
+else
+    echo "[INFO] Déploiement en production..."
+    netlify deploy --prod --dir=dist
+fi
+
 if [ $? -ne 0 ]; then
     echo "[ERREUR] Le déploiement a échoué."
     echo
@@ -71,7 +89,7 @@ echo "[OK] Déploiement terminé avec succès."
 echo
 
 echo "==================================================="
-echo "    DÉPLOIEMENT TERMINÉ"
+echo "     DÉPLOIEMENT TERMINÉ"
 echo "==================================================="
 echo
 echo "N'oubliez pas de configurer les variables d'environnement"
@@ -83,5 +101,8 @@ echo "- VITE_SUPABASE_ANON_KEY: Clé anonyme de votre projet Supabase"
 echo "- VITE_CLOUD_API_URL: URL de l'API cloud (optionnel)"
 echo
 echo "==================================================="
+echo
+echo "Vous pouvez maintenant partager le lien de déploiement avec le client."
+echo
 read -p "Appuyez sur Entrée pour continuer..." -n1 -s
 exit 0

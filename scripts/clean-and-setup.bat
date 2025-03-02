@@ -5,6 +5,16 @@ setlocal enabledelayedexpansion
 
 title FileChat - Nettoyage et Configuration
 
+REM Vérifier les droits d'administrateur pour éviter les problèmes de permission
+NET SESSION >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo [ATTENTION] Ce script n'est pas exécuté en tant qu'administrateur.
+    echo             Certaines opérations pourraient échouer.
+    echo             Il est recommandé de l'exécuter en tant qu'administrateur.
+    echo.
+    pause
+)
+
 echo ===================================================
 echo     NETTOYAGE ET CONFIGURATION DE FILECHAT
 echo ===================================================
@@ -30,6 +40,11 @@ echo [ÉTAPE 1/5] Suppression des dossiers...
 if exist "node_modules\" (
     echo [INFO] Suppression de node_modules...
     rmdir /s /q node_modules
+    if errorlevel 1 (
+        echo [ATTENTION] Problème lors de la suppression de node_modules.
+        echo             Certains fichiers peuvent être verrouillés.
+        echo             Continuons tout de même...
+    )
 )
 if exist "dist\" (
     echo [INFO] Suppression de dist...
@@ -54,13 +69,18 @@ echo.
 
 REM Réinstallation des dépendances npm
 echo [ÉTAPE 3/5] Réinstallation des dépendances npm...
-call npm install
+echo [INFO] Installation des dépendances avec npm ci (installation propre)...
+call npm ci
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERREUR] Échec de l'installation des dépendances npm.
-    echo.
-    echo Appuyez sur une touche pour quitter...
-    pause >nul
-    exit /b 1
+    echo [ATTENTION] npm ci a échoué, essai avec npm install...
+    call npm install
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ERREUR] Échec de l'installation des dépendances npm.
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
 )
 echo [OK] Dépendances npm installées avec succès.
 echo.
@@ -80,6 +100,8 @@ echo.
 
 REM Préparation de l'environnement pour le développement local
 echo [ÉTAPE 5/5] Préparation de l'environnement de développement...
+echo [INFO] Construction du projet...
+set NODE_OPTIONS=--max-old-space-size=4096
 call npm run build
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] Échec de la construction du projet.

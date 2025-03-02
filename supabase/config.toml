@@ -8,7 +8,7 @@ verify_jwt = false
 [functions.index-google-drive]
 verify_jwt = false
 
-[functions.test-summary]
+[functions.batch-index-google-drive]
 verify_jwt = false
 
 [functions.advanced-rag-generation]
@@ -17,10 +17,10 @@ verify_jwt = false
 [functions.cache-manager]
 verify_jwt = false
 
-# Fonctions temporairement désactivées pour respecter la limite du plan gratuit
-# [functions.batch-index-google-drive]
-# verify_jwt = false
+[functions.text-generation]
+verify_jwt = false
 
+# Fonctions temporairement désactivées pour respecter la limite du plan gratuit
 # [functions.microsoft-oauth]
 # verify_jwt = false
 
