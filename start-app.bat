@@ -7,6 +7,10 @@ echo ================================
 echo      DÉMARRAGE DE FILECHAT
 echo ================================
 echo.
+echo [INFO] Note: Les fonctionnalités Microsoft Teams sont temporairement 
+echo [INFO] désactivées dans cette version de test pour respecter les 
+echo [INFO] limites du plan Supabase. Elles seront réactivées en Beta 1.1.
+echo.
 
 REM Vérification et nettoyage des processus existants
 echo [INFO] Préparation de l'environnement...

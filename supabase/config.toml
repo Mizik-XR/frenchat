@@ -5,8 +5,10 @@ project_id = "dbdueopvtlanxgumenpu"
 [functions.google-oauth]
 verify_jwt = false
 
-[functions.microsoft-oauth]
-verify_jwt = false
+# Temporairement désactivé pour les tests en local
+# Sera réactivé dans la version Beta 1.1
+# [functions.microsoft-oauth]
+# verify_jwt = false
 
 [functions.secure-api-proxy]
 verify_jwt = false
