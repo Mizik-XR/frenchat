@@ -1,7 +1,7 @@
 
-# Documentation ChatAlone
+# Documentation Frenchat
 
-Bienvenue dans la documentation officielle de ChatAlone, votre solution d'intelligence artificielle conversationnelle pour l'analyse et l'indexation de documents.
+Bienvenue dans la documentation officielle de Frenchat, votre solution d'intelligence artificielle conversationnelle pour l'analyse et l'indexation de documents.
 
 ## Table des matières
 
@@ -18,7 +18,7 @@ Bienvenue dans la documentation officielle de ChatAlone, votre solution d'intell
 
 ## Introduction rapide
 
-ChatAlone est une application permettant d'indexer, analyser et interroger vos documents via une interface conversationnelle moderne. L'application s'appuie sur:
+Frenchat est une application permettant d'indexer, analyser et interroger vos documents via une interface conversationnelle moderne. L'application s'appuie sur:
 
 - Une interface utilisateur intuitive type "WhatsApp" 
 - L'indexation de documents depuis Google Drive et Microsoft Teams

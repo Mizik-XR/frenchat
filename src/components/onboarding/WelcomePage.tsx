@@ -17,7 +17,7 @@ export const WelcomePage = () => {
             <div className="flex flex-col items-center gap-4">
               <LogoImage className="h-24 w-24" />
               <h1 className="text-4xl font-bold text-purple-900 tracking-tight">
-                ChatAlone
+                Frenchat
               </h1>
             </div>
             
@@ -27,10 +27,10 @@ export const WelcomePage = () => {
             
             <div className="bg-purple-100 rounded-lg p-4 text-sm text-purple-800 leading-relaxed">
               <p className="font-medium mb-2">
-                Contrairement à d'autres solutions, ChatAlone est unique :
+                Contrairement à d'autres solutions, Frenchat est unique :
               </p>
               <p className="mb-2">
-                ChatAlone indexe automatiquement tous vos documents depuis Google Drive 
+                Frenchat indexe automatiquement tous vos documents depuis Google Drive 
                 et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre 
                 base documentaire sans sélection manuelle préalable.
               </p>

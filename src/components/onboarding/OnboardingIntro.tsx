@@ -30,8 +30,8 @@ export const OnboardingIntro = () => {
 
   const steps = [
     {
-      title: "Bienvenue dans FileChat",
-      description: "FileChat vous permet d'interroger vos documents, fichiers et données avec l'IA pour obtenir des réponses précises et contextuelles.",
+      title: "Bienvenue dans Frenchat",
+      description: "Frenchat vous permet d'interroger vos documents, fichiers et données avec l'IA pour obtenir des réponses précises et contextuelles.",
       icon: <CheckCircle className="h-6 w-6" />,
     },
     {

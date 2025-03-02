@@ -4,11 +4,11 @@ chcp 65001
 setlocal enabledelayedexpansion
 
 echo ===================================================
-echo      INSTALLATION AUTOMATIQUE DE FILECHAT
+echo      INSTALLATION AUTOMATIQUE DE FRENCHAT
 echo ===================================================
 echo.
 echo Ce script va installer et configurer tous les éléments
-echo nécessaires pour exécuter FileChat sur votre machine.
+echo nécessaires pour exécuter Frenchat sur votre machine.
 echo.
 echo [1] Installation de Python (si nécessaire)
 echo [2] Configuration de l'environnement Python
@@ -84,7 +84,7 @@ echo.
 
 REM Création d'un raccourci sur le bureau
 echo [ÉTAPE 5/5] Création des raccourcis...
-powershell -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut([System.Environment]::GetFolderPath('Desktop') + '\FileChat.lnk'); $Shortcut.TargetPath = '%~dp0start-app.bat'; $Shortcut.WorkingDirectory = '%~dp0'; $Shortcut.IconLocation = '%~dp0public\favicon.ico,0'; $Shortcut.Save()"
+powershell -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut([System.Environment]::GetFolderPath('Desktop') + '\Frenchat.lnk'); $Shortcut.TargetPath = '%~dp0start-app.bat'; $Shortcut.WorkingDirectory = '%~dp0'; $Shortcut.IconLocation = '%~dp0public\favicon.ico,0'; $Shortcut.Save()"
 echo [OK] Raccourci créé sur le bureau.
 echo.
 
@@ -92,15 +92,15 @@ echo ===================================================
 echo         INSTALLATION TERMINÉE AVEC SUCCÈS
 echo ===================================================
 echo.
-echo FileChat a été installé et configuré avec succès !
+echo Frenchat a été installé et configuré avec succès !
 echo.
-echo Pour démarrer FileChat :
-echo - Double-cliquez sur le raccourci "FileChat" sur votre bureau
+echo Pour démarrer Frenchat :
+echo - Double-cliquez sur le raccourci "Frenchat" sur votre bureau
 echo - OU exécutez le fichier "start-app.bat" dans ce dossier
 echo.
-echo Appuyez sur une touche pour lancer FileChat maintenant...
+echo Appuyez sur une touche pour lancer Frenchat maintenant...
 pause >nul
 
-REM Lancement de FileChat
+REM Lancement de Frenchat
 start "" "%~dp0start-app.bat"
 exit /b 0
