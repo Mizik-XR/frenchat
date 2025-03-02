@@ -74,5 +74,22 @@ export const isLovableEnvironment = (): boolean => {
   const hasLovableParam = new URLSearchParams(window.location.search).get('lovable') === 'true' ||
                           window.location.search.includes('forceHideBadge=true');
   
-  return isLovableDomain || (isInIframe && hasLovableParam);
+  // Vérifier si le script gptengineer.js est chargé
+  const isLovableScriptLoaded = typeof window.gptengineer !== 'undefined' || 
+                               document.querySelector('script[src*="gptengineer.js"]') !== null;
+  
+  return isLovableDomain || (isInIframe && hasLovableParam) || isLovableScriptLoaded;
 };
+
+/**
+ * Vérifier si le script Lovable est correctement chargé
+ * @returns true si le script est chargé
+ */
+export const isLovableScriptLoaded = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  // Vérifier si le script gptengineer.js est chargé
+  return typeof (window as any).gptengineer !== 'undefined' || 
+         document.querySelector('script[src*="gptengineer.js"]') !== null;
+};
+

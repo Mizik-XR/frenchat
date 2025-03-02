@@ -16,7 +16,7 @@ echo ===================================================
 echo.
 
 REM Vérifier et corriger index.html
-echo [ÉTAPE 1/2] Vérification du fichier index.html...
+echo [ÉTAPE 1/3] Vérification du fichier index.html...
 if exist "index.html" (
     echo [INFO] Vérification de la présence du script gptengineer.js...
     findstr "gptengineer.js" "index.html" >nul
@@ -48,8 +48,27 @@ if exist "index.html" (
 )
 echo.
 
+REM Vérification dans le répertoire dist
+echo [ÉTAPE 2/3] Vérification du fichier dist/index.html...
+if exist "dist\index.html" (
+    echo [INFO] Vérification de la présence du script gptengineer.js dans le build...
+    findstr "gptengineer.js" "dist\index.html" >nul
+    if !errorlevel! NEQ 0 (
+        echo [ATTENTION] Le script Lovable manque dans dist/index.html, correction...
+        
+        REM Copier le fichier index.html corrigé dans dist
+        copy /y index.html dist\index.html >nul
+        echo [OK] Script gptengineer.js ajouté dans dist/index.html.
+    ) else (
+        echo [OK] Le script gptengineer.js est déjà présent dans dist/index.html.
+    )
+) else (
+    echo [INFO] Le dossier dist n'existe pas ou n'a pas encore été généré.
+)
+echo.
+
 REM Reconstruction de l'application
-echo [ÉTAPE 2/2] Reconstruction de l'application...
+echo [ÉTAPE 3/3] Reconstruction de l'application...
 call npm run build
 if errorlevel 1 (
     echo [ERREUR] Reconstruction de l'application échouée.
@@ -65,11 +84,15 @@ echo ===================================================
 echo     CORRECTION TERMINÉE AVEC SUCCÈS
 echo ===================================================
 echo.
-echo Veuillez maintenant lancer l'application avec la commande:
-echo .\start-app.bat
+echo La correction du problème d'édition est terminée.
 echo.
-echo Si le problème persiste, exécutez .\fix-blank-page.bat
-echo pour une réparation plus complète.
+echo Si vous êtes en train d'utiliser l'application:
+echo 1. Fermez-la et relancez-la avec start-app-simplified.bat
+echo 2. Effacez le cache de votre navigateur ou utilisez le mode incognito
+echo.
+echo Si le problème persiste:
+echo 1. Essayez d'utiliser Chrome ou Edge au lieu de Firefox
+echo 2. Vérifiez que JavaScript est activé dans votre navigateur
 echo.
 pause
 exit /b 0
