@@ -5,6 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
 import { GoogleOAuthConfig } from "@/types/google-drive";
 import { getRedirectUrl } from "@/hooks/useGoogleDriveStatus";
+import { EdgeFunctionResponse } from "@/integrations/supabase/client";
 
 const isGoogleOAuthConfig = (obj: unknown): obj is GoogleOAuthConfig => {
   if (!obj || typeof obj !== 'object') {
@@ -84,14 +85,14 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
       const redirectUri = getRedirectUrl('auth/google/callback');
       console.log("URL de redirection OAuth configurée:", redirectUri);
       
-      const { data: authData, error: authError } = await supabase.functions.invoke<{
-        client_id: string;
-      }>('google-oauth', {
+      type ClientIdResponse = { client_id: string };
+      
+      const { data: authData, error: authError } = await supabase.functions.invoke('google-oauth', {
         body: { 
           action: 'get_client_id',
           redirectUrl: redirectUri
         }
-      });
+      }) as EdgeFunctionResponse<ClientIdResponse>;
 
       if (authError || !authData?.client_id) {
         throw new Error("Impossible de récupérer les informations d'authentification");
@@ -132,12 +133,14 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
     }
 
     try {
+      type IndexingResponse = { progressId: string };
+      
       const { data, error } = await supabase.functions.invoke('batch-index-google-drive', {
         body: { 
           userId: user.id,
           folderId
         }
-      });
+      }) as EdgeFunctionResponse<IndexingResponse>;
 
       if (error) throw error;
 

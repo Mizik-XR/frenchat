@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, EdgeFunctionResponse } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 /**
@@ -29,14 +29,14 @@ export const useSecureApiProxy = () => {
     setError(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke<T>('secure-api-proxy', {
+      const { data, error } = await supabase.functions.invoke('secure-api-proxy', {
         body: {
           service,
           endpoint,
           payload,
           method
         }
-      });
+      }) as EdgeFunctionResponse<T>;
 
       if (error) {
         throw new Error(`Erreur du proxy API sécurisé: ${error.message}`);

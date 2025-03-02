@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, EdgeFunctionResponse } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
 import { GoogleOAuthConfig } from "@/types/google-drive";
@@ -82,11 +82,12 @@ export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
 
     try {
       setIsConnecting(true);
-      const { data: authData, error: authError } = await supabase.functions.invoke<{
-        client_id: string;
-      }>('google-oauth', {
+      
+      type ClientIdResponse = { client_id: string };
+      
+      const { data: authData, error: authError } = await supabase.functions.invoke('google-oauth', {
         body: { action: 'get_client_id' }
-      });
+      }) as EdgeFunctionResponse<ClientIdResponse>;
 
       if (authError || !authData?.client_id) {
         throw new Error("Impossible de récupérer les informations d'authentification");
