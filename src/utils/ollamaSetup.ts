@@ -26,10 +26,14 @@ export function promptOllamaInstallation() {
   toast({
     title: "Installation d'Ollama nécessaire",
     description: "Pour utiliser l'IA locale, veuillez installer Ollama",
-    action: {
-      label: "Télécharger",
-      onClick: () => window.open('https://ollama.ai/download', '_blank')
-    },
+    action: (
+      <button 
+        onClick={() => window.open('https://ollama.ai/download', '_blank')}
+        className="rounded bg-white text-black px-3 py-1 text-xs font-medium"
+      >
+        Télécharger
+      </button>
+    ),
     duration: 10000
   });
 }
@@ -94,7 +98,7 @@ export async function downloadOllamaModel(modelName: string = 'mistral'): Promis
       success: true, 
       message: `Le téléchargement du modèle ${modelName} a commencé` 
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erreur lors du téléchargement du modèle:", error);
     return { 
       success: false, 

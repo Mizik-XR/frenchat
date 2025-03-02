@@ -36,8 +36,8 @@ export function createSystemCapabilitiesManager() {
     
     return {
       hybridModeAvailable: !browserCompatibility.shouldFallbackToCloud,
-      sharedBufferAvailable: browserCompatibility.hasSharedArrayBufferSupport,
-      navigatorHardwareSupport: browserCompatibility.hasNavigatorHardwareConcurrency,
+      sharedBufferAvailable: browserCompatibility.capabilities?.["sharedArrayBuffer"] || false,
+      navigatorHardwareSupport: browserCompatibility.capabilities?.["hardwareConcurrency"] || false,
       ollamaAvailable,
       shouldFallbackToCloud: browserCompatibility.shouldFallbackToCloud
     };

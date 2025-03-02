@@ -12,16 +12,17 @@ import {
   checkLocalService,
   setLocalProviderConfig as setProviderConfig,
   detectLocalServices as detectServices,
-  notifyServiceChange
 } from './ai/aiServiceUtils';
 
 import { executeAIRequest } from './ai/strategies/aiServiceStrategy';
 import { createSystemCapabilitiesManager } from './ai/strategies/systemCapabilitiesStrategy';
 import { useModelDownload } from './useModelDownload';
 import { checkBrowserCompatibility } from './ai/analyzers/browserCompatibility';
+import { createHybridModeActions } from './ai/huggingface/hybridModeActions';
+import { handleTextGenerationError, logExecutionStrategy } from './ai/huggingface/errorHandling';
 
 export function useHuggingFace(provider: string = 'huggingface') {
-  // Vérifier si le mode hybride est activé
+  // Création du gestionnaire de capabilities système
   const { 
     getSystemCapabilities, 
     determineExecutionStrategy,
@@ -30,6 +31,7 @@ export function useHuggingFace(provider: string = 'huggingface') {
   
   const hybridModeEnabled = isHybridModeEnabled();
   
+  // États du hook
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [serviceType, setServiceType] = useState<AIServiceType>(
@@ -44,12 +46,20 @@ export function useHuggingFace(provider: string = 'huggingface') {
     localStorage.getItem('localProvider') as LLMProviderType || 'huggingface'
   );
 
+  // Fonctionnalités pour le téléchargement de modèles
   const { 
     downloadStatus: modelDownloadStatus, 
     startModelDownload: downloadModel,
     fetchDownloadProgress
   } = useModelDownload();
 
+  // Actions pour le mode hybride
+  const {
+    enableHybridMode: enableHybrid,
+    disableHybridMode: disableHybrid
+  } = createHybridModeActions(setServiceType);
+
+  // Effet pour la gestion du mode hybride
   useEffect(() => {
     // Mettre à jour le type de service si le mode hybride est détecté
     if (hybridModeEnabled && serviceType !== 'hybrid') {
@@ -77,12 +87,12 @@ export function useHuggingFace(provider: string = 'huggingface') {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [hybridModeEnabled]);
 
+  // Effet pour vérifier la compatibilité du navigateur
   useEffect(() => {
     const checkCompatibility = () => {
       const browserCompatibility = checkBrowserCompatibility();
       
-      // Si le navigateur n'est pas compatible avec des fonctionnalités critiques,
-      // basculer automatiquement vers le mode cloud
+      // Si le navigateur n'est pas compatible, basculer vers le cloud
       if (browserCompatibility.shouldFallbackToCloud && !hybridModeEnabled) {
         setServiceType('cloud');
         localStorage.setItem('aiServiceType', 'cloud');
@@ -101,7 +111,7 @@ export function useHuggingFace(provider: string = 'huggingface') {
     checkCompatibility();
   }, [hybridModeEnabled]);
 
-  // Vérifier périodiquement la disponibilité du service local en mode hybride
+  // Vérification périodique du service local en mode hybride
   useEffect(() => {
     if (serviceType === 'hybrid') {
       const checkLocalAvailability = async () => {
@@ -121,13 +131,16 @@ export function useHuggingFace(provider: string = 'huggingface') {
     }
   }, [serviceType, localAIUrl]);
 
+  // Fonction principale pour la génération de texte
   const textGeneration = async (options: TextGenerationParameters): Promise<TextGenerationResponse[]> => {
     setIsLoading(true);
     setError(null);
     
     try {
+      // Déterminer la stratégie d'exécution
       const executionStrategy = await determineExecutionStrategy(options, serviceType);
       
+      // Exécuter la requête
       const response = await executeAIRequest(
         options, 
         executionStrategy, 
@@ -137,96 +150,31 @@ export function useHuggingFace(provider: string = 'huggingface') {
         provider
       );
       
-      if (serviceType === 'local' && executionStrategy === 'cloud') {
-        console.log("Basculement temporaire vers le cloud");
-      } else if (serviceType === 'hybrid') {
-        console.log(`Mode hybride: utilisation de la stratégie ${executionStrategy}`);
-      }
+      // Logging
+      logExecutionStrategy(serviceType, executionStrategy);
       
       return response;
     } catch (e) {
-      console.error("Erreur lors de l'appel au modèle:", e);
       setError(e instanceof Error ? e.message : String(e));
-      
-      if (serviceType === 'hybrid') {
-        // En mode hybride, on tente de basculer d'une stratégie à l'autre en cas d'erreur
-        try {
-          console.log("Tentative de basculement automatique en mode hybride");
-          const fallbackStrategy = options.forceLocal ? 'cloud' : 'local';
-          
-          // Forcer la stratégie opposée
-          const fallbackOptions = { 
-            ...options,
-            forceLocal: fallbackStrategy === 'local', 
-            forceCloud: fallbackStrategy === 'cloud'
-          };
-          
-          toast({
-            title: "Basculement automatique",
-            description: `Tentative d'utilisation du service ${fallbackStrategy === 'local' ? 'local' : 'cloud'}`,
-            variant: "default"
-          });
-          
-          const fallbackResponse = await executeAIRequest(
-            fallbackOptions, 
-            fallbackStrategy, 
-            localAIUrl, 
-            localProvider, 
-            modelDownloadStatus, 
-            provider
-          );
-          
-          return fallbackResponse;
-        } catch (fallbackError) {
-          console.error("Échec du basculement automatique:", fallbackError);
-          // Si le basculement échoue également, on rejette avec l'erreur d'origine
-          throw e;
-        }
-      } else {
-        // En mode non-hybride, on affiche simplement l'erreur
-        notifyServiceChange(
-          "Erreur de connexion au service d'IA",
-          "Impossible de se connecter au service d'IA. Vérifiez votre connexion ou essayez plus tard.",
-          "destructive"
-        );
-        
-        throw e;
-      }
+      return await handleTextGenerationError(
+        e, 
+        serviceType, 
+        options, 
+        localAIUrl, 
+        localProvider, 
+        modelDownloadStatus, 
+        provider
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Fonction pour configurer le provider local
   const setLocalProviderConfig = useCallback((provider: LLMProviderType) => {
     const updatedProvider = setProviderConfig(provider);
     setLocalProvider(updatedProvider);
     return updatedProvider;
-  }, []);
-
-  // Activer explicitement le mode hybride
-  const enableHybridMode = useCallback(() => {
-    setServiceType('hybrid');
-    localStorage.setItem('hybridMode', 'true');
-    
-    toast({
-      title: "Mode hybride activé",
-      description: "FileChat utilise maintenant les modèles locaux et cloud ensemble",
-      variant: "default"
-    });
-  }, []);
-
-  // Désactiver le mode hybride
-  const disableHybridMode = useCallback(() => {
-    const defaultMode: AIServiceType = 'cloud';
-    setServiceType(defaultMode);
-    localStorage.removeItem('hybridMode');
-    localStorage.setItem('aiServiceType', defaultMode);
-    
-    toast({
-      title: "Mode hybride désactivé",
-      description: `FileChat utilise maintenant uniquement le mode ${defaultMode}`,
-      variant: "default"
-    });
   }, []);
 
   return { 
@@ -243,7 +191,7 @@ export function useHuggingFace(provider: string = 'huggingface') {
     downloadModel,
     modelsAvailable: [],
     isHybridMode: serviceType === 'hybrid',
-    enableHybridMode,
-    disableHybridMode
+    enableHybridMode: enableHybrid,
+    disableHybridMode: disableHybrid
   };
 }
