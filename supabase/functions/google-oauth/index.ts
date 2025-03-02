@@ -1,23 +1,23 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.5.0';
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
-// Création du client Supabase
+// Création du client Supabase avec les variables d'environnement
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Configuration OAuth
-const GOOGLE_CLIENT_ID = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID') || '';
-const GOOGLE_CLIENT_SECRET = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET') || '';
+// Clés d'API pour Google OAuth
+const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID') || '';
+const clientSecret = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET') || '';
 
 serve(async (req) => {
-  // Gestion CORS pour les requêtes préliminaires OPTIONS
+  // Gestion des requêtes CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -26,93 +26,91 @@ serve(async (req) => {
     // Récupération des données de la requête
     const { action, code, redirectUrl, userId } = await req.json();
 
-    // Récupérer le client ID uniquement (sécurisé)
+    // Action: récupérer le client_id
     if (action === 'get_client_id') {
-      return new Response(JSON.stringify({ client_id: GOOGLE_CLIENT_ID }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ client_id: clientId }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    // Échanger le code contre un token (TOUJOURS côté serveur)
+    
+    // Action: échanger le code d'autorisation
     if (action === 'exchange_code') {
-      console.log("Échange du code d'autorisation contre des tokens...");
-      
-      if (!code) {
-        return new Response(
-          JSON.stringify({ error: "Code d'autorisation manquant" }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      if (!code || !redirectUrl) {
+        throw new Error("Code d'autorisation ou URL de redirection manquant");
       }
 
-      if (!redirectUrl) {
-        return new Response(
-          JSON.stringify({ error: "URL de redirection manquante" }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+      // Préparation des paramètres d'échange du code
+      const tokenParams = new URLSearchParams();
+      tokenParams.append('client_id', clientId);
+      tokenParams.append('client_secret', clientSecret);
+      tokenParams.append('code', code);
+      tokenParams.append('redirect_uri', redirectUrl);
+      tokenParams.append('grant_type', 'authorization_code');
 
+      // Échange du code contre un token
       const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          code,
-          client_id: GOOGLE_CLIENT_ID,
-          client_secret: GOOGLE_CLIENT_SECRET,
-          redirect_uri: redirectUrl,
-          grant_type: 'authorization_code',
-        }),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: tokenParams.toString(),
       });
 
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error("Erreur lors de l'échange du code:", errorText);
+        throw new Error(`Erreur lors de l'échange du code: ${errorText}`);
+      }
+
+      // Récupération des données du token
       const tokenData = await tokenResponse.json();
       
-      if (tokenData.error) {
-        console.error("Erreur lors de l'échange du code:", tokenData);
-        return new Response(
-          JSON.stringify({ error: tokenData.error_description || tokenData.error }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      // Récupération des informations utilisateur
+      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+        },
+      });
+
+      if (!userInfoResponse.ok) {
+        throw new Error("Erreur lors de la récupération des informations utilisateur");
       }
 
-      // Récupérer les infos du profil
-      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: { Authorization: `Bearer ${tokenData.access_token}` },
-      });
-      
       const userInfo = await userInfoResponse.json();
       
-      // Récupérer l'ID utilisateur de la session
-      const { data: authData } = await supabase.auth.getUser(req.headers.get('Authorization')?.split(' ')[1] || '');
+      // Calcul de la date d'expiration
+      const expiresAt = new Date();
+      expiresAt.setSeconds(expiresAt.getSeconds() + tokenData.expires_in);
       
-      const userID = authData?.user?.id;
-      if (!userID) {
-        return new Response(
-          JSON.stringify({ error: "Utilisateur non authentifié" }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      // Récupérer l'utilisateur Supabase courant
+      const { data: sessionData, error: sessionError } = await supabase.auth.getUser(req.headers.get('Authorization')?.split(' ')[1] || '');
+      
+      if (sessionError) {
+        throw new Error(`Erreur d'authentification: ${sessionError.message}`);
       }
-
-      // Stocker les tokens dans la base de données
-      const { error: tokenError } = await supabase
+      
+      const currentUserId = sessionData.user?.id;
+      
+      // Stockage du token dans la base de données
+      const { error: insertError } = await supabase
         .from('oauth_tokens')
         .upsert({
-          user_id: userID,
           provider: 'google',
+          user_id: currentUserId,
           access_token: tokenData.access_token,
           refresh_token: tokenData.refresh_token,
-          expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+          expires_at: expiresAt.toISOString(),
           metadata: {
             email: userInfo.email,
             name: userInfo.name,
             picture: userInfo.picture,
-          },
+            created_at: new Date().toISOString()
+          }
         });
 
-      if (tokenError) {
-        console.error("Erreur lors du stockage des tokens:", tokenError);
-        return new Response(
-          JSON.stringify({ error: "Erreur lors du stockage des tokens" }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      if (insertError) {
+        throw new Error(`Erreur lors du stockage du token: ${insertError.message}`);
       }
 
       return new Response(
@@ -120,123 +118,186 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Rafraîchir un token expiré
-    if (action === 'refresh_token') {
-      const { data: tokens, error: fetchError } = await supabase
+    
+    // Action: vérifier l'état du token
+    if (action === 'check_token_status') {
+      if (!userId) {
+        throw new Error("ID utilisateur manquant");
+      }
+      
+      // Récupération du token depuis la base de données
+      const { data: tokenData, error: tokenError } = await supabase
         .from('oauth_tokens')
-        .select('refresh_token')
+        .select('expires_at, access_token')
         .eq('user_id', userId)
         .eq('provider', 'google')
-        .single();
-
-      if (fetchError || !tokens?.refresh_token) {
-        console.error("Erreur lors de la récupération du refresh token:", fetchError);
+        .maybeSingle();
+      
+      if (tokenError) {
+        throw new Error(`Erreur lors de la récupération du token: ${tokenError.message}`);
+      }
+      
+      if (!tokenData) {
         return new Response(
-          JSON.stringify({ error: "Token de rafraîchissement introuvable" }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ isValid: false }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-
+      
+      // Vérification de la validité du token
+      const expiresAt = new Date(tokenData.expires_at);
+      const now = new Date();
+      const isValid = expiresAt > now;
+      
+      // Calcul du temps restant en secondes
+      const expiresIn = Math.floor((expiresAt.getTime() - now.getTime()) / 1000);
+      
+      return new Response(
+        JSON.stringify({ isValid, expiresIn }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Action: rafraîchir le token
+    if (action === 'refresh_token') {
+      if (!userId) {
+        throw new Error("ID utilisateur manquant");
+      }
+      
+      // Récupération du refresh token depuis la base de données
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('oauth_tokens')
+        .select('refresh_token, metadata')
+        .eq('user_id', userId)
+        .eq('provider', 'google')
+        .maybeSingle();
+      
+      if (tokenError) {
+        throw new Error(`Erreur lors de la récupération du refresh token: ${tokenError.message}`);
+      }
+      
+      if (!tokenData?.refresh_token) {
+        throw new Error("Aucun refresh token trouvé");
+      }
+      
+      // Préparation des paramètres pour rafraîchir le token
+      const refreshParams = new URLSearchParams();
+      refreshParams.append('client_id', clientId);
+      refreshParams.append('client_secret', clientSecret);
+      refreshParams.append('refresh_token', tokenData.refresh_token);
+      refreshParams.append('grant_type', 'refresh_token');
+      
+      // Appel à l'API pour rafraîchir le token
       const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: GOOGLE_CLIENT_ID,
-          client_secret: GOOGLE_CLIENT_SECRET,
-          refresh_token: tokens.refresh_token,
-          grant_type: 'refresh_token',
-        }),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: refreshParams.toString(),
       });
-
-      const refreshData = await refreshResponse.json();
-
-      if (refreshData.error) {
-        console.error("Erreur lors du rafraîchissement du token:", refreshData);
-        return new Response(
-          JSON.stringify({ error: refreshData.error_description || refreshData.error }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      
+      if (!refreshResponse.ok) {
+        const errorText = await refreshResponse.text();
+        console.error("Erreur lors du rafraîchissement du token:", errorText);
+        throw new Error(`Erreur lors du rafraîchissement du token: ${errorText}`);
       }
-
-      // Mettre à jour le token d'accès dans la base de données
+      
+      // Récupération des nouvelles données du token
+      const newTokenData = await refreshResponse.json();
+      
+      // Calcul de la nouvelle date d'expiration
+      const expiresAt = new Date();
+      expiresAt.setSeconds(expiresAt.getSeconds() + newTokenData.expires_in);
+      
+      // Mise à jour du token dans la base de données
       const { error: updateError } = await supabase
         .from('oauth_tokens')
         .update({
-          access_token: refreshData.access_token,
-          expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
-          updated_at: new Date().toISOString(),
+          access_token: newTokenData.access_token,
+          expires_at: expiresAt.toISOString(),
+          // Conserver le refresh token existant si le nouveau n'est pas fourni
+          ...(newTokenData.refresh_token ? { refresh_token: newTokenData.refresh_token } : {})
         })
         .eq('user_id', userId)
         .eq('provider', 'google');
-
+      
       if (updateError) {
-        console.error("Erreur lors de la mise à jour du token:", updateError);
-        return new Response(
-          JSON.stringify({ error: "Erreur lors de la mise à jour du token" }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        throw new Error(`Erreur lors de la mise à jour du token: ${updateError.message}`);
       }
-
+      
       return new Response(
         JSON.stringify({ success: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Révoquer un token
+    
+    // Action: révoquer le token
     if (action === 'revoke_token') {
-      const { data: tokens, error: fetchError } = await supabase
+      if (!userId) {
+        throw new Error("ID utilisateur manquant");
+      }
+      
+      // Récupération du token depuis la base de données
+      const { data: tokenData, error: tokenError } = await supabase
         .from('oauth_tokens')
         .select('access_token')
         .eq('user_id', userId)
         .eq('provider', 'google')
-        .single();
-
-      if (fetchError || !tokens?.access_token) {
-        console.error("Erreur lors de la récupération du token à révoquer:", fetchError);
-        return new Response(
-          JSON.stringify({ error: "Token introuvable" }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        .maybeSingle();
+      
+      if (tokenError) {
+        throw new Error(`Erreur lors de la récupération du token: ${tokenError.message}`);
       }
-
-      // Révoquer le token auprès de Google
-      await fetch(`https://oauth2.googleapis.com/revoke?token=${tokens.access_token}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
-
-      // Supprimer le token de la base de données (même si la révocation échoue)
+      
+      if (tokenData?.access_token) {
+        // Révocation du token d'accès
+        const revokeParams = new URLSearchParams();
+        revokeParams.append('token', tokenData.access_token);
+        
+        await fetch('https://oauth2.googleapis.com/revoke', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: revokeParams.toString(),
+        });
+      }
+      
+      // Suppression du token de la base de données
       const { error: deleteError } = await supabase
         .from('oauth_tokens')
         .delete()
         .eq('user_id', userId)
         .eq('provider', 'google');
-
+      
       if (deleteError) {
-        console.error("Erreur lors de la suppression du token:", deleteError);
-        return new Response(
-          JSON.stringify({ error: "Erreur lors de la suppression du token" }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        throw new Error(`Erreur lors de la suppression du token: ${deleteError.message}`);
       }
-
+      
       return new Response(
         JSON.stringify({ success: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
+    
+    // Action non reconnue
     return new Response(
-      JSON.stringify({ error: "Action non reconnue" }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Action non supportée' }),
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
+    
   } catch (error) {
-    console.error("Erreur dans la fonction google-oauth:", error);
+    console.error('Erreur dans la fonction Google OAuth:', error);
+    
     return new Response(
-      JSON.stringify({ error: "Erreur interne du serveur" }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });
