@@ -1,296 +1,303 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { createClient } from '@supabase/supabase-js';
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
+// Configuration des en-têtes CORS pour permettre les appels depuis le frontend
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface OAuthRequest {
+  code?: string;
+  action?: string;
+  redirectUrl?: string;
+  userId?: string;
+  tenantId?: string;
+  state?: string;
 }
 
-// Création du client Supabase avec les variables d'environnement
-const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Clés d'API pour Microsoft OAuth - à configurer dans les secrets de l'Edge Function
-const clientId = Deno.env.get('MICROSOFT_OAUTH_CLIENT_ID') || '';
-const clientSecret = Deno.env.get('MICROSOFT_OAUTH_CLIENT_SECRET') || '';
-
 serve(async (req) => {
-  // Gestion des requêtes CORS preflight
+  // Gestion des requêtes OPTIONS pour CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Récupération des données de la requête
-    const { action, code, redirectUrl, userId, tenantId } = await req.json();
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Action: récupérer le client_id
-    if (action === 'get_client_id') {
+    const requestBody: OAuthRequest = await req.json();
+    const { code, action, redirectUrl, userId, tenantId, state } = requestBody;
+
+    // Récupération des identifiants client depuis la table service_configurations
+    const { data: serviceConfig, error: configError } = await supabase
+      .from('service_configurations')
+      .select('config')
+      .eq('service_type', 'MICROSOFT_OAUTH')
+      .single();
+
+    if (configError || !serviceConfig?.config) {
+      console.error("Erreur lors de la récupération de la configuration OAuth:", configError);
       return new Response(
-        JSON.stringify({ client_id: clientId }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Configuration OAuth non trouvée" }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
-    
-    // Action: échanger le code d'autorisation
-    if (action === 'exchange_code') {
-      if (!code || !redirectUrl) {
-        throw new Error("Code d'autorisation ou URL de redirection manquant");
-      }
 
-      // Récupérer l'utilisateur Supabase courant
-      const { data: sessionData, error: sessionError } = await supabase.auth.getUser(req.headers.get('Authorization')?.split(' ')[1] || '');
-      
-      if (sessionError) {
-        throw new Error(`Erreur d'authentification: ${sessionError.message}`);
-      }
-      
-      const currentUserId = sessionData.user?.id;
+    const clientId = serviceConfig.config.client_id;
+    const clientSecret = serviceConfig.config.client_secret;
 
-      // Récupération du tenant ID depuis la configuration
-      const { data: tenantConfig, error: tenantError } = await supabase
-        .from('service_configurations')
-        .select('config')
-        .eq('service_type', 'microsoft_teams')
-        .maybeSingle();
-      
-      if (tenantError) {
-        throw new Error(`Erreur lors de la récupération de la configuration: ${tenantError.message}`);
-      }
-      
-      const tenantIdFromConfig = tenantConfig?.config?.tenantId || 'common';
-      
-      // Préparation des paramètres d'échange du code
-      const tokenParams = new URLSearchParams();
-      tokenParams.append('client_id', clientId);
-      tokenParams.append('client_secret', clientSecret);
-      tokenParams.append('code', code);
-      tokenParams.append('redirect_uri', redirectUrl);
-      tokenParams.append('grant_type', 'authorization_code');
-
-      // Échange du code contre un token
-      const tokenResponse = await fetch(`https://login.microsoftonline.com/${tenantIdFromConfig}/oauth2/v2.0/token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: tokenParams.toString(),
-      });
-
-      if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error("Erreur lors de l'échange du code:", errorText);
-        throw new Error(`Erreur lors de l'échange du code: ${errorText}`);
-      }
-
-      // Récupération des données du token
-      const tokenData = await tokenResponse.json();
-      
-      // Récupération des informations utilisateur
-      const userInfoResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
-        headers: {
-          'Authorization': `Bearer ${tokenData.access_token}`,
-        },
-      });
-
-      if (!userInfoResponse.ok) {
-        throw new Error("Erreur lors de la récupération des informations utilisateur");
-      }
-
-      const userInfo = await userInfoResponse.json();
-      
-      // Calcul de la date d'expiration
-      const expiresAt = new Date();
-      expiresAt.setSeconds(expiresAt.getSeconds() + tokenData.expires_in);
-      
-      // Stockage du token dans la base de données
-      const { error: insertError } = await supabase
-        .from('oauth_tokens')
-        .upsert({
-          provider: 'microsoft',
-          user_id: currentUserId,
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          expires_at: expiresAt.toISOString(),
-          metadata: {
-            email: userInfo.userPrincipalName || userInfo.mail,
-            name: userInfo.displayName,
-            tenant_id: tenantIdFromConfig,
-            created_at: new Date().toISOString()
-          }
-        });
-
-      if (insertError) {
-        throw new Error(`Erreur lors du stockage du token: ${insertError.message}`);
-      }
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          email: userInfo.userPrincipalName || userInfo.mail 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Action: vérifier l'état du token
-    if (action === 'check_token_status') {
-      if (!userId) {
-        throw new Error("ID utilisateur manquant");
-      }
-      
-      // Récupération du token depuis la base de données
-      const { data: tokenData, error: tokenError } = await supabase
-        .from('oauth_tokens')
-        .select('expires_at, access_token')
-        .eq('user_id', userId)
-        .eq('provider', 'microsoft')
-        .maybeSingle();
-      
-      if (tokenError) {
-        throw new Error(`Erreur lors de la récupération du token: ${tokenError.message}`);
-      }
-      
-      if (!tokenData) {
+    // Traitement en fonction de l'action demandée
+    switch (action) {
+      case 'get_client_id':
         return new Response(
-          JSON.stringify({ isValid: false }),
+          JSON.stringify({ client_id: clientId }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
-      }
-      
-      // Vérification de la validité du token
-      const expiresAt = new Date(tokenData.expires_at);
-      const now = new Date();
-      const isValid = expiresAt > now;
-      
-      // Calcul du temps restant en secondes
-      const expiresIn = Math.floor((expiresAt.getTime() - now.getTime()) / 1000);
-      
-      return new Response(
-        JSON.stringify({ isValid, expiresIn }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+
+      case 'revoke_token':
+        if (!userId) {
+          return new Response(
+            JSON.stringify({ error: "ID utilisateur requis pour révoquer le token" }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+
+        // Pour Microsoft, il n'y a pas d'endpoint de révocation standard
+        // On supprime simplement les tokens de la base de données
+        await supabase
+          .from('oauth_tokens')
+          .delete()
+          .eq('user_id', userId)
+          .eq('provider', 'microsoft');
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      case 'check_token_status':
+        if (!userId) {
+          return new Response(
+            JSON.stringify({ error: "ID utilisateur requis pour vérifier le statut du token" }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+
+        const { data: tokenStatus, error: statusError } = await supabase
+          .from('oauth_tokens')
+          .select('expires_at, access_token')
+          .eq('user_id', userId)
+          .eq('provider', 'microsoft')
+          .single();
+
+        if (statusError || !tokenStatus) {
+          return new Response(
+            JSON.stringify({ isValid: false }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const expiresAt = new Date(tokenStatus.expires_at);
+        const now = new Date();
+        const isValid = expiresAt > now;
+        const expiresIn = Math.floor((expiresAt.getTime() - now.getTime()) / 1000);
+
+        return new Response(
+          JSON.stringify({ isValid, expiresIn }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      case 'refresh_token':
+        if (!userId) {
+          return new Response(
+            JSON.stringify({ error: "ID utilisateur requis pour rafraîchir le token" }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+
+        const { data: refreshData, error: refreshError } = await supabase
+          .from('oauth_tokens')
+          .select('refresh_token')
+          .eq('user_id', userId)
+          .eq('provider', 'microsoft')
+          .single();
+
+        if (refreshError || !refreshData?.refresh_token) {
+          return new Response(
+            JSON.stringify({ error: "Token de rafraîchissement non trouvé" }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+
+        // Nous avons besoin du tenant ID pour Microsoft
+        const currentTenantId = tenantId || 'common';
+
+        // Rafraîchissement du token
+        const tokenResponse = await fetch(`https://login.microsoftonline.com/${currentTenantId}/oauth2/v2.0/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            refresh_token: refreshData.refresh_token,
+            grant_type: 'refresh_token'
+          })
+        });
+
+        const tokenData = await tokenResponse.json();
+
+        if (!tokenResponse.ok) {
+          console.error("Erreur lors du rafraîchissement du token:", tokenData);
+          return new Response(
+            JSON.stringify({ error: "Échec du rafraîchissement du token", details: tokenData }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+
+        // Calcul de la date d'expiration
+        const expiryDate = new Date();
+        expiryDate.setSeconds(expiryDate.getSeconds() + tokenData.expires_in);
+
+        // Mise à jour du token dans la BD
+        const { error: updateError } = await supabase
+          .from('oauth_tokens')
+          .update({
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token, // Microsoft retourne un nouveau refresh token
+            expires_at: expiryDate.toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId)
+          .eq('provider', 'microsoft');
+
+        if (updateError) {
+          console.error("Erreur lors de la mise à jour du token:", updateError);
+          return new Response(
+            JSON.stringify({ error: "Échec de la mise à jour du token en BD" }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      default:
+        // Traitement du code d'authentification (comportement par défaut)
+        if (!code || !redirectUrl) {
+          return new Response(
+            JSON.stringify({ error: "Code d'autorisation et URL de redirection requis" }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+
+        // Vérification de l'état si fourni
+        if (!state) {
+          console.warn("État OAuth non fourni dans la requête");
+        }
+
+        // Nous avons besoin du tenant ID pour Microsoft
+        const authTenantId = tenantId || 'common';
+
+        // Échange du code contre des tokens
+        const tokenUrl = `https://login.microsoftonline.com/${authTenantId}/oauth2/v2.0/token`;
+        const tokenReq = await fetch(tokenUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            code,
+            client_id: clientId,
+            client_secret: clientSecret,
+            redirect_uri: redirectUrl,
+            grant_type: 'authorization_code'
+          })
+        });
+
+        const tokenResult = await tokenReq.json();
+
+        if (!tokenReq.ok) {
+          console.error("Erreur lors de l'échange du code:", tokenResult);
+          return new Response(
+            JSON.stringify({ error: "Échec de l'échange du code d'autorisation", details: tokenResult }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+
+        // Récupération des informations utilisateur
+        const userInfoReq = await fetch('https://graph.microsoft.com/v1.0/me', {
+          headers: { Authorization: `Bearer ${tokenResult.access_token}` }
+        });
+
+        const userInfo = await userInfoReq.json();
+
+        if (!userInfoReq.ok) {
+          console.error("Erreur lors de la récupération des informations utilisateur:", userInfo);
+          return new Response(
+            JSON.stringify({ error: "Échec de la récupération des informations utilisateur" }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
+        }
+
+        // Récupération de l'utilisateur Supabase actuel
+        const { data: { user } } = await supabase.auth.getUser(req.headers.get('Authorization')?.split(' ')[1] || '');
+
+        if (!user) {
+          return new Response(
+            JSON.stringify({ error: "Utilisateur non authentifié" }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+          );
+        }
+
+        // Calcul de la date d'expiration
+        const expiresAt = new Date();
+        expiresAt.setSeconds(expiresAt.getSeconds() + tokenResult.expires_in);
+
+        // Stockage des tokens dans Supabase
+        const { error: insertError } = await supabase
+          .from('oauth_tokens')
+          .upsert({
+            user_id: user.id,
+            provider: 'microsoft',
+            access_token: tokenResult.access_token,
+            refresh_token: tokenResult.refresh_token,
+            expires_at: expiresAt.toISOString(),
+            provider_user_id: userInfo.id,
+            provider_user_email: userInfo.userPrincipalName || userInfo.mail,
+            provider_user_info: userInfo,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id,provider' });
+
+        if (insertError) {
+          console.error("Erreur lors du stockage des tokens:", insertError);
+          return new Response(
+            JSON.stringify({ error: "Échec du stockage des tokens" }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            user_info: {
+              id: userInfo.id,
+              email: userInfo.userPrincipalName || userInfo.mail,
+              name: userInfo.displayName,
+              picture: null // Microsoft ne fournit pas directement une URL d'avatar
+            }
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
     }
-    
-    // Action: rafraîchir le token
-    if (action === 'refresh_token') {
-      if (!userId) {
-        throw new Error("ID utilisateur manquant");
-      }
-      
-      // Récupération du refresh token depuis la base de données
-      const { data: tokenData, error: tokenError } = await supabase
-        .from('oauth_tokens')
-        .select('refresh_token, metadata')
-        .eq('user_id', userId)
-        .eq('provider', 'microsoft')
-        .maybeSingle();
-      
-      if (tokenError) {
-        throw new Error(`Erreur lors de la récupération du refresh token: ${tokenError.message}`);
-      }
-      
-      if (!tokenData?.refresh_token) {
-        throw new Error("Aucun refresh token trouvé");
-      }
-      
-      const tenantId = tokenData.metadata?.tenant_id || 'common';
-      
-      // Préparation des paramètres pour rafraîchir le token
-      const refreshParams = new URLSearchParams();
-      refreshParams.append('client_id', clientId);
-      refreshParams.append('client_secret', clientSecret);
-      refreshParams.append('refresh_token', tokenData.refresh_token);
-      refreshParams.append('grant_type', 'refresh_token');
-      
-      // Appel à l'API pour rafraîchir le token
-      const refreshResponse = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: refreshParams.toString(),
-      });
-      
-      if (!refreshResponse.ok) {
-        const errorText = await refreshResponse.text();
-        console.error("Erreur lors du rafraîchissement du token:", errorText);
-        throw new Error(`Erreur lors du rafraîchissement du token: ${errorText}`);
-      }
-      
-      // Récupération des nouvelles données du token
-      const newTokenData = await refreshResponse.json();
-      
-      // Calcul de la nouvelle date d'expiration
-      const expiresAt = new Date();
-      expiresAt.setSeconds(expiresAt.getSeconds() + newTokenData.expires_in);
-      
-      // Mise à jour du token dans la base de données
-      const { error: updateError } = await supabase
-        .from('oauth_tokens')
-        .update({
-          access_token: newTokenData.access_token,
-          expires_at: expiresAt.toISOString(),
-          // Conserver le refresh token existant si le nouveau n'est pas fourni
-          ...(newTokenData.refresh_token ? { refresh_token: newTokenData.refresh_token } : {})
-        })
-        .eq('user_id', userId)
-        .eq('provider', 'microsoft');
-      
-      if (updateError) {
-        throw new Error(`Erreur lors de la mise à jour du token: ${updateError.message}`);
-      }
-      
-      return new Response(
-        JSON.stringify({ success: true }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Action: révoquer le token
-    if (action === 'revoke_token') {
-      if (!userId) {
-        throw new Error("ID utilisateur manquant");
-      }
-      
-      // Pour Microsoft, pas d'endpoint de révocation simple
-      // Nous allons simplement supprimer le token de la base de données
-      const { error: deleteError } = await supabase
-        .from('oauth_tokens')
-        .delete()
-        .eq('user_id', userId)
-        .eq('provider', 'microsoft');
-      
-      if (deleteError) {
-        throw new Error(`Erreur lors de la suppression du token: ${deleteError.message}`);
-      }
-      
-      return new Response(
-        JSON.stringify({ success: true }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Action non reconnue
-    return new Response(
-      JSON.stringify({ error: 'Action non supportée' }),
-      { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-    
   } catch (error) {
-    console.error('Erreur dans la fonction Microsoft OAuth:', error);
-    
+    console.error("Erreur lors du traitement de la requête OAuth Microsoft:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ error: "Erreur interne du serveur", details: error.message }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });

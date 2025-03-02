@@ -2,10 +2,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { getRedirectUrl } from '@/utils/environmentUtils';
-import { generateOAuthState } from '@/utils/oauthStateManager';
+import { generateOAuthState, validateOAuthState } from '@/utils/oauthStateManager';
 
 /**
- * Récupère l'URL de redirection pour l'authentification OAuth Google Drive
+ * Récupère l'URL de redirection pour l'authentification OAuth Google
  * @returns L'URL complète de redirection pour Google OAuth
  */
 export const getGoogleRedirectUrl = (): string => {
@@ -17,7 +17,7 @@ export const getGoogleRedirectUrl = (): string => {
  * @param userId L'ID de l'utilisateur actuel
  * @returns Promise avec l'URL d'authentification Google
  */
-export const initiateGoogleAuth = async (userId: string): Promise<string> => {
+export const initiateGoogleDriveAuth = async (userId: string): Promise<string> => {
   if (!userId) {
     throw new Error("Utilisateur non connecté");
   }
@@ -41,12 +41,12 @@ export const initiateGoogleAuth = async (userId: string): Promise<string> => {
   // Génération d'un état OAuth sécurisé pour prévenir les attaques CSRF
   const state = generateOAuthState('google');
 
-  // Demande de scopes étendus pour l'accès aux fichiers
+  // Demande de scopes nécessaires pour Google Drive
   const scopes = encodeURIComponent(
-    'https://www.googleapis.com/auth/drive.file ' +
-    'https://www.googleapis.com/auth/drive.metadata.readonly ' +
     'https://www.googleapis.com/auth/userinfo.email ' +
-    'https://www.googleapis.com/auth/userinfo.profile'
+    'https://www.googleapis.com/auth/userinfo.profile ' + 
+    'https://www.googleapis.com/auth/drive.readonly ' +
+    'https://www.googleapis.com/auth/drive.metadata.readonly'
   );
   
   const redirectUrl = encodeURIComponent(redirectUri);
@@ -61,6 +61,41 @@ export const initiateGoogleAuth = async (userId: string): Promise<string> => {
     `prompt=consent`;
 
   return authUrl;
+};
+
+/**
+ * Échange le code d'autorisation contre des tokens d'accès
+ * @param code Le code d'autorisation retourné par Google
+ * @param state L'état OAuth retourné par Google
+ * @returns Promise avec les informations utilisateur Google
+ */
+export const exchangeGoogleAuthCode = async (code: string, state: string): Promise<any> => {
+  // Vérification de l'état OAuth
+  if (!validateOAuthState('google', state)) {
+    toast({
+      title: "Erreur d'authentification",
+      description: "Session OAuth expirée ou invalide. Veuillez réessayer.",
+      variant: "destructive"
+    });
+    throw new Error("État OAuth invalide");
+  }
+
+  const redirectUrl = getGoogleRedirectUrl();
+  
+  const { data, error } = await supabase.functions.invoke('google-oauth', {
+    body: { 
+      code, 
+      redirectUrl,
+      state
+    }
+  });
+  
+  if (error || !data?.success) {
+    console.error("Erreur lors de l'échange du code:", error || data?.error);
+    throw new Error("Échec de l'authentification Google Drive");
+  }
+  
+  return data.user_info;
 };
 
 /**
@@ -94,7 +129,7 @@ export const revokeGoogleDriveAccess = async (userId: string): Promise<boolean> 
  * @param userId L'ID de l'utilisateur actuel
  * @returns Promise indiquant si le token est valide
  */
-export const checkGoogleTokenStatus = async (userId: string): Promise<{isValid: boolean, expiresIn?: number}> => {
+export const checkGoogleDriveTokenStatus = async (userId: string): Promise<{isValid: boolean, expiresIn?: number}> => {
   if (!userId) return { isValid: false };
   
   try {
@@ -122,7 +157,7 @@ export const checkGoogleTokenStatus = async (userId: string): Promise<{isValid: 
  * @param userId L'ID de l'utilisateur actuel
  * @returns Promise indiquant le succès du rafraîchissement
  */
-export const refreshGoogleToken = async (userId: string): Promise<boolean> => {
+export const refreshGoogleDriveToken = async (userId: string): Promise<boolean> => {
   if (!userId) return false;
   
   try {

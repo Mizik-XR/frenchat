@@ -1,116 +1,168 @@
 
-import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { getMicrosoftRedirectUrl } from '@/utils/microsoftTeamsUtils';
-import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle } from 'lucide-react';
-import { validateOAuthState } from '@/utils/oauthStateManager';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { validateOAuthState } from "@/utils/oauthStateManager";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { getRedirectUrl } from "@/utils/environmentUtils";
 
-export default function MicrosoftAuthCallback() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+const MicrosoftAuthCallback = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
-    const exchangeCodeForToken = async () => {
+    const handleAuth = async () => {
       try {
-        // Extraire le code d'autorisation et l'état de l'URL
-        const urlParams = new URLSearchParams(location.search);
-        const code = urlParams.get('code');
-        const state = urlParams.get('state');
-        
+        // Récupération des paramètres d'URL
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const state = params.get('state');
+        const error = params.get('error');
+        const errorDescription = params.get('error_description');
+
+        // Gestion des erreurs retournées par Microsoft
+        if (error) {
+          console.error("Erreur OAuth retournée par Microsoft:", error, errorDescription);
+          setStatus('error');
+          setErrorMessage(`Erreur d'authentification Microsoft: ${error} - ${errorDescription || ''}`);
+          toast({
+            title: "Échec de l'authentification",
+            description: `Microsoft a retourné une erreur: ${error}`,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Vérification des paramètres requis
         if (!code) {
-          throw new Error("Code d'autorisation manquant dans l'URL");
+          console.error("Code d'autorisation manquant dans l'URL");
+          setStatus('error');
+          setErrorMessage("Code d'autorisation manquant");
+          toast({
+            title: "Échec de l'authentification",
+            description: "Code d'autorisation Microsoft manquant",
+            variant: "destructive",
+          });
+          return;
         }
-        
+
         if (!state) {
-          throw new Error("Paramètre state manquant dans l'URL de redirection");
+          console.error("Paramètre state manquant dans l'URL");
+          setStatus('error');
+          setErrorMessage("Paramètre state manquant - possible tentative CSRF");
+          toast({
+            title: "Échec de l'authentification",
+            description: "Paramètre de sécurité state manquant - possible tentative CSRF",
+            variant: "destructive",
+          });
+          return;
         }
-        
-        // Vérifier la validité du state pour protéger contre les attaques CSRF
+
+        // Validation de l'état OAuth pour prévenir les attaques CSRF
         if (!validateOAuthState('microsoft', state)) {
-          throw new Error("Validation de sécurité échouée (state invalide)");
+          console.error("État OAuth invalide ou expiré");
+          setStatus('error');
+          setErrorMessage("Session d'authentification invalide ou expirée");
+          toast({
+            title: "Échec de l'authentification",
+            description: "Session d'authentification invalide ou expirée. Veuillez réessayer.",
+            variant: "destructive",
+          });
+          return;
         }
 
-        console.log("Code d'autorisation reçu, échange en cours...");
-
-        // Générer dynamiquement l'URL de redirection utilisée lors de l'autorisation
-        const redirectUrl = getMicrosoftRedirectUrl();
-        
-        // Appeler la fonction Supabase Edge pour échanger le code
-        const { data, error } = await supabase.functions.invoke('microsoft-oauth', {
-          body: {
-            action: 'exchange_code',
-            code,
+        // Échange du code contre des tokens via l'Edge Function sécurisée
+        const redirectUrl = getRedirectUrl('auth/microsoft/callback');
+        const { data, error: exchangeError } = await supabase.functions.invoke('microsoft-oauth', {
+          body: { 
+            code, 
             redirectUrl,
+            state
           }
         });
-
-        if (error) {
-          throw new Error(`Erreur lors de l'échange du code: ${error.message}`);
-        }
-
-        if (!data || !data.success) {
-          throw new Error("Échec de l'échange du code d'autorisation");
-        }
-
-        console.log("Authentification Microsoft réussie");
-        setSuccess(true);
         
-        // Redirection après un court délai pour que l'utilisateur voie le message de succès
+        if (exchangeError || !data?.success) {
+          throw new Error(exchangeError?.message || data?.error || "Échec de l'échange du code d'autorisation");
+        }
+        
+        const userInfo = data.user_info;
+        console.log("Authentification Microsoft réussie pour:", userInfo.email);
+        
+        setStatus('success');
+        toast({
+          title: "Authentication réussie",
+          description: `Connecté à Microsoft Teams en tant que ${userInfo.email}`,
+          variant: "default",
+        });
+        
+        // Redirection après un court délai pour laisser l'utilisateur voir le message de succès
         setTimeout(() => {
-          navigate('/config');
-        }, 2000);
-      } catch (err) {
-        console.error("Erreur lors du callback Microsoft:", err);
-        setError(err instanceof Error ? err.message : "Une erreur inconnue s'est produite");
-      } finally {
-        setLoading(false);
+          navigate('/config?tab=microsoft-teams', { replace: true });
+        }, 1500);
+      } catch (error) {
+        console.error("Erreur lors du traitement du callback OAuth:", error);
+        setStatus('error');
+        setErrorMessage(error.message || "Une erreur inconnue est survenue");
+        toast({
+          title: "Échec de l'authentification",
+          description: error.message || "Une erreur inconnue est survenue",
+          variant: "destructive",
+        });
       }
     };
 
-    exchangeCodeForToken();
-  }, [location.search, navigate]);
-
-  if (loading) {
-    return <AuthLoadingScreen message="Traitement de l'authentification Microsoft en cours..." />;
-  }
+    handleAuth();
+  }, [navigate]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Authentification Microsoft Teams</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {error ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Erreur</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-              <div className="mt-4">
-                <Button onClick={() => navigate('/config')}>
-                  Retour aux paramètres
-                </Button>
-              </div>
-            </Alert>
-          ) : (
-            <Alert variant="default" className="bg-green-50 border-green-200">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <AlertTitle className="text-green-700">Succès</AlertTitle>
-              <AlertDescription>
-                Votre compte Microsoft Teams a été connecté avec succès. Vous allez être redirigé...
-              </AlertDescription>
-            </Alert>
+    <div className="flex h-screen w-full flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md rounded-lg border bg-card p-8 shadow-lg">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold">Authentification Microsoft Teams</h1>
+          
+          {status === 'loading' && (
+            <div className="mt-6 flex flex-col items-center">
+              <Loader2 className="mb-2 h-12 w-12 animate-spin text-primary" />
+              <p className="text-lg text-muted-foreground">
+                Finalisation de l'authentification...
+              </p>
+            </div>
           )}
-        </CardContent>
-      </Card>
+
+          {status === 'success' && (
+            <div className="mt-6 flex flex-col items-center">
+              <CheckCircle className="mb-2 h-12 w-12 text-green-500" />
+              <p className="text-lg text-muted-foreground">
+                Authentification réussie ! Redirection en cours...
+              </p>
+            </div>
+          )}
+
+          {status === 'error' && (
+            <div className="mt-6">
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-5 w-5" />
+                <AlertTitle>Erreur d'authentification</AlertTitle>
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+              
+              <Button 
+                variant="default" 
+                className="w-full" 
+                onClick={() => navigate('/config?tab=microsoft-teams')}
+              >
+                Retour à la configuration
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default MicrosoftAuthCallback;
