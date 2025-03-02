@@ -3,6 +3,13 @@
  * Utilitaires pour la gestion des environnements et des URLs
  */
 
+// Déclaration de type pour ajouter la propriété gptengineer à l'objet Window
+declare global {
+  interface Window {
+    gptengineer: any;
+  }
+}
+
 /**
  * Détecte l'URL de base de l'application en fonction de l'environnement
  * @returns L'URL de base de l'application
@@ -89,7 +96,6 @@ export const isLovableScriptLoaded = (): boolean => {
   if (typeof window === 'undefined') return false;
   
   // Vérifier si le script gptengineer.js est chargé
-  return typeof (window as any).gptengineer !== 'undefined' || 
+  return typeof window.gptengineer !== 'undefined' || 
          document.querySelector('script[src*="gptengineer.js"]') !== null;
 };
-
