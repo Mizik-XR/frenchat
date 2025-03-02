@@ -2,13 +2,7 @@
 # Config for function deployment
 project_id = "dbdueopvtlanxgumenpu"
 
-[functions.google-oauth]
-verify_jwt = false
-
-[functions.microsoft-oauth]
-verify_jwt = false
-
-[functions.secure-api-proxy]
+[functions.unified-oauth-proxy]
 verify_jwt = false
 
 [functions.index-google-drive]
@@ -23,12 +17,15 @@ verify_jwt = false
 [functions.advanced-rag-generation]
 verify_jwt = false
 
-[functions.generate-system-report]
-verify_jwt = false
-
-[functions.export-to-google-drive]
-verify_jwt = false
-
 [functions.cache-manager]
 verify_jwt = false
 
+# Fonctions temporairement désactivées pour respecter la limite du plan gratuit
+# [functions.microsoft-oauth]
+# verify_jwt = false
+
+# [functions.export-to-google-drive]
+# verify_jwt = false
+
+# [functions.generate-system-report]
+# verify_jwt = false

@@ -27,8 +27,9 @@ export const initiateGoogleDriveAuth = async (userId: string): Promise<string> =
   
   const { data: authData, error: authError } = await supabase.functions.invoke<{
     client_id: string;
-  }>('google-oauth', {
+  }>('unified-oauth-proxy', {
     body: { 
+      provider: 'google',
       action: 'get_client_id',
       redirectUrl: redirectUri
     }
@@ -82,11 +83,12 @@ export const exchangeGoogleAuthCode = async (code: string, state: string): Promi
 
   const redirectUrl = getGoogleRedirectUrl();
   
-  const { data, error } = await supabase.functions.invoke('google-oauth', {
+  const { data, error } = await supabase.functions.invoke('unified-oauth-proxy', {
     body: { 
-      code, 
-      redirectUrl,
-      state
+      provider: 'google',
+      code: code, 
+      redirectUrl: redirectUrl,
+      state: state
     }
   });
   
@@ -109,8 +111,9 @@ export const revokeGoogleDriveAccess = async (userId: string): Promise<boolean> 
   }
 
   // Appel sécurisé à l'Edge Function pour révoquer le token sans l'exposer côté client
-  const { error: revokeError } = await supabase.functions.invoke('google-oauth', {
+  const { error: revokeError } = await supabase.functions.invoke('unified-oauth-proxy', {
     body: { 
+      provider: 'google',
       action: 'revoke_token',
       userId: userId
     }
@@ -133,8 +136,9 @@ export const checkGoogleDriveTokenStatus = async (userId: string): Promise<{isVa
   if (!userId) return { isValid: false };
   
   try {
-    const { data, error } = await supabase.functions.invoke('google-oauth', {
+    const { data, error } = await supabase.functions.invoke('unified-oauth-proxy', {
       body: { 
+        provider: 'google',
         action: 'check_token_status', 
         userId: userId
       }
@@ -161,10 +165,12 @@ export const refreshGoogleDriveToken = async (userId: string): Promise<boolean> 
   if (!userId) return false;
   
   try {
-    const { data: refreshData, error: refreshError } = await supabase.functions.invoke('google-oauth', {
+    const { data: refreshData, error: refreshError } = await supabase.functions.invoke('unified-oauth-proxy', {
       body: { 
+        provider: 'google',
         action: 'refresh_token', 
-        userId: userId
+        userId: userId,
+        redirectUrl: getGoogleRedirectUrl()
       }
     });
     
