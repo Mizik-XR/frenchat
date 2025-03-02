@@ -9,7 +9,9 @@ import { estimateSystemCapabilities } from './analyzers/systemCapabilities';
 import { checkBrowserCompatibility } from './analyzers/browserCompatibility';
 import { testResponseTime, estimateNetworkSpeed } from './analyzers/networkAnalyzer';
 import { detectBrowser, getNetworkType } from './analyzers/browserAnalyzer';
-import { testCloudService, determineRecommendedMode } from './analyzers/serviceAnalyzer';
+
+// Import our diagnostic services
+import { testCloudService, determineRecommendedMode } from '../diagnostics/diagnosticServices';
 
 export { 
   analyzeRequest,
