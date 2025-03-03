@@ -67,6 +67,16 @@ export const isDebugMode = (): boolean => {
 };
 
 /**
+ * Obtient l'URL d'origine JavaScript autorisée pour l'environnement actuel
+ * Utile pour configurer Google OAuth
+ * @returns l'URL d'origine sans chemin
+ */
+export const getJavaScriptOrigin = (): string => {
+  if (typeof window === 'undefined') return 'http://localhost:8080';
+  return window.location.origin;
+};
+
+/**
  * Normalise les paramètres d'URL pour s'assurer que tous les paramètres nécessaires sont présents
  * @returns URL normalisée avec tous les paramètres nécessaires
  */
