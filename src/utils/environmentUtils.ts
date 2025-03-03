@@ -1,74 +1,200 @@
 
 /**
- * Utilitaires liés à l'environnement d'exécution
- * Aide à détecter le contexte d'exécution (local, cloud, preview, etc.)
+ * Utilitaires pour la gestion des environnements et des URLs
  */
 
+// Déclaration de type pour ajouter la propriété gptengineer à l'objet Window
+declare global {
+  interface Window {
+    gptengineer: any;
+    APP_CONFIG?: {
+      forceCloudMode?: boolean;
+      debugMode?: boolean;
+    };
+  }
+}
+
 /**
- * Détermine si l'application est en cours d'exécution en mode preview
- * (sur la plateforme Lovable ou netlify)
+ * Détecte l'URL de base de l'application en fonction de l'environnement
+ * @returns L'URL de base de l'application
  */
-export const isPreviewEnvironment = (): boolean => {
-  if (typeof window === 'undefined') return false;
+export const getBaseUrl = (): string => {
+  // Vérifier si nous sommes dans un navigateur
+  if (typeof window === 'undefined') {
+    // Côté serveur, utiliser la variable d'environnement ou une valeur par défaut
+    return process.env.VITE_SITE_URL || 'http://localhost:8080';
+  }
+
+  // Obtenir l'hôte actuel
+  const currentHost = window.location.host;
+  const isLocalhost = 
+    currentHost.includes('localhost') || 
+    currentHost.includes('127.0.0.1');
   
-  const hostname = window.location.hostname;
-  return hostname.includes('lovable.ai') || 
-         hostname.includes('preview') || 
-         hostname.includes('netlify.app');
+  // Déterminer le protocole (http pour localhost, https pour les autres)
+  const protocol = isLocalhost ? 'http' : 'https';
+  
+  return `${protocol}://${currentHost}`;
 };
 
 /**
- * Détermine si l'application est en cours d'exécution localement
+ * Génère une URL de redirection pour l'authentification OAuth
+ * @param path Le chemin de redirection (ex: "/auth/google/callback")
+ * @returns L'URL complète de redirection
  */
-export const isLocalEnvironment = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  
-  const hostname = window.location.hostname;
-  return hostname === 'localhost' || 
-         hostname === '127.0.0.1' || 
-         hostname.startsWith('192.168.') ||
-         hostname.startsWith('10.0.');
+export const getRedirectUrl = (path: string): string => {
+  // Supprimer le slash initial si présent pour éviter les doubles slashes
+  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+  // Conserver les paramètres d'URL importants
+  const urlParams = getFormattedUrlParams();
+  return `${getBaseUrl()}/${cleanPath}${urlParams}`;
 };
 
 /**
- * Formate les paramètres d'URL importants à conserver lors des redirections
+ * Détecte si l'application s'exécute en environnement de production
+ * @returns true si l'application est en production
+ */
+export const isProduction = (): boolean => {
+  return import.meta.env.PROD || import.meta.env.MODE === 'production';
+};
+
+/**
+ * Détecte si l'application s'exécute en environnement de développement
+ * @returns true si l'application est en développement
+ */
+export const isDevelopment = (): boolean => {
+  return import.meta.env.DEV || import.meta.env.MODE === 'development';
+};
+
+/**
+ * Détecte si le mode cloud est forcé via URL, environnement ou configuration
+ * @returns true si le mode cloud est forcé
+ */
+export const isCloudModeForced = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  // Vérifier les paramètres d'URL (prioritaires)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlForceCloud = 
+    urlParams.get('forceCloud') === 'true' || 
+    urlParams.get('mode') === 'cloud';
+  
+  // Vérifier la configuration globale
+  const configForceCloud = window.APP_CONFIG?.forceCloudMode === true;
+  
+  // Vérifier le localStorage
+  const localStorageForceCloud = window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true';
+  
+  // Vérifier le .env.local ou variables d'environnement
+  const envForceCloud = 
+    import.meta.env.VITE_FORCE_CLOUD === 'true' || 
+    import.meta.env.FORCE_CLOUD_MODE === 'true';
+  
+  // Si mode cloud détecté, persister dans localStorage
+  if (urlForceCloud || configForceCloud || envForceCloud) {
+    try {
+      window.localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+      window.localStorage.setItem('aiServiceType', 'cloud');
+    } catch (e) {
+      console.warn("Impossible de stocker les préférences de mode cloud dans localStorage");
+    }
+  }
+  
+  return urlForceCloud || configForceCloud || localStorageForceCloud || envForceCloud;
+};
+
+/**
+ * Détecte si l'application s'exécute sur Lovable
+ */
+export const isLovableEnvironment = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  // Vérifier le hostname
+  const isLovableDomain = 
+    window.location.host.includes('lovable.dev') || 
+    window.location.host.includes('lovable.app') ||
+    window.location.host.includes('lovableproject.com');
+  
+  // Vérifier si nous sommes dans un iframe
+  const isInIframe = window !== window.parent;
+  
+  // Vérifier si un paramètre Lovable est présent
+  const hasLovableParam = 
+    new URLSearchParams(window.location.search).get('lovable') === 'true' ||
+    window.location.search.includes('forceHideBadge=true');
+  
+  // Vérifier si le script gptengineer.js est chargé
+  const isLovableScriptLoaded = 
+    typeof window.gptengineer !== 'undefined' || 
+    document.querySelector('script[src*="gptengineer.js"]') !== null;
+  
+  return isLovableDomain || (isInIframe && hasLovableParam) || isLovableScriptLoaded;
+};
+
+/**
+ * Retourne les paramètres d'URL formatés pour la navigation
  */
 export const getFormattedUrlParams = (): string => {
   if (typeof window === 'undefined') return '';
   
-  const searchParams = new URLSearchParams(window.location.search);
-  const paramsToKeep = ['mode', 'client', 'forceCloud', 'hideDebug', 'cloud'];
-  const keepParams = new URLSearchParams();
+  // Paramètres à conserver lors des redirections
+  const paramsToPersist = ['mode', 'client', 'debug', 'forceCloud', 'hideDebug'];
+  const urlParams = new URLSearchParams(window.location.search);
+  const persistedParams = new URLSearchParams();
   
-  paramsToKeep.forEach(param => {
-    if (searchParams.has(param)) {
-      keepParams.append(param, searchParams.get(param) || '');
+  // Copier les paramètres à conserver
+  for (const param of paramsToPersist) {
+    if (urlParams.has(param)) {
+      persistedParams.set(param, urlParams.get(param)!);
     }
-  });
+  }
   
-  const paramsString = keepParams.toString();
-  return paramsString ? `?${paramsString}` : '';
+  // Si mode=cloud est présent, ajouter forceCloud=true
+  if (urlParams.get('mode') === 'cloud' && !persistedParams.has('forceCloud')) {
+    persistedParams.set('forceCloud', 'true');
+  }
+  
+  // S'assurer que tous les paramètres récurrents sont définis
+  if (urlParams.has('client') || persistedParams.has('client')) {
+    persistedParams.set('client', 'true');
+  }
+  
+  const paramString = persistedParams.toString();
+  return paramString ? `?${paramString}` : '';
 };
 
 /**
- * Obtient les informations sur l'environnement pour le diagnostic
+ * Récupère tous les paramètres d'URL sous forme d'objet
  */
-export const getEnvironmentInfo = () => {
-  if (typeof window === 'undefined') {
-    return {
-      environment: 'server',
-      url: null,
-      userAgent: null,
-      aiServiceType: null,
-      forceCloudMode: null
-    };
-  }
+export const getAllUrlParams = (): Record<string, string> => {
+  if (typeof window === 'undefined') return {};
   
-  return {
-    environment: isPreviewEnvironment() ? 'preview' : isLocalEnvironment() ? 'local' : 'production',
-    url: window.location.href,
-    userAgent: window.navigator.userAgent,
-    aiServiceType: localStorage.getItem('aiServiceType') || 'cloud',
-    forceCloudMode: localStorage.getItem('FORCE_CLOUD_MODE') === 'true'
-  };
+  const urlParams = new URLSearchParams(window.location.search);
+  const params: Record<string, string> = {};
+  
+  urlParams.forEach((value, key) => {
+    params[key] = value;
+  });
+  
+  return params;
+};
+
+/**
+ * Détermine si le mode client est activé
+ */
+export const isClientMode = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('client') === 'true';
+};
+
+/**
+ * Détermine si le mode debug est activé
+ */
+export const isDebugMode = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('debug') === 'true' && urlParams.get('hideDebug') !== 'true';
 };
