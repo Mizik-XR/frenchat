@@ -55,6 +55,9 @@ if ! grep -q "gptengineer.js" "dist/index.html"; then
     echo ""
 fi
 
+# URL avec paramètres normalisés
+APP_URL="http://localhost:8080/?client=true&hideDebug=true&forceCloud=true&mode=cloud"
+
 # Démarrage du serveur web
 echo "[INFO] Lancement de l'application..."
 http-server dist -p 8080 -c-1 --cors &
@@ -64,12 +67,12 @@ sleep 2
 # Ouvrir le navigateur avec le mode client activé, debug désactivé et cloud forcé
 echo "[INFO] Ouverture dans votre navigateur..."
 if command -v xdg-open &> /dev/null; then
-    xdg-open "http://localhost:8080?client=true&hideDebug=true&forceCloud=true"
+    xdg-open "$APP_URL"
 elif command -v open &> /dev/null; then
-    open "http://localhost:8080?client=true&hideDebug=true&forceCloud=true"
+    open "$APP_URL"
 else
     echo "[INFO] Ouvrez manuellement ce lien dans votre navigateur:"
-    echo "http://localhost:8080?client=true&hideDebug=true&forceCloud=true"
+    echo "$APP_URL"
 fi
 
 echo ""
@@ -81,9 +84,12 @@ echo ""
 echo "L'application utilise l'IA en mode cloud uniquement."
 echo "Aucune installation locale n'est nécessaire."
 echo ""
+echo "URL d'accès: $APP_URL"
+echo ""
 echo "Appuyez sur Ctrl+C pour quitter."
 echo "================================"
 echo ""
 
 # Attendre que l'utilisateur appuie sur Ctrl+C
+trap "kill $SERVER_PID; echo ''; echo 'Fermeture de FileChat...'; exit 0" INT
 wait $SERVER_PID

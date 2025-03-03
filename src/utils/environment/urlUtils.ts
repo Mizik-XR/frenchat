@@ -41,8 +41,10 @@ export const getRedirectUrl = (path: string): string => {
 
 /**
  * Retourne les paramètres d'URL formatés pour la navigation
+ * @param additionalParams Paramètres supplémentaires à inclure
+ * @returns Chaîne formatée des paramètres d'URL
  */
-export const getFormattedUrlParams = (): string => {
+export const getFormattedUrlParams = (additionalParams?: Record<string, string>): string => {
   if (typeof window === 'undefined') return '';
   
   // Paramètres à conserver lors des redirections
@@ -62,9 +64,16 @@ export const getFormattedUrlParams = (): string => {
     persistedParams.set('forceCloud', 'true');
   }
   
-  // S'assurer que tous les paramètres récurrents sont définis
+  // S'assurer que tous les paramètres récurrents sont définis correctement
   if (urlParams.has('client') || persistedParams.has('client')) {
     persistedParams.set('client', 'true');
+  }
+  
+  // Ajouter les paramètres supplémentaires fournis
+  if (additionalParams) {
+    Object.entries(additionalParams).forEach(([key, value]) => {
+      persistedParams.set(key, value);
+    });
   }
   
   const paramString = persistedParams.toString();
