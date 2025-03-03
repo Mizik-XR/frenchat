@@ -10,13 +10,24 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react(),
+    react({
+      // Explicitement définir les options de babel pour éviter les conflits
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
+        ]
+      }
+    }),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Ajouter des alias explicites pour React pour éviter les doublons
+      "react": path.resolve(__dirname, "./node_modules/react"),
+      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
+    dedupe: ['react', 'react-dom'], // Dédupliquer React pour éviter les conflits
   },
   // Configuration améliorée pour la production
   build: {
@@ -38,6 +49,8 @@ export default defineConfig(({ mode }) => ({
           }
         },
       },
+      // Ajout pour éviter les conflits de React
+      external: [], // Ne pas externaliser React
     },
     // Activer la compression
     reportCompressedSize: true,
@@ -46,6 +59,7 @@ export default defineConfig(({ mode }) => ({
   // Configuration pour améliorer le comportement du cache
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
+    force: true, // Forcer l'optimisation des dépendances
   },
   // Configuration de la gestion des assets
   assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg'],

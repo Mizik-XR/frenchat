@@ -28,6 +28,25 @@ if exist "index.html" (
     )
 )
 
+rem Vérification de la compatibilité React
+echo [INFO] Vérification de la compatibilité React...
+if exist "node_modules\react\package.json" (
+    findstr "\"version\": \"18" "node_modules\react\package.json" >nul
+    if !errorlevel! NEQ 0 (
+        echo [ATTENTION] Version de React incompatible détectée, correction en cours...
+        call npm uninstall react react-dom
+        call npm cache clean --force
+        call npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0
+        echo [OK] React réinstallé avec la version compatible.
+    ) else (
+        echo [OK] Version de React compatible.
+    )
+) else (
+    echo [ATTENTION] Installation React manquante ou incomplète.
+    echo [INFO] Installation des dépendances React...
+    call npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0
+)
+
 rem Choix du mode de démarrage
 echo.
 echo Choisissez le mode de démarrage :

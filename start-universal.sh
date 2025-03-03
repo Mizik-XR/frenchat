@@ -25,6 +25,24 @@ else
     fi
 fi
 
+# Vérification de la compatibilité React
+echo "[INFO] Vérification de la compatibilité React..."
+if [ -f "node_modules/react/package.json" ]; then
+    if ! grep -q "\"version\": \"18" "node_modules/react/package.json"; then
+        echo "[ATTENTION] Version de React incompatible détectée, correction en cours..."
+        npm uninstall react react-dom
+        npm cache clean --force
+        npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0
+        echo "[OK] React réinstallé avec la version compatible."
+    else
+        echo "[OK] Version de React compatible."
+    fi
+else
+    echo "[ATTENTION] Installation React manquante ou incomplète."
+    echo "[INFO] Installation des dépendances React..."
+    npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0
+fi
+
 # Choix du mode de démarrage
 echo ""
 echo "Choisissez le mode de démarrage :"
@@ -45,8 +63,8 @@ case $choice in
         bash scripts/unix/start-app-simplified.sh
         ;;
     *)
-        echo "[INFO] Démarrage en mode développement..."
-        npm run dev
+        echo "[INFO] Démarrage en mode développement avec React compatible..."
+        VITE_FORCE_REACT_VERSION=18.2.0 npm run dev
         ;;
 esac
 

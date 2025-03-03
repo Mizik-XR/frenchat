@@ -11,6 +11,10 @@ import { LoadingScreen } from '@/components/auth/LoadingScreen'
 // Log pour débogage
 console.log("Initialisation de l'application...")
 
+// Vérification de la version de React
+const ReactVersion = require('react').version;
+console.log("Version de React utilisée:", ReactVersion);
+
 // Configuration du client de requête avec optimisations
 const queryClient = new QueryClient({
   defaultOptions: {
