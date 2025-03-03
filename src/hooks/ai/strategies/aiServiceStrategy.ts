@@ -1,7 +1,7 @@
 
 import { toast } from '@/hooks/use-toast';
-import { AIServiceType, ModelDownloadStatus, TextGenerationParameters, TextGenerationResponse } from '../types';
-import { callOllamaService } from '../ollamaService';
+import { AIServiceType, ModelDownloadStatus, TextGenerationParameters, TextGenerationResponse } from '../../ai/types';
+import { callOllamaService } from '../../ai/ollamaService';
 import { LLMProviderType } from '@/types/config';
 
 /**
