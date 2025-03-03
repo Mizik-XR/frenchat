@@ -2,7 +2,18 @@
 # Redirection pour toutes les routes vers index.html (SPA)
 /* /index.html 200
 
-# Redirection explicite pour les paramètres d'URL
+# Redirections explicites pour les paramètres d'URL importants
 /?mode=cloud /index.html?mode=cloud 200
 /?forceCloud=true /index.html?forceCloud=true 200
 /?client=true /index.html?client=true 200
+/?hideDebug=true /index.html?hideDebug=true 200
+
+# Combinaisons fréquentes de paramètres
+/?client=true&hideDebug=true /index.html?client=true&hideDebug=true 200
+/?client=true&forceCloud=true /index.html?client=true&forceCloud=true 200
+/?mode=cloud&client=true /index.html?mode=cloud&client=true 200
+/?client=true&hideDebug=true&forceCloud=true /index.html?client=true&hideDebug=true&forceCloud=true 200
+/?client=true&hideDebug=true&forceCloud=true&mode=cloud /index.html?client=true&hideDebug=true&forceCloud=true&mode=cloud 200
+
+# Préservation des paramètres pour les routes d'authentification
+/auth* /index.html 200

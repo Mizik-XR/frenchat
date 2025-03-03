@@ -49,7 +49,9 @@ export const getBaseUrl = (): string => {
 export const getRedirectUrl = (path: string): string => {
   // Supprimer le slash initial si présent pour éviter les doubles slashes
   const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-  return `${getBaseUrl()}/${cleanPath}`;
+  // Conserver les paramètres d'URL importants
+  const urlParams = getFormattedUrlParams();
+  return `${getBaseUrl()}/${cleanPath}${urlParams}`;
 };
 
 /**
@@ -69,15 +71,17 @@ export const isDevelopment = (): boolean => {
 };
 
 /**
- * Détecte si le mode cloud est forcé via URL ou configuration
+ * Détecte si le mode cloud est forcé via URL, environnement ou configuration
  * @returns true si le mode cloud est forcé
  */
 export const isCloudModeForced = (): boolean => {
   if (typeof window === 'undefined') return false;
   
-  // Vérifier les paramètres d'URL
+  // Vérifier les paramètres d'URL (prioritaires)
   const urlParams = new URLSearchParams(window.location.search);
-  const urlForceCloud = urlParams.get('forceCloud') === 'true' || urlParams.get('mode') === 'cloud';
+  const urlForceCloud = 
+    urlParams.get('forceCloud') === 'true' || 
+    urlParams.get('mode') === 'cloud';
   
   // Vérifier la configuration globale
   const configForceCloud = window.APP_CONFIG?.forceCloudMode === true;
@@ -85,7 +89,25 @@ export const isCloudModeForced = (): boolean => {
   // Vérifier le localStorage
   const localStorageForceCloud = window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true';
   
-  return urlForceCloud || configForceCloud || localStorageForceCloud;
+  // Vérifier le .env.local ou variables d'environnement (via import.meta.env)
+  const envForceCloud = 
+    import.meta.env.VITE_FORCE_CLOUD === 'true' || 
+    import.meta.env.FORCE_CLOUD_MODE === 'true' ||
+    import.meta.env.VITE_API_SERVICE === 'cloud';
+  
+  // Si mode cloud détecté, persister dans localStorage pour les navigations futures
+  if (urlForceCloud || configForceCloud || envForceCloud) {
+    // Stocker dans localStorage pour persistance
+    try {
+      window.localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+      window.localStorage.setItem('aiServiceType', 'cloud');
+    } catch (e) {
+      console.warn("Impossible de stocker les préférences de mode cloud dans localStorage");
+    }
+  }
+  
+  // Considérer toutes les sources possibles
+  return urlForceCloud || configForceCloud || localStorageForceCloud || envForceCloud;
 };
 
 /**
@@ -134,7 +156,7 @@ export const getFormattedUrlParams = (): string => {
   if (typeof window === 'undefined') return '';
   
   // Paramètres d'URL à conserver lors des redirections
-  const paramsToPersist = ['mode', 'client', 'debug'];
+  const paramsToPersist = ['mode', 'client', 'debug', 'forceCloud', 'hideDebug'];
   const urlParams = new URLSearchParams(window.location.search);
   const persistedParams = new URLSearchParams();
   
@@ -145,11 +167,56 @@ export const getFormattedUrlParams = (): string => {
     }
   }
   
-  // Si mode=cloud est présent, ajouter forceCloud=true
-  if (urlParams.get('mode') === 'cloud') {
+  // Si mode=cloud est présent, ajouter forceCloud=true s'il n'est pas déjà présent
+  if (urlParams.get('mode') === 'cloud' && !persistedParams.has('forceCloud')) {
     persistedParams.set('forceCloud', 'true');
+  }
+  
+  // S'assurer que tous les paramètres récurrents sont correctement définis
+  if (urlParams.has('client') || persistedParams.has('client')) {
+    persistedParams.set('client', 'true');
   }
   
   const paramString = persistedParams.toString();
   return paramString ? `?${paramString}` : '';
+};
+
+/**
+ * Récupère tous les paramètres d'URL sous forme d'objet
+ * @returns Objet avec tous les paramètres d'URL
+ */
+export const getAllUrlParams = (): Record<string, string> => {
+  if (typeof window === 'undefined') return {};
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const params: Record<string, string> = {};
+  
+  urlParams.forEach((value, key) => {
+    params[key] = value;
+  });
+  
+  return params;
+};
+
+/**
+ * Détermine si le mode client est activé
+ * @returns true si le mode client est activé
+ */
+export const isClientMode = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('client') === 'true';
+};
+
+/**
+ * Détermine si le mode debug est activé
+ * @returns true si le mode debug est activé
+ */
+export const isDebugMode = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  // Debug activé explicitement par URL mais peut être désactivé par hideDebug
+  return urlParams.get('debug') === 'true' && urlParams.get('hideDebug') !== 'true';
 };
