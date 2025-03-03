@@ -20,6 +20,7 @@ set "USE_PYTHON=0"
 set "USE_CLOUD=1"
 
 REM Vérification d'Ollama (prioritaire)
+echo [INFO] Vérification d'Ollama...
 netstat -an | findstr ":11434" | findstr "LISTENING" >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
     set "USE_OLLAMA=1"
@@ -32,8 +33,10 @@ if %ERRORLEVEL% EQU 0 (
 echo.
 
 REM Vérification de Python et Hugging Face
+echo [INFO] Vérification de Python...
 python --version >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
+    echo [INFO] Tentative de vérification de Hugging Face Transformers...
     python -c "import transformers" >nul 2>nul
     if %ERRORLEVEL% EQU 0 (
         set "USE_PYTHON=1"
@@ -59,6 +62,7 @@ echo  OK!
 echo.
 
 REM Vérification du dossier dist
+echo [INFO] Vérification de la build...
 if not exist "dist\" (
     echo [INFO] Construction de l'application en cours...
     call npm run build
@@ -74,11 +78,26 @@ if not exist "dist\" (
 )
 
 REM Vérifier si le script Lovable est présent dans index.html
+echo [INFO] Vérification du script Lovable...
 findstr "gptengineer.js" "dist\index.html" >nul 2>nul
 if !errorlevel! NEQ 0 (
     echo [ATTENTION] Le script Lovable manque dans dist\index.html.
     echo             Application de la correction...
-    call fix-edit-issues.bat /silent
+    
+    REM Vérifier si fix-edit-issues.bat existe
+    if exist "fix-edit-issues.bat" (
+        call fix-edit-issues.bat /silent
+    ) else if exist "scripts\fix-edit-issues.bat" (
+        call scripts\fix-edit-issues.bat /silent
+    ) else (
+        echo [ERREUR] Impossible de trouver le script fix-edit-issues.bat
+        echo          Correction automatique impossible.
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
+    
     if errorlevel 1 (
         echo [ERREUR] Correction échouée, consultez le diagnostic complet.
         echo          Utilisez scripts\diagnostic.bat pour plus d'informations.
@@ -92,14 +111,17 @@ if !errorlevel! NEQ 0 (
 )
 
 REM Vérifier si http-server est installé
+echo [INFO] Vérification du serveur http-server...
 where http-server >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo [INFO] Installation du serveur web...
-    call npm install -g http-server >nul 2>nul
+    call npm install -g http-server
     if errorlevel 1 (
         echo [ERREUR] Installation du serveur web échouée.
         echo         Utilisation de npx comme alternative...
         set "USE_NPX=1"
+    ) else (
+        echo [OK] http-server installé avec succès.
     )
 )
 
@@ -165,6 +187,7 @@ echo.
 echo Pour quitter, fermez cette fenêtre.
 echo ===================================================
 echo.
+echo Appuyez sur une touche pour quitter le programme quand vous avez terminé...
 pause >nul
 
 echo.

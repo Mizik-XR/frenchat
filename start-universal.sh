@@ -12,6 +12,7 @@ USE_PYTHON=0
 USE_CLOUD=1
 
 # Vérification d'Ollama (prioritaire)
+echo "[INFO] Vérification d'Ollama..."
 if lsof -Pi :11434 -sTCP:LISTEN -t >/dev/null 2>&1; then
     USE_OLLAMA=1
     echo "[DÉTECTÉ] Ollama est actif sur ce système."
@@ -23,6 +24,7 @@ fi
 echo ""
 
 # Vérification de Python et Hugging Face
+echo "[INFO] Vérification de Python..."
 if command -v python3 >/dev/null 2>&1; then
     PYTHON_CMD="python3"
 elif command -v python >/dev/null 2>&1; then
@@ -32,6 +34,7 @@ else
 fi
 
 if [ -n "$PYTHON_CMD" ]; then
+    echo "[INFO] Tentative de vérification de Hugging Face Transformers..."
     if $PYTHON_CMD -c "import transformers" >/dev/null 2>&1; then
         USE_PYTHON=1
         echo "[DÉTECTÉ] Python avec Hugging Face Transformers est disponible."
@@ -56,6 +59,7 @@ echo " OK!"
 echo ""
 
 # Vérification du dossier dist
+echo "[INFO] Vérification de la build..."
 if [ ! -d "dist" ]; then
     echo "[INFO] Construction de l'application en cours..."
     npm run build
@@ -71,10 +75,25 @@ if [ ! -d "dist" ]; then
 fi
 
 # Vérifier si le script Lovable est présent dans index.html
+echo "[INFO] Vérification du script Lovable..."
 if ! grep -q "gptengineer.js" "dist/index.html" 2>/dev/null; then
     echo "[ATTENTION] Le script Lovable manque dans dist/index.html."
     echo "             Application de la correction..."
-    bash scripts/unix/fix-edit-issues.sh --silent
+    
+    # Essayer différents chemins pour le script de correction
+    if [ -f "scripts/unix/fix-edit-issues.sh" ]; then
+        bash scripts/unix/fix-edit-issues.sh --silent
+    elif [ -f "fix-edit-issues.sh" ]; then
+        bash fix-edit-issues.sh --silent
+    else
+        echo "[ERREUR] Impossible de trouver le script fix-edit-issues.sh"
+        echo "         Correction automatique impossible."
+        echo ""
+        echo "Appuyez sur Entrée pour quitter..."
+        read
+        exit 1
+    fi
+    
     if [ $? -ne 0 ]; then
         echo "[ERREUR] Correction échouée, consultez le diagnostic complet."
         echo "          Utilisez scripts/unix/diagnostic.sh pour plus d'informations."
@@ -89,13 +108,16 @@ fi
 
 # Vérifier si http-server est installé
 USE_NPX=0
+echo "[INFO] Vérification du serveur http-server..."
 if ! command -v http-server >/dev/null 2>&1; then
     echo "[INFO] Installation du serveur web..."
-    npm install -g http-server >/dev/null 2>&1
+    npm install -g http-server
     if [ $? -ne 0 ]; then
         echo "[ERREUR] Installation du serveur web échouée."
         echo "         Utilisation de npx comme alternative..."
         USE_NPX=1
+    else
+        echo "[OK] http-server installé avec succès."
     fi
 fi
 
