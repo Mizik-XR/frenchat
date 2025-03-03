@@ -73,6 +73,24 @@ if not exist "dist\" (
     echo.
 )
 
+REM Vérifier si le script Lovable est présent dans index.html
+findstr "gptengineer.js" "dist\index.html" >nul 2>nul
+if !errorlevel! NEQ 0 (
+    echo [ATTENTION] Le script Lovable manque dans dist\index.html.
+    echo             Application de la correction...
+    call fix-edit-issues.bat /silent
+    if errorlevel 1 (
+        echo [ERREUR] Correction échouée, consultez le diagnostic complet.
+        echo          Utilisez scripts\diagnostic.bat pour plus d'informations.
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
+    echo [OK] Correction appliquée.
+    echo.
+)
+
 REM Vérifier si http-server est installé
 where http-server >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (

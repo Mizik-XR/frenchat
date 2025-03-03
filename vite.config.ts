@@ -13,7 +13,6 @@ export default defineConfig(({ mode }) => ({
     react({
       // Configurer React pour éviter les conflits potentiels
       jsxRuntime: 'automatic',
-      // La propriété fastRefresh n'est pas reconnue, supprimons-la
       babel: {
         plugins: []
       }

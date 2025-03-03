@@ -70,6 +70,23 @@ if [ ! -d "dist" ]; then
     echo ""
 fi
 
+# Vérifier si le script Lovable est présent dans index.html
+if ! grep -q "gptengineer.js" "dist/index.html" 2>/dev/null; then
+    echo "[ATTENTION] Le script Lovable manque dans dist/index.html."
+    echo "             Application de la correction..."
+    bash scripts/unix/fix-edit-issues.sh --silent
+    if [ $? -ne 0 ]; then
+        echo "[ERREUR] Correction échouée, consultez le diagnostic complet."
+        echo "          Utilisez scripts/unix/diagnostic.sh pour plus d'informations."
+        echo ""
+        echo "Appuyez sur Entrée pour quitter..."
+        read
+        exit 1
+    fi
+    echo "[OK] Correction appliquée."
+    echo ""
+fi
+
 # Vérifier si http-server est installé
 USE_NPX=0
 if ! command -v http-server >/dev/null 2>&1; then
