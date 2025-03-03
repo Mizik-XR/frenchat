@@ -10,13 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react({
-      // Configurer React pour éviter les conflits potentiels
-      jsxRuntime: 'automatic',
-      babel: {
-        plugins: []
-      }
-    }),
+    react(),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
@@ -44,10 +38,6 @@ export default defineConfig(({ mode }) => ({
           }
         },
       },
-      external: [
-        // Exclure le script gptengineer.js du processus de bundling
-        'https://cdn.gpteng.co/gptengineer.js'
-      ]
     },
     // Activer la compression
     reportCompressedSize: true,
@@ -56,12 +46,16 @@ export default defineConfig(({ mode }) => ({
   // Configuration pour améliorer le comportement du cache
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
-    exclude: ['gptengineer']
   },
   // Configuration de la gestion des assets
   assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg'],
-  // Configuration script pour le mode développement et production
-  define: {
-    __LOVABLE_MODE__: JSON.stringify(mode),
+  // Préserve le script gptengineer.js et empêche Vite de le manipuler
+  experimental: {
+    renderBuiltUrl(filename, { hostType }) {
+      if (filename.includes('gptengineer.js')) {
+        return 'https://cdn.gpteng.co/gptengineer.js';
+      }
+      return { relative: true };
+    }
   }
 }));

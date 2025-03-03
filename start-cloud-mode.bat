@@ -102,7 +102,7 @@ timeout /t 2 /nobreak > nul
 
 REM Ouvrir le navigateur avec le mode client activé et debug désactivé
 echo [INFO] Ouverture dans votre navigateur...
-start http://localhost:8080?client=true^&hideDebug=true^&forceCloud=true
+start http://localhost:8080?client=true^&hideDebug=true
 
 echo.
 echo ===================================================

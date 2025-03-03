@@ -3,10 +3,10 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title Frenchat - Réparation page blanche et problèmes d'édition
+title FileChat - Réparation page blanche et problèmes d'édition
 
 echo ===================================================
-echo     OUTIL DE RÉPARATION FRENCHAT
+echo     OUTIL DE RÉPARATION FILECHAT
 echo ===================================================
 echo.
 echo Cet outil va tenter de résoudre les problèmes suivants:
@@ -68,8 +68,8 @@ if exist "index.html" (
         echo     ^<meta charset="UTF-8" /^>
         echo     ^<link rel="icon" type="image/svg+xml" href="/favicon.ico" /^>
         echo     ^<meta name="viewport" content="width=device-width, initial-scale=1.0" /^>
-        echo     ^<title^>Frenchat - Votre assistant d'intelligence documentaire^</title^>
-        echo     ^<meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." /^>
+        echo     ^<title^>FileChat - Votre assistant d'intelligence documentaire^</title^>
+        echo     ^<meta name="description" content="FileChat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." /^>
         echo   ^</head^>
         echo   ^<body^>
         echo     ^<div id="root"^>^</div^>
