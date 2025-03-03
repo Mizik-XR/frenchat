@@ -11,6 +11,7 @@ import {
   updateSessionLoading
 } from "./auth/authConstants";
 import { useSignOut } from "./auth/authActions";
+import { getFormattedUrlParams } from "@/utils/environmentUtils";
 
 export function useAuthSession() {
   const navigate = useNavigate();
@@ -24,8 +25,15 @@ export function useAuthSession() {
     const searchParams = new URLSearchParams(location.search);
     return {
       mode: searchParams.get('mode'),
-      client: searchParams.get('client') === 'true'
+      client: searchParams.get('client') === 'true',
+      forceCloud: searchParams.get('forceCloud') === 'true',
     };
+  };
+
+  // Conserver les paramètres d'URL lors des redirections
+  const getNavigationPath = (path: string) => {
+    const persistedParams = getFormattedUrlParams();
+    return `${path}${persistedParams}`;
   };
 
   // Gérer les changements d'état d'authentification
@@ -41,7 +49,7 @@ export function useAuthSession() {
     // Vérifier si l'utilisateur tente d'accéder à une route protégée sans être authentifié
     if (!session?.user && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
       // Rediriger vers la page d'authentification avec l'origine stockée
-      navigate('/auth', { state: { from: location.pathname } });
+      navigate(getNavigationPath('/auth'), { state: { from: location.pathname } });
       updateSessionLoading(false);
       setIsLoading(false);
       return;
@@ -75,23 +83,23 @@ export function useAuthSession() {
         if (isFirstLogin || needsConfig) {
           if (location.pathname !== '/config') {
             console.log("Redirection vers la configuration (nouveau compte ou configuration requise)");
-            navigate('/config');
+            navigate(getNavigationPath('/config'));
           }
         } else if (location.pathname === '/auth' || location.pathname === '/' || location.pathname === '/index') {
           console.log("Redirection vers la page d'accueil (utilisateur déjà configuré)");
-          navigate('/home');
+          navigate(getNavigationPath('/home'));
         }
       } catch (error) {
         console.error("Erreur lors de la vérification du statut d'utilisateur:", error);
         // En cas d'erreur, naviguer vers la page d'accueil par défaut
         if (location.pathname === '/auth') {
-          navigate('/home');
+          navigate(getNavigationPath('/home'));
         }
       }
     } else if (_event === 'SIGNED_OUT') {
       // Rediriger vers la page d'accueil si l'utilisateur est déconnecté sur une page protégée
       if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
-        navigate('/');
+        navigate(getNavigationPath('/'));
       }
     }
 
@@ -137,11 +145,11 @@ export function useAuthSession() {
           // Redirection selon l'état de l'utilisateur
           if ((isFirstLogin || needsConfig) && location.pathname !== '/config') {
             console.log("Redirection vers configuration (vérification initiale)");
-            navigate('/config');
+            navigate(getNavigationPath('/config'));
           } else if ((location.pathname === '/' || location.pathname === '/auth' || location.pathname === '/index') && 
                     !location.pathname.startsWith('/auth/google')) {
             console.log("Redirection vers home (vérification initiale)");
-            navigate('/home');
+            navigate(getNavigationPath('/home'));
           }
         } catch (error) {
           console.error("Erreur lors de la vérification du statut d'utilisateur (session initiale):", error);
@@ -149,7 +157,7 @@ export function useAuthSession() {
         }
       } else if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
         // Rediriger si l'utilisateur tente d'accéder à une route protégée sans être authentifié
-        navigate('/auth', { state: { from: location.pathname } });
+        navigate(getNavigationPath('/auth'), { state: { from: location.pathname } });
       }
     } catch (error) {
       console.error("Erreur lors de la vérification de la session:", error);

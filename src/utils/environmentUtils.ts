@@ -7,6 +7,10 @@
 declare global {
   interface Window {
     gptengineer: any;
+    APP_CONFIG?: {
+      forceCloudMode?: boolean;
+      debugMode?: boolean;
+    };
   }
 }
 
@@ -28,7 +32,8 @@ export const getBaseUrl = (): string => {
     currentHost.includes('127.0.0.1');
   const isLovablePreview = 
     currentHost.includes('lovable.dev') || 
-    currentHost.includes('lovable.app');
+    currentHost.includes('lovable.app') ||
+    currentHost.includes('lovableproject.com');
   
   // Déterminer le protocole (http pour localhost, https pour les autres)
   const protocol = isLocalhost ? 'http' : 'https';
@@ -64,6 +69,26 @@ export const isDevelopment = (): boolean => {
 };
 
 /**
+ * Détecte si le mode cloud est forcé via URL ou configuration
+ * @returns true si le mode cloud est forcé
+ */
+export const isCloudModeForced = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  // Vérifier les paramètres d'URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlForceCloud = urlParams.get('forceCloud') === 'true' || urlParams.get('mode') === 'cloud';
+  
+  // Vérifier la configuration globale
+  const configForceCloud = window.APP_CONFIG?.forceCloudMode === true;
+  
+  // Vérifier le localStorage
+  const localStorageForceCloud = window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true';
+  
+  return urlForceCloud || configForceCloud || localStorageForceCloud;
+};
+
+/**
  * Détecte si l'application s'exécute sur Lovable
  * @returns true si l'application s'exécute sur Lovable
  */
@@ -72,7 +97,8 @@ export const isLovableEnvironment = (): boolean => {
   
   // Vérifier le hostname pour Lovable
   const isLovableDomain = window.location.host.includes('lovable.dev') || 
-                         window.location.host.includes('lovable.app');
+                         window.location.host.includes('lovable.app') ||
+                         window.location.host.includes('lovableproject.com');
   
   // Vérifier si nous sommes dans un iframe (probable dans Lovable)
   const isInIframe = window !== window.parent;
@@ -98,4 +124,32 @@ export const isLovableScriptLoaded = (): boolean => {
   // Vérifier si le script gptengineer.js est chargé
   return typeof window.gptengineer !== 'undefined' || 
          document.querySelector('script[src*="gptengineer.js"]') !== null;
+};
+
+/**
+ * Retourne les paramètres d'URL formatés pour la navigation
+ * @returns Chaîne de paramètres d'URL
+ */
+export const getFormattedUrlParams = (): string => {
+  if (typeof window === 'undefined') return '';
+  
+  // Paramètres d'URL à conserver lors des redirections
+  const paramsToPersist = ['mode', 'client', 'debug'];
+  const urlParams = new URLSearchParams(window.location.search);
+  const persistedParams = new URLSearchParams();
+  
+  // Copier les paramètres à conserver
+  for (const param of paramsToPersist) {
+    if (urlParams.has(param)) {
+      persistedParams.set(param, urlParams.get(param)!);
+    }
+  }
+  
+  // Si mode=cloud est présent, ajouter forceCloud=true
+  if (urlParams.get('mode') === 'cloud') {
+    persistedParams.set('forceCloud', 'true');
+  }
+  
+  const paramString = persistedParams.toString();
+  return paramString ? `?${paramString}` : '';
 };

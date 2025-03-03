@@ -1,3 +1,8 @@
 
 # Redirection pour toutes les routes vers index.html (SPA)
 /* /index.html 200
+
+# Redirection explicite pour les paramètres d'URL
+/?mode=cloud /index.html?mode=cloud 200
+/?forceCloud=true /index.html?forceCloud=true 200
+/?client=true /index.html?client=true 200
