@@ -123,4 +123,3 @@ echo ===================================================
 echo.
 echo Appuyez sur une touche pour quitter...
 pause >nul
-exit /b 0
