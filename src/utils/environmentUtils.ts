@@ -30,10 +30,6 @@ export const getBaseUrl = (): string => {
   const isLocalhost = 
     currentHost.includes('localhost') || 
     currentHost.includes('127.0.0.1');
-  const isLovablePreview = 
-    currentHost.includes('lovable.dev') || 
-    currentHost.includes('lovable.app') ||
-    currentHost.includes('lovableproject.com');
   
   // Déterminer le protocole (http pour localhost, https pour les autres)
   const protocol = isLocalhost ? 'http' : 'https';
@@ -89,15 +85,13 @@ export const isCloudModeForced = (): boolean => {
   // Vérifier le localStorage
   const localStorageForceCloud = window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true';
   
-  // Vérifier le .env.local ou variables d'environnement (via import.meta.env)
+  // Vérifier le .env.local ou variables d'environnement
   const envForceCloud = 
     import.meta.env.VITE_FORCE_CLOUD === 'true' || 
-    import.meta.env.FORCE_CLOUD_MODE === 'true' ||
-    import.meta.env.VITE_API_SERVICE === 'cloud';
+    import.meta.env.FORCE_CLOUD_MODE === 'true';
   
-  // Si mode cloud détecté, persister dans localStorage pour les navigations futures
+  // Si mode cloud détecté, persister dans localStorage
   if (urlForceCloud || configForceCloud || envForceCloud) {
-    // Stocker dans localStorage pour persistance
     try {
       window.localStorage.setItem('FORCE_CLOUD_MODE', 'true');
       window.localStorage.setItem('aiServiceType', 'cloud');
@@ -106,56 +100,44 @@ export const isCloudModeForced = (): boolean => {
     }
   }
   
-  // Considérer toutes les sources possibles
   return urlForceCloud || configForceCloud || localStorageForceCloud || envForceCloud;
 };
 
 /**
  * Détecte si l'application s'exécute sur Lovable
- * @returns true si l'application s'exécute sur Lovable
  */
 export const isLovableEnvironment = (): boolean => {
   if (typeof window === 'undefined') return false;
   
-  // Vérifier le hostname pour Lovable
-  const isLovableDomain = window.location.host.includes('lovable.dev') || 
-                         window.location.host.includes('lovable.app') ||
-                         window.location.host.includes('lovableproject.com');
+  // Vérifier le hostname
+  const isLovableDomain = 
+    window.location.host.includes('lovable.dev') || 
+    window.location.host.includes('lovable.app') ||
+    window.location.host.includes('lovableproject.com');
   
-  // Vérifier si nous sommes dans un iframe (probable dans Lovable)
+  // Vérifier si nous sommes dans un iframe
   const isInIframe = window !== window.parent;
   
-  // Vérifier si nous sommes sur la plateforme Lovable avec un paramètre d'URL 
-  const hasLovableParam = new URLSearchParams(window.location.search).get('lovable') === 'true' ||
-                          window.location.search.includes('forceHideBadge=true');
+  // Vérifier si un paramètre Lovable est présent
+  const hasLovableParam = 
+    new URLSearchParams(window.location.search).get('lovable') === 'true' ||
+    window.location.search.includes('forceHideBadge=true');
   
   // Vérifier si le script gptengineer.js est chargé
-  const isLovableScriptLoaded = typeof window.gptengineer !== 'undefined' || 
-                               document.querySelector('script[src*="gptengineer.js"]') !== null;
+  const isLovableScriptLoaded = 
+    typeof window.gptengineer !== 'undefined' || 
+    document.querySelector('script[src*="gptengineer.js"]') !== null;
   
   return isLovableDomain || (isInIframe && hasLovableParam) || isLovableScriptLoaded;
 };
 
 /**
- * Vérifier si le script Lovable est correctement chargé
- * @returns true si le script est chargé
- */
-export const isLovableScriptLoaded = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  
-  // Vérifier si le script gptengineer.js est chargé
-  return typeof window.gptengineer !== 'undefined' || 
-         document.querySelector('script[src*="gptengineer.js"]') !== null;
-};
-
-/**
  * Retourne les paramètres d'URL formatés pour la navigation
- * @returns Chaîne de paramètres d'URL
  */
 export const getFormattedUrlParams = (): string => {
   if (typeof window === 'undefined') return '';
   
-  // Paramètres d'URL à conserver lors des redirections
+  // Paramètres à conserver lors des redirections
   const paramsToPersist = ['mode', 'client', 'debug', 'forceCloud', 'hideDebug'];
   const urlParams = new URLSearchParams(window.location.search);
   const persistedParams = new URLSearchParams();
@@ -167,12 +149,12 @@ export const getFormattedUrlParams = (): string => {
     }
   }
   
-  // Si mode=cloud est présent, ajouter forceCloud=true s'il n'est pas déjà présent
+  // Si mode=cloud est présent, ajouter forceCloud=true
   if (urlParams.get('mode') === 'cloud' && !persistedParams.has('forceCloud')) {
     persistedParams.set('forceCloud', 'true');
   }
   
-  // S'assurer que tous les paramètres récurrents sont correctement définis
+  // S'assurer que tous les paramètres récurrents sont définis
   if (urlParams.has('client') || persistedParams.has('client')) {
     persistedParams.set('client', 'true');
   }
@@ -183,7 +165,6 @@ export const getFormattedUrlParams = (): string => {
 
 /**
  * Récupère tous les paramètres d'URL sous forme d'objet
- * @returns Objet avec tous les paramètres d'URL
  */
 export const getAllUrlParams = (): Record<string, string> => {
   if (typeof window === 'undefined') return {};
@@ -200,7 +181,6 @@ export const getAllUrlParams = (): Record<string, string> => {
 
 /**
  * Détermine si le mode client est activé
- * @returns true si le mode client est activé
  */
 export const isClientMode = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -211,12 +191,10 @@ export const isClientMode = (): boolean => {
 
 /**
  * Détermine si le mode debug est activé
- * @returns true si le mode debug est activé
  */
 export const isDebugMode = (): boolean => {
   if (typeof window === 'undefined') return false;
   
   const urlParams = new URLSearchParams(window.location.search);
-  // Debug activé explicitement par URL mais peut être désactivé par hideDebug
   return urlParams.get('debug') === 'true' && urlParams.get('hideDebug') !== 'true';
 };
