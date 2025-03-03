@@ -3,80 +3,106 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title FileChat - Démarrage Application
+title FileChat - Mode Cloud Uniquement
 
 echo ===================================================
-echo     DÉMARRAGE DE FILECHAT
+echo     DÉMARRAGE DE FILECHAT (MODE CLOUD)
 echo ===================================================
 echo.
 
-REM Vérification des prérequis
-echo [ÉTAPE 1/3] Vérification des prérequis...
-where node >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo [ERREUR] Node.js n'est pas installé. Téléchargez-le sur https://nodejs.org/
-    pause
-    exit /b 1
-) else (
-    for /f "tokens=*" %%a in ('node -v') do set NODE_VERSION=%%a
-    echo   [OK] Node.js %NODE_VERSION% est installé.
-)
+REM Configuration du mode cloud uniquement
+set FORCE_CLOUD_MODE=1
+set CLIENT_MODE=1
+set VITE_DISABLE_DEV_MODE=1
 
-where python >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo [ERREUR] Python n'est pas installé. Téléchargez-le sur https://www.python.org/
-    pause
-    exit /b 1
-) else (
-    for /f "tokens=*" %%a in ('python --version') do set PYTHON_VERSION=%%a
-    echo   [OK] %PYTHON_VERSION% est installé.
-)
-echo.
-
-REM Démarrage du backend (API)
-echo [ÉTAPE 2/3] Démarrage du serveur IA...
-if not exist "serve_model.py" (
-    echo [ERREUR] Le fichier serve_model.py est introuvable.
-    pause
-    exit /b 1
-)
-
-start "Serveur IA FileChat" /min cmd /c "venv\Scripts\python serve_model.py"
-echo   [OK] Serveur IA démarré.
-echo.
-
-REM Démarrage du frontend
-echo [ÉTAPE 3/3] Démarrage du frontend...
-where http-server >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo   [INFO] Installation de http-server...
-    call npm install -g http-server
-    if %ERRORLEVEL% NEQ 0 (
-        echo [ERREUR] Échec de l'installation de http-server.
-        pause
+REM Vérification du dossier dist
+if not exist "dist\" (
+    echo [INFO] Construction de l'application en cours...
+    call npm run build
+    if errorlevel 1 (
+        echo [ERREUR] Construction de l'application échouée
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
         exit /b 1
     )
-    echo   [OK] http-server installé.
-) else (
-    echo   [OK] http-server est déjà installé.
+    echo [OK] Application construite avec succès.
+    echo.
 )
 
-start "Serveur HTTP FileChat" /min cmd /c "http-server dist -p 8080 --cors -c-1"
-echo   [OK] Serveur HTTP démarré.
-echo.
+REM Vérification du fichier index.html dans dist
+if not exist "dist\index.html" (
+    echo [ERREUR] Le fichier 'dist\index.html' est manquant.
+    echo [INFO] Reconstruction de l'application en cours...
+    call npm run build
+    if errorlevel 1 (
+        echo [ERREUR] Construction de l'application échouée
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
+    echo [OK] Application construite avec succès.
+    echo.
+)
 
-REM Ouverture du navigateur
+REM Vérification du contenu du fichier index.html
+findstr "gptengineer.js" "dist\index.html" >nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [ATTENTION] Le script Lovable manque dans index.html, reconstruction...
+    call npm run build
+    if errorlevel 1 (
+        echo [ERREUR] Construction de l'application échouée
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
+    echo [OK] Application reconstruite avec succès.
+    echo.
+)
+
+REM Vérifier si http-server est installé
+where http-server >nul 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [INFO] Installation de http-server...
+    call npm install -g http-server
+    if errorlevel 1 (
+        echo [ERREUR] Installation de http-server échouée
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
+    echo [OK] http-server installé.
+)
+
+REM Définir l'URL avec les paramètres normalisés
+set "APP_URL=http://localhost:8080/?client=true&hideDebug=true&forceCloud=true&mode=cloud"
+
+REM Démarrage du serveur web
+echo [INFO] Lancement de l'application...
+start "Serveur HTTP FileChat" /min cmd /c "http-server dist -p 8080 --cors -c-1"
 timeout /t 2 /nobreak > nul
-start "" "http://localhost:8080/?client=true&hideDebug=true&forceCloud=true&mode=cloud"
+
+REM Ouvrir le navigateur
+echo [INFO] Ouverture dans votre navigateur...
+start "" "%APP_URL%"
 
 echo.
 echo ===================================================
 echo         FILECHAT DÉMARRÉ AVEC SUCCÈS
+echo         (MODE CLOUD UNIQUEMENT)
 echo ===================================================
 echo.
-echo Services disponibles:
-echo [1] Serveur IA local: http://localhost:8000
-echo [2] Application Web: http://localhost:8080/?client=true^&hideDebug=true^&forceCloud=true^&mode=cloud
+echo L'application utilise l'IA en mode cloud uniquement.
+echo Aucune installation Python n'est nécessaire.
+echo.
+echo URL d'accès: %APP_URL%
+echo.
+echo Pour la configuration OAuth Google, utilisez:
+echo - Origine JavaScript autorisée: http://localhost:8080
+echo - URI de redirection: http://localhost:8080/auth/google/callback?client=true^&hideDebug=true^&forceCloud=true^&mode=cloud
 echo.
 echo Pour arrêter les services, fermez cette fenêtre et les fenêtres associées.
 echo.
@@ -84,7 +110,6 @@ echo Appuyez sur une touche pour fermer cette fenêtre...
 pause >nul
 
 REM Fermeture des processus
-taskkill /F /FI "WINDOWTITLE eq Serveur IA FileChat" >nul 2>nul
 taskkill /F /FI "WINDOWTITLE eq Serveur HTTP FileChat" >nul 2>nul
 
 exit /b 0

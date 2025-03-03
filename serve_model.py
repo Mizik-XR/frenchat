@@ -3,7 +3,6 @@
 
 import os
 import sys
-import uvicorn
 import logging
 
 # Configuration du logging
@@ -59,4 +58,5 @@ if __name__ == "__main__":
     app = init_app()
     
     # Démarrage du serveur
+    import uvicorn
     uvicorn.run(app, host=host, port=port, log_level="info")
