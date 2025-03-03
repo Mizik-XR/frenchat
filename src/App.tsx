@@ -27,8 +27,8 @@ const RagAdvancedSettings = lazy(() => import("./pages/RagAdvancedSettings"));
 // Préchargez les pages les plus importantes dès que possible
 const preloadImportantPages = () => {
   const importantPages = [
-    import("./pages/Index"),
     import("./pages/Auth"),
+    import("./pages/Index"),
     import("./pages/Chat")
   ];
   
@@ -85,14 +85,14 @@ function AppWithAuth() {
             <Route path="/index" element={<Navigate to="/" replace />} />
             <Route path="/home" element={<Index />} />
             
-            {/* Routes d'authentification */}
+            {/* Routes d'authentification - PRIORITAIRES */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
             
-            {/* Routes principales */}
+            {/* Routes principales - PROTÉGÉES */}
             <Route path="/chat" element={<Chat />} />
             
-            {/* Routes de configuration */}
+            {/* Routes de configuration - ACCESSIBLES APRÈS AUTH */}
             <Route path="/config" element={<Config />} />
             <Route path="/advanced-config" element={<AdvancedConfig />} />
             <Route path="/rag-advanced-settings" element={<RagAdvancedSettings />} />

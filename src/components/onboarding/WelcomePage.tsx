@@ -9,7 +9,11 @@ export const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate("/auth");
+    navigate("/auth", { state: { tab: "signup" } });
+  };
+
+  const handleSignIn = () => {
+    navigate("/auth", { state: { tab: "signin" } });
   };
 
   const handleLearnMore = () => {
@@ -59,8 +63,15 @@ export const WelcomePage: React.FC = () => {
                   Créer un compte <ArrowRight className="h-4 w-4" />
                 </Button>
                 <Button 
-                  onClick={handleLearnMore} 
+                  onClick={handleSignIn} 
                   variant="outline" 
+                  size="lg"
+                >
+                  Se connecter
+                </Button>
+                <Button 
+                  onClick={handleLearnMore} 
+                  variant="ghost" 
                   size="lg"
                 >
                   En savoir plus

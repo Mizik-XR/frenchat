@@ -3,7 +3,7 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title FileChat - Correction problèmes d'édition
+title Frenchat - Correction problèmes d'édition
 
 echo ===================================================
 echo     CORRECTION PROBLÈMES D'ÉDITION LOVABLE
