@@ -31,7 +31,6 @@ if exist "index.html" (
             echo %%i
             echo %%i | findstr "<script type=\"module\" src=\"/src/main.tsx\"></script>" >nul
             if !errorlevel! EQU 0 (
-                echo     ^<!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" --^>
                 echo     ^<script src="https://cdn.gpteng.co/gptengineer.js" type="module"^>^</script^>
             )
         )) > index.html.temp
