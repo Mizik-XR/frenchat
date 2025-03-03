@@ -73,6 +73,15 @@ echo.
 echo [5] Vérification de la build...
 if exist "dist\index.html" (
     echo [OK] Build existante détectée.
+    
+    echo [INFO] Vérification de la présence du script gptengineer.js...
+    findstr "gptengineer.js" "dist\index.html" >nul 2>nul
+    if !errorlevel! NEQ 0 (
+        echo [ATTENTION] Le script Lovable manque dans dist\index.html.
+        echo             Utilisez start-universal.bat pour corriger ce problème.
+    ) else (
+        echo [OK] Le script gptengineer.js est présent dans dist\index.html.
+    )
 ) else (
     echo [INFO] Aucune build détectée.
     echo        Exécutez "npm run build" pour créer une build.
@@ -123,3 +132,4 @@ echo ===================================================
 echo.
 echo Appuyez sur une touche pour quitter...
 pause >nul
+
