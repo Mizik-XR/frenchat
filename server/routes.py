@@ -1,5 +1,3 @@
-
-# Laissons le code existant mais ajoutons la route /health
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -7,6 +5,7 @@ import traceback
 import time
 import json
 import os
+import platform
 
 from .config import logger, MODEL_LOADED
 from .model_manager import lazy_load_model
@@ -30,7 +29,15 @@ class ModelConfigInput(BaseModel):
 @router.get("/health")
 async def get_health():
     """Endpoint simple pour vérifier que le serveur est en ligne"""
-    return {"status": "ok", "message": "Service is running"}
+    return {
+        "status": "ok", 
+        "message": "Service is running",
+        "system": {
+            "platform": platform.system(),
+            "version": platform.python_version(),
+            "time": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+    }
 
 @router.get("/status")
 async def get_status():
