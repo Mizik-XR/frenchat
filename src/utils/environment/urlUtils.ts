@@ -95,3 +95,33 @@ export const getAllUrlParams = (): Record<string, string> => {
   
   return params;
 };
+
+/**
+ * Génère une URL complète avec tous les paramètres normalisés pour le mode cloud
+ * Utile pour les redirections OAuth et les liens de documentation
+ * @param baseUrl URL de base (par défaut: URL actuelle)
+ * @returns URL complète avec les paramètres normalisés
+ */
+export const getNormalizedCloudModeUrl = (path?: string, baseUrl?: string): string => {
+  // Utiliser l'URL actuelle comme base par défaut
+  const base = baseUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8080');
+  
+  // Paramètres normalisés pour le mode cloud
+  const params = {
+    client: 'true',
+    hideDebug: 'true',
+    forceCloud: 'true',
+    mode: 'cloud'
+  };
+  
+  // Construire l'URL avec les paramètres normalisés
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    searchParams.set(key, value);
+  });
+  
+  // Ajouter le chemin s'il est fourni
+  const pathSegment = path ? `/${path.startsWith('/') ? path.substring(1) : path}` : '';
+  
+  return `${base}${pathSegment}?${searchParams.toString()}`;
+};
