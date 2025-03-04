@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { PageHeader } from "@/components/navigation/PageHeader";
-import { Loader2, Download, Check, Camera, FilePresentation } from "lucide-react";
+import { Loader2, Download, Check, Camera, Presentation } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 // Liste des pages à capturer
@@ -127,7 +126,7 @@ export default function Demo() {
       <Card className="w-full max-w-3xl mx-auto mt-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FilePresentation className="h-6 w-6 text-purple-500" />
+            <Presentation className="h-6 w-6 text-purple-500" />
             Générer une Présentation PowerPoint
           </CardTitle>
           <CardDescription>
