@@ -8,7 +8,7 @@ import { handleLoadError } from './utils/errorHandlingUtils'
 // Log pour débogage
 console.log("Initialisation de l'application...")
 
-// Vérification de la version de React (avec ES modules)
+// Vérification de la version de React
 console.log("Version de React utilisée:", React.version);
 
 // Essayer de démarrer l'application avec timeout de sécurité

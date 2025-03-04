@@ -72,11 +72,8 @@ export const setupNetworkMonitoring = () => {
  */
 export const verifyReactLoaded = () => {
   try {
-    // Dynamically import React to avoid reference errors
-    const React = require('react');
-    const { createRoot } = require('react-dom/client');
-    
     // Vérifier que React est bien défini
+    const React = window.React || globalThis.React;
     if (!React || !React.createElement) {
       console.error("React n'est pas correctement chargé");
       return false;

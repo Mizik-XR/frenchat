@@ -7,7 +7,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { preloadSession } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { createRoot } from 'react-dom/client';
-import React from 'react';
+import * as React from 'react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { QueryClientProvider } from '@tanstack/react-query';
 import App from '../App';
