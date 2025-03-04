@@ -9,14 +9,6 @@
     <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
     <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
-    <!-- Message de secours si le JavaScript est désactivé -->
-    <noscript>
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center;">
-        <h1 style="color: #4f46e5; margin-bottom: 20px;">JavaScript est requis</h1>
-        <p>Cette application nécessite que JavaScript soit activé pour fonctionner.</p>
-        <p>Veuillez l'activer dans les paramètres de votre navigateur.</p>
-      </div>
-    </noscript>
     <!-- Style de base pour l'écran de chargement initial -->
     <style>
       #loading-screen {
@@ -65,6 +57,15 @@
     </style>
   </head>
   <body>
+    <!-- Message de secours si le JavaScript est désactivé -->
+    <noscript>
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center;">
+        <h1 style="color: #4f46e5; margin-bottom: 20px;">JavaScript est requis</h1>
+        <p>Cette application nécessite que JavaScript soit activé pour fonctionner.</p>
+        <p>Veuillez l'activer dans les paramètres de votre navigateur.</p>
+      </div>
+    </noscript>
+    
     <!-- Écran de chargement visible immédiatement -->
     <div id="root">
       <div id="loading-screen">
