@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { AIUsageMetrics } from "@/components/config/AIUsageMetrics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 export default function Config() {
   const navigate = useNavigate();
@@ -18,6 +19,10 @@ export default function Config() {
   
   const handleSkipToChat = () => {
     navigate("/chat");
+    toast({
+      title: "Configuration reportée",
+      description: "Vous utilisez l'IA par défaut (Mistral/Mixtral en cloud)",
+    });
   };
   
   return (
