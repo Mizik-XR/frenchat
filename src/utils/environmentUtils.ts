@@ -1,17 +1,22 @@
 
-import { isLovableEnvironment, isNetlifyEnvironment, isProduction, isDevelopment } from '@/utils/environment';
-import { getAllUrlParams, getBaseUrl, getFormattedUrlParams, getRedirectUrl } from '@/utils/environment';
-
-// Cette version refactorisée du fichier environmentUtils.ts
-// maintient la compatibilité avec le code existant
-// tout en utilisant la nouvelle structure modulaire des utilitaires d'environnement
+// Import functions from the new module structure
+import {
+  isLovableEnvironment as isLovableEnv,
+  isNetlifyEnvironment as isNetlifyEnv,
+  isProduction as isProd,
+  isDevelopment as isDev,
+  getAllUrlParams as getUrlParams,
+  getBaseUrl as getBaseUrlUtil,
+  getFormattedUrlParams as getFormattedParams,
+  getRedirectUrl as getRedirectUrlUtil
+} from '@/utils/environment';
 
 /**
  * Vérifie si l'application est en mode production
  * @deprecated Utilisez import { isProduction } from '@/utils/environment' à la place
  */
 export function isProduction(): boolean {
-  return isProduction();
+  return isProd();
 }
 
 /**
@@ -19,7 +24,7 @@ export function isProduction(): boolean {
  * @deprecated Utilisez import { isDevelopment } from '@/utils/environment' à la place
  */
 export function isDevelopment(): boolean {
-  return isDevelopment();
+  return isDev();
 }
 
 /**
@@ -27,7 +32,7 @@ export function isDevelopment(): boolean {
  * @deprecated Utilisez import { isLovableEnvironment } from '@/utils/environment' à la place
  */
 export function isLovableEnvironment(): boolean {
-  return isLovableEnvironment();
+  return isLovableEnv();
 }
 
 /**
@@ -35,14 +40,14 @@ export function isLovableEnvironment(): boolean {
  * @deprecated Utilisez import { isNetlifyEnvironment } from '@/utils/environment' à la place
  */
 export function isNetlifyEnvironment(): boolean {
-  return isNetlifyEnvironment();
+  return isNetlifyEnv();
 }
 
 /**
  * Vérifie si le mode client est activé via les paramètres d'URL
  */
 export function isClientMode(): boolean {
-  const urlParams = getAllUrlParams();
+  const urlParams = getUrlParams();
   return urlParams.client === 'true';
 }
 
@@ -50,7 +55,7 @@ export function isClientMode(): boolean {
  * Vérifie si le mode debug est activé via les paramètres d'URL
  */
 export function isDebugMode(): boolean {
-  const urlParams = getAllUrlParams();
+  const urlParams = getUrlParams();
   return urlParams.debug === 'true' && !urlParams.hideDebug;
 }
 
@@ -58,7 +63,7 @@ export function isDebugMode(): boolean {
  * Vérifie si le mode cloud est forcé via les paramètres d'URL ou les variables d'environnement
  */
 export function isCloudModeForced(): boolean {
-  const urlParams = getAllUrlParams();
+  const urlParams = getUrlParams();
   return urlParams.forceCloud === 'true' || import.meta.env.VITE_FORCE_CLOUD_MODE === 'true';
 }
 
@@ -67,7 +72,7 @@ export function isCloudModeForced(): boolean {
  * @deprecated Utilisez import { getBaseUrl } from '@/utils/environment' à la place
  */
 export function getBaseUrl(): string {
-  return getBaseUrl();
+  return getBaseUrlUtil();
 }
 
 /**
@@ -76,7 +81,7 @@ export function getBaseUrl(): string {
  * @deprecated Utilisez import { getRedirectUrl } from '@/utils/environment' à la place
  */
 export function getRedirectUrl(path: string): string {
-  return getRedirectUrl(path);
+  return getRedirectUrlUtil(path);
 }
 
 /**
@@ -84,7 +89,7 @@ export function getRedirectUrl(path: string): string {
  * @deprecated Utilisez import { getFormattedUrlParams } from '@/utils/environment' à la place
  */
 export function getFormattedUrlParams(): Record<string, string> {
-  return getFormattedUrlParams();
+  return getFormattedParams();
 }
 
 /**
@@ -92,5 +97,5 @@ export function getFormattedUrlParams(): Record<string, string> {
  * @deprecated Utilisez import { getAllUrlParams } from '@/utils/environment' à la place
  */
 export function getAllUrlParams(): Record<string, string> {
-  return getAllUrlParams();
+  return getUrlParams();
 }
