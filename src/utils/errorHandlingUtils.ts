@@ -4,6 +4,7 @@
  */
 
 import { toast } from '@/hooks/use-toast';
+import { createRoot } from 'react-dom/client';
 
 /**
  * Creates a user-friendly error message HTML to display when critical errors occur
@@ -79,8 +80,9 @@ export const verifyReactLoaded = () => {
       return false;
     }
     
-    // Vérifier que ReactDOM est bien défini
-    if (!createRoot) {
+    // Vérifier que createRoot de ReactDOM est bien défini
+    // Ici, nous vérifions si la fonction est disponible dans le scope global
+    if (typeof createRoot !== 'function') {
       console.error("ReactDOM.createRoot n'est pas disponible");
       return false;
     }

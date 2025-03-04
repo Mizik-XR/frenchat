@@ -66,7 +66,7 @@ echo     CORRECTION TERMINÉE AVEC SUCCÈS
 echo ===================================================
 echo.
 echo Veuillez maintenant lancer l'application avec la commande:
-echo .\start-app.bat
+echo npm run dev
 echo.
 echo Si le problème persiste, exécutez .\fix-blank-page.bat
 echo pour une réparation plus complète.
