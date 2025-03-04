@@ -3,155 +3,154 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title Frenchat - Démarrage Universel
+title FileChat - Mode Universel
+
+REM Configuration de l'interface graphique
+mode con cols=100 lines=30
+color 1F
 
 echo ===================================================
-echo            DÉMARRAGE UNIVERSEL DE FRENCHAT
+echo      DÉMARRAGE UNIVERSEL DE FILECHAT
 echo ===================================================
 echo.
 
-rem Vérification de la présence du script Lovable
-echo [INFO] Vérification de la configuration Lovable...
-if exist "index.html" (
-    findstr "gptengineer.js" "index.html" >nul
-    if !errorlevel! NEQ 0 (
-        echo [ATTENTION] Script Lovable manquant, correction en cours...
-        if exist "fix-edit-issues.bat" (
-            call fix-edit-issues.bat
-        ) else (
-            echo [ERREUR] Impossible de trouver fix-edit-issues.bat
-            echo [INFO] Création de corrections manuelles...
-            
-            REM Sauvegarde du fichier original
-            copy index.html index.html.backup >nul
-            
-            REM Modifier le fichier index.html pour ajouter le script manquant
-            (for /f "delims=" %%i in (index.html) do (
-                echo %%i
-                echo %%i | findstr "</body>" >nul
-                if !errorlevel! EQU 0 (
-                    echo     ^<script src="https://cdn.gpteng.co/gptengineer.js" type="module"^>^</script^>
-                )
-            )) > index.html.temp
-            
-            move /y index.html.temp index.html >nul
-            echo [OK] Script gptengineer.js ajouté dans index.html.
-        )
-    ) else (
-        echo [OK] Configuration Lovable correcte.
-    )
+REM Détection du mode optimal
+set "USE_OLLAMA=0"
+set "USE_PYTHON=0"
+set "USE_CLOUD=1"
+
+REM Vérification d'Ollama (prioritaire)
+netstat -an | findstr ":11434" | findstr "LISTENING" >nul 2>nul
+if %ERRORLEVEL% EQU 0 (
+    set "USE_OLLAMA=1"
+    echo [DÉTECTÉ] Ollama est actif sur ce système.
+    echo           Le mode IA locale via Ollama sera disponible.
 ) else (
-    echo [ATTENTION] index.html introuvable, vérification avancée nécessaire.
-    if exist "scripts\fix-blank-page.bat" (
-        call scripts\fix-blank-page.bat
-    ) else (
-        echo [ERREUR] Impossible de trouver les scripts de réparation.
-        echo [INFO] Tentative de démarrage direct...
-    )
+    echo [INFO] Ollama n'est pas en cours d'exécution.
+    echo        L'IA locale via Ollama ne sera pas disponible.
 )
-
-rem Vérification de la compatibilité React
-echo [INFO] Vérification de la compatibilité React...
-if exist "node_modules\react\package.json" (
-    findstr "\"version\": \"18" "node_modules\react\package.json" >nul
-    if !errorlevel! NEQ 0 (
-        echo [ATTENTION] Version de React incompatible détectée, correction en cours...
-        call npm uninstall react react-dom
-        call npm cache clean --force
-        call npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0
-        echo [OK] React réinstallé avec la version compatible.
-    ) else (
-        echo [OK] Version de React compatible.
-    )
-) else (
-    echo [ATTENTION] Installation React manquante ou incomplète.
-    echo [INFO] Installation des dépendances React...
-    call npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0
-)
-
-rem Vérification des commandes requises
-echo [INFO] Vérification des commandes requises...
-where npm >nul 2>nul
-if !errorlevel! NEQ 0 (
-    echo [ERREUR] npm n'est pas disponible. Veuillez installer Node.js.
-    echo Téléchargez-le depuis https://nodejs.org/
-    pause
-    exit /b 1
-)
-
-rem Vérification de npx
-where npx >nul 2>nul
-if !errorlevel! NEQ 0 (
-    echo [INFO] npx n'est pas disponible. Installation en cours...
-    call npm install -g npx
-    if !errorlevel! NEQ 0 (
-        echo [ATTENTION] Installation de npx échouée, mais on peut continuer.
-    )
-)
-
-rem Vérification du fichier _redirects
-echo [INFO] Vérification du fichier _redirects...
-if not exist "public\_redirects" (
-    echo [INFO] Création du fichier _redirects...
-    if not exist "public" mkdir public
-    echo /* /index.html 200 > "public\_redirects"
-    echo [OK] Fichier _redirects créé.
-)
-
-rem Reconstruction forcée pour s'assurer que tout est à jour
-echo [INFO] Reconstruction du projet pour appliquer les modifications...
-set NODE_OPTIONS=--max-old-space-size=4096
-call npm run build
-if errorlevel 1 (
-    echo [ATTENTION] La reconstruction avec npm run build a échoué, tentative avec npx...
-    set NODE_OPTIONS=--max-old-space-size=4096
-    call npx vite build
-    if errorlevel 1 (
-        echo [ATTENTION] La reconstruction a échoué, tentative avec des options simplifiées...
-        set NO_RUST_INSTALL=1
-        set NODE_OPTIONS=--max-old-space-size=4096
-        call npx vite build --force
-        if errorlevel 1 (
-            echo [ATTENTION] Toutes les tentatives de reconstruction ont échoué.
-            echo [INFO] Nous allons tenter de démarrer quand même.
-        )
-    )
-)
-
-rem Choix du mode de démarrage
 echo.
-echo Choisissez le mode de démarrage :
-echo 1. Mode développement (npm run dev)
-echo 2. Mode production locale (start-app.bat)
-echo 3. Mode cloud uniquement (start-cloud-mode.bat)
-echo 4. Nettoyage complet (cleanup.bat)
-echo.
-set /p choice="Votre choix [1-4] (1 par défaut): "
 
-if "%choice%"=="2" (
-    echo [INFO] Démarrage en mode production locale...
-    call start-app.bat
-) else if "%choice%"=="3" (
-    echo [INFO] Démarrage en mode cloud uniquement...
-    call start-cloud-mode.bat
-) else if "%choice%"=="4" (
-    echo [INFO] Lancement du nettoyage complet...
-    call cleanup.bat
+REM Vérification de Python et Hugging Face
+python --version >nul 2>nul
+if %ERRORLEVEL% EQU 0 (
+    python -c "import transformers" >nul 2>nul
+    if %ERRORLEVEL% EQU 0 (
+        set "USE_PYTHON=1"
+        echo [DÉTECTÉ] Python avec Hugging Face Transformers est disponible.
+        echo           Le mode IA locale via Python sera disponible.
+    ) else (
+        echo [INFO] Python est installé mais la bibliothèque transformers n'est pas détectée.
+        echo        L'IA locale via Python ne sera pas disponible.
+    )
 ) else (
-    echo [INFO] Démarrage en mode développement...
-    set VITE_FORCE_REACT_VERSION=18.2.0
-    call npx vite
+    echo [INFO] Python n'est pas détecté sur ce système.
+    echo        L'IA locale via Python ne sera pas disponible.
+)
+echo.
+
+REM Animation de chargement
+echo Préparation de FileChat en cours...
+for /L %%i in (1,1,20) do (
+    <nul set /p =█
+    timeout /t 0 /nobreak >nul
+)
+echo  OK!
+echo.
+
+REM Vérification du dossier dist
+if not exist "dist\" (
+    echo [INFO] Construction de l'application en cours...
+    call npm run build
     if errorlevel 1 (
-        echo [ATTENTION] Démarrage avec npx vite échoué, tentative avec npm run dev...
-        call npm run dev
-        if errorlevel 1 (
-            echo [ATTENTION] Toutes les tentatives de démarrage ont échoué.
-            echo [INFO] Tentative avec serveur HTTP simple...
-            call npx http-server dist -p 8080 -c-1 --cors
-        )
+        echo [ERREUR] Construction de l'application échouée
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
+        exit /b 1
+    )
+    echo [OK] Application construite avec succès.
+    echo.
+)
+
+REM Vérifier si http-server est installé
+where http-server >nul 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [INFO] Installation du serveur web...
+    call npm install -g http-server >nul 2>nul
+    if errorlevel 1 (
+        echo [ERREUR] Installation du serveur web échouée.
+        echo         Utilisation de npx comme alternative...
+        set "USE_NPX=1"
     )
 )
 
-echo [INFO] Frenchat s'est terminé. Appuyez sur une touche pour fermer cette fenêtre...
-pause
+REM Configuration des variables d'environnement
+set "CLIENT_MODE=1"
+set "FORCE_CLOUD_MODE=0"
+
+if %USE_OLLAMA% EQU 0 if %USE_PYTHON% EQU 0 (
+    set "FORCE_CLOUD_MODE=1"
+    echo [INFO] Mode cloud forcé (aucune IA locale détectée).
+)
+
+REM Démarrage des services nécessaires
+echo [INFO] Démarrage des services...
+
+if %USE_PYTHON% EQU 1 (
+    echo [INFO] Démarrage du serveur d'IA en Python...
+    start "Serveur IA Python" /min cmd /c "python serve_model.py"
+    timeout /t 2 /nobreak > nul
+)
+
+echo [INFO] Démarrage du serveur web...
+if defined USE_NPX (
+    start "Serveur Web FileChat" /min cmd /c "npx http-server dist -p 8080 -c-1 --cors"
+) else (
+    start "Serveur Web FileChat" /min cmd /c "http-server dist -p 8080 -c-1 --cors"
+)
+timeout /t 2 /nobreak > nul
+
+REM Construction de l'URL avec les paramètres appropriés
+set "APP_URL=http://localhost:8080/?"
+if %FORCE_CLOUD_MODE% EQU 1 (
+    set "APP_URL=!APP_URL!client=true^&hideDebug=true^&forceCloud=true"
+) else (
+    set "APP_URL=!APP_URL!client=true"
+)
+
+REM Ouvrir le navigateur
+echo [INFO] Ouverture de FileChat dans votre navigateur...
+start "" "!APP_URL!"
+
+echo.
+echo ===================================================
+echo       FILECHAT EST PRÊT À ÊTRE UTILISÉ
+echo ===================================================
+echo.
+echo L'application est maintenant accessible avec:
+
+if %USE_OLLAMA% EQU 1 (
+    echo [v] Mode IA locale via Ollama
+)
+if %USE_PYTHON% EQU 1 (
+    echo [v] Mode IA locale via Python
+)
+echo [v] Mode cloud
+
+echo.
+echo URL d'accès: !APP_URL!
+echo.
+echo Cette fenêtre peut être minimisée. Ne la fermez pas tant que
+echo vous utilisez FileChat.
+echo.
+echo Pour quitter, fermez cette fenêtre.
+echo ===================================================
+echo.
+pause >nul
+
+echo.
+echo Fermeture de FileChat...
+taskkill /F /IM "node.exe" /FI "WINDOWTITLE eq Serveur Web FileChat" >nul 2>nul
+taskkill /F /IM "node.exe" /FI "WINDOWTITLE eq Serveur IA Python" >nul 2>nul
 exit /b 0

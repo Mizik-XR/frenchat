@@ -113,14 +113,17 @@ if %ERRORLEVEL% EQU 0 (
 )
 echo.
 
+REM URL avec paramètres normalisés pour éviter les erreurs 404
+set APP_URL=http://localhost:8080/?client=true^&hideDebug=true^&forceCloud=true^&mode=cloud
+
 REM Démarrage de l'application web
 echo [INFO] Démarrage de l'interface web...
-start "Application Web FileChat" /min cmd /c "http-server dist -p 8080 -c-1"
+start "Application Web FileChat" /min cmd /c "http-server dist -p 8080 -c-1 --cors"
 timeout /t 2 /nobreak > nul
 
 REM Ouvrir le navigateur
 echo [INFO] Ouverture de FileChat dans votre navigateur...
-start http://localhost:8080
+start "" "%APP_URL%"
 echo.
 
 echo ===================================================
@@ -136,7 +139,9 @@ echo.
 echo Cette fenêtre peut être minimisée. Ne la fermez pas tant que
 echo vous utilisez FileChat.
 echo.
-echo REMARQUE: Avec PowerShell, utilisez toujours .\script.bat pour exécuter les scripts
+echo URL d'accès: %APP_URL%
+echo.
+echo Pour forcer une reconstruction, utilisez: .\start-app-simplified.bat --rebuild
 echo.
 echo ===================================================
 

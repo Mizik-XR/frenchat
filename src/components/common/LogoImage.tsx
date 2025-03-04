@@ -1,50 +1,44 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface LogoImageProps {
   className?: string;
-  fallbackText?: string;
 }
 
-export const LogoImage = ({ 
-  className = "h-10 w-10", 
-  fallbackText = "FC" 
-}: LogoImageProps) => {
+export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
   const [imagePath, setImagePath] = useState<string>("");
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
-  const [loadAttempted, setLoadAttempted] = useState<boolean>(false);
   
   useEffect(() => {
-    console.log("LogoImage: Tentative de chargement de l'image");
+    // Déterminer si nous sommes en environnement de développement ou de production
+    const isDevEnvironment = process.env.NODE_ENV === 'development' || 
+                             window.location.hostname === 'localhost' || 
+                             window.location.hostname === '127.0.0.1';
     
-    // Liste des chemins possibles pour trouver l'image
-    const possiblePaths = [
-      // Chemins relatifs à l'application
-      "/filechat-animation.gif",
-      "./filechat-animation.gif", 
-      "filechat-animation.gif",
-      // Chemins absolus basés sur l'origine
-      `${window.location.origin}/filechat-animation.gif`,
-      // Chemins pour les environnements de développement
-      "/public/filechat-animation.gif",
-      "./public/filechat-animation.gif",
-      // Chemins pour les builds de production
-      "/assets/filechat-animation.gif",
-      "./assets/filechat-animation.gif",
-      // Chemin Lovable
-      './public/lovable-uploads/filechat-animation.gif'
-    ];
+    // Chemins à essayer, en commençant par celui approprié pour l'environnement
+    let paths = isDevEnvironment 
+      ? [
+          "/filechat-animation.gif",
+          "./filechat-animation.gif", 
+          "filechat-animation.gif",
+          "/public/filechat-animation.gif",
+          "./public/filechat-animation.gif"
+        ]
+      : [
+          // En production, on essaie d'abord les chemins relatifs à la racine du site
+          "./filechat-animation.gif",
+          "/filechat-animation.gif", 
+          "filechat-animation.gif"
+        ];
     
     // Tester la charge de l'image avec chaque chemin
     const testImage = (path: string) => {
       return new Promise<boolean>((resolve) => {
         const img = new Image();
         img.onload = () => {
-          console.log(`LogoImage: Chemin fonctionnel trouvé: ${path}`);
           resolve(true);
         };
         img.onerror = () => {
-          console.log(`LogoImage: Échec du chargement pour: ${path}`);
           resolve(false);
         };
         img.src = path;
@@ -52,9 +46,8 @@ export const LogoImage = ({
     };
 
     const findWorkingPath = async () => {
-      setLoadAttempted(true);
-      
-      for (const path of possiblePaths) {
+      // D'abord, essayons les chemins relatifs normaux
+      for (const path of paths) {
         const success = await testImage(path);
         if (success) {
           setImagePath(path);
@@ -63,31 +56,31 @@ export const LogoImage = ({
         }
       }
       
-      // Si nous sommes dans un environnement de déploiement
-      if (window.location.hostname.includes('preview') || 
-          window.location.hostname.includes('netlify') || 
-          window.location.hostname.includes('vercel')) {
-        // Essayer un chemin spécifique aux déploiements
-        const deploymentPath = `${window.location.origin}/filechat-animation.gif`;
-        const success = await testImage(deploymentPath);
+      // Si ça ne fonctionne pas, essayons avec un chemin complet basé sur l'origine de la page
+      const baseUrl = window.location.origin;
+      const fullPaths = paths.map(path => {
+        // Si le chemin commence déjà par /, supprimer le / initial pour éviter les doubles slashes
+        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+        return `${baseUrl}/${cleanPath}`;
+      });
+      
+      for (const path of fullPaths) {
+        const success = await testImage(path);
         if (success) {
-          setImagePath(deploymentPath);
+          setImagePath(path);
           setImageLoaded(true);
           return;
         }
       }
       
-      // Utiliser une image statique de secours si disponible
-      const staticFallback = "/favicon.ico";
-      const fallbackSuccess = await testImage(staticFallback);
-      if (fallbackSuccess) {
-        console.log("LogoImage: Utilisation de l'image de secours");
-        setImagePath(staticFallback);
+      // Si rien ne fonctionne, essayer le fichier depuis les uploads Lovable s'il existe
+      const lovablePath = './public/lovable-uploads/filechat-animation.gif';
+      const success = await testImage(lovablePath);
+      if (success) {
+        setImagePath(lovablePath);
         setImageLoaded(true);
         return;
       }
-      
-      console.warn("LogoImage: Aucun chemin d'image fonctionnel trouvé");
     };
 
     findWorkingPath();
@@ -96,8 +89,8 @@ export const LogoImage = ({
   // Utiliser une icône de secours si l'image ne charge pas
   if (!imageLoaded) {
     return (
-      <div className={`flex items-center justify-center bg-purple-100 rounded-full ${className}`}>
-        <span className="text-purple-600 font-bold">{fallbackText}</span>
+      <div className={`flex items-center justify-center bg-blue-100 rounded-full ${className}`}>
+        <span className="text-blue-600 font-bold">CA</span>
       </div>
     );
   }
@@ -105,10 +98,9 @@ export const LogoImage = ({
   return (
     <img
       src={imagePath}
-      alt="Frenchat Logo"
+      alt="ChatAlone Logo"
       className={className}
-      onError={(e) => {
-        console.error("LogoImage: Erreur de chargement de l'image:", e);
+      onError={() => {
         setImageLoaded(false);
       }}
     />

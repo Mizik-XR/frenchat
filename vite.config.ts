@@ -11,16 +11,11 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
-      // Configuration explicite de Babel avec les transformations nécessaires
+      // Configurer React pour éviter les conflits potentiels
+      jsxRuntime: 'automatic',
+      // La propriété fastRefresh n'est pas reconnue, supprimons-la
       babel: {
-        plugins: [
-          '@babel/plugin-transform-react-jsx',
-        ],
-        presets: [
-          ['@babel/preset-react', { runtime: 'automatic' }]
-        ],
-        babelrc: true,
-        configFile: false,
+        plugins: []
       }
     }),
     mode === 'development' && componentTagger(),
@@ -28,17 +23,19 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "react": path.resolve(__dirname, "./node_modules/react"),
-      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
-    dedupe: ['react', 'react-dom'], // Dédupliquer React pour éviter les conflits
   },
+  // Configuration améliorée pour la production
   build: {
+    // Utilisation d'esbuild au lieu de terser pour la minification
     minify: 'esbuild',
+    // Configuration d'esbuild pour la minification
     target: 'es2015',
     rollupOptions: {
       output: {
+        // Séparation du code en chunks pour un meilleur chargement
         manualChunks: (id) => {
+          // On crée un chunk pour chaque lib importante
           if (id.includes('node_modules')) {
             if (id.includes('@supabase')) return 'vendor-supabase';
             if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
@@ -48,28 +45,24 @@ export default defineConfig(({ mode }) => ({
           }
         },
       },
-      external: [], // Ne pas externaliser React
+      external: [
+        // Exclure le script gptengineer.js du processus de bundling
+        'https://cdn.gpteng.co/gptengineer.js'
+      ]
     },
+    // Activer la compression
     reportCompressedSize: true,
-    chunkSizeWarningLimit: 1000,
-    // Activer la copie des ressources
-    assetsInlineLimit: 0, // Ne pas inliner les ressources (important pour les GIFs et images)
+    chunkSizeWarningLimit: 1000, // Augmenter la limite d'avertissement
   },
+  // Configuration pour améliorer le comportement du cache
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', '@babel/plugin-transform-react-jsx'],
-    force: true, // Forcer l'optimisation des dépendances
+    include: ['react', 'react-dom', 'react-router-dom'],
+    exclude: ['gptengineer']
   },
   // Configuration de la gestion des assets
-  assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg', '**/*.ico'],
-  // Configurer le comportement de base de publicPath
-  base: './',
-  // Préserve le script gptengineer.js et empêche Vite de le manipuler
-  experimental: {
-    renderBuiltUrl(filename, { hostType }) {
-      if (filename.includes('gptengineer.js')) {
-        return 'https://cdn.gpteng.co/gptengineer.js';
-      }
-      return { relative: true };
-    }
+  assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg'],
+  // Configuration script pour le mode développement et production
+  define: {
+    __LOVABLE_MODE__: JSON.stringify(mode),
   }
 }));

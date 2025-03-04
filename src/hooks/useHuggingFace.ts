@@ -19,12 +19,20 @@ import { executeAIRequest } from './ai/strategies/aiServiceStrategy';
 import { createSystemCapabilitiesManager } from './ai/strategies/systemCapabilitiesStrategy';
 import { useModelDownload } from './useModelDownload';
 import { checkBrowserCompatibility } from './ai/analyzers/browserCompatibility';
+import { isLovableEnvironment } from '@/utils/environmentUtils';
 
 export function useHuggingFace(provider: string = 'huggingface') {
+  // Vérifier immédiatement si le mode cloud est forcé
+  const isCloudModeForced = 
+    window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true' ||
+    new URLSearchParams(window.location.search).get('forceCloud') === 'true' ||
+    isLovableEnvironment(); // Force le mode cloud dans l'environnement Lovable
+  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [serviceType, setServiceType] = useState<AIServiceType>(
-    localStorage.getItem('aiServiceType') as AIServiceType || 'cloud'
+    isCloudModeForced ? 'cloud' : 
+    (localStorage.getItem('aiServiceType') as AIServiceType || 'cloud')
   );
   const [localAIUrl, setLocalAIUrl] = useState<string | null>(
     localStorage.getItem('localAIUrl') || 'http://localhost:8000'
@@ -45,46 +53,89 @@ export function useHuggingFace(provider: string = 'huggingface') {
   } = useModelDownload();
 
   useEffect(() => {
+    // Si le mode cloud est forcé, définir les préférences en conséquence
+    if (isCloudModeForced && serviceType !== 'cloud') {
+      console.log("Mode cloud forcé, mise à jour des préférences");
+      setServiceType('cloud');
+      localStorage.setItem('aiServiceType', 'cloud');
+    }
+
     const handleStorageChange = () => {
-      setServiceType(localStorage.getItem('aiServiceType') as AIServiceType || 'cloud');
+      // Ne pas permettre le changement de serviceType si le mode cloud est forcé
+      if (!isCloudModeForced) {
+        const storedServiceType = localStorage.getItem('aiServiceType') as AIServiceType;
+        setServiceType(storedServiceType || 'cloud');
+      }
+      
       setLocalAIUrl(localStorage.getItem('localAIUrl') || 'http://localhost:8000');
       setLocalProvider(localStorage.getItem('localProvider') as LLMProviderType || 'huggingface');
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [isCloudModeForced, serviceType]);
 
   useEffect(() => {
+    // Pour s'assurer qu'un mode est toujours sélectionné
+    if (!localStorage.getItem('aiServiceType')) {
+      console.log("Définition du mode cloud par défaut (première utilisation)");
+      localStorage.setItem('aiServiceType', 'cloud');
+      setServiceType('cloud');
+    }
+
     const checkCompatibility = () => {
-      const browserCompatibility = checkBrowserCompatibility();
+      // Si le mode cloud est forcé, ignorer la vérification de compatibilité
+      if (isCloudModeForced) {
+        return;
+      }
       
-      // Si le navigateur n'est pas compatible avec des fonctionnalités critiques,
-      // basculer automatiquement vers le mode cloud
-      if (browserCompatibility.shouldFallbackToCloud) {
+      try {
+        const browserCompatibility = checkBrowserCompatibility();
+        
+        // Si le navigateur n'est pas compatible avec des fonctionnalités critiques,
+        // basculer automatiquement vers le mode cloud
+        if (browserCompatibility.shouldFallbackToCloud) {
+          setServiceType('cloud');
+          localStorage.setItem('aiServiceType', 'cloud');
+          
+          // Notification uniquement en mode développement ou debug
+          if (import.meta.env.DEV || window.location.search.includes('debug=true')) {
+            toast({
+              title: "Compatibilité navigateur",
+              description: `Mode cloud automatiquement activé - votre navigateur ne supporte pas l'IA locale`,
+              variant: "default"
+            });
+          }
+        }
+      } catch (error) {
+        console.warn("Erreur lors de la vérification de compatibilité:", error);
+        // En cas d'erreur, passer au mode cloud par défaut
         setServiceType('cloud');
         localStorage.setItem('aiServiceType', 'cloud');
-        
-        // Notification uniquement en mode développement ou debug
-        if (import.meta.env.DEV || window.location.search.includes('debug=true')) {
-          toast({
-            title: "Compatibilité navigateur",
-            description: `Mode cloud automatiquement activé - votre navigateur ne supporte pas l'IA locale`,
-            variant: "default"
-          });
-        }
       }
     };
     
-    checkCompatibility();
-  }, []);
+    // Exécuter avec un léger délai pour ne pas bloquer le rendu initial
+    const timer = setTimeout(() => {
+      checkCompatibility();
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [isCloudModeForced]);
 
   const textGeneration = async (options: TextGenerationParameters): Promise<TextGenerationResponse[]> => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const executionStrategy = await determineExecutionStrategy(options, serviceType);
+      // Si mode cloud forcé, toujours utiliser la stratégie cloud
+      const executionStrategy = isCloudModeForced ? 'cloud' : 
+        await determineExecutionStrategy(options, serviceType).catch(err => {
+          console.warn("Erreur lors de la détermination de la stratégie:", err);
+          return 'cloud' as const; // Fallback en cas d'erreur
+        });
+      
+      console.log(`Exécution avec la stratégie: ${executionStrategy} (forceCloud: ${isCloudModeForced})`);
       
       const response = await executeAIRequest(
         options, 
@@ -104,13 +155,17 @@ export function useHuggingFace(provider: string = 'huggingface') {
       console.error("Erreur lors de l'appel au modèle:", e);
       setError(e instanceof Error ? e.message : String(e));
       
-      notifyServiceChange(
-        "Erreur de connexion au service d'IA",
-        "Impossible de se connecter au service d'IA. Vérifiez votre connexion ou essayez plus tard.",
-        "destructive"
-      );
+      // Ne pas afficher de notification en cas de mode cloud forcé et erreur locale
+      if (!isCloudModeForced || (isCloudModeForced && serviceType === 'cloud')) {
+        notifyServiceChange(
+          "Erreur de connexion au service d'IA",
+          "Impossible de se connecter au service d'IA. Vérifiez votre connexion ou essayez plus tard.",
+          "destructive"
+        );
+      }
       
-      throw e;
+      // Toujours renvoyer une réponse même en cas d'erreur pour éviter le blocage de l'UI
+      return [{ generated_text: "Désolé, je n'ai pas pu générer de réponse en raison d'une erreur de connexion. Veuillez réessayer." }];
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +181,7 @@ export function useHuggingFace(provider: string = 'huggingface') {
     textGeneration, 
     isLoading, 
     error,
-    serviceType,
+    serviceType: isCloudModeForced ? 'cloud' : serviceType,  // Toujours renvoyer 'cloud' si mode forcé
     localAIUrl,
     localProvider,
     checkLocalService,

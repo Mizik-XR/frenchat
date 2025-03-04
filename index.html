@@ -1,80 +1,143 @@
 
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Frenchat - Votre assistant d'intelligence documentaire</title>
     <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
-    <!-- Force le navigateur à recharger le cache des ressources -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
+    <!-- Style de base pour l'écran de chargement initial -->
     <style>
-      /* Styles de chargement initial */
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      
-      .initial-loading-spinner {
-        width: 50px;
-        height: 50px;
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #3498db;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-bottom: 20px;
-      }
-      
-      .initial-loading-container {
+      #loading-screen {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        min-height: 100vh;
-        font-family: system-ui, sans-serif;
+        height: 100vh;
         background: linear-gradient(to bottom right, #f0f9ff, #e1e7ff);
-        padding: 2rem;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       }
-      
-      .initial-loading-title {
-        color: #4b5563;
+      .loading-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+      }
+      .loading-title {
+        color: #4f46e5;
         font-size: 1.5rem;
         margin-bottom: 1rem;
       }
-      
-      .initial-loading-text {
-        color: #6b7280;
+      .loading-bar {
+        width: 100%;
+        height: 6px;
+        background-color: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 1.5rem 0;
       }
-      
-      @media (prefers-color-scheme: dark) {
-        .initial-loading-container {
-          background: linear-gradient(to bottom right, #1f2937, #111827);
-        }
-        
-        .initial-loading-title {
-          color: #e5e7eb;
-        }
-        
-        .initial-loading-text {
-          color: #9ca3af;
-        }
+      .loading-bar-progress {
+        width: 30%;
+        height: 100%;
+        background-color: #4f46e5;
+        border-radius: 3px;
+        animation: progressAnimation 2s infinite ease-in-out;
+      }
+      @keyframes progressAnimation {
+        0% { width: 10%; }
+        50% { width: 70%; }
+        100% { width: 10%; }
+      }
+      .retry-btn {
+        display: none;
+        margin-top: 1rem;
+        background-color: #4f46e5;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      .error-message {
+        display: none;
+        color: #dc2626;
+        margin-top: 1rem;
       }
     </style>
+    <!-- Script de pré-initialisation pour améliorer le chargement -->
+    <script>
+      // Définition des variables globales accessibles par l'application
+      window.APP_CONFIG = {
+        forceCloudMode: false,
+        debugMode: false
+      };
+      
+      // Lecture des paramètres d'URL pour configuration initiale
+      document.addEventListener('DOMContentLoaded', function() {
+        // Analyser les paramètres d'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Configurer le mode cloud si demandé
+        if (urlParams.has('mode') && urlParams.get('mode') === 'cloud') {
+          window.APP_CONFIG.forceCloudMode = true;
+          console.log('Mode cloud activé via paramètre URL');
+          localStorage.setItem('aiServiceType', 'cloud');
+        }
+        
+        // Activer le mode debug si demandé
+        if (urlParams.has('debug') && urlParams.get('debug') === 'true') {
+          window.APP_CONFIG.debugMode = true;
+          console.log('Mode debug activé via paramètre URL');
+        }
+        
+        // Définir un timeout pour afficher un bouton de rechargement si le chargement prend trop de temps
+        setTimeout(function() {
+          const loadingEl = document.getElementById('loading-screen');
+          if (loadingEl) {
+            const retryBtn = document.querySelector('.retry-btn');
+            const errorMsg = document.querySelector('.error-message');
+            if (retryBtn) retryBtn.style.display = 'inline-block';
+            if (errorMsg) errorMsg.style.display = 'block';
+          }
+        }, 10000); // 10 secondes
+      });
+      
+      // Fonction de rechargement de la page
+      function reloadPage() {
+        window.location.href = window.location.pathname + '?forceCloud=true';
+      }
+    </script>
   </head>
   <body>
+    <!-- Message de secours si le JavaScript est désactivé -->
+    <noscript>
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center;">
+        <h1 style="color: #4f46e5; margin-bottom: 20px;">JavaScript est requis</h1>
+        <p>Cette application nécessite que JavaScript soit activé pour fonctionner.</p>
+        <p>Veuillez l'activer dans les paramètres de votre navigateur.</p>
+      </div>
+    </noscript>
+    
+    <!-- Écran de chargement visible immédiatement -->
     <div id="root">
-      <!-- Fallback pour montrer quelque chose même si React ne charge pas -->
-      <div class="initial-loading-container">
-        <div class="initial-loading-spinner"></div>
-        <h2 class="initial-loading-title">Chargement de Frenchat...</h2>
-        <p class="initial-loading-text">Si cette page reste affichée trop longtemps, veuillez rafraîchir.</p>
+      <div id="loading-screen">
+        <div class="loading-container">
+          <h1 class="loading-title">FileChat</h1>
+          <p>Chargement de votre assistant d'intelligence documentaire...</p>
+          <div class="loading-bar"><div class="loading-bar-progress"></div></div>
+          <p style="font-size: 0.8rem; color: #6b7280;">Si le chargement échoue, essayez de rafraîchir la page.</p>
+          <div class="error-message">Le chargement semble prendre plus de temps que prévu.</div>
+          <button class="retry-btn" onclick="reloadPage()">Essayer en mode cloud</button>
+        </div>
       </div>
     </div>
-    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
-    <script type="module" src="./src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -3,23 +3,23 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title FileChat - Mode Cloud
+title FileChat - Mode de Secours
 
 REM Configuration de l'interface graphique (meilleure présentation)
 mode con cols=100 lines=30
 color 1F
 
 echo ===================================================
-echo     DÉMARRAGE DE FILECHAT - MODE CLOUD
+echo     DÉMARRAGE DE FILECHAT - MODE DE SECOURS
 echo ===================================================
 echo.
 
-REM Configuration en mode cloud uniquement (masquer les fonctionnalités techniques)
-set "MODE_CLOUD=1"
+REM Configuration en mode minimal pour assurer le fonctionnement
+set "FORCE_CLOUD_MODE=1"
 set "CLIENT_MODE=1"
-set "HIDE_DEBUG=1"
 set "VITE_DISABLE_DEV_MODE=1"
-set "VITE_DEBUG_AUTH_KEY=disabled-%random%%random%"
+set "FALLBACK_MODE=1"
+set "DISABLE_ADVANCED_FEATURES=1"
 
 REM Vérification du dossier dist
 echo [INFO] Vérification des fichiers de l'application...
@@ -54,64 +54,36 @@ if not exist "dist\index.html" (
     echo.
 )
 
-REM Animation de chargement
-echo [INFO] Initialisation de FileChat en cours...
-for /L %%i in (1,1,20) do (
-    <nul set /p =█
-    timeout /t 0 /nobreak >nul
-)
-echo  OK!
-echo.
-
-REM Vérification des dépendances NPM
-echo [INFO] Vérification des composants...
-if not exist "node_modules\" (
-    echo [INFO] Installation des composants nécessaires...
-    call scripts\install-npm-deps.bat >nul 2>nul
-    if errorlevel 1 (
-        echo [ERREUR] Installation des composants échouée.
-        echo         Veuillez contacter le support technique.
-        echo.
-        echo Appuyez sur une touche pour quitter...
-        pause >nul
-        exit /b 1
-    )
-    echo [OK] Composants installés avec succès.
-    echo.
-)
-
-REM Vérifier si http-server est installé
+REM Démarrage d'un serveur HTTP simple
+echo [INFO] Démarrage du serveur web en mode minimal...
 where http-server >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo [INFO] Installation du serveur web...
     call npm install -g http-server >nul 2>nul
     if errorlevel 1 (
         echo [ERREUR] Installation du serveur web échouée.
-        echo         Veuillez contacter le support technique.
+        echo         Essai avec npx...
         echo.
-        echo Appuyez sur une touche pour quitter...
-        pause >nul
-        exit /b 1
     )
 )
 
-REM Démarrage de l'application web
-echo [INFO] Lancement de l'application...
-start "Application Web FileChat" /min cmd /c "http-server dist -p 8080 -c-1"
+REM Lancement avec npx en cas d'échec de l'installation globale
+start "Application Web FileChat - Mode de Secours" /min cmd /c "http-server dist -p 8080 -c-1 --cors || npx http-server dist -p 8080 -c-1 --cors"
 timeout /t 2 /nobreak > nul
 
-REM Ouvrir le navigateur avec le mode client activé et debug désactivé
+REM Ouvrir le navigateur avec des paramètres de secours
 echo [INFO] Ouverture dans votre navigateur...
-start http://localhost:8080?client=true^&hideDebug=true^&forceCloud=true
+start http://localhost:8080?mode=fallback^&client=true^&hideDebug=true^&forceCloud=true
 
 echo.
 echo ===================================================
 echo    FILECHAT EST PRÊT À ÊTRE UTILISÉ
-echo          MODE CLOUD UNIQUEMENT
+echo          MODE DE SECOURS ACTIVÉ
 echo ===================================================
 echo.
-echo L'application utilise l'IA en mode cloud uniquement.
-echo Aucune installation locale n'est nécessaire.
+echo L'application démarre en mode minimal avec
+echo des fonctionnalités réduites pour assurer un
+echo chargement fiable.
 echo.
 echo Cette fenêtre peut être minimisée. Ne la fermez pas tant que
 echo vous utilisez FileChat.
@@ -123,5 +95,5 @@ pause >nul
 
 echo.
 echo Fermeture de FileChat...
-taskkill /F /IM "node.exe" /FI "WINDOWTITLE eq Application Web FileChat" >nul 2>nul
+taskkill /F /IM "node.exe" /FI "WINDOWTITLE eq Application Web FileChat - Mode de Secours" >nul 2>nul
 exit /b 0

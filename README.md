@@ -3,57 +3,18 @@
 
 Frenchat est une application qui vous permet d'interroger vos documents avec l'intelligence artificielle pour obtenir des réponses précises.
 
-## Installation Rapide (Tous Systèmes)
+## Installation et Démarrage Rapide
 
 ### Windows
-1. Double-cliquez sur `install.bat` pour une installation automatique complète
+1. Double-cliquez sur `setup.bat` pour une installation automatique complète
 2. Après l'installation, utilisez le raccourci "Frenchat" sur votre bureau pour démarrer l'application
-3. Si aucun raccourci n'est créé, utilisez `start-universal.bat` pour démarrer l'application
 
 ### macOS / Linux
 1. Ouvrez un terminal dans le dossier de l'application
-2. Exécutez les commandes suivantes:
+2. Exécutez la commande suivante:
    ```
-   chmod +x install.sh
-   ./install.sh
+   chmod +x start-ai-service.sh && ./start-ai-service.sh
    ```
-3. Si aucun raccourci n'est créé, utilisez `./start-universal.sh` pour démarrer l'application
-
-## Maintenance et Nettoyage
-
-Si votre environnement contient des fichiers temporaires ou que vous rencontrez des problèmes:
-
-### Windows
-1. Exécutez `cleanup.bat` pour nettoyer les fichiers temporaires, ou
-2. Démarrez `start-universal.bat` et choisissez l'option 4 (Nettoyage complet)
-
-### macOS / Linux
-1. Exécutez `bash scripts/unix/cleanup.sh` pour nettoyer les fichiers temporaires, ou
-2. Démarrez `./start-universal.sh` et choisissez l'option 4 (Nettoyage complet)
-
-## Dépannage Installation
-
-Si l'installation s'interrompt ou si la fenêtre se ferme trop rapidement:
-
-### Windows
-1. Ouvrez un terminal (cmd) en tant qu'administrateur
-2. Naviguez vers le dossier de l'application: `cd chemin\vers\frenchat`
-3. Exécutez: `install.bat`
-4. En cas d'erreur, notez le message exact et redémarrez avec: `start-universal.bat`
-
-### macOS / Linux
-1. Ouvrez un terminal
-2. Naviguez vers le dossier de l'application: `cd chemin/vers/frenchat`
-3. Exécutez: `bash -x install.sh` (le mode verbeux aidera à identifier les erreurs)
-4. En cas d'erreur, notez le message exact et redémarrez avec: `./start-universal.sh`
-
-## Démarrage Rapide (Installation Déjà Effectuée)
-
-### Windows
-- Double-cliquez sur `start-universal.bat` pour démarrer en mode interactif
-
-### macOS / Linux
-- Ouvrez un terminal et exécutez `./start-universal.sh`
 
 ## Fonctionnalités
 
@@ -68,12 +29,6 @@ Si l'installation s'interrompt ou si la fenêtre se ferme trop rapidement:
 - Windows 10/11 ou macOS 10.15+ ou Linux
 - 8 Go de RAM minimum (16 Go recommandés)
 - Connexion internet pour l'installation initiale et l'accès aux services cloud
-
-## Modes d'Utilisation
-
-- **Mode complet** (recommandé) - Utilise l'IA locale pour toutes les fonctionnalités
-- **Mode cloud** - Option simplifiée utilisant uniquement les services cloud (moins de ressources requises)
-- **Mode Ollama** - Alternative utilisant Ollama pour la gestion des modèles (voir `start-ollama.bat`)
 
 ## Support
 

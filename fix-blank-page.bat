@@ -3,10 +3,10 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title FileChat - Réparation page blanche et problèmes d'édition
+title Frenchat - Réparation page blanche et problèmes d'édition
 
 echo ===================================================
-echo     OUTIL DE RÉPARATION FILECHAT
+echo     OUTIL DE RÉPARATION FRENCHAT
 echo ===================================================
 echo.
 echo Cet outil va tenter de résoudre les problèmes suivants:
@@ -15,7 +15,6 @@ echo [1] Page blanche après chargement
 echo [2] Erreur "AI edits didn't result in any changes"
 echo [3] Problèmes d'édition avec Lovable
 echo [4] Erreurs liées à Supabase ou variables d'environnement
-echo [5] Erreurs de compatibilité React
 echo.
 echo ===================================================
 echo.
@@ -23,7 +22,7 @@ echo Appuyez sur une touche pour démarrer la réparation...
 pause >nul
 
 REM Nettoyer le dossier dist
-echo [ÉTAPE 1/6] Nettoyage du dossier dist...
+echo [ÉTAPE 1/5] Nettoyage du dossier dist...
 if exist "dist\" (
     rmdir /s /q dist
     echo [OK] Dossier dist supprimé avec succès.
@@ -33,7 +32,7 @@ if exist "dist\" (
 echo.
 
 REM Vérifier et corriger index.html
-echo [ÉTAPE 2/6] Vérification du fichier index.html...
+echo [ÉTAPE 2/5] Vérification du fichier index.html...
 if exist "index.html" (
     echo [INFO] Vérification de la présence du script gptengineer.js...
     findstr "gptengineer.js" "index.html" >nul
@@ -69,8 +68,8 @@ if exist "index.html" (
         echo     ^<meta charset="UTF-8" /^>
         echo     ^<link rel="icon" type="image/svg+xml" href="/favicon.ico" /^>
         echo     ^<meta name="viewport" content="width=device-width, initial-scale=1.0" /^>
-        echo     ^<title^>FileChat - Votre assistant d'intelligence documentaire^</title^>
-        echo     ^<meta name="description" content="FileChat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." /^>
+        echo     ^<title^>Frenchat - Votre assistant d'intelligence documentaire^</title^>
+        echo     ^<meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." /^>
         echo   ^</head^>
         echo   ^<body^>
         echo     ^<div id="root"^>^</div^>
@@ -86,7 +85,7 @@ if exist "index.html" (
 echo.
 
 REM Vérification des variables d'environnement
-echo [ÉTAPE 3/6] Vérification de la configuration Supabase...
+echo [ÉTAPE 3/5] Vérification de la configuration Supabase...
 echo [INFO] Création d'un fichier .env.local de secours avec configuration Supabase...
 
 (
@@ -100,27 +99,16 @@ echo [INFO] Création d'un fichier .env.local de secours avec configuration Supa
 echo [OK] Fichier .env.local créé avec la configuration Supabase.
 echo.
 
-REM Correction des problèmes de compatibilité React
-echo [ÉTAPE 4/6] Correction des problèmes de compatibilité React...
-echo [INFO] Réinstallation des dépendances React...
-
-call npm uninstall react react-dom
-call npm cache clean --force
-call npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0
-
-echo [OK] Dépendances React réinstallées.
-echo.
-
 REM Reconstruction de l'application
-echo [ÉTAPE 5/6] Reconstruction complète de l'application...
+echo [ÉTAPE 4/5] Reconstruction complète de l'application...
 echo [INFO] Utilisation de NODE_OPTIONS=--max-old-space-size=4096...
 set NODE_OPTIONS=--max-old-space-size=4096
-call npm run build -- --force
+call npm run build
 if errorlevel 1 (
     echo [ERREUR] Reconstruction de l'application échouée.
     echo          Tentative avec NO_RUST_INSTALL=1...
     set NO_RUST_INSTALL=1
-    call npm run build -- --force
+    call npm run build
     if errorlevel 1 (
         echo [ERREUR] Reconstruction de l'application échouée.
         echo          Veuillez vérifier les erreurs de compilation.
@@ -132,17 +120,15 @@ if errorlevel 1 (
 )
 
 REM Vérification finale et démarrage du serveur
-echo [ÉTAPE 6/6] Vérification finale et démarrage...
+echo [ÉTAPE 5/5] Vérification finale et démarrage...
 if exist "dist\index.html" (
     echo [INFO] Vérification de dist\index.html...
     findstr "gptengineer.js" "dist\index.html" >nul
     if !errorlevel! NEQ 0 (
         echo [ATTENTION] Le script gptengineer.js est absent de dist\index.html.
         echo             Application d'une correction manuelle...
-        
-        REM Maintenant nous copions le fichier modifié pour s'assurer que le script est inclus
-        type "index.html" > "dist\index.html"
-        echo [OK] Correction appliquée à dist\index.html.
+        copy index.html dist\index.html >nul
+        echo [OK] Correction appliquée.
     ) else (
         echo [OK] Le fichier dist\index.html contient le script requis.
     )

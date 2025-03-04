@@ -1,25 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { getBaseUrl, isPreviewEnvironment, isDevelopment } from "@/utils/environmentUtils";
 
-const getApiUrl = () => {
-  const configuredApiUrl = import.meta.env.VITE_API_URL;
-  
-  // Si une URL API est explicitement configurée, l'utiliser
-  if (configuredApiUrl) {
-    return configuredApiUrl;
-  }
-  
-  // En environnement de prévisualisation, utiliser un chemin relatif
-  if (isPreviewEnvironment()) {
-    return `${getBaseUrl()}/api`;
-  }
-  
-  // Par défaut en développement local
-  return 'http://localhost:8000';
-};
-
-const API_URL = getApiUrl();
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const ENVIRONMENT = import.meta.env.VITE_ENVIRONMENT || 'development';
 
 export const apiConfig = {
@@ -39,14 +21,6 @@ export const apiConfig = {
     modelInfo: '/model-info',
   }
 };
-
-// Journaliser la configuration API une seule fois au démarrage
-console.log("Configuration API:", {
-  url: apiConfig.baseURL,
-  environment: ENVIRONMENT,
-  isPreview: isPreviewEnvironment(),
-  isDev: isDevelopment()
-});
 
 export const isLocalDevelopment = () => ENVIRONMENT === 'development';
 
@@ -104,7 +78,6 @@ export const secureApiRequest = async <T>(
     if (!apiConfig.isProduction) {
       console.log(`API Request to ${endpoint}:`, {
         method,
-        fullUrl: `${apiConfig.baseURL}${endpoint}`,
         ...(data ? { body: sanitizeForLogs(data) } : {})
       });
     }

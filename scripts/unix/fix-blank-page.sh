@@ -12,7 +12,6 @@ echo "[2] Erreur \"AI edits didn't result in any changes\""
 echo "[3] Problèmes d'édition avec Lovable"
 echo "[4] Erreurs liées à Supabase ou variables d'environnement"
 echo "[5] Erreurs de typage TypeScript"
-echo "[6] Erreurs de compatibilité React"
 echo
 echo "==================================================="
 echo
@@ -20,7 +19,7 @@ read -p "Appuyez sur Entrée pour démarrer la réparation..." -n1 -s
 echo
 
 # Nettoyer le dossier dist
-echo "[ÉTAPE 1/7] Nettoyage du dossier dist..."
+echo "[ÉTAPE 1/6] Nettoyage du dossier dist..."
 if [ -d "dist" ]; then
     rm -rf dist
     echo "[OK] Dossier dist supprimé avec succès."
@@ -30,7 +29,7 @@ fi
 echo
 
 # Vérifier et corriger index.html
-echo "[ÉTAPE 2/7] Vérification du fichier index.html..."
+echo "[ÉTAPE 2/6] Vérification du fichier index.html..."
 if [ -f "index.html" ]; then
     echo "[INFO] Vérification de la présence du script gptengineer.js..."
     if ! grep -q "gptengineer.js" "index.html"; then
@@ -75,7 +74,7 @@ fi
 echo
 
 # Vérification des variables d'environnement
-echo "[ÉTAPE 3/7] Vérification de la configuration Supabase..."
+echo "[ÉTAPE 3/6] Vérification de la configuration Supabase..."
 echo "[INFO] Création d'un fichier .env.local de secours avec configuration Supabase..."
 
 cat > .env.local << EOF
@@ -89,19 +88,8 @@ EOF
 echo "[OK] Fichier .env.local créé avec la configuration Supabase."
 echo
 
-# Correction des problèmes de compatibilité React
-echo "[ÉTAPE 4/7] Correction des problèmes de compatibilité React..."
-echo "[INFO] Réinstallation des dépendances React..."
-
-npm uninstall react react-dom
-npm cache clean --force
-npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0
-
-echo "[OK] Dépendances React réinstallées."
-echo
-
 # Vérification des erreurs de typage
-echo "[ÉTAPE 5/7] Vérification des erreurs TypeScript..."
+echo "[ÉTAPE 4/6] Vérification des erreurs TypeScript..."
 echo "[INFO] Exécution du vérificateur de types..."
 
 # Vérifier si tsc est disponible
@@ -119,15 +107,15 @@ fi
 echo
 
 # Reconstruction de l'application
-echo "[ÉTAPE 6/7] Reconstruction complète de l'application..."
+echo "[ÉTAPE 5/6] Reconstruction complète de l'application..."
 echo "[INFO] Utilisation de NODE_OPTIONS=--max-old-space-size=4096..."
 export NODE_OPTIONS=--max-old-space-size=4096
-npm run build -- --force
+npm run build
 if [ $? -ne 0 ]; then
     echo "[ERREUR] Reconstruction de l'application échouée."
     echo "         Tentative avec NO_RUST_INSTALL=1..."
     export NO_RUST_INSTALL=1
-    npm run build -- --force
+    npm run build
     if [ $? -ne 0 ]; then
         echo "[ERREUR] Reconstruction de l'application échouée."
         echo "         Veuillez vérifier les erreurs de compilation."
@@ -140,16 +128,14 @@ else
 fi
 
 # Vérification finale et démarrage du serveur
-echo "[ÉTAPE 7/7] Vérification finale et démarrage..."
+echo "[ÉTAPE 6/6] Vérification finale et démarrage..."
 if [ -f "dist/index.html" ]; then
     echo "[INFO] Vérification de dist/index.html..."
     if ! grep -q "gptengineer.js" "dist/index.html"; then
         echo "[ATTENTION] Le script gptengineer.js est absent de dist/index.html."
         echo "            Application d'une correction manuelle..."
-        
-        # Maintenant nous copions le fichier modifié pour s'assurer que le script est inclus
-        cat "index.html" > "dist/index.html"
-        echo "[OK] Correction appliquée à dist/index.html."
+        cp index.html dist/index.html
+        echo "[OK] Correction appliquée."
     else
         echo "[OK] Le fichier dist/index.html contient le script requis."
     fi
