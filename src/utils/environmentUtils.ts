@@ -22,6 +22,16 @@ export const isPreviewEnvironment = () => {
          window.location.hostname.includes('gpteng');
 };
 
+// Déterminer le chemin de base pour les ressources statiques
+export const getPublicPath = () => {
+  // En mode preview Lovable, utiliser le chemin relatif
+  if (isPreviewEnvironment()) {
+    return './';
+  }
+  // En développement local, utiliser le chemin standard
+  return '/';
+};
+
 /**
  * Construit une URL de redirection complète basée sur l'environnement actuel
  * @param path Le chemin relatif à ajouter à l'URL de base
@@ -38,7 +48,11 @@ export const getRedirectUrl = (path: string): string => {
 export const getBaseUrl = () => {
   // Si on est en mode preview, utiliser l'origine actuelle
   if (isPreviewEnvironment()) {
-    return window.location.origin;
+    // Extraire le chemin de base pour Lovable
+    const pathParts = window.location.pathname.split('/');
+    // Conserver uniquement le domaine et le premier segment si présent (projet ID)
+    const basePath = pathParts.length > 1 ? `/${pathParts[1]}` : '';
+    return `${window.location.origin}${basePath}`;
   }
   
   // Si on est en mode développement
@@ -53,10 +67,15 @@ export const getBaseUrl = () => {
 // Obtenir la configuration API selon l'environnement
 export const getApiConfig = () => {
   // API URL en fonction de l'environnement
-  const apiUrl = import.meta.env.VITE_API_URL || 
-                (isPreviewEnvironment() ? 
-                 `${window.location.origin}/api` : 
-                 'http://localhost:8000');
+  let apiUrl = import.meta.env.VITE_API_URL;
+  
+  if (!apiUrl) {
+    if (isPreviewEnvironment()) {
+      apiUrl = `${getBaseUrl()}/api`;
+    } else {
+      apiUrl = 'http://localhost:8000';
+    }
+  }
                  
   return {
     baseURL: apiUrl,
@@ -93,9 +112,11 @@ export const logEnvironmentInfo = () => {
       isProd: isProduction(),
       isPreview: isPreviewEnvironment(),
       baseUrl: getBaseUrl(),
+      publicPath: getPublicPath(),
       apiConfig: getApiConfig(),
       hostname: window.location.hostname,
-      pathname: window.location.pathname
+      pathname: window.location.pathname,
+      fullUrl: window.location.href
     });
   }
 };
