@@ -1,157 +1,69 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card } from "@/components/ui/card";
-import { supabase } from '@/integrations/supabase/client';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { AlertCircle, CheckCircle, XCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { Json } from '@/types/database';
+import React from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-interface MetricsSummary {
-  success_rate: number;
-  avg_duration: number;
-  error_count: number;
-  total_operations: number;
-}
-
-interface CacheStats {
-  hit_rate: number;
-  miss_rate: number;
-}
-
-interface RecentError {
-  message: string;
-  timestamp: string;
-}
-
-interface SystemReport {
-  id: string;
-  timestamp: string;
-  metrics_summary: MetricsSummary;
-  cache_stats: CacheStats;
-  recent_errors: RecentError[];
-}
-
-export const SystemReportChart = () => {
-  const { data: reports, isLoading, error } = useQuery({
-    queryKey: ['systemReports'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('system_reports')
-        .select('*')
-        .order('timestamp', { ascending: false })
-        .limit(24); // Dernières 24 heures
-
-      if (error) throw error;
-      
-      // Transformer les données brutes en type SystemReport
-      return (data || []).map(item => ({
-        id: item.id,
-        timestamp: item.timestamp,
-        metrics_summary: item.metrics_summary as unknown as MetricsSummary,
-        cache_stats: item.cache_stats as unknown as CacheStats,
-        recent_errors: (item.recent_errors as unknown as RecentError[]) || []
-      })) as SystemReport[];
-    },
-    refetchInterval: 60000, // Rafraîchir toutes les minutes
-  });
-
-  if (isLoading) {
-    return <div className="flex justify-center p-8">Chargement des métriques...</div>;
-  }
-
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Erreur</AlertTitle>
-        <AlertDescription>
-          Erreur lors du chargement des métriques système
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (!reports?.length) {
-    return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Aucune donnée</AlertTitle>
-        <AlertDescription>
-          Aucune métrique système n'est disponible pour le moment
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  const formatTime = (timestamp: string) => {
-    return format(new Date(timestamp), 'HH:mm');
+interface SystemReportProps {
+  report: {
+    metrics_summary: {
+      total_operations: number;
+      success_rate: number;
+      avg_duration: number;
+      error_count: number;
+    };
+    cache_stats: {
+      hit_rate: number;
+      miss_rate: number;
+    };
   };
+}
+
+export const SystemReportChart = ({ report }: SystemReportProps) => {
+  const data = [
+    {
+      name: 'Taux de succès',
+      value: report.metrics_summary.success_rate,
+      fill: report.metrics_summary.success_rate >= 95 ? '#22c55e' : '#f59e0b',
+      unit: '%'
+    },
+    {
+      name: 'Temps moyen',
+      value: report.metrics_summary.avg_duration,
+      fill: report.metrics_summary.avg_duration < 1000 ? '#3b82f6' : '#f59e0b',
+      unit: 'ms'
+    },
+    {
+      name: 'Utilisation cache',
+      value: report.cache_stats.hit_rate,
+      fill: '#8b5cf6',
+      unit: '%'
+    }
+  ];
 
   return (
-    <div className="space-y-6">
-      <Card className="p-6">
-        <h3 className="text-lg font-medium mb-4">Taux de succès et performance</h3>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={reports}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="timestamp" 
-                tickFormatter={formatTime}
-              />
-              <YAxis />
-              <Tooltip 
-                labelFormatter={(label) => formatTime(label as string)}
-              />
-              <Line
-                type="monotone"
-                name="Taux de succès"
-                dataKey="metrics_summary.success_rate"
-                stroke="#8884d8"
-                dot={false}
-              />
-              <Line
-                type="monotone"
-                name="Durée moyenne (ms)"
-                dataKey="metrics_summary.avg_duration"
-                stroke="#82ca9d"
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <h3 className="text-lg font-medium mb-4">Erreurs récentes</h3>
-        <div className="space-y-4">
-          {reports[0]?.recent_errors.map((error, index) => (
-            <Alert key={index} variant={error ? "destructive" : "default"}>
-              <XCircle className="h-4 w-4" />
-              <AlertTitle>
-                {formatTime(error.timestamp)}
-              </AlertTitle>
-              <AlertDescription>
-                {error.message}
-              </AlertDescription>
-            </Alert>
-          ))}
-          {!reports[0]?.recent_errors.length && (
-            <Alert>
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <AlertTitle>Aucune erreur</AlertTitle>
-              <AlertDescription>
-                Aucune erreur récente n'a été détectée
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-      </Card>
-    </div>
+    <Card>
+      <CardContent className="pt-6">
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart
+            data={data}
+            margin={{
+              top: 5,
+              right: 30,
+              left: 20,
+              bottom: 5,
+            }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip 
+              formatter={(value, name, props) => [`${value}${props.payload.unit}`, props.payload.name]}
+            />
+            <Legend />
+            <Bar dataKey="value" name="Valeur" />
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
   );
 };

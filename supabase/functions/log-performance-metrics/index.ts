@@ -16,6 +16,17 @@ serve(async (req) => {
   try {
     const { operation, duration, success, error, timestamp, cache_hit } = await req.json()
 
+    // Validation des données entrantes
+    if (!operation) {
+      throw new Error('Le champ "operation" est requis')
+    }
+    
+    if (typeof duration !== 'number') {
+      throw new Error('Le champ "duration" doit être un nombre')
+    }
+
+    console.log(`Enregistrement des métriques pour l'opération ${operation}: ${duration}ms, succès=${success}`)
+
     const { data, error: dbError } = await supabase
       .from('performance_metrics')
       .insert([
@@ -24,8 +35,8 @@ serve(async (req) => {
           duration,
           success,
           error,
-          timestamp,
-          cache_hit
+          timestamp: timestamp || new Date().toISOString(),
+          cache_hit: !!cache_hit
         }
       ])
       .select()
@@ -51,7 +62,7 @@ serve(async (req) => {
   } catch (err) {
     console.error('Error processing request:', err)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: err.message || 'Internal server error' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500

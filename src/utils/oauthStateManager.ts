@@ -10,7 +10,7 @@
  */
 export function generateOAuthState(provider: string): string {
   // Création d'un identifiant aléatoire suffisamment long pour être sécurisé
-  const randomState = Array.from(crypto.getRandomValues(new Uint8Array(24)))
+  const randomState = Array.from(crypto.getRandomValues(new Uint8Array(32)))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
   
@@ -52,4 +52,36 @@ export function validateOAuthState(provider: string, returnedState: string): boo
   // Nettoyer l'état utilisé
   sessionStorage.removeItem(`oauth_state_${provider}`);
   return true;
+}
+
+/**
+ * Stocke de manière sécurisée un token d'accès temporaire
+ * @param provider Le fournisseur OAuth
+ * @param token Le token à stocker
+ */
+export function storeOAuthToken(provider: string, token: string): void {
+  // Utilisation de sessionStorage pour des raisons de sécurité (durée de vie limitée à la session)
+  sessionStorage.setItem(`oauth_token_${provider}`, token);
+  
+  // Définir une expiration automatique (30 minutes)
+  setTimeout(() => {
+    sessionStorage.removeItem(`oauth_token_${provider}`);
+  }, 30 * 60 * 1000);
+}
+
+/**
+ * Récupère un token OAuth stocké
+ * @param provider Le fournisseur OAuth
+ * @returns Le token ou null s'il n'existe pas
+ */
+export function getStoredOAuthToken(provider: string): string | null {
+  return sessionStorage.getItem(`oauth_token_${provider}`);
+}
+
+/**
+ * Supprime un token OAuth stocké
+ * @param provider Le fournisseur OAuth
+ */
+export function clearOAuthToken(provider: string): void {
+  sessionStorage.removeItem(`oauth_token_${provider}`);
 }

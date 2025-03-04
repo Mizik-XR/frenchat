@@ -105,6 +105,8 @@ serve(async (req) => {
       url += `?key=${apiKey}`;
     }
     
+    console.log(`Appel API ${service} vers ${endpoint}`);
+    
     // Exécution de la requête API
     const apiResponse = await fetch(url, {
       method: method || 'POST',

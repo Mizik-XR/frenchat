@@ -16,8 +16,9 @@
   from = "/*"
   to = "/index.html"
   status = 200
-
-# Configuration pour rediriger les appels d'API vers les fonctions Netlify
+  force = true
+  
+# Rediriger les API vers les fonctions Netlify
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
@@ -36,18 +37,10 @@
   [headers.values]
     X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
-    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* ws://localhost:* https://* wss://* /.netlify/functions/*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*; worker-src 'self' blob:;"
+    X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-    Cross-Origin-Embedder-Policy = "require-corp"
-    Cross-Origin-Opener-Policy = "same-origin"
-    Cross-Origin-Resource-Policy = "cross-origin"
-
-# Redirection des appels aux fonctions Netlify
-[[redirects]]
-  from = "/.netlify/functions/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* ws://localhost:* https://* wss://* /.netlify/functions/*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*; worker-src 'self' blob:;"
 
 # Configuration de mise en cache
 [[headers]]

@@ -1,11 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from '../_shared/cors.ts';
 
 interface SystemReport {
   timestamp: string;
@@ -31,11 +27,34 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Vérification de l'authentification
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'Authentification requise' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // Vérifier que l'utilisateur est authentifié
+    const { data: userData, error: authError } = await supabaseClient.auth.getUser(
+      authHeader.split(' ')[1]
+    );
+
+    if (authError || !userData.user) {
+      return new Response(
+        JSON.stringify({ error: 'Session invalide' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Génération de rapport système demandé par l'utilisateur ${userData.user.id}`);
 
     // Période d'analyse (10 dernières minutes)
     const startTime = new Date(Date.now() - 10 * 60 * 1000).toISOString();

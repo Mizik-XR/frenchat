@@ -16,4 +16,7 @@
 /?client=true&hideDebug=true&forceCloud=true&mode=cloud /index.html?client=true&hideDebug=true&forceCloud=true&mode=cloud 200
 
 # Préservation des paramètres pour l'authentification
-/auth* /index.html 200
+/auth/* /index.html 200
+
+# Redirection des API vers les fonctions Netlify
+/api/* /.netlify/functions/:splat 200

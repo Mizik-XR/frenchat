@@ -1,8 +1,22 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { isProduction, isNetlifyEnvironment } from "@/utils/environment/environmentDetection";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const ENVIRONMENT = import.meta.env.VITE_ENVIRONMENT || 'development';
+// Détermination dynamique de l'URL API en fonction de l'environnement
+const determineApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  if (isNetlifyEnvironment()) {
+    return '/.netlify/functions';
+  }
+  
+  return 'http://localhost:8000';
+};
+
+const API_URL = determineApiUrl();
+const ENVIRONMENT = import.meta.env.VITE_ENVIRONMENT || (isProduction() ? 'production' : 'development');
 
 export const apiConfig = {
   baseURL: API_URL,
