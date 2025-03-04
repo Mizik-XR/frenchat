@@ -10,6 +10,7 @@ import { WelcomePage } from "./components/onboarding/WelcomePage";
 import { Suspense, lazy, useEffect } from "react";
 import { DebugPanel } from "./components/DebugPanel";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
+import { InitialLoading } from "@/components/InitialLoading";
 
 // Lazy load pages pour améliorer le temps de chargement initial
 const Auth = lazy(() => import("./pages/Auth"));
@@ -78,63 +79,13 @@ function App() {
   // Log pour comprendre si l'app se charge
   console.log("App component rendering");
 
-  useEffect(() => {
-    // Précharger les routes importantes dès que possible
-    preloadImportantPages();
-    
-    // Afficher l'URL actuelle pour le débogage
-    console.log("Current environment:", 
-      window.location.hostname.includes('preview') || window.location.hostname.includes('lovable') 
-        ? "Preview environment" 
-        : "Local environment");
-    console.log("Current URL:", window.location.href);
-    console.log("Current hostname:", window.location.hostname);
-    console.log("Current origin:", window.location.origin);
-    console.log("Current pathname:", window.location.pathname);
-    
-    // Loguer toute erreur de chargement des ressources
-    const originalFetch = window.fetch;
-    window.fetch = function(input, init) {
-      const inputUrl = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
-      console.log(`Fetch request to: ${inputUrl}`);
-      return originalFetch(input, init)
-        .then(response => {
-          if (!response.ok) {
-            console.warn(`Fetch error ${response.status} for ${inputUrl}`);
-          }
-          return response;
-        })
-        .catch(error => {
-          console.error(`Fetch failed for ${inputUrl}:`, error);
-          throw error;
-        });
-    };
-    
-    // Fixed: Vérifier et traiter les erreurs de chargement des scripts
-    document.addEventListener('error', function(e) {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'SCRIPT' || target.tagName === 'LINK' || target.tagName === 'IMG') {
-        // Fixed type issue: Check the element type before accessing src/href properties
-        const resourceUrl = target instanceof HTMLImageElement || target instanceof HTMLScriptElement 
-          ? target.src 
-          : target instanceof HTMLLinkElement 
-            ? target.href 
-            : 'unknown resource';
-        
-        console.error(`Erreur de chargement de ressource: ${resourceUrl}`);
-      }
-    }, true);
-
-    return () => {
-      window.fetch = originalFetch;
-    };
-  }, []);
-
   return (
     <ErrorBoundary>
-      <BrowserRouter>
-        <AppWithAuth />
-      </BrowserRouter>
+      <InitialLoading>
+        <BrowserRouter>
+          <AppWithAuth />
+        </BrowserRouter>
+      </InitialLoading>
     </ErrorBoundary>
   );
 }

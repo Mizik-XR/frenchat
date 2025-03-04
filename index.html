@@ -11,20 +11,66 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
+    <style>
+      /* Styles de chargement initial */
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .initial-loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      }
+      
+      .initial-loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        font-family: system-ui, sans-serif;
+        background: linear-gradient(to bottom right, #f0f9ff, #e1e7ff);
+        padding: 2rem;
+      }
+      
+      .initial-loading-title {
+        color: #4b5563;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      
+      .initial-loading-text {
+        color: #6b7280;
+      }
+      
+      @media (prefers-color-scheme: dark) {
+        .initial-loading-container {
+          background: linear-gradient(to bottom right, #1f2937, #111827);
+        }
+        
+        .initial-loading-title {
+          color: #e5e7eb;
+        }
+        
+        .initial-loading-text {
+          color: #9ca3af;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root">
       <!-- Fallback pour montrer quelque chose même si React ne charge pas -->
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui, sans-serif;">
-        <div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
-        <h2>Chargement de Frenchat...</h2>
-        <p>Si cette page reste affichée trop longtemps, veuillez rafraîchir.</p>
-        <style>
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        </style>
+      <div class="initial-loading-container">
+        <div class="initial-loading-spinner"></div>
+        <h2 class="initial-loading-title">Chargement de Frenchat...</h2>
+        <p class="initial-loading-text">Si cette page reste affichée trop longtemps, veuillez rafraîchir.</p>
       </div>
     </div>
     <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->
