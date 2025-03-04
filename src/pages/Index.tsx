@@ -1,8 +1,9 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, FileText, Settings, BarChart3, Presentation } from "lucide-react";
+import { MessageCircle, FileText, Settings, BarChart3 } from "lucide-react";
 import { PageHeader } from "@/components/navigation/PageHeader";
 import { LogoImage } from "@/components/common/LogoImage";
 
@@ -110,30 +111,6 @@ const Index = () => {
               <CardFooter>
                 <Button asChild variant="outline" className="w-full">
                   <Link to="/monitoring">Voir les statistiques</Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-
-          <div className="mt-6">
-            <Card className="hover:shadow-lg transition-shadow border-purple-200">
-              <CardHeader className="bg-purple-50 dark:bg-purple-900/20">
-                <CardTitle className="flex items-center gap-2">
-                  <Presentation className="h-5 w-5 text-purple-600" />
-                  Générer une présentation
-                </CardTitle>
-                <CardDescription>
-                  Créez une démo PowerPoint automatiquement
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <p>
-                  Générez une présentation complète du projet avec captures d'écran et explications des fonctionnalités principales.
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button asChild variant="default" className="w-full bg-purple-600 hover:bg-purple-700">
-                  <Link to="/demo">Créer une présentation</Link>
                 </Button>
               </CardFooter>
             </Card>
