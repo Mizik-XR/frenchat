@@ -7,13 +7,13 @@ import { preloadSession } from '@/integrations/supabase/client'
 import { toast } from '@/hooks/use-toast'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { LoadingScreen } from '@/components/auth/LoadingScreen'
+import * as React from 'react'
 
 // Log pour débogage
 console.log("Initialisation de l'application...")
 
-// Vérification de la version de React
-const ReactVersion = require('react').version;
-console.log("Version de React utilisée:", ReactVersion);
+// Vérification de la version de React (avec ES modules)
+console.log("Version de React utilisée:", React.version);
 
 // Configuration du client de requête avec optimisations
 const queryClient = new QueryClient({

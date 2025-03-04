@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
           ['@babel/preset-react', { runtime: 'automatic' }]
         ],
         // S'assurer que Babel utilise le cache pour de meilleures performances
-        babelrc: false,
+        babelrc: true,
         configFile: false,
       }
     }),
