@@ -23,6 +23,7 @@ const Index = lazy(() => import("./pages/Index"));
 const Monitoring = lazy(() => import("./pages/Monitoring"));
 const AIConfig = lazy(() => import("./pages/AIConfig"));
 const RagAdvancedSettings = lazy(() => import("./pages/RagAdvancedSettings"));
+const Demo = lazy(() => import("./demo/Demo"));
 
 // Préchargez les pages les plus importantes dès que possible
 const preloadImportantPages = () => {
@@ -103,6 +104,9 @@ function AppWithAuth() {
             {/* Autres routes */}
             <Route path="/documents" element={<Documents />} />
             <Route path="/monitoring" element={<Monitoring />} />
+            
+            {/* Route pour la démo */}
+            <Route path="/demo" element={<Demo />} />
             
             {/* Redirection pour les routes inconnues */}
             <Route path="*" element={<Navigate to="/" replace />} />
