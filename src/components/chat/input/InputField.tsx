@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 interface InputFieldProps {
   input: string;
   setInput: (value: string) => void;
-  onSubmit: () => void;
+  onSubmit: (e?: React.FormEvent) => void;  // Make the event parameter optional
   isLoading: boolean;
   hasFiles: boolean;
 }
@@ -21,7 +21,7 @@ export function InputField({ input, setInput, onSubmit, isLoading, hasFiles }: I
       />
       <button 
         type="button"
-        onClick={onSubmit}
+        onClick={() => onSubmit()}  // Call without passing an event
         disabled={isLoading || (!input.trim() && !hasFiles)}
         className="absolute right-2 bottom-2 p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:bg-gray-400"
       >

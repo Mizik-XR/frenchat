@@ -95,7 +95,7 @@ export const ChatInputContainer = ({
         <InputField 
           input={input}
           setInput={setInput}
-          onSubmit={handleFormSubmit}
+          onSubmit={handleFormSubmit}  // Pass the function that expects an event
           isLoading={isLoading}
           hasFiles={currentFiles.length > 0}
         />
