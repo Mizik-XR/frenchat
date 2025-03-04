@@ -15,7 +15,12 @@ echo [INFO] Détection du système d'exploitation...
 IF EXIST "%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe" (
     echo [OK] Système Windows détecté
     call setup.bat
-    exit /b %ERRORLEVEL%
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ERREUR] L'installation a échoué avec le code %ERRORLEVEL%.
+        echo Veuillez vérifier les messages d'erreur ci-dessus.
+        pause
+        exit /b %ERRORLEVEL%
+    )
 ) ELSE (
     echo [INFO] Système non-Windows détecté, tentative d'exécution du script shell...
     
@@ -30,5 +35,15 @@ IF EXIST "%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe" (
     
     REM Rendre le script exécutable et le lancer
     bash -c "chmod +x install.sh && ./install.sh"
-    exit /b !ERRORLEVEL!
+    if !ERRORLEVEL! NEQ 0 (
+        echo [ERREUR] L'installation a échoué avec le code !ERRORLEVEL!.
+        echo Veuillez vérifier les messages d'erreur ci-dessus.
+        pause
+        exit /b !ERRORLEVEL!
+    )
 )
+
+echo [INFO] Installation terminée avec succès.
+echo [INFO] Vous pouvez maintenant démarrer l'application avec start-universal.bat
+pause
+exit /b 0

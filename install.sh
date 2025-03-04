@@ -6,6 +6,15 @@ echo "           INSTALLATION UNIVERSELLE DE FRENCHAT"
 echo "==================================================="
 echo ""
 
+# Fonction pour gérer les erreurs
+handle_error() {
+    echo "[ERREUR] $1"
+    echo ""
+    echo "Appuyez sur Entrée pour quitter..."
+    read -n1 -s
+    exit 1
+}
+
 # Détection du système d'exploitation
 echo "[INFO] Détection du système d'exploitation..."
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -21,19 +30,14 @@ fi
 
 # Rendre les scripts exécutables
 echo "[INFO] Configuration des permissions des scripts..."
-chmod +x scripts/unix/*.sh
-chmod +x start-universal.sh
-chmod +x start-ai-service.sh
+chmod +x scripts/unix/*.sh || handle_error "Impossible de modifier les permissions des scripts"
+chmod +x start-universal.sh || handle_error "Impossible de modifier les permissions de start-universal.sh"
+chmod +x start-ai-service.sh || handle_error "Impossible de modifier les permissions de start-ai-service.sh"
 
 # Vérification de Python
 echo "[INFO] Vérification de Python..."
 if ! command -v python3 &> /dev/null; then
-    echo "[ERREUR] Python 3 n'est pas installé."
-    echo "Veuillez installer Python 3 depuis https://www.python.org/downloads/"
-    echo ""
-    echo "Appuyez sur Entrée pour quitter..."
-    read -n1 -s
-    exit 1
+    handle_error "Python 3 n'est pas installé. Veuillez installer Python 3 depuis https://www.python.org/downloads/"
 fi
 echo "[OK] Python est installé: $(python3 --version)"
 echo ""
@@ -41,12 +45,7 @@ echo ""
 # Vérification de Node.js
 echo "[INFO] Vérification de Node.js..."
 if ! command -v node &> /dev/null; then
-    echo "[ERREUR] Node.js n'est pas installé."
-    echo "Veuillez installer Node.js depuis https://nodejs.org/"
-    echo ""
-    echo "Appuyez sur Entrée pour quitter..."
-    read -n1 -s
-    exit 1
+    handle_error "Node.js n'est pas installé. Veuillez installer Node.js depuis https://nodejs.org/"
 fi
 echo "[OK] Node.js est installé: $(node --version)"
 echo ""
@@ -54,12 +53,7 @@ echo ""
 # Vérification de npm
 echo "[INFO] Vérification de npm..."
 if ! command -v npm &> /dev/null; then
-    echo "[ERREUR] npm n'est pas installé."
-    echo "Veuillez réinstaller Node.js depuis https://nodejs.org/"
-    echo ""
-    echo "Appuyez sur Entrée pour quitter..."
-    read -n1 -s
-    exit 1
+    handle_error "npm n'est pas installé. Veuillez réinstaller Node.js depuis https://nodejs.org/"
 fi
 echo "[OK] npm est installé: $(npm --version)"
 echo ""
@@ -68,24 +62,20 @@ echo ""
 echo "[INFO] Installation des dépendances npm..."
 npm install
 if [ $? -ne 0 ]; then
-    echo "[ERREUR] L'installation des dépendances a échoué."
-    echo ""
-    echo "Appuyez sur Entrée pour quitter..."
-    read -n1 -s
-    exit 1
+    handle_error "L'installation des dépendances a échoué."
 fi
 echo "[OK] Dépendances npm installées."
 echo ""
 
 # Configuration de l'environnement Python
 echo "[INFO] Configuration de l'environnement Python..."
+if [ ! -f "scripts/unix/setup-venv.sh" ]; then
+    handle_error "Le script setup-venv.sh est manquant."
+fi
+
 source scripts/unix/setup-venv.sh
 if [ $? -ne 0 ]; then
-    echo "[ERREUR] La configuration de l'environnement Python a échoué."
-    echo ""
-    echo "Appuyez sur Entrée pour quitter..."
-    read -n1 -s
-    exit 1
+    handle_error "La configuration de l'environnement Python a échoué."
 fi
 echo "[OK] Environnement Python configuré."
 echo ""
@@ -97,11 +87,7 @@ if [ $? -ne 0 ]; then
     echo "[ATTENTION] La construction avec npm run build a échoué, tentative avec npx..."
     NODE_OPTIONS="--max-old-space-size=4096" npx vite build
     if [ $? -ne 0 ]; then
-        echo "[ERREUR] La construction de l'application a échoué."
-        echo ""
-        echo "Appuyez sur Entrée pour quitter..."
-        read -n1 -s
-        exit 1
+        handle_error "La construction de l'application a échoué."
     fi
 fi
 echo "[OK] Application construite avec succès."
@@ -130,6 +116,10 @@ Type=Application
 Categories=Utility;
 EOF
     echo "[OK] Raccourci créé dans le menu des applications"
+    # Créer aussi un lien sur le bureau pour Linux
+    ln -sf "$(pwd)/start-universal.sh" ~/Desktop/Frenchat
+    chmod +x ~/Desktop/Frenchat
+    echo "[OK] Raccourci créé sur le Bureau"
 fi
 
 echo "==================================================="
@@ -143,6 +133,7 @@ echo "- Exécuter ./start-universal.sh dans ce dossier"
 if [[ "$OS_TYPE" == "macos" ]]; then
     echo "- Double-cliquer sur le raccourci Frenchat.command sur votre Bureau"
 elif [[ "$OS_TYPE" == "linux" ]]; then
+    echo "- Double-cliquer sur le raccourci Frenchat sur votre Bureau"
     echo "- Lancer Frenchat depuis le menu des applications"
 fi
 echo ""

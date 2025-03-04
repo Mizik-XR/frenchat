@@ -8,6 +8,7 @@ Frenchat est une application qui vous permet d'interroger vos documents avec l'i
 ### Windows
 1. Double-cliquez sur `install.bat` pour une installation automatique complète
 2. Après l'installation, utilisez le raccourci "Frenchat" sur votre bureau pour démarrer l'application
+3. Si aucun raccourci n'est créé, utilisez `start-universal.bat` pour démarrer l'application
 
 ### macOS / Linux
 1. Ouvrez un terminal dans le dossier de l'application
@@ -16,6 +17,23 @@ Frenchat est une application qui vous permet d'interroger vos documents avec l'i
    chmod +x install.sh
    ./install.sh
    ```
+3. Si aucun raccourci n'est créé, utilisez `./start-universal.sh` pour démarrer l'application
+
+## Dépannage Installation
+
+Si l'installation s'interrompt ou si la fenêtre se ferme trop rapidement:
+
+### Windows
+1. Ouvrez un terminal (cmd) en tant qu'administrateur
+2. Naviguez vers le dossier de l'application: `cd chemin\vers\frenchat`
+3. Exécutez: `install.bat`
+4. En cas d'erreur, notez le message exact et redémarrez avec: `start-universal.bat`
+
+### macOS / Linux
+1. Ouvrez un terminal
+2. Naviguez vers le dossier de l'application: `cd chemin/vers/frenchat`
+3. Exécutez: `bash -x install.sh` (le mode verbeux aidera à identifier les erreurs)
+4. En cas d'erreur, notez le message exact et redémarrez avec: `./start-universal.sh`
 
 ## Démarrage Rapide (Installation Déjà Effectuée)
 

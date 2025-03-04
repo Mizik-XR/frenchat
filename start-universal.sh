@@ -6,6 +6,15 @@ echo "            DÉMARRAGE UNIVERSEL DE FRENCHAT"
 echo "==================================================="
 echo ""
 
+# Fonction pour gérer les erreurs
+handle_error() {
+    echo "[ERREUR] $1"
+    echo ""
+    echo "Appuyez sur Entrée pour quitter..."
+    read -n1 -s
+    exit 1
+}
+
 # Vérification de la présence du script Lovable
 echo "[INFO] Vérification de la configuration Lovable..."
 if [ -f "index.html" ]; then
@@ -53,10 +62,7 @@ fi
 # Vérification des commandes requises
 echo "[INFO] Vérification des commandes requises..."
 if ! command -v npm &> /dev/null; then
-    echo "[ERREUR] npm n'est pas disponible. Veuillez installer Node.js."
-    echo "Téléchargez-le depuis https://nodejs.org/"
-    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
-    exit 1
+    handle_error "npm n'est pas disponible. Veuillez installer Node.js. Téléchargez-le depuis https://nodejs.org/"
 fi
 
 # Vérification de npx
@@ -97,6 +103,7 @@ fi
 
 # Reconstruction forcée pour s'assurer que tout est à jour
 echo "[INFO] Reconstruction du projet pour appliquer les modifications..."
+export NODE_OPTIONS=--max-old-space-size=4096
 npm run build
 if [ $? -ne 0 ]; then
     echo "[ATTENTION] La reconstruction avec npm run build a échoué, tentative avec npx..."
@@ -158,4 +165,6 @@ case $choice in
         ;;
 esac
 
+echo "[INFO] Frenchat s'est terminé. Appuyez sur Entrée pour fermer cette fenêtre..."
+read -n1 -s
 exit 0

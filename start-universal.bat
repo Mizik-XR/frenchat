@@ -16,7 +16,27 @@ if exist "index.html" (
     findstr "gptengineer.js" "index.html" >nul
     if !errorlevel! NEQ 0 (
         echo [ATTENTION] Script Lovable manquant, correction en cours...
-        call fix-edit-issues.bat
+        if exist "fix-edit-issues.bat" (
+            call fix-edit-issues.bat
+        ) else (
+            echo [ERREUR] Impossible de trouver fix-edit-issues.bat
+            echo [INFO] Création de corrections manuelles...
+            
+            REM Sauvegarde du fichier original
+            copy index.html index.html.backup >nul
+            
+            REM Modifier le fichier index.html pour ajouter le script manquant
+            (for /f "delims=" %%i in (index.html) do (
+                echo %%i
+                echo %%i | findstr "</body>" >nul
+                if !errorlevel! EQU 0 (
+                    echo     ^<script src="https://cdn.gpteng.co/gptengineer.js" type="module"^>^</script^>
+                )
+            )) > index.html.temp
+            
+            move /y index.html.temp index.html >nul
+            echo [OK] Script gptengineer.js ajouté dans index.html.
+        )
     ) else (
         echo [OK] Configuration Lovable correcte.
     )
@@ -26,7 +46,7 @@ if exist "index.html" (
         call scripts\fix-blank-page.bat
     ) else (
         echo [ERREUR] Impossible de trouver les scripts de réparation.
-        exit /b 1
+        echo [INFO] Tentative de démarrage direct...
     )
 )
 
@@ -59,6 +79,7 @@ if !errorlevel! NEQ 0 (
     exit /b 1
 )
 
+rem Vérification de npx
 where npx >nul 2>nul
 if !errorlevel! NEQ 0 (
     echo [INFO] npx n'est pas disponible. Installation en cours...
@@ -79,9 +100,11 @@ if not exist "public\_redirects" (
 
 rem Reconstruction forcée pour s'assurer que tout est à jour
 echo [INFO] Reconstruction du projet pour appliquer les modifications...
+set NODE_OPTIONS=--max-old-space-size=4096
 call npm run build
 if errorlevel 1 (
     echo [ATTENTION] La reconstruction avec npm run build a échoué, tentative avec npx...
+    set NODE_OPTIONS=--max-old-space-size=4096
     call npx vite build
     if errorlevel 1 (
         echo [ATTENTION] La reconstruction a échoué, tentative avec des options simplifiées...
@@ -125,4 +148,6 @@ if "%choice%"=="2" (
     )
 )
 
+echo [INFO] Frenchat s'est terminé. Appuyez sur une touche pour fermer cette fenêtre...
+pause
 exit /b 0
