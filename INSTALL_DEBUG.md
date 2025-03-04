@@ -123,3 +123,4 @@ Si les problèmes persistent, lancez l'outil de diagnostic et partagez les résu
 ```
 scripts\diagnostic.bat
 ```
+

@@ -15,9 +15,8 @@ echo d'être connecté à votre compte Netlify.
 echo.
 echo Étapes:
 echo 1. Vérification de l'environnement
-echo 2. Vérification de Rust/Cargo
-echo 3. Préparation du build pour déploiement
-echo 4. Déploiement vers Netlify
+echo 2. Préparation du build pour déploiement
+echo 3. Déploiement vers Netlify
 echo.
 echo ===================================================
 echo.
@@ -25,8 +24,9 @@ echo Appuyez sur une touche pour continuer...
 pause >nul
 
 REM Vérifier si netlify CLI est installé
-if not exist "%USERPROFILE%\.netlify" (
-    echo [INFO] Netlify CLI n'est pas configuré, installation en cours...
+npm list -g netlify-cli >nul 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [INFO] Netlify CLI n'est pas installé, installation en cours...
     call npm install -g netlify-cli
     if %ERRORLEVEL% NEQ 0 (
         echo [ERREUR] L'installation de la CLI Netlify a échoué.
@@ -41,46 +41,11 @@ if not exist "%USERPROFILE%\.netlify" (
     echo [OK] CLI Netlify installée avec succès.
 )
 
-REM Vérifier si Rust/Cargo est installé
-echo [ÉTAPE 1/4] Vérification de Rust/Cargo...
-where rustc >nul 2>nul
-where cargo >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo [INFO] Rust/Cargo n'est pas installé ou n'est pas dans le PATH.
-    echo [INFO] Installation de Rust en cours...
-    
-    REM Télécharger le programme d'installation de Rust
-    curl -O https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
-    
-    REM Exécuter l'installateur avec les options par défaut
-    rustup-init.exe -y
-    
-    REM Mettre à jour le PATH pour cette session
-    set PATH=%PATH%;%USERPROFILE%\.cargo\bin
-    
-    REM Vérifier l'installation
-    where rustc >nul 2>nul
-    where cargo >nul 2>nul
-    if %ERRORLEVEL% NEQ 0 (
-        echo [ATTENTION] L'installation automatique de Rust a échoué.
-        echo             Vous pouvez continuer en mode sans Rust.
-        echo             Définissez NO_RUST_INSTALL=1 pour l'installation Python.
-        set NO_RUST_INSTALL=1
-    ) else (
-        echo [OK] Rust et Cargo installés avec succès:
-        rustc --version
-        cargo --version
-    )
-) else (
-    echo [OK] Rust et Cargo sont déjà installés:
-    rustc --version
-    cargo --version
-)
-echo.
-
 REM Préparer le build
-echo [ÉTAPE 2/4] Préparation du build pour déploiement...
-call scripts\prepare-deployment.bat
+echo [ÉTAPE 1/3] Préparation du build pour déploiement...
+set NODE_OPTIONS=--max-old-space-size=4096
+set NO_RUST_INSTALL=1
+call npm run build
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] La préparation du déploiement a échoué.
     echo.
@@ -92,7 +57,7 @@ echo [OK] Build prêt pour déploiement.
 echo.
 
 REM Vérifier la connexion à Netlify
-echo [ÉTAPE 3/4] Vérification de la connexion à Netlify...
+echo [ÉTAPE 2/3] Vérification de la connexion à Netlify...
 netlify status >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo [INFO] Vous n'êtes pas connecté à Netlify.
@@ -110,7 +75,7 @@ echo [OK] Connecté à Netlify.
 echo.
 
 REM Déployer vers Netlify
-echo [ÉTAPE 4/4] Déploiement vers Netlify...
+echo [ÉTAPE 3/3] Déploiement vers Netlify...
 echo [INFO] Voulez-vous:
 echo 1. Déployer une prévisualisation (preview)
 echo 2. Déployer en production
