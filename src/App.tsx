@@ -42,14 +42,14 @@ function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <SettingsProvider>
-            <Router>
+        <Router>
+          <AuthProvider>
+            <SettingsProvider>
               <AppRouter />
               <Toaster />
-            </Router>
-          </SettingsProvider>
-        </AuthProvider>
+            </SettingsProvider>
+          </AuthProvider>
+        </Router>
       </QueryClientProvider>
     </ThemeProvider>
   );
