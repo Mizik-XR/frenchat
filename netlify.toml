@@ -10,6 +10,8 @@
   NPM_FLAGS = "--no-optional"
   NODE_OPTIONS = "--max-old-space-size=4096"
   NO_RUST_INSTALL = "1"  # Désactive l'installation de dépendances nécessitant Rust
+  NETLIFY_USE_YARN = "false"
+  TRANSFORMERS_OFFLINE = "1"  # Évite les problèmes de téléchargement des modèles
 
 # Configuration des redirections pour le routage SPA
 [[redirects]]
@@ -57,3 +59,4 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+

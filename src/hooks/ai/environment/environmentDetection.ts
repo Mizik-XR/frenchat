@@ -1,5 +1,5 @@
 
-import { isLovableEnvironment } from '@/utils/environmentUtils';
+import { isLovableEnvironment, isNetlifyEnvironment } from '@/utils/environmentUtils';
 
 /**
  * Détecte si le mode cloud est forcé
@@ -8,7 +8,8 @@ import { isLovableEnvironment } from '@/utils/environmentUtils';
 export function isCloudModeForced(): boolean {
   return window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true' ||
     new URLSearchParams(window.location.search).get('forceCloud') === 'true' ||
-    isLovableEnvironment();
+    isLovableEnvironment() ||
+    isNetlifyEnvironment();
 }
 
 /**
