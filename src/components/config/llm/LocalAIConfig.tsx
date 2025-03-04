@@ -130,7 +130,7 @@ export const LocalAIConfig = ({
                 </label>
                 <div className="flex gap-2">
                   <ModelPathSelector
-                    path={modelPath}
+                    modelPath={modelPath}
                     onPathChange={onModelPathChange}
                   />
                   <Button

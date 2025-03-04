@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -191,6 +190,14 @@ export function FolderIndexingSelector() {
     );
   }
 
+  const renderBadgeWithoutSize = () => {
+    return (
+      <Badge variant="outline" className="ml-auto">
+        Partagé
+      </Badge>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -274,9 +281,7 @@ export function FolderIndexingSelector() {
                           <Folder className="h-4 w-4" />
                           <span>{folder.path || folder.name}</span>
                           {folder.is_shared && (
-                            <Badge variant="outline" size="sm" className="ml-auto">
-                              Partagé
-                            </Badge>
+                            renderBadgeWithoutSize()
                           )}
                         </div>
                       </SelectItem>

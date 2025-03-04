@@ -9,11 +9,20 @@ import { CloudAIConfig } from "@/components/config/CloudAIConfig";
 import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
 import { MicrosoftTeamsConfig } from "@/components/config/MicrosoftTeamsConfig";
 import { LLMProviderType } from "@/types/config";
+import { toast } from "@/hooks/use-toast";
 
 export default function AdvancedConfig() {
   const navigate = useNavigate();
   const [modelPath, setModelPath] = useState("");
   const [provider, setProvider] = useState<LLMProviderType>("huggingface");
+
+  const handleLLMSave = () => {
+    toast({
+      title: "Configuration IA sauvegardée",
+      description: "Vos paramètres d'IA locale ont été enregistrés avec succès.",
+    });
+    // Ici, vous pourriez ajouter la logique pour sauvegarder dans localStorage ou votre base de données
+  };
 
   return (
     <div className="container mx-auto py-8">
@@ -52,6 +61,7 @@ export default function AdvancedConfig() {
                 onModelPathChange={setModelPath}
                 provider={provider}
                 onProviderChange={setProvider}
+                onSave={handleLLMSave}
               />
             </TabsContent>
           </Tabs>

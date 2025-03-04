@@ -31,7 +31,7 @@ export function ThemeToggle() {
           <p>
             {theme === "light" ? "Passer en mode sombre" : "Passer en mode clair"}
             {process.env.NODE_ENV === "development" && (
-              <Badge variant="secondary" size="sm" className="ml-2">
+              <Badge variant="secondary" className="ml-2">
                 {theme}
               </Badge>
             )}

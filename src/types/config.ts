@@ -1,4 +1,3 @@
-
 import { Json } from './database';
 
 export type ServiceType = 
@@ -23,9 +22,9 @@ export type LLMProviderType =
   | 'local'
   | 'cohere'
   | 'mistral'
-  | 'ollama';
+  | 'ollama'
+  | 'qwen';
 
-// Interface pour l'objet provider complet
 export interface LLMProvider {
   id: string;
   name: string;

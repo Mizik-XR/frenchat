@@ -8,16 +8,16 @@ import { useEffect, useState } from "react";
 
 interface ModelPathSelectorProps {
   modelPath: string;
-  defaultModelPath: string;
+  defaultModelPath?: string;
   onPathChange: (path: string) => void;
-  onPathSelect: () => void;
+  onPathSelect?: () => void;
   onDownloadCompanion?: () => void;
   onOpenWizard?: () => void;
 }
 
 export function ModelPathSelector({ 
   modelPath, 
-  defaultModelPath, 
+  defaultModelPath = "~/models", 
   onPathChange, 
   onPathSelect,
   onDownloadCompanion,
