@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorFallback } from "@/components/ErrorFallback";
-import { isBrowserCompatible } from "@/utils/environmentUtils";
+import { isBrowserCompatible, logEnvironmentInfo } from "@/utils/environmentUtils";
 
 export function InitialLoading({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -10,6 +10,9 @@ export function InitialLoading({ children }: { children: React.ReactNode }) {
   const [loadingMessage, setLoadingMessage] = useState("Initialisation de Frenchat...");
 
   useEffect(() => {
+    // Journaliser les informations sur l'environnement pour faciliter le débogage
+    logEnvironmentInfo();
+    
     const steps = [
       "Vérification de l'environnement...",
       "Chargement des ressources...",
