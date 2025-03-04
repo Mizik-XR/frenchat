@@ -1,4 +1,3 @@
-
 import { BrowserRouter } from "react-router-dom";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { AuthProvider } from "./components/AuthProvider";
@@ -23,7 +22,6 @@ const Index = lazy(() => import("./pages/Index"));
 const Monitoring = lazy(() => import("./pages/Monitoring"));
 const AIConfig = lazy(() => import("./pages/AIConfig"));
 const RagAdvancedSettings = lazy(() => import("./pages/RagAdvancedSettings"));
-const Demo = lazy(() => import("./demo/Demo"));
 
 // Préchargez les pages les plus importantes dès que possible
 const preloadImportantPages = () => {
@@ -66,11 +64,9 @@ function AppWithAuth() {
     setAppLoaded(true);
     
     // Précharger les pages principales après le montage initial
-    if (typeof window !== 'undefined' && window.requestIdleCallback) {
-      window.requestIdleCallback(preloadImportantPages);
-    } else {
-      setTimeout(preloadImportantPages, 200);
-    }
+    window.requestIdleCallback 
+      ? window.requestIdleCallback(preloadImportantPages) 
+      : setTimeout(preloadImportantPages, 200);
   }, [urlParams.forceCloud]);
 
   if (!appLoaded) {
@@ -104,9 +100,6 @@ function AppWithAuth() {
             {/* Autres routes */}
             <Route path="/documents" element={<Documents />} />
             <Route path="/monitoring" element={<Monitoring />} />
-            
-            {/* Route pour la démo */}
-            <Route path="/demo" element={<Demo />} />
             
             {/* Redirection pour les routes inconnues */}
             <Route path="*" element={<Navigate to="/" replace />} />
