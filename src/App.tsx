@@ -1,3 +1,4 @@
+
 import { BrowserRouter } from "react-router-dom";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { AuthProvider } from "./components/AuthProvider";
@@ -64,9 +65,11 @@ function AppWithAuth() {
     setAppLoaded(true);
     
     // Précharger les pages principales après le montage initial
-    window.requestIdleCallback 
-      ? window.requestIdleCallback(preloadImportantPages) 
-      : setTimeout(preloadImportantPages, 200);
+    if (typeof window !== 'undefined' && window.requestIdleCallback) {
+      window.requestIdleCallback(preloadImportantPages);
+    } else {
+      setTimeout(preloadImportantPages, 200);
+    }
   }, [urlParams.forceCloud]);
 
   if (!appLoaded) {
