@@ -31,15 +31,51 @@
    - Allez dans "API et services" > "Identifiants"
    - Cliquez sur "Créer des identifiants" > "ID client OAuth"
    - Sélectionnez "Application Web"
-   - Ajoutez les URI de redirection autorisés:
-     - `http://localhost:5173/auth/google/callback` (développement)
-     - `https://votre-domaine.com/auth/google/callback` (production)
+   - Ajoutez les **Origines JavaScript autorisées**:
+   
+     **Pour le développement local:**
+     - `http://localhost:8080`
+     - `http://localhost:5173` (si vous utilisez Vite en mode dev)
+     - `http://127.0.0.1:8080`
+     
+     **Pour le développement avec Lovable:**
+     - `https://votre-projet.gptengineer.app`
+     
+     **Pour la production:**
+     - `https://votre-domaine.com`
+
+   - Ajoutez les **URI de redirection autorisés** selon votre environnement:
+   
+     **Pour le développement local:**
+     - `http://localhost:8080/auth/google/callback`
+     - `http://localhost:5173/auth/google/callback` (si vous utilisez Vite en mode dev)
+     - `http://127.0.0.1:8080/auth/google/callback`
+     
+     **Pour le développement avec Lovable:**
+     - `https://votre-projet.gptengineer.app/auth/google/callback`
+     
+     **Pour la production:**
+     - `https://votre-domaine.com/auth/google/callback`
+   
    - Notez le Client ID et le Client Secret générés
 
 5. **Configuration dans FileChat**
    - Dans l'application FileChat, accédez aux paramètres
    - Entrez le Client ID et le Client Secret dans la section "Configuration Google Drive"
    - Sauvegardez les modifications
+
+## URLs importantes pour les redirections OAuth
+
+| Environnement | Origines JavaScript autorisées | URI de redirection |
+|---------------|--------------------------------|-------------------|
+| Local (http-server) | `http://localhost:8080` | `http://localhost:8080/auth/google/callback` |
+| Local (Vite dev) | `http://localhost:5173` | `http://localhost:5173/auth/google/callback` |
+| Local (alternative) | `http://127.0.0.1:8080` | `http://127.0.0.1:8080/auth/google/callback` |
+| Lovable | `https://votre-projet.gptengineer.app` | `https://votre-projet.gptengineer.app/auth/google/callback` |
+| Production | `https://votre-domaine.com` | `https://votre-domaine.com/auth/google/callback` |
+
+> **Important**: Pour le développement local avec les paramètres spécifiques au mode cloud, utilisez également:
+> `http://localhost:8080/auth/google/callback?client=true&hideDebug=true&forceCloud=true&mode=cloud`
 
 ## Configuration de Microsoft Teams
 

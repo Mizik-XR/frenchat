@@ -15,6 +15,12 @@ echo.
 echo ===================================================
 echo.
 
+REM Afficher les informations de débogage Supabase
+echo [INFO] Variables d'environnement Supabase
+echo VITE_SUPABASE_URL=%VITE_SUPABASE_URL%
+echo VITE_SUPABASE_ANON_KEY définie: %VITE_SUPABASE_ANON_KEY:~0,5%...
+echo.
+
 REM Vérifier et corriger index.html
 echo [ÉTAPE 1/3] Vérification du fichier index.html...
 if exist "index.html" (
