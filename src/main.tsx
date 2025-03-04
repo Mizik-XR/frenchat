@@ -60,9 +60,38 @@ const handleLoadError = (error: any) => {
   }
 };
 
+// Fonction pour vérifier si React est correctement chargé
+const verifyReactLoaded = () => {
+  try {
+    // Vérifier que React est bien défini
+    if (!React || !React.createElement) {
+      console.error("React n'est pas correctement chargé");
+      return false;
+    }
+    
+    // Vérifier que ReactDOM est bien défini
+    if (!createRoot) {
+      console.error("ReactDOM.createRoot n'est pas disponible");
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de la vérification de React:", error);
+    return false;
+  }
+};
+
 // Fonction pour démarrer l'application
 const startApp = async () => {
   try {
+    console.log("Démarrage de l'application...");
+    
+    // Vérifier que React est correctement chargé
+    if (!verifyReactLoaded()) {
+      throw new Error("React n'est pas correctement chargé");
+    }
+    
     // Vérification des paramètres Supabase
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://dbdueopvtlanxgumenpu.supabase.co";
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZHVlb3B2dGxhbnhndW1lbnB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NzQ0NTIsImV4cCI6MjA1NTU1MDQ1Mn0.lPPbNJANU8Zc7i5OB9_atgDZ84Yp5SBjXCiIqjA79Tk";
@@ -140,16 +169,41 @@ const safetyTimeout = setTimeout(() => {
   if (!appStarted) {
     const rootElement = document.getElementById("root");
     if (rootElement) {
-      createRoot(rootElement).render(<LoadingScreen showRetry={true} message="Chargement prolongé..." />);
+      console.log("Délai de chargement dépassé, affichage de l'écran de secours");
+      try {
+        createRoot(rootElement).render(<LoadingScreen showRetry={true} message="Chargement prolongé..." />);
+      } catch (error) {
+        console.error("Erreur lors de l'affichage de l'écran de secours:", error);
+        rootElement.innerHTML = `
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh;">
+            <h2>Chargement prolongé...</h2>
+            <p>Veuillez rafraîchir la page.</p>
+            <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px;">
+              Rafraîchir
+            </button>
+          </div>
+        `;
+      }
     }
   }
 }, 5000);
 
 // Démarrer l'application
+console.log("Tentative de démarrage de l'application...");
 startApp().then(() => {
   appStarted = true;
   clearTimeout(safetyTimeout);
+  console.log("Application démarrée avec succès");
 }).catch(error => {
   clearTimeout(safetyTimeout);
+  console.error("Échec du démarrage de l'application:", error);
   handleLoadError(error);
+});
+
+window.addEventListener('load', () => {
+  console.log("Événement window.load déclenché");
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log("Événement DOMContentLoaded déclenché");
 });

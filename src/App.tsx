@@ -109,6 +109,14 @@ function App() {
           throw error;
         });
     };
+    
+    // Vérifier et traiter les erreurs de chargement des scripts
+    document.addEventListener('error', function(e) {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'SCRIPT' || target.tagName === 'LINK' || target.tagName === 'IMG') {
+        console.error(`Erreur de chargement de ressource: ${(target as HTMLImageElement | HTMLScriptElement | HTMLLinkElement).src || (target as HTMLLinkElement).href}`);
+      }
+    }, true);
 
     return () => {
       window.fetch = originalFetch;

@@ -1,44 +1,50 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface LogoImageProps {
   className?: string;
+  fallbackText?: string;
 }
 
-export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
+export const LogoImage = ({ 
+  className = "h-10 w-10", 
+  fallbackText = "FC" 
+}: LogoImageProps) => {
   const [imagePath, setImagePath] = useState<string>("");
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
+  const [loadAttempted, setLoadAttempted] = useState<boolean>(false);
   
   useEffect(() => {
-    // Déterminer si nous sommes en environnement de développement ou de production
-    const isDevEnvironment = process.env.NODE_ENV === 'development' || 
-                             window.location.hostname === 'localhost' || 
-                             window.location.hostname === '127.0.0.1';
+    console.log("LogoImage: Tentative de chargement de l'image");
     
-    // Chemins à essayer, en commençant par celui approprié pour l'environnement
-    let paths = isDevEnvironment 
-      ? [
-          "/filechat-animation.gif",
-          "./filechat-animation.gif", 
-          "filechat-animation.gif",
-          "/public/filechat-animation.gif",
-          "./public/filechat-animation.gif"
-        ]
-      : [
-          // En production, on essaie d'abord les chemins relatifs à la racine du site
-          "./filechat-animation.gif",
-          "/filechat-animation.gif", 
-          "filechat-animation.gif"
-        ];
+    // Liste des chemins possibles pour trouver l'image
+    const possiblePaths = [
+      // Chemins relatifs à l'application
+      "/filechat-animation.gif",
+      "./filechat-animation.gif", 
+      "filechat-animation.gif",
+      // Chemins absolus basés sur l'origine
+      `${window.location.origin}/filechat-animation.gif`,
+      // Chemins pour les environnements de développement
+      "/public/filechat-animation.gif",
+      "./public/filechat-animation.gif",
+      // Chemins pour les builds de production
+      "/assets/filechat-animation.gif",
+      "./assets/filechat-animation.gif",
+      // Chemin Lovable
+      './public/lovable-uploads/filechat-animation.gif'
+    ];
     
     // Tester la charge de l'image avec chaque chemin
     const testImage = (path: string) => {
       return new Promise<boolean>((resolve) => {
         const img = new Image();
         img.onload = () => {
+          console.log(`LogoImage: Chemin fonctionnel trouvé: ${path}`);
           resolve(true);
         };
         img.onerror = () => {
+          console.log(`LogoImage: Échec du chargement pour: ${path}`);
           resolve(false);
         };
         img.src = path;
@@ -46,8 +52,9 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
     };
 
     const findWorkingPath = async () => {
-      // D'abord, essayons les chemins relatifs normaux
-      for (const path of paths) {
+      setLoadAttempted(true);
+      
+      for (const path of possiblePaths) {
         const success = await testImage(path);
         if (success) {
           setImagePath(path);
@@ -56,31 +63,31 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
         }
       }
       
-      // Si ça ne fonctionne pas, essayons avec un chemin complet basé sur l'origine de la page
-      const baseUrl = window.location.origin;
-      const fullPaths = paths.map(path => {
-        // Si le chemin commence déjà par /, supprimer le / initial pour éviter les doubles slashes
-        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-        return `${baseUrl}/${cleanPath}`;
-      });
-      
-      for (const path of fullPaths) {
-        const success = await testImage(path);
+      // Si nous sommes dans un environnement de déploiement
+      if (window.location.hostname.includes('preview') || 
+          window.location.hostname.includes('netlify') || 
+          window.location.hostname.includes('vercel')) {
+        // Essayer un chemin spécifique aux déploiements
+        const deploymentPath = `${window.location.origin}/filechat-animation.gif`;
+        const success = await testImage(deploymentPath);
         if (success) {
-          setImagePath(path);
+          setImagePath(deploymentPath);
           setImageLoaded(true);
           return;
         }
       }
       
-      // Si rien ne fonctionne, essayer le fichier depuis les uploads Lovable s'il existe
-      const lovablePath = './public/lovable-uploads/filechat-animation.gif';
-      const success = await testImage(lovablePath);
-      if (success) {
-        setImagePath(lovablePath);
+      // Utiliser une image statique de secours si disponible
+      const staticFallback = "/favicon.ico";
+      const fallbackSuccess = await testImage(staticFallback);
+      if (fallbackSuccess) {
+        console.log("LogoImage: Utilisation de l'image de secours");
+        setImagePath(staticFallback);
         setImageLoaded(true);
         return;
       }
+      
+      console.warn("LogoImage: Aucun chemin d'image fonctionnel trouvé");
     };
 
     findWorkingPath();
@@ -89,8 +96,8 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
   // Utiliser une icône de secours si l'image ne charge pas
   if (!imageLoaded) {
     return (
-      <div className={`flex items-center justify-center bg-blue-100 rounded-full ${className}`}>
-        <span className="text-blue-600 font-bold">CA</span>
+      <div className={`flex items-center justify-center bg-purple-100 rounded-full ${className}`}>
+        <span className="text-purple-600 font-bold">{fallbackText}</span>
       </div>
     );
   }
@@ -98,9 +105,10 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
   return (
     <img
       src={imagePath}
-      alt="ChatAlone Logo"
+      alt="Frenchat Logo"
       className={className}
-      onError={() => {
+      onError={(e) => {
+        console.error("LogoImage: Erreur de chargement de l'image:", e);
         setImageLoaded(false);
       }}
     />

@@ -15,12 +15,10 @@ export default defineConfig(({ mode }) => ({
       babel: {
         plugins: [
           '@babel/plugin-transform-react-jsx',
-          // Ajouter d'autres plugins Babel si nécessaire
         ],
         presets: [
           ['@babel/preset-react', { runtime: 'automatic' }]
         ],
-        // S'assurer que Babel utilise le cache pour de meilleures performances
         babelrc: true,
         configFile: false,
       }
@@ -30,23 +28,17 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Ajouter des alias explicites pour React pour éviter les doublons
       "react": path.resolve(__dirname, "./node_modules/react"),
       "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
     dedupe: ['react', 'react-dom'], // Dédupliquer React pour éviter les conflits
   },
-  // Configuration améliorée pour la production
   build: {
-    // Utilisation d'esbuild au lieu de terser pour la minification
     minify: 'esbuild',
-    // Configuration d'esbuild pour la minification
     target: 'es2015',
     rollupOptions: {
       output: {
-        // Séparation du code en chunks pour un meilleur chargement
         manualChunks: (id) => {
-          // On crée un chunk pour chaque lib importante
           if (id.includes('node_modules')) {
             if (id.includes('@supabase')) return 'vendor-supabase';
             if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
@@ -56,20 +48,21 @@ export default defineConfig(({ mode }) => ({
           }
         },
       },
-      // Ajout pour éviter les conflits de React
       external: [], // Ne pas externaliser React
     },
-    // Activer la compression
     reportCompressedSize: true,
-    chunkSizeWarningLimit: 1000, // Augmenter la limite d'avertissement
+    chunkSizeWarningLimit: 1000,
+    // Activer la copie des ressources
+    assetsInlineLimit: 0, // Ne pas inliner les ressources (important pour les GIFs et images)
   },
-  // Configuration pour améliorer le comportement du cache
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', '@babel/plugin-transform-react-jsx'],
     force: true, // Forcer l'optimisation des dépendances
   },
   // Configuration de la gestion des assets
-  assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg'],
+  assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg', '**/*.ico'],
+  // Configurer le comportement de base de publicPath
+  base: './',
   // Préserve le script gptengineer.js et empêche Vite de le manipuler
   experimental: {
     renderBuiltUrl(filename, { hostType }) {
