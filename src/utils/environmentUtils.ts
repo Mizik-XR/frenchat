@@ -7,7 +7,7 @@ import {
   isDevelopment as isDev,
   getAllUrlParams as getUrlParams,
   getBaseUrl as getBaseUrlUtil,
-  getFormattedUrlParams as getFormattedParams,
+  getFormattedUrlParams as getFormattedParamsString,
   getRedirectUrl as getRedirectUrlUtil
 } from '@/utils/environment';
 
@@ -87,9 +87,10 @@ export function getRedirectUrl(path: string): string {
 /**
  * Formate les paramètres d'URL
  * @deprecated Utilisez import { getFormattedUrlParams } from '@/utils/environment' à la place
+ * @returns Une chaîne formatée de paramètres d'URL (commençant par '?' si des paramètres sont présents)
  */
-export function getFormattedUrlParams(): Record<string, string> {
-  return getFormattedParams();
+export function getFormattedUrlParams(): string {
+  return getFormattedParamsString();
 }
 
 /**
