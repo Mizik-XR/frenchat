@@ -2,7 +2,8 @@
 // unified-oauth-proxy.ts - Une fonction unifiée pour gérer l'authentification OAuth et les proxys API sécurisés
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
-import { Buffer } from 'https://deno.land/std@0.192.0/node/buffer.ts';
+// Fix the buffer import path
+import { Buffer } from 'https://deno.land/std@0.192.0/node/buffer.js';
 import { encode as encodeBase64 } from 'https://deno.land/std@0.192.0/encoding/base64.ts';
 import * as crypto from 'https://deno.land/std@0.192.0/crypto/mod.ts';
 

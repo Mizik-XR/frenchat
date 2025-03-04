@@ -26,6 +26,30 @@ verify_jwt = false
 [functions.log-performance-metrics]
 verify_jwt = false
 
+[functions.process-uploaded-files]
+verify_jwt = false
+
+[functions.generate-embeddings]
+verify_jwt = false
+
+[functions.update-embeddings]
+verify_jwt = false
+
+[functions.generate-system-report]
+verify_jwt = false
+
+[functions.generate-image]
+verify_jwt = false
+
+[functions.manage-service-config]
+verify_jwt = false
+
+[functions.web-search]
+verify_jwt = false
+
+[functions.manage-embeddings-cache]
+verify_jwt = false
+
 # [functions.export-to-google-drive]
 # verify_jwt = false
 
