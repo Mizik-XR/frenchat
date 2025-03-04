@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Server, ExternalLink, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { isLovableEnvironment } from "@/utils/environment";
 
 interface EnvironmentDetectionProps {
   children: React.ReactNode;
@@ -32,7 +31,7 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
     // Vérifier si mode cloud est forcé par un paramètre d'URL ou une variable d'environnement
     const urlParams = new URLSearchParams(window.location.search);
     const forceCloudMode = urlParams.get('forceCloud') === 'true' || 
-                          urlParams.get('mode') === 'cloud' ||
+                          urlParams.get('cloud') === 'true' ||
                           window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true';
     
     if (forceCloudMode) {
@@ -43,12 +42,6 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
 
     // Ne rien vérifier en environnement de prévisualisation sauf si on est sur localhost
     if (isPreview && hostname !== 'localhost') {
-      // Si Lovable, forcer le mode cloud
-      if (isLovableEnvironment()) {
-        window.localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-        window.localStorage.setItem('aiServiceType', 'cloud');
-        console.log("Environnement Lovable détecté, mode cloud activé automatiquement.");
-      }
       return;
     }
     

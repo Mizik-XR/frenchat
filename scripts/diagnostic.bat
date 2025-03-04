@@ -3,124 +3,131 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title FileChat - Diagnostic complet
-
-REM Configuration de l'interface graphique
-mode con cols=100 lines=30
-color 1F
+title FileChat - Diagnostic système
 
 echo ===================================================
-echo     DIAGNOSTIC COMPLET DE FILECHAT
+echo    Diagnostic de l'environnement FileChat
 echo ===================================================
 echo.
 
-echo [1] Vérification de l'environnement JavaScript...
-where node >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo [ERREUR] Node.js n'est pas installé.
-    echo         Téléchargez-le depuis https://nodejs.org/
-) else (
-    node --version
-    echo [OK] Node.js est correctement installé.
+REM Animation pour simuler le traitement
+echo Analyse de votre système en cours...
+for /L %%i in (1,1,20) do (
+    <nul set /p =█
+    timeout /t 0 /nobreak >nul
 )
+echo  OK!
 echo.
 
-echo [2] Vérification de Python...
-where python >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    where python3 >nul 2>nul
-    if %ERRORLEVEL% NEQ 0 (
-        echo [INFO] Python n'est pas installé ou n'est pas dans le PATH.
-        echo        Le mode cloud reste disponible.
-        echo        Pour utiliser l'IA en local, installez Python depuis https://www.python.org/downloads/
-    ) else (
-        python3 --version
-        echo [OK] Python3 est installé.
-    )
-) else (
-    python --version
-    echo [OK] Python est correctement installé.
-)
-echo.
-
-echo [3] Vérification d'Ollama...
-set "OLLAMA_RUNNING=0"
-netstat -an | findstr ":11434" | findstr "LISTENING" >nul 2>nul
+echo [1] Vérification de Python...
+where python3 >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
-    echo [OK] Ollama est en cours d'exécution sur le port 11434.
-    set "OLLAMA_RUNNING=1"
+    for /f "tokens=*" %%i in ('python3 --version 2^>^&1') do echo %%i
+    echo [OK] Python est correctement installé.
+) else (
+    where python >nul 2>nul
+    if %ERRORLEVEL% EQU 0 (
+        for /f "tokens=*" %%i in ('python --version 2^>^&1') do echo %%i
+        echo [OK] Python est correctement installé.
+    ) else (
+        echo [ATTENTION] Python n'est pas installé ou n'est pas dans votre PATH.
+        echo             Cela ne pose pas de problème en mode cloud uniquement.
+    )
+)
+echo.
+
+echo [2] Vérification de Ollama...
+netstat -ano | findstr ":11434" >nul
+if %ERRORLEVEL% EQU 0 (
+    echo [OK] Ollama est actif et fonctionne sur votre système.
+    echo      C'est la solution recommandée pour l'IA locale.
 ) else (
     where ollama >nul 2>nul
     if %ERRORLEVEL% EQU 0 (
-        echo [INFO] Ollama est installé mais n'est pas en cours d'exécution.
-        echo        Démarrez Ollama pour utiliser l'IA locale.
+        echo [INFO] Ollama est installé mais n'est pas actif.
+        echo        Vous pouvez démarrer Ollama pour utiliser l'IA locale.
     ) else (
-        echo [INFO] Ollama n'est pas détecté sur ce système.
-        echo        Téléchargez-le depuis https://ollama.ai/download
+        echo [INFO] Ollama n'est pas installé.
+        echo        Téléchargement recommandé: https://ollama.ai/download
     )
 )
 echo.
 
-echo [4] Vérification des dépendances npm...
-if exist "node_modules\" (
-    echo [OK] Dépendances npm installées.
-) else (
-    echo [INFO] Les dépendances npm ne sont pas installées.
-    echo        Exécutez "npm install" pour les installer.
-)
-echo.
-
-echo [5] Vérification de la build...
+echo [3] Vérification des fichiers de l'application...
 if exist "dist\index.html" (
-    echo [OK] Build existante détectée.
+    echo [OK] Le fichier dist\index.html existe.
+    
+    findstr "gptengineer.js" "dist\index.html" >nul
+    if %ERRORLEVEL% EQU 0 (
+        echo [OK] Le script Lovable est présent dans index.html.
+    ) else (
+        echo [ATTENTION] Le script Lovable manque dans index.html.
+        echo            Cela peut causer une page blanche.
+        echo            Utilisez .\fix-blank-page.bat pour réparer.
+    )
 ) else (
-    echo [INFO] Aucune build détectée.
-    echo        Exécutez "npm run build" pour créer une build.
+    echo [ATTENTION] Le fichier dist\index.html est manquant.
+    echo            Essayez de reconstruire l'application avec:
+    echo            .\start-app.bat --rebuild ou .\fix-blank-page.bat
 )
 echo.
 
-echo [6] Test de connectivité réseau...
-ping -n 1 api.openai.com >nul 2>nul
+echo [4] Vérification de PowerShell...
+echo [INFO] Mode de lancement des scripts correct avec PowerShell:
+echo        .\start-app.bat et non start-app.bat
+echo.
+
+echo [5] Vérification de l'environnement virtuel...
+if exist "venv\" (
+    echo [OK] Environnement virtuel trouvé.
+    
+    echo [6] Versions des packages installés:
+    call venv\Scripts\activate.bat >nul 2>nul
+    pip list | findstr "torch transformers tokenizers fastapi" 
+    if %ERRORLEVEL% NEQ 0 echo      Aucun package IA trouvé (mode cloud uniquement)
+    echo.
+) else (
+    echo [INFO] Environnement virtuel non trouvé.
+    echo        Ce n'est pas un problème si vous utilisez le mode cloud uniquement.
+)
+
+echo.
+echo ===================================================
+echo Recommandations
+echo ===================================================
+echo.
+echo Votre système est configuré pour:
+if exist "venv\" (
+    echo [V] Mode IA locale (Python)
+) else (
+    echo [ ] Mode IA locale (Python) - Non configuré
+)
+
+netstat -ano | findstr ":11434" >nul
 if %ERRORLEVEL% EQU 0 (
-    echo [OK] Connexion à Internet fonctionnelle.
+    echo [V] Mode IA locale (Ollama) - Recommandé
 ) else (
-    echo [ATTENTION] Problème de connexion Internet détecté.
-    echo             Vérifiez votre connexion réseau.
+    echo [ ] Mode IA locale (Ollama) - Non configuré/actif
 )
-echo.
 
+echo [V] Mode Cloud (Toujours disponible)
+echo.
+echo Solution recommandée:
+echo -------------------
+echo 1. Si vous avez une page blanche, essayez:
+echo    .\fix-blank-page.bat
+echo.
+echo 2. Pour démarrer l'application avec PowerShell:
+echo    .\start-app.bat
+echo    .\start-cloud-mode.bat (plus léger, sans IA locale)
+echo.
+echo 3. En cas de problème dans l'invite de commande normale:
+echo    - Démarrer → cmd.exe → cd chemin_vers_filechat → start-app.bat
+echo.
 echo ===================================================
-echo     RÉSULTATS ET RECOMMANDATIONS
-echo ===================================================
-echo.
-echo Modes disponibles:
-echo.
-echo [v] Mode cloud (toujours disponible)
-
-if %OLLAMA_RUNNING% EQU 1 (
-    echo [v] Mode IA locale via Ollama (détecté et actif)
-) else (
-    echo [ ] Mode IA locale via Ollama (non disponible)
-)
-
-python -c "import transformers" >nul 2>nul
-if %ERRORLEVEL% EQU 0 (
-    echo [v] Mode IA locale via Python et Hugging Face (disponible)
-) else (
-    echo [ ] Mode IA locale via Python et Hugging Face (non disponible)
-)
-echo.
-
-echo Recommandation:
-if %OLLAMA_RUNNING% EQU 1 (
-    echo - Utilisez "start-universal.bat" pour démarrer avec Ollama (mode hybride)
-) else (
-    echo - Utilisez "start-app-simplified.bat" pour le mode cloud uniquement
-)
-echo.
-
+echo Fin du diagnostic
 echo ===================================================
 echo.
-echo Appuyez sur une touche pour quitter...
-pause >nul
-exit /b 0
+echo Pour obtenir de l'aide supplémentaire, contactez le support technique.
+echo.
+pause

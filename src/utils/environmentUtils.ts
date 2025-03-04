@@ -1,16 +1,101 @@
 
 /**
- * Ce fichier est maintenu pour la rétrocompatibilité.
- * Il réexporte toutes les fonctions des modules environnement refactorisés.
- * 
- * Pour les nouveaux développements, veuillez importer directement depuis les modules spécifiques:
- * - @/utils/environment/environmentDetection
- * - @/utils/environment/urlUtils
- * - @/utils/environment/cloudModeUtils
- * 
- * Ou importez depuis le module index:
- * - @/utils/environment
+ * Utilitaires pour la gestion des environnements et des URLs
  */
 
-// Réexporter toutes les fonctions pour maintenir la compatibilité
-export * from './environment/index';
+// Déclaration de type pour ajouter la propriété gptengineer à l'objet Window
+declare global {
+  interface Window {
+    gptengineer: any;
+  }
+}
+
+/**
+ * Détecte l'URL de base de l'application en fonction de l'environnement
+ * @returns L'URL de base de l'application
+ */
+export const getBaseUrl = (): string => {
+  // Vérifier si nous sommes dans un navigateur
+  if (typeof window === 'undefined') {
+    // Côté serveur, utiliser la variable d'environnement ou une valeur par défaut
+    return process.env.VITE_SITE_URL || 'http://localhost:8080';
+  }
+
+  // Obtenir l'hôte actuel
+  const currentHost = window.location.host;
+  const isLocalhost = 
+    currentHost.includes('localhost') || 
+    currentHost.includes('127.0.0.1');
+  const isLovablePreview = 
+    currentHost.includes('lovable.dev') || 
+    currentHost.includes('lovable.app');
+  
+  // Déterminer le protocole (http pour localhost, https pour les autres)
+  const protocol = isLocalhost ? 'http' : 'https';
+  
+  return `${protocol}://${currentHost}`;
+};
+
+/**
+ * Génère une URL de redirection pour l'authentification OAuth
+ * @param path Le chemin de redirection (ex: "/auth/google/callback")
+ * @returns L'URL complète de redirection
+ */
+export const getRedirectUrl = (path: string): string => {
+  // Supprimer le slash initial si présent pour éviter les doubles slashes
+  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+  return `${getBaseUrl()}/${cleanPath}`;
+};
+
+/**
+ * Détecte si l'application s'exécute en environnement de production
+ * @returns true si l'application est en production
+ */
+export const isProduction = (): boolean => {
+  return import.meta.env.PROD || import.meta.env.MODE === 'production';
+};
+
+/**
+ * Détecte si l'application s'exécute en environnement de développement
+ * @returns true si l'application est en développement
+ */
+export const isDevelopment = (): boolean => {
+  return import.meta.env.DEV || import.meta.env.MODE === 'development';
+};
+
+/**
+ * Détecte si l'application s'exécute sur Lovable
+ * @returns true si l'application s'exécute sur Lovable
+ */
+export const isLovableEnvironment = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  // Vérifier le hostname pour Lovable
+  const isLovableDomain = window.location.host.includes('lovable.dev') || 
+                         window.location.host.includes('lovable.app');
+  
+  // Vérifier si nous sommes dans un iframe (probable dans Lovable)
+  const isInIframe = window !== window.parent;
+  
+  // Vérifier si nous sommes sur la plateforme Lovable avec un paramètre d'URL 
+  const hasLovableParam = new URLSearchParams(window.location.search).get('lovable') === 'true' ||
+                          window.location.search.includes('forceHideBadge=true');
+  
+  // Vérifier si le script gptengineer.js est chargé
+  const isLovableScriptLoaded = typeof window.gptengineer !== 'undefined' || 
+                               document.querySelector('script[src*="gptengineer.js"]') !== null;
+  
+  return isLovableDomain || (isInIframe && hasLovableParam) || isLovableScriptLoaded;
+};
+
+/**
+ * Vérifier si le script Lovable est correctement chargé
+ * @returns true si le script est chargé
+ */
+export const isLovableScriptLoaded = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  // Vérifier si le script gptengineer.js est chargé
+  return typeof window.gptengineer !== 'undefined' || 
+         document.querySelector('script[src*="gptengineer.js"]') !== null;
+};
