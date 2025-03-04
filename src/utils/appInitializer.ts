@@ -76,7 +76,9 @@ export const preloadSupabaseSession = async () => {
 export const renderFallback = (rootElement: HTMLElement) => {
   try {
     console.log("Délai de chargement dépassé, affichage de l'écran de secours");
-    createRoot(rootElement).render(<LoadingScreen showRetry={true} message="Chargement prolongé..." />);
+    createRoot(rootElement).render(
+      React.createElement(LoadingScreen, { showRetry: true, message: "Chargement prolongé..." })
+    );
   } catch (error) {
     console.error("Erreur lors de l'affichage de l'écran de secours:", error);
     rootElement.innerHTML = `
@@ -106,13 +108,19 @@ export const mountReactApp = (queryClient: QueryClient) => {
   const root = createRoot(rootElement);
   
   root.render(
-    <React.StrictMode>
-      <ErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <App />
-        </QueryClientProvider>
-      </ErrorBoundary>
-    </React.StrictMode>
+    React.createElement(
+      React.StrictMode,
+      null,
+      React.createElement(
+        ErrorBoundary,
+        null,
+        React.createElement(
+          QueryClientProvider,
+          { client: queryClient },
+          React.createElement(App, null)
+        )
+      )
+    )
   );
   
   console.log("Application React montée avec succès");
