@@ -146,6 +146,17 @@ export const Chat = () => {
     });
   };
 
+  // Adapt the updateConversation function to match the expected signature in MainLayout
+  const handleUpdateConversation = (params: { 
+    id: string; 
+    title?: string; 
+    folderId?: string | null;
+    isPinned?: boolean;
+    isArchived?: boolean;
+  }) => {
+    updateConversation(params);
+  };
+
   return (
     <MainLayout
       conversations={conversations || []}
@@ -163,7 +174,7 @@ export const Chat = () => {
       onClearReply={clearReplyToMessage}
       onConversationSelect={setSelectedConversationId}
       onNewConversation={handleNewConversation}
-      onUpdateConversation={updateConversation}
+      onUpdateConversation={handleUpdateConversation}
       onModeChange={(mode) => setWebUIConfig(prev => ({ ...prev, mode }))}
       onWebUIConfigChange={(config) => setWebUIConfig(prev => ({ ...prev, ...config }))}
       onProviderChange={handleProviderChange}

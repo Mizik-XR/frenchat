@@ -3,7 +3,7 @@ import { ConversationList } from "../ConversationList";
 import { ChatContainer } from "./ChatContainer";
 import { PriorityTopicsPanel } from "../PriorityTopicsPanel";
 import { AIProvider, WebUIConfig, AnalysisMode, Message } from "@/types/chat";
-import { Conversation } from "@/hooks/useConversations";
+import { type Conversation } from "@/types/chat";
 
 interface MainLayoutProps {
   conversations: Conversation[];
@@ -21,7 +21,7 @@ interface MainLayoutProps {
   onClearReply: () => void;
   onConversationSelect: (id: string) => void;
   onNewConversation: () => void;
-  onUpdateConversation: (id: string, data: Partial<Conversation>) => void;
+  onUpdateConversation: (params: { id: string; title?: string; folderId?: string | null; isPinned?: boolean; isArchived?: boolean }) => void;
   onModeChange: (mode: 'auto' | 'manual') => void;
   onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
   onProviderChange: (provider: AIProvider) => void;
@@ -114,6 +114,7 @@ export const MainLayout = ({
         {showPriorityTopics && (
           <div className="w-72 border-l bg-gray-50 dark:bg-gray-900">
             <PriorityTopicsPanel
+              messages={messages}
               onClose={() => setShowPriorityTopics(false)}
               onTopicSelect={onTopicSelect}
             />
