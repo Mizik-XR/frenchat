@@ -24,6 +24,13 @@ export const isDevelopmentEnvironment = (): boolean => {
 };
 
 /**
+ * Alias pour isDevelopmentEnvironment pour compatibilité avec le code existant
+ */
+export const isDevelopment = (): boolean => {
+  return isDevelopmentEnvironment();
+};
+
+/**
  * Récupère l'URL de base de l'application en fonction de l'environnement
  */
 export const getBaseUrl = (): string => {
@@ -43,10 +50,33 @@ export const getBaseUrl = (): string => {
 };
 
 /**
+ * Récupère l'URL complète pour les redirections
+ * @param path Le chemin relatif pour la redirection
+ * @returns L'URL complète de redirection
+ */
+export const getRedirectUrl = (path: string): string => {
+  return `${getBaseUrl()}/${path}`;
+};
+
+/**
  * Récupère l'URL de callback OAuth en fonction de l'environnement
  */
 export const getOAuthCallbackUrl = (provider: string): string => {
-  return `${getBaseUrl()}/auth/${provider}/callback`;
+  return getRedirectUrl(`auth/${provider}/callback`);
+};
+
+/**
+ * Journalise les informations sur l'environnement actuel
+ * Utile pour le débogage
+ */
+export const logEnvironmentInfo = (): void => {
+  console.group('Informations sur l\'environnement');
+  console.log('URL de base:', getBaseUrl());
+  console.log('Est en prévisualisation:', isPreviewEnvironment());
+  console.log('Est en développement:', isDevelopmentEnvironment());
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('VITE_SITE_URL:', import.meta.env.VITE_SITE_URL);
+  console.groupEnd();
 };
 
 /**
