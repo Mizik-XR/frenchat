@@ -1,4 +1,3 @@
-
 import { TextGenerationParameters, TextGenerationResponse, OllamaGenerationResponse } from './types';
 
 /**
@@ -45,5 +44,57 @@ export async function callOllamaService(
   } catch (error) {
     console.error("Erreur lors de l'appel au service Ollama:", error);
     throw error;
+  }
+}
+
+/**
+ * Récupère la liste des modèles disponibles dans Ollama
+ */
+export async function getOllamaModels(ollamaUrl: string): Promise<{ name: string; size: number; modified: string }[]> {
+  try {
+    const response = await fetch(`${ollamaUrl}/api/tags`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Erreur lors de la récupération des modèles: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.models || [];
+  } catch (error) {
+    console.error("Erreur lors de la récupération des modèles Ollama:", error);
+    return [];
+  }
+}
+
+/**
+ * Télécharge un modèle depuis Ollama
+ */
+export async function pullOllamaModel(ollamaUrl: string, modelName: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`${ollamaUrl}/api/pull`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: modelName }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Erreur lors du téléchargement du modèle: ${error}`);
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error(`Erreur lors du téléchargement du modèle ${modelName}:`, error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Erreur inconnue" 
+    };
   }
 }

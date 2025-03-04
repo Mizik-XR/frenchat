@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,8 @@ import { ModelPathWizard } from "./components/wizard/ModelPathWizard";
 import { LOCAL_MODELS, CLOUD_MODELS } from "./types";
 import { ModelSelector } from "./ModelSelector";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CloudIcon, ServerIcon } from "lucide-react";
+import { CloudIcon, ServerIcon, CheckCircle } from "lucide-react";
+import { useSystemCapabilities } from "@/hooks/useSystemCapabilities";
 
 interface LocalAIConfigProps {
   modelPath: string;
@@ -31,6 +31,29 @@ export const LocalAIConfig = ({
   const [localSelectedModel, setLocalSelectedModel] = useState<string>("mistral-local");
   const [cloudSelectedModel, setCloudSelectedModel] = useState<string>("huggingface/mixtral");
   const [showPathWizard, setShowPathWizard] = useState(false);
+  const { capabilities } = useSystemCapabilities();
+  const [isOllamaDetected, setIsOllamaDetected] = useState(false);
+  
+  // Vérifier si Ollama est disponible
+  useEffect(() => {
+    const checkOllama = async () => {
+      try {
+        const response = await fetch('http://localhost:11434/api/version', { 
+          signal: AbortSignal.timeout(2000) 
+        });
+        setIsOllamaDetected(response.ok);
+        
+        // Si Ollama est détecté, le définir comme provider par défaut
+        if (response.ok && provider !== 'ollama') {
+          onProviderChange('ollama');
+        }
+      } catch (e) {
+        setIsOllamaDetected(false);
+      }
+    };
+    
+    checkOllama();
+  }, []);
 
   // Synchroniser le provider avec les sélections de modèle
   useEffect(() => {
@@ -73,7 +96,7 @@ export const LocalAIConfig = ({
         onProviderChange(newProvider);
       }
     }
-  }, [mode, localSelectedModel, cloudSelectedModel]);
+  }, [mode, localSelectedModel, cloudSelectedModel, onProviderChange, provider]);
 
   const handleSave = () => {
     onSave();
@@ -112,6 +135,31 @@ export const LocalAIConfig = ({
       </Tabs>
 
       <div className="space-y-6">
+        {isOllamaDetected && (
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-4">
+            <h4 className="text-sm font-medium text-green-800 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Ollama détecté!
+            </h4>
+            <p className="text-sm text-gray-600 mt-1">
+              Ollama est installé et fonctionne sur votre machine. C'est la méthode recommandée pour utiliser l'IA locale.
+            </p>
+            <Button
+              variant="outline" 
+              size="sm"
+              className="mt-2"
+              onClick={() => {
+                localStorage.setItem('localProvider', 'ollama');
+                localStorage.setItem('localAIUrl', 'http://localhost:11434');
+                localStorage.setItem('aiServiceType', 'local');
+                onProviderChange('ollama');
+                alert("Configuration avec Ollama terminée! L'application utilisera maintenant Ollama pour l'IA locale.");
+              }}
+            >
+              Configurer automatiquement
+            </Button>
+          </div>
+        )}
         {mode === "local" ? (
           <>
             <div className="space-y-4">
