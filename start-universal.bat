@@ -51,18 +51,21 @@ if exist "node_modules\react\package.json" (
 
 rem Vérification des commandes requises
 echo [INFO] Vérification des commandes requises...
+where npm >nul 2>nul
+if !errorlevel! NEQ 0 (
+    echo [ERREUR] npm n'est pas disponible. Veuillez installer Node.js.
+    echo Téléchargez-le depuis https://nodejs.org/
+    pause
+    exit /b 1
+)
+
 where npx >nul 2>nul
 if !errorlevel! NEQ 0 (
-    echo [ATTENTION] npx n'est pas disponible. Vérification de npm...
-    where npm >nul 2>nul
-    if !errorlevel! NEQ 0 (
-        echo [ERREUR] npm n'est pas disponible. Veuillez installer Node.js.
-        echo Téléchargez-le depuis https://nodejs.org/
-        pause
-        exit /b 1
-    )
-    echo [INFO] Installation de npx via npm...
+    echo [INFO] npx n'est pas disponible. Installation en cours...
     call npm install -g npx
+    if !errorlevel! NEQ 0 (
+        echo [ATTENTION] Installation de npx échouée, mais on peut continuer.
+    )
 )
 
 rem Vérification du fichier _redirects
@@ -85,6 +88,10 @@ if errorlevel 1 (
         set NO_RUST_INSTALL=1
         set NODE_OPTIONS=--max-old-space-size=4096
         call npx vite build --force
+        if errorlevel 1 (
+            echo [ATTENTION] Toutes les tentatives de reconstruction ont échoué.
+            echo [INFO] Nous allons tenter de démarrer quand même.
+        )
     )
 )
 
@@ -110,6 +117,11 @@ if "%choice%"=="2" (
     if errorlevel 1 (
         echo [ATTENTION] Démarrage avec npx vite échoué, tentative avec npm run dev...
         call npm run dev
+        if errorlevel 1 (
+            echo [ATTENTION] Toutes les tentatives de démarrage ont échoué.
+            echo [INFO] Tentative avec serveur HTTP simple...
+            call npx http-server dist -p 8080 -c-1 --cors
+        )
     )
 )
 

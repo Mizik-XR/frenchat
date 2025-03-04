@@ -43,6 +43,27 @@ if %ERRORLEVEL% NEQ 0 (
     set USE_NPX=0
 )
 
+REM Vérifier les outils nécessaires
+echo [INFO] Vérification des outils de construction...
+where npm >nul 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERREUR] npm n'est pas installé ou n'est pas dans le PATH.
+    echo Veuillez installer Node.js depuis https://nodejs.org/
+    echo.
+    echo Appuyez sur une touche pour quitter...
+    pause >nul
+    exit /b 1
+)
+
+where npx >nul 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [INFO] npx n'est pas disponible, installation en cours...
+    call npm install -g npx
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ATTENTION] Installation de npx échouée, mais on peut continuer avec npm.
+    )
+)
+
 REM Vérifier si le dossier dist existe déjà
 echo [INFO] Vérification du dossier dist...
 if not exist "dist\" (
@@ -66,6 +87,9 @@ if exist "dist\" (
     REM On garde une sauvegarde du dist au cas où
     if not exist "dist_backup\" (
         mkdir dist_backup 2>nul
+    ) else (
+        rmdir /s /q dist_backup
+        mkdir dist_backup
     )
     xcopy /E /I /Y "dist\*" "dist_backup\" >nul 2>nul
     echo [OK] Sauvegarde du dossier dist créée dans dist_backup.
@@ -306,7 +330,7 @@ if %ERRORLEVEL% NEQ 0 (
             ) else (
                 netlify deploy --dir=dist
             )
-        )
+        }
         
         if %ERRORLEVEL% NEQ 0 (
             echo [ERREUR] Le déploiement a échoué à nouveau.

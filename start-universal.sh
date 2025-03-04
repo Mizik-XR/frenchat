@@ -50,6 +50,24 @@ EOF
     echo "[OK] Fichier index.html créé."
 fi
 
+# Vérification des commandes requises
+echo "[INFO] Vérification des commandes requises..."
+if ! command -v npm &> /dev/null; then
+    echo "[ERREUR] npm n'est pas disponible. Veuillez installer Node.js."
+    echo "Téléchargez-le depuis https://nodejs.org/"
+    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+    exit 1
+fi
+
+# Vérification de npx
+if ! command -v npx &> /dev/null; then
+    echo "[INFO] npx n'est pas disponible. Installation en cours..."
+    npm install -g npx
+    if [ $? -ne 0 ]; then
+        echo "[ATTENTION] Installation de npx échouée, mais on peut continuer."
+    fi
+fi
+
 # Vérification de la compatibilité React
 echo "[INFO] Vérification de la compatibilité React..."
 if [ -f "node_modules/react/package.json" ]; then
@@ -66,20 +84,6 @@ else
     echo "[ATTENTION] Installation React manquante ou incomplète."
     echo "[INFO] Installation des dépendances React..."
     npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0
-fi
-
-# Vérification des commandes requises
-echo "[INFO] Vérification des commandes requises..."
-if ! command -v npx &> /dev/null; then
-    echo "[ATTENTION] npx n'est pas disponible. Vérification de npm..."
-    if ! command -v npm &> /dev/null; then
-        echo "[ERREUR] npm n'est pas disponible. Veuillez installer Node.js."
-        echo "Téléchargez-le depuis https://nodejs.org/"
-        read -p "Appuyez sur Entrée pour quitter..." -n1 -s
-        exit 1
-    fi
-    echo "[INFO] Installation de npx via npm..."
-    npm install -g npx
 fi
 
 # Vérification du fichier _redirects
@@ -102,6 +106,10 @@ if [ $? -ne 0 ]; then
         export NO_RUST_INSTALL=1
         export NODE_OPTIONS=--max-old-space-size=4096
         npx vite build --force
+        if [ $? -ne 0 ]; then
+            echo "[ATTENTION] Toutes les tentatives de reconstruction ont échoué."
+            echo "[INFO] Nous allons tenter de démarrer quand même."
+        fi
     fi
 fi
 
@@ -141,6 +149,11 @@ case $choice in
         if [ $? -ne 0 ]; then
             echo "[ATTENTION] Démarrage avec npx vite échoué, tentative avec npm run dev..."
             npm run dev
+            if [ $? -ne 0 ]; then
+                echo "[ATTENTION] Toutes les tentatives de démarrage ont échoué."
+                echo "[INFO] Tentative avec serveur HTTP simple..."
+                npx http-server dist -p 8080 -c-1 --cors
+            fi
         fi
         ;;
 esac

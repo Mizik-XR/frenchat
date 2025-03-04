@@ -19,6 +19,16 @@ echo
 read -p "Appuyez sur Entrée pour continuer..." -n1 -s
 echo
 
+# Vérifier si les outils nécessaires sont installés
+echo "[INFO] Vérification des outils requis..."
+if ! command -v npm &> /dev/null; then
+    echo "[ERREUR] npm n'est pas installé ou n'est pas dans le PATH."
+    echo "Veuillez installer Node.js depuis https://nodejs.org/"
+    echo
+    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+    exit 1
+fi
+
 # Vérifier si netlify CLI est installé
 echo "[ÉTAPE 1/3] Vérification de l'environnement..."
 if ! command -v netlify &> /dev/null; then
@@ -36,6 +46,15 @@ if ! command -v netlify &> /dev/null; then
 else
     echo "[OK] CLI Netlify est déjà installée."
     USE_NPX=0
+fi
+
+# Vérifier si npx est disponible
+if ! command -v npx &> /dev/null; then
+    echo "[INFO] npx n'est pas disponible, installation en cours..."
+    npm install -g npx
+    if [ $? -ne 0 ]; then
+        echo "[ATTENTION] Installation de npx échouée, mais on peut continuer avec npm."
+    fi
 fi
 
 # Vérifier si le dossier dist existe déjà
@@ -60,6 +79,9 @@ if [ -d "dist" ]; then
     # On garde une sauvegarde du dist au cas où
     if [ ! -d "dist_backup" ]; then
         mkdir -p dist_backup 2>/dev/null
+    else
+        rm -rf dist_backup
+        mkdir -p dist_backup
     fi
     cp -r dist/* dist_backup/ 2>/dev/null
     echo "[OK] Sauvegarde du dossier dist créée dans dist_backup."
