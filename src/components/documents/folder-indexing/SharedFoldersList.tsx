@@ -75,7 +75,7 @@ export function SharedFoldersList({ onSelectFolder }: SharedFoldersListProps) {
                 <Button 
                   variant="outline"
                   size="sm"
-                  onClick={() => onSelectFolder(folder.folder_id)}
+                  onClick={() => onSelectFolder(folder.id)}
                 >
                   <RefreshCcw className="h-3.5 w-3.5 mr-1" />
                   Réindexer
