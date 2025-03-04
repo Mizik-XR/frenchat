@@ -90,10 +90,12 @@ export function getEnvironmentInfo() {
 }
 
 // Pour assurer la rétrocompatibilité, réexporter les fonctions du nouveau module
+// Correction du chemin d'importation
 export { 
   getBaseUrl,
   getRedirectUrl, 
   getFormattedUrlParams,
   getAllUrlParams,
   getNormalizedCloudModeUrl
-} from './utils/environment/urlUtils';
+} from '@/utils/environment';
+
