@@ -123,11 +123,38 @@ export function useHuggingFace(provider: string = 'huggingface') {
     return () => clearTimeout(timer);
   }, [isCloudModeForced]);
 
+  // Validation des entrées utilisateur
+  const validateUserInput = (options: TextGenerationParameters): string | null => {
+    if (!options.prompt || typeof options.prompt !== 'string') {
+      return "Format de prompt invalide";
+    }
+    
+    if (options.prompt.length > 10000) {
+      return "Prompt trop long (maximum 10000 caractères)";
+    }
+    
+    if (options.max_tokens && (options.max_tokens < 1 || options.max_tokens > 4096)) {
+      return "Nombre de tokens invalide (doit être entre 1 et 4096)";
+    }
+    
+    if (options.temperature && (options.temperature < 0 || options.temperature > 2)) {
+      return "Température invalide (doit être entre 0 et 2)";
+    }
+    
+    return null;
+  };
+
   const textGeneration = async (options: TextGenerationParameters): Promise<TextGenerationResponse[]> => {
     setIsLoading(true);
     setError(null);
     
     try {
+      // Validation des entrées
+      const validationError = validateUserInput(options);
+      if (validationError) {
+        throw new Error(`Erreur de validation: ${validationError}`);
+      }
+      
       // Si mode cloud forcé, toujours utiliser la stratégie cloud
       const executionStrategy = isCloudModeForced ? 'cloud' : 
         await determineExecutionStrategy(options, serviceType).catch(err => {
