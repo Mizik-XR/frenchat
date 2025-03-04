@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowPathIcon, ExclamationTriangleIcon, CheckCircleIcon } from 'lucide-react';
+import { RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import { SystemReportChart } from './SystemReportChart';
 import { secureApiRequest } from '@/services/apiConfig';
 import { toast } from '@/hooks/use-toast';
@@ -83,7 +83,7 @@ export const MonitoringDashboard = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Monitoring Système</h1>
         <Button onClick={() => refetch()} variant="outline" className="flex items-center gap-2">
-          <ArrowPathIcon className="h-4 w-4" />
+          <RefreshCw className="h-4 w-4" />
           Actualiser
         </Button>
       </div>
@@ -166,7 +166,7 @@ export const MonitoringDashboard = () => {
                 <CardContent>
                   {systemReport.metrics_summary.error_count > 0 && (
                     <Alert className="mb-4 bg-yellow-50">
-                      <ExclamationTriangleIcon className="h-4 w-4" />
+                      <AlertTriangle className="h-4 w-4" />
                       <AlertTitle>Attention</AlertTitle>
                       <AlertDescription>
                         {systemReport.metrics_summary.error_count} erreurs détectées récemment
@@ -176,7 +176,7 @@ export const MonitoringDashboard = () => {
 
                   {systemReport.metrics_summary.success_rate < 95 && (
                     <Alert className="mb-4 bg-red-50">
-                      <ExclamationTriangleIcon className="h-4 w-4" />
+                      <AlertTriangle className="h-4 w-4" />
                       <AlertTitle>Alerte</AlertTitle>
                       <AlertDescription>
                         Taux de succès des opérations sous le seuil acceptable ({systemReport.metrics_summary.success_rate.toFixed(1)}%)
@@ -186,7 +186,7 @@ export const MonitoringDashboard = () => {
 
                   {systemReport.metrics_summary.error_count === 0 && systemReport.metrics_summary.success_rate >= 95 && (
                     <Alert className="mb-4 bg-green-50">
-                      <CheckCircleIcon className="h-4 w-4" />
+                      <CheckCircle className="h-4 w-4" />
                       <AlertTitle>Tout est normal</AlertTitle>
                       <AlertDescription>
                         Tous les systèmes fonctionnent correctement
@@ -210,7 +210,7 @@ export const MonitoringDashboard = () => {
                 <CardContent>
                   {systemReport.recent_errors.length === 0 ? (
                     <div className="text-center py-6">
-                      <CheckCircleIcon className="h-12 w-12 mx-auto text-green-500 mb-2" />
+                      <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-2" />
                       <p>Aucune erreur récente détectée</p>
                     </div>
                   ) : (
@@ -285,7 +285,7 @@ export const MonitoringDashboard = () => {
 
       {error && (
         <Alert variant="destructive">
-          <ExclamationTriangleIcon className="h-4 w-4" />
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Erreur</AlertTitle>
           <AlertDescription>
             Impossible de charger les données de monitoring. Veuillez réessayer plus tard.

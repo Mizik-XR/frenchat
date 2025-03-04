@@ -20,9 +20,11 @@ verify_jwt = false
 [functions.text-generation]
 verify_jwt = false
 
-# Fonctions temporairement désactivées pour respecter la limite du plan gratuit
-# [functions.microsoft-oauth]
-# verify_jwt = false
+[functions.microsoft-oauth]
+verify_jwt = false
+
+[functions.log-performance-metrics]
+verify_jwt = false
 
 # [functions.export-to-google-drive]
 # verify_jwt = false
