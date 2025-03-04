@@ -43,6 +43,8 @@ function AppWithAuth() {
     window.requestIdleCallback 
       ? window.requestIdleCallback(preloadImportantPages) 
       : setTimeout(preloadImportantPages, 200);
+    
+    console.log("AppWithAuth is mounted, current location:", window.location.pathname);
   }, []);
 
   return (
@@ -88,6 +90,7 @@ function App() {
     console.log("Current URL:", window.location.href);
     console.log("Current hostname:", window.location.hostname);
     console.log("Current origin:", window.location.origin);
+    console.log("Current pathname:", window.location.pathname);
     
     // Loguer toute erreur de chargement des ressources
     const originalFetch = window.fetch;

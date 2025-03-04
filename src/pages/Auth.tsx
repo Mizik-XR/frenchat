@@ -28,6 +28,7 @@ export default function Auth() {
         if (error) {
           console.error('Erreur lors de la récupération de la session:', error);
         }
+        console.log("Session actuelle:", currentSession ? "Utilisateur connecté" : "Pas de session");
         setSession(currentSession);
       } catch (error) {
         console.error('Erreur dans checkSession:', error);
@@ -51,6 +52,7 @@ export default function Auth() {
   const redirectTo = location.state?.from?.pathname || '/';
 
   if (loading) {
+    console.log("Auth component is loading");
     return <AuthLoadingScreen />;
   }
 
@@ -59,6 +61,7 @@ export default function Auth() {
     return <Navigate to={redirectTo} replace />;
   }
 
+  console.log("Rendering Auth component with defaultTab:", defaultTab);
   return (
     <AuthContainer>
       <Card className="border-gray-200 shadow-lg">
