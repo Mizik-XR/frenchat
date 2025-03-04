@@ -2,7 +2,8 @@
 import { ConversationList } from "../ConversationList";
 import { ChatContainer } from "./ChatContainer";
 import { PriorityTopicsPanel } from "../PriorityTopicsPanel";
-import { Conversation, Message, WebUIConfig, AIProvider, AnalysisMode } from "@/types/chat";
+import { AIProvider, WebUIConfig, AnalysisMode, Message } from "@/types/chat";
+import { Conversation } from "@/hooks/useConversations";
 
 interface MainLayoutProps {
   conversations: Conversation[];
@@ -19,8 +20,8 @@ interface MainLayoutProps {
   replyToMessage: Message | null;
   onClearReply: () => void;
   onConversationSelect: (id: string) => void;
-  onNewConversation: () => Promise<void>;
-  onUpdateConversation: (params: { id: string; title?: string; isPinned?: boolean; isArchived?: boolean }) => void;
+  onNewConversation: () => void;
+  onUpdateConversation: (id: string, data: Partial<Conversation>) => void;
   onModeChange: (mode: 'auto' | 'manual') => void;
   onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
   onProviderChange: (provider: AIProvider) => void;
@@ -31,9 +32,11 @@ interface MainLayoutProps {
   setShowPriorityTopics: (show: boolean) => void;
   onSubmit: (e: React.FormEvent) => void;
   onFilesSelected: (files: File[]) => Promise<void>;
-  onTopicSelect: (messageId: string) => void;
+  onTopicSelect: (id: string) => void;
   onResetConversation: () => void;
   onAnalysisModeChange: (mode: AnalysisMode) => void;
+  modelSource?: 'cloud' | 'local';
+  onModelSourceChange?: (source: 'cloud' | 'local') => void;
 }
 
 export const MainLayout = ({
@@ -65,60 +68,58 @@ export const MainLayout = ({
   onFilesSelected,
   onTopicSelect,
   onResetConversation,
-  onAnalysisModeChange
+  onAnalysisModeChange,
+  modelSource = 'cloud',
+  onModelSourceChange = () => {}
 }: MainLayoutProps) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="flex h-screen overflow-hidden">
-        <div className="hidden sm:block">
-          <ConversationList
-            conversations={conversations}
-            selectedId={selectedConversationId}
-            onSelect={onConversationSelect}
-            onNew={onNewConversation}
-            onUpdateConversation={onUpdateConversation}
+    <div className="flex h-full">
+      <div className="w-72 border-r bg-gray-50 dark:bg-gray-900">
+        <ConversationList
+          conversations={conversations}
+          selectedConversationId={selectedConversationId}
+          onConversationSelect={onConversationSelect}
+          onNewConversation={onNewConversation}
+          onUpdateConversation={onUpdateConversation}
+        />
+      </div>
+      
+      <div className="flex-1 flex">
+        <div className="flex-1 h-full relative max-h-full">
+          <ChatContainer
+            messages={messages}
+            isLoading={isLoading}
+            llmStatus={llmStatus}
+            webUIConfig={webUIConfig}
+            input={input}
+            selectedDocumentId={selectedDocumentId}
+            showSettings={showSettings}
+            showUploader={showUploader}
+            replyToMessage={replyToMessage}
+            onClearReply={onClearReply}
+            onModeChange={onModeChange}
+            onWebUIConfigChange={onWebUIConfigChange}
+            onProviderChange={onProviderChange}
+            onReplyToMessage={onReplyToMessage}
+            setInput={setInput}
+            setShowSettings={setShowSettings}
+            setShowUploader={setShowUploader}
+            onSubmit={onSubmit}
+            onFilesSelected={onFilesSelected}
+            onResetConversation={onResetConversation}
+            onAnalysisModeChange={onAnalysisModeChange}
           />
         </div>
         
-        <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 relative">
-            <ChatContainer
-              messages={messages}
-              isLoading={isLoading}
-              llmStatus={llmStatus}
-              webUIConfig={webUIConfig}
-              input={input}
-              selectedDocumentId={selectedDocumentId}
-              showSettings={showSettings}
-              showUploader={showUploader}
-              replyToMessage={replyToMessage}
-              onClearReply={onClearReply}
-              onModeChange={onModeChange}
-              onWebUIConfigChange={onWebUIConfigChange}
-              onProviderChange={onProviderChange}
-              onReplyToMessage={onReplyToMessage}
-              setInput={setInput}
-              setShowSettings={setShowSettings}
-              setShowUploader={setShowUploader}
-              onSubmit={onSubmit}
-              onFilesSelected={onFilesSelected}
-              onResetConversation={onResetConversation}
-              onAnalysisModeChange={onAnalysisModeChange}
+        {showPriorityTopics && (
+          <div className="w-72 border-l bg-gray-50 dark:bg-gray-900">
+            <PriorityTopicsPanel
+              onClose={() => setShowPriorityTopics(false)}
+              onTopicSelect={onTopicSelect}
             />
           </div>
-
-          {showPriorityTopics && (
-            <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-black/40 backdrop-blur-sm shadow-lg animate-slide-in-right">
-              <PriorityTopicsPanel
-                messages={messages}
-                onClose={() => setShowPriorityTopics(false)}
-                onQuote={setInput}
-                onTopicSelect={onTopicSelect}
-              />
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
-}
+};

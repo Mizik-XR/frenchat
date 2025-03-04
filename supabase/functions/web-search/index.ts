@@ -13,33 +13,43 @@ serve(async (req) => {
 
   try {
     const { query } = await req.json()
-    const BING_ENDPOINT = 'https://api.bing.microsoft.com/v7.0/search';
     
-    const searchResponse = await fetch(
-      `${BING_ENDPOINT}?q=${encodeURIComponent(query)}&count=5&responseFilter=Webpages`,
-      {
-        headers: {
-          'Ocp-Apim-Subscription-Key': Deno.env.get('BING_API_KEY') || '',
-        },
-      }
-    );
+    // Use Bing Search API if available, otherwise fallback to a mock response
+    let searchResults;
+    
+    if (Deno.env.get('BING_API_KEY')) {
+      const BING_ENDPOINT = 'https://api.bing.microsoft.com/v7.0/search';
+      
+      const searchResponse = await fetch(
+        `${BING_ENDPOINT}?q=${encodeURIComponent(query)}&count=5&responseFilter=Webpages`,
+        {
+          headers: {
+            'Ocp-Apim-Subscription-Key': Deno.env.get('BING_API_KEY') || '',
+          },
+        }
+      );
 
-    if (!searchResponse.ok) {
-      throw new Error('Search API request failed');
+      if (!searchResponse.ok) {
+        throw new Error('Search API request failed');
+      }
+
+      const data = await searchResponse.json();
+      console.log('Search results:', data);
+
+      // Format results for display
+      searchResults = data.webPages.value
+        .map((page: any) => `${page.name}\n${page.snippet}\nSource: ${page.url}\n`)
+        .join('\n---\n');
+    } else {
+      // Mock response if no API key is available
+      searchResults = `Résultats de recherche pour "${query}":\n\n` +
+        `Résultat 1: Information pertinente sur ${query}\nSource: https://example.com/info\n\n` +
+        `Résultat 2: Plus de détails sur ${query}\nSource: https://example.com/details\n\n` +
+        `(Résultats simulés - configurez une clé API Bing pour des résultats réels)`;
     }
 
-    const data = await searchResponse.json();
-    console.log('Search results:', data);
-
-    // Format des résultats pour l'affichage
-    const formattedResults = data.webPages.value
-      .map((page: any) => `${page.name}\n${page.snippet}\nSource: ${page.url}\n`)
-      .join('\n---\n');
-
     return new Response(
-      JSON.stringify({ 
-        result: `Résultats de recherche pour "${query}":\n\n${formattedResults}` 
-      }),
+      JSON.stringify({ result: `Résultats de recherche pour "${query}":\n\n${searchResults}` }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

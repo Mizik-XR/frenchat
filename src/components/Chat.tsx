@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AIProvider, WebUIConfig, AnalysisMode, Message } from "@/types/chat";
 import { useChatMessages } from '@/hooks/useChatMessages';
@@ -15,6 +16,7 @@ export const Chat = () => {
   const [showPriorityTopics, setShowPriorityTopics] = useState(false);
   const [showUploader, setShowUploader] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [modelSource, setModelSource] = useState<'cloud' | 'local'>('cloud');
 
   const [webUIConfig, setWebUIConfig] = useState<WebUIConfig>({
     mode: 'auto',
@@ -126,6 +128,22 @@ export const Chat = () => {
 
   const handleProviderChange = (provider: AIProvider) => {
     setWebUIConfig(prev => ({ ...prev, model: provider }));
+    toast({
+      title: "Modèle sélectionné",
+      description: `Vous utilisez maintenant ${provider}`,
+    });
+  };
+
+  const handleModelSourceChange = (source: 'cloud' | 'local') => {
+    setModelSource(source);
+    // Adjust model based on source
+    const defaultModel = source === 'cloud' ? 'huggingface' : 'mistral';
+    setWebUIConfig(prev => ({ ...prev, model: defaultModel as AIProvider }));
+    
+    toast({
+      title: "Mode modifié",
+      description: `Mode ${source === 'cloud' ? 'Cloud' : 'Local'} activé`,
+    });
   };
 
   return (
@@ -159,6 +177,8 @@ export const Chat = () => {
       onTopicSelect={handleTopicSelect}
       onResetConversation={handleResetConversation}
       onAnalysisModeChange={handleAnalysisModeChange}
+      modelSource={modelSource}
+      onModelSourceChange={handleModelSourceChange}
     />
   );
 };

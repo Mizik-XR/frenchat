@@ -11,37 +11,84 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { useState, useEffect } from "react";
+
+// Define available models based on source
+const CLOUD_MODELS = [
+  {
+    id: "huggingface",
+    name: "Hugging Face",
+    description: "Modèle par défaut via l'API Hugging Face",
+    requiresKey: false
+  },
+  {
+    id: "internet-search",
+    name: "Recherche Internet",
+    description: "Recherche d'informations sur le web",
+    requiresKey: false
+  },
+  {
+    id: "deepseek",
+    name: "DeepThink",
+    description: "Analyse avancée par Hugging Face Deep Search",
+    requiresKey: true
+  }
+];
+
+const LOCAL_MODELS = [
+  {
+    id: "mistral",
+    name: "Mistral 7B",
+    description: "Modèle local optimisé pour votre machine",
+    requiresKey: false
+  },
+  {
+    id: "ollama",
+    name: "Ollama",
+    description: "Utilise les modèles configurés dans Ollama",
+    requiresKey: false
+  }
+];
 
 interface SettingsPanelProps {
   webUIConfig: WebUIConfig;
   onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
   onProviderChange: (provider: AIProvider) => void;
   onAnalysisModeChange: (mode: AnalysisMode) => void;
+  modelSource: 'cloud' | 'local';
 }
 
 export const SettingsPanel = ({
   webUIConfig,
   onWebUIConfigChange,
   onProviderChange,
-  onAnalysisModeChange
+  onAnalysisModeChange,
+  modelSource
 }: SettingsPanelProps) => {
+  const [availableModels, setAvailableModels] = useState(CLOUD_MODELS);
+
+  // Update available models when modelSource changes
+  useEffect(() => {
+    setAvailableModels(modelSource === 'cloud' ? CLOUD_MODELS : LOCAL_MODELS);
+  }, [modelSource]);
+
+  const handleModelAdd = (model: any) => {
+    // Add custom model logic here
+    console.log("Adding custom model:", model);
+  };
+
   return (
     <Card className="p-4 space-y-6 shadow-lg">
       <div className="space-y-2">
-        <Label>Modèle</Label>
-        <Select
-          value={webUIConfig.model}
-          onValueChange={(value) => onProviderChange(value as AIProvider)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionnez un modèle" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="huggingface">Hugging Face</SelectItem>
-            <SelectItem value="internet-search">Recherche Internet</SelectItem>
-            <SelectItem value="deepthink">DeepThink</SelectItem>
-          </SelectContent>
-        </Select>
+        <Label>Modèle ({modelSource === 'cloud' ? 'Cloud' : 'Local'})</Label>
+        <ModelSelector
+          models={availableModels}
+          selectedModel={webUIConfig.model}
+          onModelSelect={(modelId) => onProviderChange(modelId as AIProvider)}
+          onModelAdd={handleModelAdd}
+          label="Sélectionner un modèle"
+          type={modelSource === 'cloud' ? "cloud" : "local"}
+        />
       </div>
 
       <div className="space-y-2">

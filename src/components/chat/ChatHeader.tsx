@@ -1,8 +1,9 @@
 
-import { Info, Nut, Plus } from "lucide-react";
+import { Info, Nut, Plus, Settings } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import {
   Tooltip,
   TooltipContent,
@@ -17,6 +18,8 @@ interface ChatHeaderProps {
   setShowSettings: (show: boolean) => void;
   onResetConversation: () => void;
   setShowUploader?: (show: boolean) => void;
+  modelSource: 'cloud' | 'local';
+  onModelSourceChange: (source: 'cloud' | 'local') => void;
 }
 
 export const ChatHeader = ({ 
@@ -25,8 +28,12 @@ export const ChatHeader = ({
   showSettings,
   setShowSettings,
   onResetConversation,
-  setShowUploader
+  setShowUploader,
+  modelSource,
+  onModelSourceChange
 }: ChatHeaderProps) => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex justify-between items-center p-4 border-b">
       <div className="flex items-center gap-4">
@@ -39,24 +46,36 @@ export const ChatHeader = ({
           <h2 className="text-lg font-semibold text-gray-900">Frenchat</h2>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={mode === 'auto'}
-            onCheckedChange={(checked) => onModeChange(checked ? 'auto' : 'manual')}
-          />
-          <Label>Mode Auto</Label>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-4 w-4 text-gray-500" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="max-w-xs">
-                  Le mode Auto sélectionne intelligemment le meilleur modèle selon votre demande
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label>Cloud</Label>
+            <Switch
+              checked={modelSource === 'local'}
+              onCheckedChange={(checked) => onModelSourceChange(checked ? 'local' : 'cloud')}
+            />
+            <Label>Local</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-gray-500" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    Mode Cloud: Utilise les modèles Hugging Face en ligne<br />
+                    Mode Local: Utilise les modèles installés sur votre machine
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={mode === 'auto'}
+              onCheckedChange={(checked) => onModeChange(checked ? 'auto' : 'manual')}
+            />
+            <Label>Mode Auto</Label>
+          </div>
         </div>
       </div>
 
@@ -84,11 +103,11 @@ export const ChatHeader = ({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setShowSettings(!showSettings)}
+          onClick={() => navigate("/config")}
           className="hover:bg-gray-100"
-          title="Paramètres"
+          title="Configuration"
         >
-          <Nut className="h-5 w-5" />
+          <Settings className="h-5 w-5" />
         </Button>
       </div>
     </div>

@@ -22,6 +22,7 @@ interface ChatInputContainerProps {
   showUploader: boolean;
   setShowUploader: (show: boolean) => void;
   onFilesSelected: (files: File[]) => Promise<void>;
+  modelSource?: 'cloud' | 'local';
 }
 
 export const ChatInputContainer = ({
@@ -34,7 +35,8 @@ export const ChatInputContainer = ({
   model,
   showUploader,
   setShowUploader,
-  onFilesSelected
+  onFilesSelected,
+  modelSource = 'cloud'
 }: ChatInputContainerProps) => {
   const [csvData, setCsvData] = useState<string | null>(null);
   const [showChartGenerator, setShowChartGenerator] = useState(false);
@@ -95,7 +97,7 @@ export const ChatInputContainer = ({
         <InputField 
           input={input}
           setInput={setInput}
-          onSubmit={handleFormSubmit}  // Pass the function that expects an event
+          onSubmit={handleFormSubmit}
           isLoading={isLoading}
           hasFiles={currentFiles.length > 0}
         />
