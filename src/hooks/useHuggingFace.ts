@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { LLMProviderType } from '@/types/config';
@@ -123,7 +122,6 @@ export function useHuggingFace(provider: string = 'huggingface') {
     return () => clearTimeout(timer);
   }, [isCloudModeForced]);
 
-  // Validation des entrées utilisateur
   const validateUserInput = (options: TextGenerationParameters): string | null => {
     if (!options.prompt || typeof options.prompt !== 'string') {
       return "Format de prompt invalide";
@@ -133,7 +131,8 @@ export function useHuggingFace(provider: string = 'huggingface') {
       return "Prompt trop long (maximum 10000 caractères)";
     }
     
-    if (options.max_tokens && (options.max_tokens < 1 || options.max_tokens > 4096)) {
+    // Utiliser max_length au lieu de max_tokens pour cohérence
+    if (options.max_length && (options.max_length < 1 || options.max_length > 4096)) {
       return "Nombre de tokens invalide (doit être entre 1 et 4096)";
     }
     

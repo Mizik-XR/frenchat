@@ -6,6 +6,7 @@ export interface TextGenerationParameters {
   model?: string;
   max_length?: number;
   maxLength?: number;
+  max_tokens?: number;  // Ajout de cette propriété manquante
   temperature?: number;
   top_p?: number;
   top_k?: number;
