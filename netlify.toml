@@ -1,5 +1,5 @@
 
-# Configuration de build Netlify pour FileChat
+# Configuration de build Netlify pour Frenchat
 [build]
   publish = "dist"
   command = "NO_RUST_INSTALL=1 npm run build"

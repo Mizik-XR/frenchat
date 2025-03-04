@@ -3,10 +3,10 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title FileChat - Démarrage Universel
+title Frenchat - Démarrage Universel
 
 echo ===================================================
-echo            DÉMARRAGE UNIVERSEL DE FILECHAT
+echo            DÉMARRAGE UNIVERSEL DE FRENCHAT
 echo ===================================================
 echo.
 

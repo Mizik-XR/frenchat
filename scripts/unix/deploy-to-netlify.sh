@@ -2,10 +2,10 @@
 #!/bin/bash
 
 echo "==================================================="
-echo "    DÉPLOIEMENT FILECHAT VERS NETLIFY"
+echo "    DÉPLOIEMENT FRENCHAT VERS NETLIFY"
 echo "==================================================="
 echo
-echo "Ce script va déployer FileChat vers Netlify."
+echo "Ce script va déployer Frenchat vers Netlify."
 echo "Assurez-vous d'avoir installé la CLI Netlify et"
 echo "d'être connecté à votre compte Netlify."
 echo

@@ -1,7 +1,7 @@
 
-# Guide de dépannage de l'installation FileChat
+# Guide de dépannage de l'installation Frenchat
 
-Si vous rencontrez des problèmes lors de l'installation de FileChat, voici quelques étapes pour résoudre les problèmes courants.
+Si vous rencontrez des problèmes lors de l'installation de Frenchat, voici quelques étapes pour résoudre les problèmes courants.
 
 ## Problème 1: Erreur d'installation de PyTorch
 
@@ -91,7 +91,7 @@ Si vous rencontrez des difficultés avec l'installation complète, vous pouvez u
    ```
    ollama pull llama2
    ```
-3. Lancez FileChat en mode cloud uniquement:
+3. Lancez Frenchat en mode cloud uniquement:
    - Windows: `start-cloud-mode.bat`
    - Linux/Mac: `MODE_CLOUD=1 bash scripts/unix/start-app-simplified.sh`
 
@@ -123,4 +123,3 @@ Si les problèmes persistent, lancez l'outil de diagnostic et partagez les résu
 ```
 scripts\diagnostic.bat
 ```
-

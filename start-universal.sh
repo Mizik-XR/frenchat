@@ -2,7 +2,7 @@
 #!/bin/bash
 
 echo "==================================================="
-echo "            DÉMARRAGE UNIVERSEL DE FILECHAT"
+echo "            DÉMARRAGE UNIVERSEL DE FRENCHAT"
 echo "==================================================="
 echo ""
 

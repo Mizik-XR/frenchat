@@ -1,14 +1,14 @@
 
-# Présentation générale de ChatAlone
+# Présentation générale de Frenchat
 
 ## Objectif du projet
 
-ChatAlone est une solution de chat intelligent (RAG - Retrieval Augmented Generation) conçue pour:
+Frenchat est une solution de chat intelligent (RAG - Retrieval Augmented Generation) conçue pour:
 
 - **Indexer et analyser en temps réel** les documents provenant de Google Drive et Microsoft Teams
 - **Générer et prévisualiser** des documents structurés (dossiers de subvention, business plans, etc.)
 - **Exporter** ces documents directement vers Google Drive ou Teams
-- Permettre une navigation intuitive type "WhatsApp" pour gérer les conversations avec l'IA
+- Permettre une navigation type "WhatsApp" pour gérer les multiples sujets abordés avec l'IA
 
 ## Principales fonctionnalités
 
@@ -56,7 +56,7 @@ ChatAlone est une solution de chat intelligent (RAG - Retrieval Augmented Genera
 
 ## Public cible
 
-ChatAlone s'adresse principalement aux équipes et entreprises souhaitant:
+Frenchat s'adresse principalement aux équipes et entreprises souhaitant:
 
 - Valoriser leur base documentaire existante
 - Accélérer la recherche d'informations dans des documents volumineux
