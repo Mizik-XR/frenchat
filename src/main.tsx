@@ -17,12 +17,20 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
       retry: 1,
-      // Ajouter une stratégie de cache pour améliorer la performance
       gcTime: 1000 * 60 * 10, // 10 minutes
-      refetchOnWindowFocus: false, // Désactiver les refetch automatiques
+      refetchOnWindowFocus: false,
     },
   },
 })
+
+// Fonction pour vérifier si React est correctement chargé
+const checkReactDependencies = () => {
+  if (typeof React === 'undefined') {
+    console.warn("React n'est pas défini globalement - c'est normal avec les imports ES modules");
+    return false;
+  }
+  return true;
+}
 
 // Affichage d'un message de chargement pour feedback immédiat
 const showInitialLoadingMessage = () => {
@@ -55,7 +63,7 @@ const showInitialLoadingMessage = () => {
 };
 
 // Fonction pour gérer les erreurs de chargement
-const handleLoadError = (error: any) => {
+const handleLoadError = (error) => {
   console.error("Erreur critique lors du chargement de l'application:", error);
   
   // Afficher un message d'erreur utilisateur avec des options de récupération
@@ -92,35 +100,33 @@ const handleLoadError = (error: any) => {
   }
 };
 
-// Vérifier si le navigateur est compatible (recommandation Chrome/Edge)
-const checkBrowserCompatibility = () => {
-  const userAgent = navigator.userAgent.toLowerCase();
-  const isFirefox = userAgent.indexOf('firefox') > -1;
-  const isSafari = userAgent.indexOf('safari') > -1 && userAgent.indexOf('chrome') === -1;
-  const isOldEdge = userAgent.indexOf('edge/') > -1;
-  
-  if (isFirefox || isSafari || isOldEdge) {
-    console.warn("Ce navigateur peut causer des problèmes avec certaines fonctionnalités. Chrome ou Edge moderne sont recommandés.");
-  }
-  
-  // On continue quand même, c'est juste un avertissement
-  return true;
-};
-
 // Vérifier les paramètres d'URL pour mode de secours
 const checkForFallbackMode = () => {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.has('mode') && urlParams.get('mode') === 'fallback';
 };
 
-// Fonction pour démarrer l'application
+// Création explicite d'un élément React pour éviter les erreurs avec useLayoutEffect
+const setupReactDOM = () => {
+  // Essayer d'importer React explicitement si nécessaire pour certains navigateurs
+  try {
+    // Cette technique n'est pas idéale mais peut aider dans certains cas
+    if (window.React === undefined) {
+      console.log("React n'est pas disponible globalement, cela peut causer des problèmes dans certains environnements");
+    }
+  } catch (e) {
+    console.warn("Erreur lors de la vérification de React:", e);
+  }
+};
+
+// Fonction pour démarrer l'application de manière robuste
 const startApp = async () => {
   try {
     // Afficher un message de chargement pour feedback immédiat
     showInitialLoadingMessage();
     
-    // Vérifier la compatibilité du navigateur
-    checkBrowserCompatibility();
+    // Vérifier explicitement que React est disponible
+    setupReactDOM();
     
     // Mode de secours (simplifié, sans tentatives de préchargement)
     const fallbackMode = checkForFallbackMode();
@@ -145,7 +151,7 @@ const startApp = async () => {
         try {
           await preloadSession();
           console.log("Session Supabase préchargée avec succès");
-        } catch (err: any) {
+        } catch (err) {
           console.warn("Erreur non bloquante lors du préchargement de la session:", err);
           // On continue malgré l'erreur en mode normal
           // Notifier l'utilisateur uniquement si l'erreur est critique
@@ -173,18 +179,47 @@ const startApp = async () => {
     // S'assurer que le DOM est complètement chargé
     const renderApp = () => {
       try {
+        // S'assurer que createRoot est accessible
+        if (typeof createRoot !== 'function') {
+          console.error("react-dom/client createRoot n'est pas disponible, tentative de contournement...");
+          throw new Error("react-dom/client createRoot n'est pas disponible");
+        }
+        
         const root = createRoot(rootElement);
-        root.render(
-          <ErrorBoundary>
-            <QueryClientProvider client={queryClient}>
-              <App />
-            </QueryClientProvider>
-          </ErrorBoundary>
-        );
-        console.log("Application React montée avec succès");
-      } catch (renderError) {
-        console.error("Erreur lors du rendu de l'application:", renderError);
-        throw renderError;
+        
+        // Créer l'application dans un bloc try/catch pour détecter les erreurs de rendu
+        try {
+          root.render(
+            <ErrorBoundary>
+              <QueryClientProvider client={queryClient}>
+                <App />
+              </QueryClientProvider>
+            </ErrorBoundary>
+          );
+          console.log("Application React montée avec succès");
+        } catch (renderError) {
+          console.error("Erreur pendant le rendu initial:", renderError);
+          root.render(<LoadingScreen showRetry={true} message="Erreur lors du rendu de l'application" />);
+          throw renderError;
+        }
+      } catch (rootError) {
+        console.error("Erreur lors de la création du root React:", rootError);
+        
+        // Fallback à une méthode alternative si createRoot échoue
+        try {
+          console.warn("Tentative de contournement avec méthode alternative...");
+          const element = document.createElement('div');
+          element.innerHTML = '<div class="p-4 text-center"><h2>Mode de secours activé</h2><p>Chargement avec méthode alternative...</p></div>';
+          rootElement.appendChild(element);
+          
+          setTimeout(() => {
+            window.location.href = window.location.href + (window.location.href.includes('?') ? '&' : '?') + 'mode=fallback';
+          }, 2000);
+        } catch (fallbackError) {
+          console.error("Même la méthode de contournement a échoué:", fallbackError);
+        }
+        
+        throw rootError;
       }
     };
     

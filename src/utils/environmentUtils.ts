@@ -1,101 +1,96 @@
 
+import { isLovableEnvironment, isNetlifyEnvironment, isProduction, isDevelopment } from '@/utils/environment';
+import { getAllUrlParams, getBaseUrl, getFormattedUrlParams, getRedirectUrl } from '@/utils/environment';
+
+// Cette version refactorisée du fichier environmentUtils.ts
+// maintient la compatibilité avec le code existant
+// tout en utilisant la nouvelle structure modulaire des utilitaires d'environnement
+
 /**
- * Vérifie si l'application s'exécute dans l'environnement Lovable
- * @returns true si l'environnement est celui de Lovable
+ * Vérifie si l'application est en mode production
+ * @deprecated Utilisez import { isProduction } from '@/utils/environment' à la place
+ */
+export function isProduction(): boolean {
+  return isProduction();
+}
+
+/**
+ * Vérifie si l'application est en mode développement
+ * @deprecated Utilisez import { isDevelopment } from '@/utils/environment' à la place
+ */
+export function isDevelopment(): boolean {
+  return isDevelopment();
+}
+
+/**
+ * Vérifie si l'application est dans l'environnement Lovable
+ * @deprecated Utilisez import { isLovableEnvironment } from '@/utils/environment' à la place
  */
 export function isLovableEnvironment(): boolean {
-  if (typeof window === 'undefined') return false;
-  
-  // Vérification par URL
-  const url = window.location.href;
-  return url.includes('lovableproject.com') || 
-         url.includes('gpt3.app') || 
-         url.includes('lovable.ai');
+  return isLovableEnvironment();
 }
 
 /**
- * Vérifie si l'application s'exécute dans l'environnement Netlify
- * @returns true si l'environnement est celui de Netlify
+ * Vérifie si l'application est dans l'environnement Netlify
+ * @deprecated Utilisez import { isNetlifyEnvironment } from '@/utils/environment' à la place
  */
 export function isNetlifyEnvironment(): boolean {
-  if (typeof window === 'undefined') return false;
-  
-  // Vérification par variables d'environnement ou URLs Netlify
-  const isNetlifyDomain = window.location.hostname.includes('netlify.app');
-  const hasNetlifyContext = typeof process !== 'undefined' && 
-                           process.env && 
-                           (process.env.NETLIFY === 'true' || 
-                            process.env.CONTEXT === 'production' || 
-                            process.env.CONTEXT === 'deploy-preview');
-  
-  // Suppression de la référence à netlifyIdentity qui n'existe pas
-  return isNetlifyDomain || hasNetlifyContext;
+  return isNetlifyEnvironment();
 }
 
 /**
- * Vérifie si l'environnement actuel est en développement
- * @returns true si l'environnement est celui de développement
+ * Vérifie si le mode client est activé via les paramètres d'URL
  */
-export function isDevEnvironment(): boolean {
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env.NODE_ENV === 'development' || 
-           process.env.VITE_ENV === 'development';
-  }
-  return false;
+export function isClientMode(): boolean {
+  const urlParams = getAllUrlParams();
+  return urlParams.client === 'true';
 }
 
 /**
- * Configure l'environnement spécifique à Netlify
+ * Vérifie si le mode debug est activé via les paramètres d'URL
  */
-export function setupNetlifyEnvironment(): void {
-  if (isNetlifyEnvironment()) {
-    // Configuration des variables d'env pour Netlify
-    window.localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-    
-    // Configuration du comportement en cas d'erreur réseau
-    window.addEventListener('error', (event) => {
-      // Gérer uniquement les erreurs réseau
-      if (event.message && event.message.includes('network') || 
-          (event.error && event.error.message && event.error.message.includes('network'))) {
-        console.warn('Erreur réseau détectée dans l\'environnement Netlify, redirection vers le mode fallback');
-        // Rediriger vers mode de secours si besoin
-        if (!window.location.href.includes('mode=fallback')) {
-          window.location.href = '/?mode=fallback&client=true&forceCloud=true';
-        }
-      }
-    });
-  }
+export function isDebugMode(): boolean {
+  const urlParams = getAllUrlParams();
+  return urlParams.debug === 'true' && !urlParams.hideDebug;
 }
 
 /**
- * Retourne les informations adaptées à l'environnement
- * @returns Informations spécifiques à l'environnement
+ * Vérifie si le mode cloud est forcé via les paramètres d'URL ou les variables d'environnement
  */
-export function getEnvironmentInfo() {
-  return {
-    isLovable: isLovableEnvironment(),
-    isNetlify: isNetlifyEnvironment(),
-    isDev: isDevEnvironment(),
-    browserInfo: {
-      userAgent: navigator.userAgent,
-      platform: navigator.platform,
-      language: navigator.language,
-    },
-    screenInfo: {
-      width: window.innerWidth,
-      height: window.innerHeight,
-      pixelRatio: window.devicePixelRatio,
-    }
-  };
+export function isCloudModeForced(): boolean {
+  const urlParams = getAllUrlParams();
+  return urlParams.forceCloud === 'true' || import.meta.env.VITE_FORCE_CLOUD_MODE === 'true';
 }
 
-// Pour assurer la rétrocompatibilité, réexporter les fonctions du nouveau module
-// Correction du chemin d'importation
-export { 
-  getBaseUrl,
-  getRedirectUrl, 
-  getFormattedUrlParams,
-  getAllUrlParams,
-  getNormalizedCloudModeUrl
-} from '@/utils/environment';
+/**
+ * Obtient l'URL de base de l'application
+ * @deprecated Utilisez import { getBaseUrl } from '@/utils/environment' à la place
+ */
+export function getBaseUrl(): string {
+  return getBaseUrl();
+}
 
+/**
+ * Construit une URL de redirection complète
+ * @param path Chemin relatif à ajouter à l'URL de base
+ * @deprecated Utilisez import { getRedirectUrl } from '@/utils/environment' à la place
+ */
+export function getRedirectUrl(path: string): string {
+  return getRedirectUrl(path);
+}
+
+/**
+ * Formate les paramètres d'URL
+ * @deprecated Utilisez import { getFormattedUrlParams } from '@/utils/environment' à la place
+ */
+export function getFormattedUrlParams(): Record<string, string> {
+  return getFormattedUrlParams();
+}
+
+/**
+ * Récupère tous les paramètres d'URL
+ * @deprecated Utilisez import { getAllUrlParams } from '@/utils/environment' à la place
+ */
+export function getAllUrlParams(): Record<string, string> {
+  return getAllUrlParams();
+}

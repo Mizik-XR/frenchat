@@ -17,6 +17,8 @@ import { ThemeProvider } from './components/ThemeProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from './contexts/SettingsContext';
 import OllamaSetup from './pages/OllamaSetup';
+import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const queryClient = new QueryClient();
 
@@ -40,18 +42,21 @@ const AppRouter = () => {
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
-      <QueryClientProvider client={queryClient}>
-        <Router>
-          <AuthProvider>
-            <SettingsProvider>
-              <AppRouter />
-              <Toaster />
-            </SettingsProvider>
-          </AuthProvider>
-        </Router>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
+        <QueryClientProvider client={queryClient}>
+          <Router>
+            <AuthProvider>
+              <SettingsProvider>
+                <ReactErrorMonitor />
+                <AppRouter />
+                <Toaster />
+              </SettingsProvider>
+            </AuthProvider>
+          </Router>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
