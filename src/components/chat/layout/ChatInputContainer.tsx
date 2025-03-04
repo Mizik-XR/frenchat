@@ -206,15 +206,20 @@ export const ChatInputContainer = ({
     setActiveModel(model);
     
     let modelName = "";
+    let modelType = "";
+    
     switch(model) {
       case 'mixtral':
         modelName = "Mixtral";
+        modelType = "huggingface";
         break;
       case 'deepseek':
         modelName = "DeepSeek";
+        modelType = "deepseek";
         break;
       case 'search':
         modelName = "Recherche Internet";
+        modelType = "internet-search";
         break;
     }
     
@@ -439,4 +444,3 @@ export const ChatInputContainer = ({
     </form>
   );
 };
-

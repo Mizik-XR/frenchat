@@ -1,5 +1,4 @@
-
-export type AIProvider = 'auto' | 'huggingface' | 'internet-search' | 'deepthink' | 'stable-diffusion';
+export type AIProvider = 'auto' | 'huggingface' | 'internet-search' | 'deepseek' | 'stable-diffusion';
 
 export type MessageType = 'text' | 'document' | 'image' | 'chart';
 

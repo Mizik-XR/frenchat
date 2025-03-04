@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AIProvider, WebUIConfig, AnalysisMode, Message } from "@/types/chat";
 import { useChatMessages } from '@/hooks/useChatMessages';
@@ -125,6 +124,10 @@ export const Chat = () => {
     console.log('Topic selected:', messageId);
   };
 
+  const handleProviderChange = (provider: AIProvider) => {
+    setWebUIConfig(prev => ({ ...prev, model: provider }));
+  };
+
   return (
     <MainLayout
       conversations={conversations || []}
@@ -145,7 +148,7 @@ export const Chat = () => {
       onUpdateConversation={updateConversation}
       onModeChange={(mode) => setWebUIConfig(prev => ({ ...prev, mode }))}
       onWebUIConfigChange={(config) => setWebUIConfig(prev => ({ ...prev, ...config }))}
-      onProviderChange={(provider) => setWebUIConfig(prev => ({ ...prev, model: provider }))}
+      onProviderChange={handleProviderChange}
       onReplyToMessage={handleReplyToMessage}
       setInput={setInput}
       setShowSettings={setShowSettings}
