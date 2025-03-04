@@ -22,6 +22,18 @@ export const isPreviewEnvironment = () => {
          window.location.hostname.includes('gpteng');
 };
 
+/**
+ * Construit une URL de redirection complète basée sur l'environnement actuel
+ * @param path Le chemin relatif à ajouter à l'URL de base
+ * @returns L'URL complète de redirection
+ */
+export const getRedirectUrl = (path: string): string => {
+  const baseUrl = getBaseUrl();
+  // S'assurer qu'il n'y a pas de double slash entre baseUrl et path
+  const formattedPath = path.startsWith('/') ? path.substring(1) : path;
+  return `${baseUrl}/${formattedPath}`;
+};
+
 // Obtenez l'URL de base en fonction de l'environnement
 export const getBaseUrl = () => {
   // Si on est en mode preview, utiliser l'origine actuelle
