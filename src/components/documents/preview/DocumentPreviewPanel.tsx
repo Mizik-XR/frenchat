@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ZoomIn, ZoomOut, Download, Share, Check, AlertCircle, X, ChevronDown } from 'lucide-react';
+import { ZoomIn, ZoomOut, Download, Share, Check, AlertCircle, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -10,12 +10,6 @@ import {
 } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface DocumentPreviewPanelProps {
   content: string;
@@ -138,27 +132,45 @@ export const DocumentPreviewPanel = ({
           </Button>
 
           {onExport && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isExporting || isLoading || !!error}
-                >
-                  <Share className="h-4 w-4 mr-2" />
-                  Exporter
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleExport('drive')}>
-                  Google Drive
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('teams')}>
-                  Microsoft Teams
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExport('drive')}
+                      disabled={isExporting || isLoading || !!error}
+                    >
+                      <Share className="h-4 w-4 mr-2" />
+                      Drive
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Exporter vers Google Drive</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExport('teams')}
+                      disabled={isExporting || isLoading || !!error}
+                    >
+                      <Share className="h-4 w-4 mr-2" />
+                      Teams
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Exporter vers Microsoft Teams</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
 
           {onClose && (
