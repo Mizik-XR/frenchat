@@ -3,7 +3,6 @@ import { ConversationList } from "../ConversationList";
 import { ChatContainer } from "./ChatContainer";
 import { PriorityTopicsPanel } from "../PriorityTopicsPanel";
 import { Conversation, Message, WebUIConfig, AIProvider, AnalysisMode } from "@/types/chat";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface MainLayoutProps {
   conversations: Conversation[];
@@ -83,9 +82,6 @@ export const MainLayout = ({
         
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 relative">
-            <div className="absolute top-2 right-2 z-50">
-              <ThemeToggle />
-            </div>
             <ChatContainer
               messages={messages}
               isLoading={isLoading}

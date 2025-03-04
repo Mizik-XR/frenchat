@@ -1,5 +1,5 @@
 
-import { Info, Settings, Plus } from "lucide-react";
+import { Info, Nut, Plus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -88,7 +88,7 @@ export const ChatHeader = ({
           className="hover:bg-gray-100"
           title="Paramètres"
         >
-          <Settings className="h-5 w-5" />
+          <Nut className="h-5 w-5" />
         </Button>
       </div>
     </div>
