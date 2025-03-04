@@ -1,97 +1,65 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from '@/hooks/use-toast';
-import { FcGoogle } from 'react-icons/fc';
-import { BsMicrosoft } from 'react-icons/bs';
-import { STAGE_DETAILS } from '../constants';
 import { useDemo } from '../DemoContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { HelpCircle } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Check, Mail } from 'lucide-react';
 
 export const AuthStage = () => {
-  const { currentStage, nextStage } = useDemo();
-  const [email, setEmail] = useState('demo@filechat.app');
-  const [password, setPassword] = useState('********');
-  const [isLoading, setIsLoading] = useState(false);
+  const { nextStage } = useDemo();
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAuth = () => {
+    if (!email || !password) return;
+    
     setIsLoading(true);
     
     // Simuler une connexion
     setTimeout(() => {
+      setIsAuthenticated(true);
       setIsLoading(false);
-      toast({
-        title: "Connexion réussie",
-        description: "Vous êtes maintenant connecté à FileChat Demo"
-      });
-      nextStage();
-    }, 1500);
-  };
-
-  const handleOAuthSignIn = (provider: string) => {
-    setIsLoading(true);
-    
-    // Simuler une connexion OAuth
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: `Connexion ${provider} réussie`,
-        description: "Redirection vers la configuration..."
-      });
-      nextStage();
+      
+      // Passer à l'étape suivante après un court délai
+      setTimeout(() => {
+        nextStage();
+      }, 1500);
     }, 1500);
   };
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h3 className="text-xl font-semibold mb-4">Authentification</h3>
-        <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          {STAGE_DETAILS[currentStage]}
+      <div className="space-y-2">
+        <h3 className="text-xl font-bold">Authentification utilisateur</h3>
+        <p className="text-muted-foreground">
+          FileChat utilise Supabase pour l'authentification sécurisée. 
+          Pour cette démo, vous pouvez simplement entrer un email pour simuler la connexion.
         </p>
       </div>
 
-      <Tabs defaultValue="email" className="max-w-md mx-auto">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="email">Email</TabsTrigger>
-          <TabsTrigger value="oauth">OAuth</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="email">
-          <form onSubmit={handleSignIn} className="space-y-4">
+      {!isAuthenticated ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Connexion à FileChat</CardTitle>
+            <CardDescription>
+              Entrez vos identifiants pour accéder à vos documents.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
-              <div className="flex items-center">
-                <Label htmlFor="email">Email</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-4 w-4 ml-2">
-                        <HelpCircle className="h-3 w-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="w-80">
-                        Dans la démo, l'authentification est simulée. Dans l'application réelle, 
-                        Supabase est utilisé pour gérer l'authentification de manière sécurisée.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+              <Label htmlFor="email">Email</Label>
               <Input 
                 id="email" 
                 type="email" 
+                placeholder="exemple@domaine.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="vous@exemple.com"
               />
             </div>
-            
             <div className="space-y-2">
               <Label htmlFor="password">Mot de passe</Label>
               <Input 
@@ -101,41 +69,41 @@ export const AuthStage = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Connexion en cours..." : "Se connecter"}
-            </Button>
-          </form>
-        </TabsContent>
-        
-        <TabsContent value="oauth">
-          <div className="space-y-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Connectez-vous avec un compte externe:
-            </p>
-            
+          </CardContent>
+          <CardFooter>
             <Button 
-              variant="outline" 
-              className="w-full flex items-center gap-2 justify-center" 
-              onClick={() => handleOAuthSignIn('Google')}
-              disabled={isLoading}
+              className="w-full" 
+              onClick={handleAuth} 
+              disabled={isLoading || !email || !password}
             >
-              <FcGoogle className="h-5 w-5" />
-              Continuer avec Google
+              {isLoading ? 'Connexion en cours...' : 'Se connecter'}
             </Button>
-            
-            <Button 
-              variant="outline" 
-              className="w-full flex items-center gap-2 justify-center" 
-              onClick={() => handleOAuthSignIn('Microsoft')}
-              disabled={isLoading}
-            >
-              <BsMicrosoft className="h-4 w-4 text-blue-500" />
-              Continuer avec Microsoft
-            </Button>
+          </CardFooter>
+        </Card>
+      ) : (
+        <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-6 flex items-center space-x-4">
+          <div className="bg-green-100 dark:bg-green-900 p-2 rounded-full">
+            <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
           </div>
-        </TabsContent>
-      </Tabs>
+          <div>
+            <h4 className="font-medium text-green-800 dark:text-green-200">Authentification réussie</h4>
+            <p className="text-green-600 dark:text-green-400 text-sm">
+              Connexion établie pour {email}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
+        <h4 className="font-medium text-blue-800 dark:text-blue-300 flex items-center">
+          <Mail className="h-4 w-4 mr-2" />
+          Options d'authentification complètes
+        </h4>
+        <p className="text-blue-600 dark:text-blue-400 text-sm mt-1">
+          Dans la version complète, FileChat prend en charge l'authentification par email/mot de passe, 
+          Google OAuth, Microsoft OAuth, et autres méthodes SSO.
+        </p>
+      </div>
     </div>
   );
 };
