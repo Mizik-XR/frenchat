@@ -3,6 +3,8 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
+title FileChat - Démarrage Universel
+
 echo ===================================================
 echo            DÉMARRAGE UNIVERSEL DE FILECHAT
 echo ===================================================
@@ -45,6 +47,25 @@ if exist "node_modules\react\package.json" (
     echo [ATTENTION] Installation React manquante ou incomplète.
     echo [INFO] Installation des dépendances React...
     call npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0
+)
+
+rem Vérification du fichier _redirects
+echo [INFO] Vérification du fichier _redirects...
+if not exist "public\_redirects" (
+    echo [INFO] Création du fichier _redirects...
+    if not exist "public" mkdir public
+    echo /* /index.html 200 > "public\_redirects"
+    echo [OK] Fichier _redirects créé.
+)
+
+rem Reconstruction forcée pour s'assurer que tout est à jour
+echo [INFO] Reconstruction du projet pour appliquer les modifications...
+call npm run build
+if errorlevel 1 (
+    echo [ATTENTION] La reconstruction a échoué, tentative avec des options simplifiées...
+    set NO_RUST_INSTALL=1
+    set NODE_OPTIONS=--max-old-space-size=4096
+    call npm run build -- --force
 )
 
 rem Choix du mode de démarrage

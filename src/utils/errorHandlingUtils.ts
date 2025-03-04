@@ -5,11 +5,13 @@
 
 import { toast } from '@/hooks/use-toast';
 import { createRoot } from 'react-dom/client';
+import { isPreviewEnvironment } from './environmentUtils';
 
 /**
  * Creates a user-friendly error message HTML to display when critical errors occur
  */
 export const createErrorDisplay = (error: any): string => {
+  const isPreview = isPreviewEnvironment();
   return `
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; background: linear-gradient(to bottom right, #f0f9ff, #e1e7ff);">
       <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 500px; width: 100%;">
@@ -23,6 +25,7 @@ export const createErrorDisplay = (error: any): string => {
           URL: ${window.location.href}
           <br/>
           Date: ${new Date().toLocaleString()}
+          ${isPreview ? '<br/>Mode: Prévisualisation' : ''}
         </div>
         <div style="text-align: center;">
           <button onclick="window.location.reload()" style="background-color: #4f46e5; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
@@ -92,4 +95,47 @@ export const verifyReactLoaded = () => {
     console.error("Erreur lors de la vérification de React:", error);
     return false;
   }
+};
+
+/**
+ * Attache un gestionnaire d'erreurs global pour récupérer les erreurs non capturées
+ */
+export const setupGlobalErrorHandlers = () => {
+  // Gestionnaire d'erreurs pour les erreurs non capturées
+  window.addEventListener('error', (event) => {
+    console.error('Erreur globale non capturée:', event.error || event.message);
+    
+    // Ne pas traiter les erreurs de ressources comme des erreurs critiques
+    if (event.target && 
+        ['LINK', 'SCRIPT', 'IMG'].includes((event.target as HTMLElement).tagName)) {
+      console.warn(`Ressource non chargée: ${(event.target as HTMLElement).outerHTML}`);
+      return;
+    }
+    
+    // Pour les erreurs critiques, afficher une notification
+    if (!isPreviewEnvironment()) {
+      toast({
+        title: "Erreur détectée",
+        description: "Une erreur s'est produite dans l'application. Certaines fonctionnalités pourraient être affectées.",
+        variant: "destructive",
+      });
+    }
+  }, true);
+  
+  // Gestionnaire pour les rejets de promesses non gérés
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('Promesse rejetée non gérée:', event.reason);
+    
+    // Ne pas afficher de notification en mode prévisualisation
+    if (!isPreviewEnvironment()) {
+      toast({
+        title: "Erreur asynchrone",
+        description: "Une opération en arrière-plan a échoué.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Log d'information
+  console.log("Gestionnaires d'erreurs globaux installés");
 };

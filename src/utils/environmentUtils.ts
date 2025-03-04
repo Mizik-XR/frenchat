@@ -13,63 +13,82 @@ export const isProduction = () => {
   return import.meta.env.PROD || import.meta.env.MODE === 'production';
 };
 
-// Détecter si nous sommes en mode preview (Lovable)
+// Détecter si nous sommes en mode preview (Lovable, Vercel, Netlify, etc.)
 export const isPreviewEnvironment = () => {
-  return window.location.hostname.includes('preview') || 
-         window.location.hostname.includes('lovable') ||
-         window.location.hostname.includes('vercel') ||
-         window.location.hostname.includes('netlify') ||
-         window.location.hostname.includes('gpteng');
+  // Liste des domaines des environnements de prévisualisation connus
+  const previewDomains = [
+    'preview', 'lovable', 'vercel', 'netlify', 'gpteng', 
+    'preview.app', 'staging', 'dev-', 'test-'
+  ];
+  
+  // Vérifier si l'un des domaines de prévisualisation est présent dans l'URL
+  return previewDomains.some(domain => 
+    window.location.hostname.includes(domain) || 
+    window.location.pathname.includes('/projects/')
+  );
 };
 
 // Déterminer le chemin de base pour les ressources statiques
 export const getPublicPath = () => {
-  // En mode preview Lovable, utiliser le chemin relatif
+  // En mode preview Lovable ou autres prévisualisations, utiliser le chemin relatif
   if (isPreviewEnvironment()) {
     return './';
   }
-  // En développement local, utiliser le chemin standard
+  
+  // En développement local ou production, utiliser le chemin standard
   return '/';
 };
 
 /**
  * Construit une URL de redirection complète basée sur l'environnement actuel
- * @param path Le chemin relatif à ajouter à l'URL de base
- * @returns L'URL complète de redirection
  */
 export const getRedirectUrl = (path: string): string => {
   const baseUrl = getBaseUrl();
   // S'assurer qu'il n'y a pas de double slash entre baseUrl et path
   const formattedPath = path.startsWith('/') ? path.substring(1) : path;
+  
+  // Construire l'URL complète
   return `${baseUrl}/${formattedPath}`;
 };
 
-// Obtenez l'URL de base en fonction de l'environnement
+/**
+ * Obtient l'URL de base en fonction de l'environnement
+ * Cette fonction est critique pour le routage correct dans différents environnements
+ */
 export const getBaseUrl = () => {
-  // Si on est en mode preview, utiliser l'origine actuelle
+  // Si on est en mode preview
   if (isPreviewEnvironment()) {
-    // Détection spécifique pour Lovable
-    if (window.location.hostname.includes('lovable')) {
-      // Extraire le chemin de base pour Lovable incluant l'ID du projet
-      const pathMatch = window.location.pathname.match(/\/projects\/([^\/]+)/);
-      if (pathMatch && pathMatch[1]) {
-        return `${window.location.origin}/projects/${pathMatch[1]}`;
+    // Cas spécifique pour Lovable avec extraction de l'ID du projet
+    if (window.location.hostname.includes('lovable') || window.location.hostname.includes('gpteng')) {
+      // Recherche du pattern /projects/{projectId} dans l'URL
+      const projectMatch = window.location.pathname.match(/\/projects\/([^\/]+)/);
+      if (projectMatch && projectMatch[1]) {
+        // Retourner l'URL complète avec l'ID du projet
+        return `${window.location.origin}/projects/${projectMatch[1]}`;
       }
     }
     
-    // Pour les autres environnements de prévisualisation
-    const pathParts = window.location.pathname.split('/');
-    // Conserver uniquement le domaine et le premier segment si présent (projet ID)
-    const basePath = pathParts.length > 1 ? `/${pathParts[1]}` : '';
-    return `${window.location.origin}${basePath}`;
+    // Pour d'autres environnements de prévisualisation (Vercel, Netlify, etc.)
+    // On extrait uniquement les premiers segments du chemin qui sont pertinents
+    const pathSegments = window.location.pathname.split('/').filter(Boolean);
+    
+    // Si nous avons au moins un segment, le considérer comme partie de l'URL de base
+    if (pathSegments.length > 0) {
+      // Pour les chemins de type /demo/something ou /preview/something
+      // Nous voulons conserver le premier segment comme base
+      return `${window.location.origin}/${pathSegments[0]}`;
+    }
+    
+    // Sinon, retourner simplement l'origine
+    return window.location.origin;
   }
   
-  // Si on est en mode développement
+  // En développement local
   if (isDevelopment()) {
     return import.meta.env.VITE_SITE_URL || 'http://localhost:8080';
   }
   
-  // En production, utiliser l'URL configurée ou l'origine actuelle
+  // En production
   return import.meta.env.VITE_SITE_URL || window.location.origin;
 };
 
@@ -79,9 +98,11 @@ export const getApiConfig = () => {
   let apiUrl = import.meta.env.VITE_API_URL;
   
   if (!apiUrl) {
+    // En environnement de prévisualisation, utiliser le chemin relatif /api
     if (isPreviewEnvironment()) {
       apiUrl = `${getBaseUrl()}/api`;
     } else {
+      // Par défaut pour le développement local
       apiUrl = 'http://localhost:8000';
     }
   }
@@ -128,4 +149,21 @@ export const logEnvironmentInfo = () => {
       fullUrl: window.location.href
     });
   }
+};
+
+// Fonction utilitaire pour corriger les chemins des ressources statiques
+export const fixAssetPath = (path: string): string => {
+  if (!path) return path;
+  
+  // Si déjà un chemin relatif ou URL absolue, ne pas modifier
+  if (path.startsWith('./') || path.startsWith('http') || path.startsWith('data:')) {
+    return path;
+  }
+  
+  // Transformer les chemins absolus en chemins relatifs dans les environnements de prévisualisation
+  if (isPreviewEnvironment() && path.startsWith('/')) {
+    return `.${path}`;
+  }
+  
+  return path;
 };

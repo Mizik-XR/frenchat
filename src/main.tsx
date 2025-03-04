@@ -4,16 +4,30 @@ import * as React from 'react'
 import { startApp } from './utils/appInitializer'
 import { renderFallback } from './utils/appInitializer'
 import { handleLoadError } from './utils/errorHandlingUtils'
-import { logEnvironmentInfo } from './utils/environmentUtils'
+import { logEnvironmentInfo, isPreviewEnvironment, getPublicPath } from './utils/environmentUtils'
 
 // Log pour débogage
-console.log("Initialisation de l'application...")
+console.log("Initialisation de l'application...", {
+  env: import.meta.env.MODE,
+  publicPath: getPublicPath(),
+  isPreview: isPreviewEnvironment(),
+  location: window.location.href
+});
 
 // Vérification de la version de React
 console.log("Version de React utilisée:", React.version);
 
 // Journaliser les informations d'environnement
 logEnvironmentInfo();
+
+// Installer un gestionnaire d'erreurs global
+window.addEventListener('error', (event) => {
+  console.error('Erreur globale:', event.error || event.message);
+  // Ne pas bloquer les erreurs de ressources (comme les images manquantes)
+  if (event.target && ['LINK', 'SCRIPT', 'IMG'].includes((event.target as any).tagName)) {
+    console.warn(`Échec de chargement de ressource: ${(event.target as HTMLElement).outerHTML}`);
+  }
+}, true);
 
 // Essayer de démarrer l'application avec timeout de sécurité
 let appStarted = false;
