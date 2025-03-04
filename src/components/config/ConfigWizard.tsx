@@ -90,10 +90,30 @@ export const ConfigWizard = () => {
     navigate(path);
   };
 
+  const handleSkipToChat = () => {
+    navigate("/chat");
+    toast({
+      title: "Configuration reportée",
+      description: "Vous utilisez l'IA par défaut (Mistral/Mixtral en cloud)",
+    });
+  };
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 0:
-        return <WelcomeStep onNext={handleNext} />;
+        return (
+          <>
+            <WelcomeStep onNext={handleNext} />
+            <div className="mt-4 text-right">
+              <Button 
+                variant="ghost" 
+                onClick={handleSkipToChat}
+              >
+                Ignorer et aller directement au chat
+              </Button>
+            </div>
+          </>
+        );
       case 1:
         return (
           <div className="animate-fade-in space-y-8">

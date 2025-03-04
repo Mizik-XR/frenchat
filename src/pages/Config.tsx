@@ -7,11 +7,16 @@ import { AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AIUsageMetrics } from "@/components/config/AIUsageMetrics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 export default function Config() {
   const navigate = useNavigate();
   
   const handleBack = () => {
+    navigate("/chat");
+  };
+  
+  const handleSkipToChat = () => {
     navigate("/chat");
   };
   
@@ -29,6 +34,15 @@ export default function Config() {
           </AlertDescription>
         </Alert>
       )}
+      
+      <div className="flex justify-end mb-4">
+        <Button 
+          variant="outline" 
+          onClick={handleSkipToChat}
+        >
+          Aller au chat sans terminer la configuration
+        </Button>
+      </div>
       
       <Tabs defaultValue="config" className="w-full">
         <TabsList className="mb-4">
