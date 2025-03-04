@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
@@ -18,7 +19,7 @@ export {
 } from '@/utils/googleDriveUtils';
 
 // Also re-export getRedirectUrl for backward compatibility
-export { getRedirectUrl } from '@/utils/environmentUtils';
+export { getRedirectUrl } from '@/utils/environment';
 
 export interface ConnectionData {
   email: string;

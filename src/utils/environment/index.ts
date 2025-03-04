@@ -8,7 +8,8 @@
 export {
   isProduction,
   isDevelopment,
-  isLovableEnvironment
+  isLovableEnvironment,
+  isNetlifyEnvironment
 } from './environmentDetection';
 
 // Exporter les fonctions de gestion d'URL
@@ -16,7 +17,8 @@ export {
   getBaseUrl,
   getRedirectUrl,
   getFormattedUrlParams,
-  getAllUrlParams
+  getAllUrlParams,
+  getNormalizedCloudModeUrl
 } from './urlUtils';
 
 // Exporter les fonctions de détection du mode cloud
@@ -25,3 +27,4 @@ export {
   isClientMode,
   isDebugMode
 } from './cloudModeUtils';
+

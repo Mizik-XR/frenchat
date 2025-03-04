@@ -1,5 +1,5 @@
 
-import { isLovableEnvironment, isNetlifyEnvironment } from '@/utils/environmentUtils';
+import { isLovableEnvironment, isNetlifyEnvironment } from '@/utils/environment';
 
 /**
  * Détecte si le mode cloud est forcé

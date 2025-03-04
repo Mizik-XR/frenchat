@@ -1,7 +1,7 @@
 
 import { supabase, EdgeFunctionResponse } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { getRedirectUrl } from '@/utils/environmentUtils';
+import { getRedirectUrl } from '@/utils/environment';
 import { generateOAuthState, validateOAuthState } from '@/utils/oauthStateManager';
 
 /**

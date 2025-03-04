@@ -28,7 +28,8 @@ export function isNetlifyEnvironment(): boolean {
                             process.env.CONTEXT === 'production' || 
                             process.env.CONTEXT === 'deploy-preview');
   
-  return isNetlifyDomain || hasNetlifyContext || !!window.netlifyIdentity;
+  // Modification: Suppression de la vérification de netlifyIdentity qui n'existe pas dans Window
+  return isNetlifyDomain || hasNetlifyContext;
 }
 
 /**
@@ -87,3 +88,13 @@ export function getEnvironmentInfo() {
     }
   };
 }
+
+// Exporter les fonctions depuis le module environment/urlUtils pour la rétrocompatibilité
+export { 
+  getBaseUrl,
+  getRedirectUrl, 
+  getFormattedUrlParams,
+  getAllUrlParams,
+  getNormalizedCloudModeUrl
+} from './utils/environment/urlUtils';
+
