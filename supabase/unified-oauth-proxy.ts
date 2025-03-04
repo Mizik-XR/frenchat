@@ -2,7 +2,7 @@
 // unified-oauth-proxy.ts - Une fonction unifiée pour gérer l'authentification OAuth et les proxys API sécurisés
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
-// Use a more reliable buffer import path
+import { Buffer } from 'https://deno.land/std@0.192.0/node/buffer.ts';
 import { encode as encodeBase64 } from 'https://deno.land/std@0.192.0/encoding/base64.ts';
 import * as crypto from 'https://deno.land/std@0.192.0/crypto/mod.ts';
 
@@ -29,11 +29,6 @@ if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
 
 if (!OAUTH_ENCRYPTION_KEY || OAUTH_ENCRYPTION_KEY.length < 32) {
   console.error("Erreur de configuration: Clé d'encryption manquante ou invalide (doit faire au moins 32 caractères)");
-}
-
-// Helper function for Base64 encoding (replacement for Buffer)
-function btoa(str: string): string {
-  return encodeBase64(new TextEncoder().encode(str));
 }
 
 // Fonctions de chiffrement/déchiffrement AES-256-CBC
@@ -132,7 +127,7 @@ async function handleGoogleOAuth(req: Request): Promise<Response> {
       console.log("Échange du code d'autorisation contre un token...");
       
       // Préparer les informations pour l'échange du code
-      const basicAuth = btoa(`${GOOGLE_CLIENT_ID}:${GOOGLE_CLIENT_SECRET}`);
+      const basicAuth = Buffer.from(`${GOOGLE_CLIENT_ID}:${GOOGLE_CLIENT_SECRET}`).toString('base64');
       const tokenEndpoint = 'https://oauth2.googleapis.com/token';
       const params = new URLSearchParams({
         code,
@@ -296,7 +291,7 @@ async function handleGoogleOAuth(req: Request): Promise<Response> {
       const refreshToken = await decryptData(tokenData.refresh_token);
       
       // Préparer les données pour le rafraîchissement
-      const basicAuth = btoa(`${GOOGLE_CLIENT_ID}:${GOOGLE_CLIENT_SECRET}`);
+      const basicAuth = Buffer.from(`${GOOGLE_CLIENT_ID}:${GOOGLE_CLIENT_SECRET}`).toString('base64');
       const tokenEndpoint = 'https://oauth2.googleapis.com/token';
       const params = new URLSearchParams({
         refresh_token: refreshToken,
