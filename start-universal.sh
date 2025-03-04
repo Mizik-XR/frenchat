@@ -126,8 +126,9 @@ echo "Choisissez le mode de démarrage :"
 echo "1. Mode développement (npm run dev)"
 echo "2. Mode production locale (bash scripts/unix/start-app-simplified.sh)"
 echo "3. Mode cloud uniquement (MODE_CLOUD=1)"
+echo "4. Nettoyage complet (bash scripts/unix/cleanup.sh)"
 echo ""
-read -p "Votre choix [1-3] (1 par défaut): " choice
+read -p "Votre choix [1-4] (1 par défaut): " choice
 
 case $choice in
     2)
@@ -147,6 +148,16 @@ case $choice in
         else
             echo "[INFO] Démarrage du serveur web simple..."
             npx http-server dist -p 8080 -c-1 --cors
+        fi
+        ;;
+    4)
+        echo "[INFO] Lancement du nettoyage complet..."
+        if [ -f "scripts/unix/cleanup.sh" ]; then
+            bash scripts/unix/cleanup.sh
+        else
+            echo "[ERREUR] Script de nettoyage introuvable"
+            echo "Veuillez créer le script scripts/unix/cleanup.sh"
+            exit 1
         fi
         ;;
     *)

@@ -28,6 +28,10 @@ find . -name "*.log" -type f -print -delete
 echo "[INFO] Recherche des fichiers temporaires..."
 find . -name "*.tmp" -type f -print -delete
 
+echo "[INFO] Recherche des fichiers exécutables non nécessaires..."
+# Trouver les executables mais exclure ceux dans les dossiers système
+find . -type f -executable -not -path "*/node_modules/*" -not -path "*/venv/*" -not -name "*.sh" -not -name "*.py" -print -delete
+
 echo "[INFO] Suppression des caches npm..."
 if [ -d ".npm" ]; then
     echo "   Suppression du dossier .npm"

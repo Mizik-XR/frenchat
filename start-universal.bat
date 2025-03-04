@@ -124,8 +124,9 @@ echo Choisissez le mode de démarrage :
 echo 1. Mode développement (npm run dev)
 echo 2. Mode production locale (start-app.bat)
 echo 3. Mode cloud uniquement (start-cloud-mode.bat)
+echo 4. Nettoyage complet (cleanup.bat)
 echo.
-set /p choice="Votre choix [1-3] (1 par défaut): "
+set /p choice="Votre choix [1-4] (1 par défaut): "
 
 if "%choice%"=="2" (
     echo [INFO] Démarrage en mode production locale...
@@ -133,6 +134,9 @@ if "%choice%"=="2" (
 ) else if "%choice%"=="3" (
     echo [INFO] Démarrage en mode cloud uniquement...
     call start-cloud-mode.bat
+) else if "%choice%"=="4" (
+    echo [INFO] Lancement du nettoyage complet...
+    call cleanup.bat
 ) else (
     echo [INFO] Démarrage en mode développement...
     set VITE_FORCE_REACT_VERSION=18.2.0

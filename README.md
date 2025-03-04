@@ -19,6 +19,18 @@ Frenchat est une application qui vous permet d'interroger vos documents avec l'i
    ```
 3. Si aucun raccourci n'est créé, utilisez `./start-universal.sh` pour démarrer l'application
 
+## Maintenance et Nettoyage
+
+Si votre environnement contient des fichiers temporaires ou que vous rencontrez des problèmes:
+
+### Windows
+1. Exécutez `cleanup.bat` pour nettoyer les fichiers temporaires, ou
+2. Démarrez `start-universal.bat` et choisissez l'option 4 (Nettoyage complet)
+
+### macOS / Linux
+1. Exécutez `bash scripts/unix/cleanup.sh` pour nettoyer les fichiers temporaires, ou
+2. Démarrez `./start-universal.sh` et choisissez l'option 4 (Nettoyage complet)
+
 ## Dépannage Installation
 
 Si l'installation s'interrompt ou si la fenêtre se ferme trop rapidement:

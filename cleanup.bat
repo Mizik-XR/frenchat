@@ -13,9 +13,9 @@ echo Ce script va nettoyer votre environnement de développement
 echo en supprimant les fichiers temporaires et inutiles.
 echo.
 echo Actions qui seront effectuées:
-echo 1. Suppression des fichiers temporaires et de cache
-echo 2. Nettoyage des backups inutiles
-echo 3. Optimisation du dossier node_modules
+echo 1. Suppression des fichiers .exe, .tmp et autres fichiers temporaires
+echo 2. Nettoyage des dossiers de cache
+echo 3. Optimisation du dossier node_modules (option)
 echo 4. Vérification et nettoyage du dossier dist
 echo.
 echo ===================================================
@@ -25,6 +25,16 @@ pause >nul
 
 REM Suppression des fichiers temporaires
 echo [ÉTAPE 1/4] Suppression des fichiers temporaires...
+
+echo [INFO] Recherche et suppression des fichiers .exe non essentiels...
+for /r %%i in (*.exe) do (
+    REM Vérifier si ce n'est pas un exe du système Windows ou nécessaire
+    echo %%i | findstr /i "\\Windows\\ \\System32\\ rustup-init.exe" >nul
+    if !errorlevel! NEQ 0 (
+        echo    Suppression: %%i
+        del "%%i" 2>nul
+    )
+)
 
 echo [INFO] Recherche des fichiers .log...
 for /r %%i in (*.log) do (
@@ -53,6 +63,12 @@ if exist ".cache\" (
 if exist "node_modules\.cache\" (
     echo    Suppression du cache dans node_modules
     rmdir /s /q node_modules\.cache 2>nul
+)
+
+REM Nettoyage des anciens fichiers de rustup si présents
+if exist "%USERPROFILE%\.rustup\tmp" (
+    echo    Suppression du cache rustup
+    rmdir /s /q "%USERPROFILE%\.rustup\tmp" 2>nul
 )
 
 echo [OK] Fichiers temporaires supprimés.
