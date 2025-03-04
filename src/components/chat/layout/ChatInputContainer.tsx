@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -166,7 +165,6 @@ export const ChatInputContainer = ({
     
     setUploadInProgress(true);
     try {
-      // Upload les fichiers vers Google Drive via la fonction Edge
       const { data, error } = await supabase.functions.invoke('upload-to-google-drive', {
         body: { files: currentFiles.map(f => ({ name: f.name, size: f.size, type: f.type })) }
       });
@@ -178,7 +176,6 @@ export const ChatInputContainer = ({
         description: "Vos fichiers ont été ajoutés à votre Google Drive avec succès",
       });
       
-      // Processer les fichiers normalement après l'upload Drive
       await handleProcessFiles(currentFiles);
     } catch (error: any) {
       console.error("Erreur lors de l'upload vers Google Drive:", error);
@@ -288,44 +285,6 @@ export const ChatInputContainer = ({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleGenerateImage('illustration')}
-                  disabled={isLoading || isGeneratingImage}
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p>Générer une image</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleGenerateImage('chart')}
-                  disabled={isLoading || isGeneratingImage}
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p>Générer un graphique</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -334,12 +293,20 @@ export const ChatInputContainer = ({
                       size="icon"
                       disabled={isLoading}
                     >
-                      <Upload className="h-4 w-4" />
+                      <Paperclip className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
+                  <DropdownMenuContent align="start" className="bg-white">
+                    <DropdownMenuItem onClick={() => handleGenerateImage('illustration')}>
+                      <ImageIcon className="h-4 w-4 mr-2" />
+                      <span>Générer une image</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleGenerateImage('chart')}>
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      <span>Générer un graphique</span>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowUploader(!showUploader)}>
-                      <Paperclip className="h-4 w-4 mr-2" />
+                      <Upload className="h-4 w-4 mr-2" />
                       <span>Depuis mon appareil</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleUploadToDrive} disabled={uploadInProgress}>
@@ -350,7 +317,7 @@ export const ChatInputContainer = ({
                 </DropdownMenu>
               </TooltipTrigger>
               <TooltipContent side="top">
-                <p>Ajouter des fichiers</p>
+                <p>Ajouter du contenu</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
