@@ -11,11 +11,18 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
-      // Explicitement définir les options de babel pour éviter les conflits
+      // Configuration explicite de Babel avec les transformations nécessaires
       babel: {
         plugins: [
-          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
-        ]
+          '@babel/plugin-transform-react-jsx',
+          // Ajouter d'autres plugins Babel si nécessaire
+        ],
+        presets: [
+          ['@babel/preset-react', { runtime: 'automatic' }]
+        ],
+        // S'assurer que Babel utilise le cache pour de meilleures performances
+        babelrc: false,
+        configFile: false,
       }
     }),
     mode === 'development' && componentTagger(),
@@ -58,7 +65,7 @@ export default defineConfig(({ mode }) => ({
   },
   // Configuration pour améliorer le comportement du cache
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
+    include: ['react', 'react-dom', 'react-router-dom', '@babel/plugin-transform-react-jsx'],
     force: true, // Forcer l'optimisation des dépendances
   },
   // Configuration de la gestion des assets

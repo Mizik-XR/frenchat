@@ -27,6 +27,17 @@ call npm install --legacy-peer-deps date-fns@2.28.0 react-day-picker@8.10.1 || (
     exit /b 1
 )
 
+REM Installation des dépendances Babel
+echo Installation des dépendances Babel...
+call npm install --legacy-peer-deps ^
+    @babel/core@latest ^
+    @babel/preset-env@latest ^
+    @babel/preset-react@latest ^
+    @babel/plugin-transform-react-jsx@latest || (
+    echo Erreur lors de l'installation des dépendances Babel
+    exit /b 1
+)
+
 REM Installation des React Router explicitement pour éviter les conflits
 echo Installation de React Router...
 call npm install --legacy-peer-deps react-router-dom@6.26.2 || (
