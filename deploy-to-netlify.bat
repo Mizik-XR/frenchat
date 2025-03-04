@@ -77,48 +77,77 @@ set NO_RUST_INSTALL=1
 
 echo [INFO] Construction du projet en cours...
 echo [INFO] Cette étape peut prendre plusieurs minutes...
+
+REM Vérifier si package.json existe
+if not exist "package.json" (
+    echo [ERREUR] Fichier package.json introuvable.
+    echo.
+    echo Vérifiez que vous êtes dans le bon répertoire.
+    echo.
+    pause
+    exit /b 1
+)
+
+REM Vérifier le script de build dans package.json
+findstr "\"build\":" "package.json" >nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERREUR] Script de build non trouvé dans package.json.
+    echo.
+    echo Vérifiez que votre package.json contient une commande de build.
+    echo.
+    pause
+    exit /b 1
+)
+
+REM Tenter la construction avec npm run build
 call npm run build
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERREUR] La construction du projet a échoué.
+    echo [ERREUR] La construction avec npm run build a échoué.
     echo.
-    echo Options de récupération:
-    echo 1. Restaurer la sauvegarde du dossier dist
-    echo 2. Tenter une construction avec des options simplifiées
-    echo 3. Quitter
-    choice /C 123 /N /M "Choisissez une option (1, 2 ou 3): "
-    
-    if %ERRORLEVEL% EQU 1 (
-        echo [INFO] Restauration de la sauvegarde du dossier dist...
-        if exist "dist_backup\" (
-            rmdir /s /q "dist" 2>nul
-            mkdir "dist" 2>nul
-            xcopy /E /I /Y "dist_backup\*" "dist\" >nul
-            echo [OK] Sauvegarde restaurée.
-        ) else (
-            echo [ERREUR] Aucune sauvegarde disponible.
-            echo.
-            echo Appuyez sur une touche pour quitter...
-            pause >nul
-            exit /b 1
-        )
-    ) else if %ERRORLEVEL% EQU 2 (
-        echo [INFO] Tentative de construction avec options simplifiées...
-        set NODE_OPTIONS=--max-old-space-size=4096
-        set NO_RUST_INSTALL=1
-        set VITE_DISABLE_DEV_MODE=1
-        call npm run build -- --force
-        if %ERRORLEVEL% NEQ 0 (
-            echo [ERREUR] La construction a échoué même avec les options simplifiées.
-            echo.
-            echo Appuyez sur une touche pour quitter...
-            pause >nul
-            exit /b 1
-        )
-    ) else (
+    echo Tentative avec npx vite build...
+    call npx vite build
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ERREUR] La construction du projet a échoué.
         echo.
-        echo Appuyez sur une touche pour quitter...
-        pause >nul
-        exit /b 1
+        echo Options de récupération:
+        echo 1. Restaurer la sauvegarde du dossier dist
+        echo 2. Tenter une construction avec des options simplifiées
+        echo 3. Quitter
+        choice /C 123 /N /M "Choisissez une option (1, 2 ou 3): "
+        
+        if %ERRORLEVEL% EQU 1 (
+            echo [INFO] Restauration de la sauvegarde du dossier dist...
+            if exist "dist_backup\" (
+                rmdir /s /q "dist" 2>nul
+                mkdir "dist" 2>nul
+                xcopy /E /I /Y "dist_backup\*" "dist\" >nul
+                echo [OK] Sauvegarde restaurée.
+            ) else (
+                echo [ERREUR] Aucune sauvegarde disponible.
+                echo.
+                echo Appuyez sur une touche pour quitter...
+                pause >nul
+                exit /b 1
+            )
+        ) else if %ERRORLEVEL% EQU 2 (
+            echo [INFO] Tentative de construction avec options simplifiées...
+            set NODE_OPTIONS=--max-old-space-size=4096
+            set NO_RUST_INSTALL=1
+            set VITE_DISABLE_DEV_MODE=1
+            call npx vite build --force
+            if %ERRORLEVEL% NEQ 0 (
+                echo [ERREUR] La construction a échoué même avec les options simplifiées.
+                echo.
+                echo Appuyez sur une touche pour quitter...
+                pause >nul
+                exit /b 1
+            )
+        ) else (
+            echo.
+            echo Appuyez sur une touche pour quitter...
+            pause >nul
+            exit /b 1
+        )
     )
 )
 

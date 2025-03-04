@@ -49,6 +49,22 @@ if exist "node_modules\react\package.json" (
     call npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0
 )
 
+rem Vérification des commandes requises
+echo [INFO] Vérification des commandes requises...
+where npx >nul 2>nul
+if !errorlevel! NEQ 0 (
+    echo [ATTENTION] npx n'est pas disponible. Vérification de npm...
+    where npm >nul 2>nul
+    if !errorlevel! NEQ 0 (
+        echo [ERREUR] npm n'est pas disponible. Veuillez installer Node.js.
+        echo Téléchargez-le depuis https://nodejs.org/
+        pause
+        exit /b 1
+    )
+    echo [INFO] Installation de npx via npm...
+    call npm install -g npx
+)
+
 rem Vérification du fichier _redirects
 echo [INFO] Vérification du fichier _redirects...
 if not exist "public\_redirects" (
@@ -62,10 +78,14 @@ rem Reconstruction forcée pour s'assurer que tout est à jour
 echo [INFO] Reconstruction du projet pour appliquer les modifications...
 call npm run build
 if errorlevel 1 (
-    echo [ATTENTION] La reconstruction a échoué, tentative avec des options simplifiées...
-    set NO_RUST_INSTALL=1
-    set NODE_OPTIONS=--max-old-space-size=4096
-    call npm run build -- --force
+    echo [ATTENTION] La reconstruction avec npm run build a échoué, tentative avec npx...
+    call npx vite build
+    if errorlevel 1 (
+        echo [ATTENTION] La reconstruction a échoué, tentative avec des options simplifiées...
+        set NO_RUST_INSTALL=1
+        set NODE_OPTIONS=--max-old-space-size=4096
+        call npx vite build --force
+    )
 )
 
 rem Choix du mode de démarrage
@@ -85,7 +105,12 @@ if "%choice%"=="2" (
     call start-cloud-mode.bat
 ) else (
     echo [INFO] Démarrage en mode développement...
-    call npm run dev
+    set VITE_FORCE_REACT_VERSION=18.2.0
+    call npx vite
+    if errorlevel 1 (
+        echo [ATTENTION] Démarrage avec npx vite échoué, tentative avec npm run dev...
+        call npm run dev
+    )
 )
 
 exit /b 0

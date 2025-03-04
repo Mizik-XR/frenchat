@@ -68,6 +68,20 @@ else
     npm install --legacy-peer-deps react@18.2.0 react-dom@18.2.0
 fi
 
+# Vérification des commandes requises
+echo "[INFO] Vérification des commandes requises..."
+if ! command -v npx &> /dev/null; then
+    echo "[ATTENTION] npx n'est pas disponible. Vérification de npm..."
+    if ! command -v npm &> /dev/null; then
+        echo "[ERREUR] npm n'est pas disponible. Veuillez installer Node.js."
+        echo "Téléchargez-le depuis https://nodejs.org/"
+        read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+        exit 1
+    fi
+    echo "[INFO] Installation de npx via npm..."
+    npm install -g npx
+fi
+
 # Vérification du fichier _redirects
 echo "[INFO] Vérification du fichier _redirects..."
 if [ ! -f "public/_redirects" ]; then
@@ -81,10 +95,14 @@ fi
 echo "[INFO] Reconstruction du projet pour appliquer les modifications..."
 npm run build
 if [ $? -ne 0 ]; then
-    echo "[ATTENTION] La reconstruction a échoué, tentative avec des options simplifiées..."
-    export NO_RUST_INSTALL=1
-    export NODE_OPTIONS=--max-old-space-size=4096
-    npm run build --force
+    echo "[ATTENTION] La reconstruction avec npm run build a échoué, tentative avec npx..."
+    npx vite build
+    if [ $? -ne 0 ]; then
+        echo "[ATTENTION] La reconstruction a échoué, tentative avec des options simplifiées..."
+        export NO_RUST_INSTALL=1
+        export NODE_OPTIONS=--max-old-space-size=4096
+        npx vite build --force
+    fi
 fi
 
 # Choix du mode de démarrage
@@ -118,7 +136,12 @@ case $choice in
         ;;
     *)
         echo "[INFO] Démarrage en mode développement avec React compatible..."
-        VITE_FORCE_REACT_VERSION=18.2.0 npm run dev
+        export VITE_FORCE_REACT_VERSION=18.2.0
+        npx vite
+        if [ $? -ne 0 ]; then
+            echo "[ATTENTION] Démarrage avec npx vite échoué, tentative avec npm run dev..."
+            npm run dev
+        fi
         ;;
 esac
 

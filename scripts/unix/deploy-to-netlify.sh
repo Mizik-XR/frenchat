@@ -71,50 +71,78 @@ export NO_RUST_INSTALL=1
 
 echo "[INFO] Construction du projet en cours..."
 echo "[INFO] Cette étape peut prendre plusieurs minutes..."
+
+# Vérifier si package.json existe
+if [ ! -f "package.json" ]; then
+    echo "[ERREUR] Fichier package.json introuvable."
+    echo
+    echo "Vérifiez que vous êtes dans le bon répertoire."
+    echo
+    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+    exit 1
+fi
+
+# Vérifier le script de build dans package.json
+if ! grep -q "\"build\":" "package.json"; then
+    echo "[ERREUR] Script de build non trouvé dans package.json."
+    echo
+    echo "Vérifiez que votre package.json contient une commande de build."
+    echo
+    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+    exit 1
+fi
+
+# Tenter la construction avec npm run build
 npm run build
 if [ $? -ne 0 ]; then
-    echo "[ERREUR] La construction du projet a échoué."
+    echo "[ERREUR] La construction avec npm run build a échoué."
     echo
-    echo "Options de récupération:"
-    echo "1. Restaurer la sauvegarde du dossier dist"
-    echo "2. Tenter une construction avec des options simplifiées"
-    echo "3. Quitter"
-    read -p "Choisissez une option (1, 2 ou 3): " choice
-    
-    case $choice in
-        1)
-            echo "[INFO] Restauration de la sauvegarde du dossier dist..."
-            if [ -d "dist_backup" ] && [ "$(ls -A dist_backup 2>/dev/null)" ]; then
-                rm -rf dist 2>/dev/null
-                mkdir -p dist 2>/dev/null
-                cp -r dist_backup/* dist/ 2>/dev/null
-                echo "[OK] Sauvegarde restaurée."
-            else
-                echo "[ERREUR] Aucune sauvegarde disponible."
+    echo "Tentative avec npx vite build..."
+    npx vite build
+    if [ $? -ne 0 ]; then
+        echo "[ERREUR] La construction du projet a échoué."
+        echo
+        echo "Options de récupération:"
+        echo "1. Restaurer la sauvegarde du dossier dist"
+        echo "2. Tenter une construction avec des options simplifiées"
+        echo "3. Quitter"
+        read -p "Choisissez une option (1, 2 ou 3): " choice
+        
+        case $choice in
+            1)
+                echo "[INFO] Restauration de la sauvegarde du dossier dist..."
+                if [ -d "dist_backup" ] && [ "$(ls -A dist_backup 2>/dev/null)" ]; then
+                    rm -rf dist 2>/dev/null
+                    mkdir -p dist 2>/dev/null
+                    cp -r dist_backup/* dist/ 2>/dev/null
+                    echo "[OK] Sauvegarde restaurée."
+                else
+                    echo "[ERREUR] Aucune sauvegarde disponible."
+                    echo
+                    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+                    exit 1
+                fi
+                ;;
+            2)
+                echo "[INFO] Tentative de construction avec options simplifiées..."
+                export NODE_OPTIONS="--max-old-space-size=4096"
+                export NO_RUST_INSTALL=1
+                export VITE_DISABLE_DEV_MODE=1
+                npx vite build --force
+                if [ $? -ne 0 ]; then
+                    echo "[ERREUR] La construction a échoué même avec les options simplifiées."
+                    echo
+                    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+                    exit 1
+                fi
+                ;;
+            *)
                 echo
                 read -p "Appuyez sur Entrée pour quitter..." -n1 -s
                 exit 1
-            fi
-            ;;
-        2)
-            echo "[INFO] Tentative de construction avec options simplifiées..."
-            export NODE_OPTIONS="--max-old-space-size=4096"
-            export NO_RUST_INSTALL=1
-            export VITE_DISABLE_DEV_MODE=1
-            npm run build -- --force
-            if [ $? -ne 0 ]; then
-                echo "[ERREUR] La construction a échoué même avec les options simplifiées."
-                echo
-                read -p "Appuyez sur Entrée pour quitter..." -n1 -s
-                exit 1
-            fi
-            ;;
-        *)
-            echo
-            read -p "Appuyez sur Entrée pour quitter..." -n1 -s
-            exit 1
-            ;;
-    esac
+                ;;
+        esac
+    fi
 fi
 
 # Vérifier le contenu du dossier dist après la construction
