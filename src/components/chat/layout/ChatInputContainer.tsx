@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUploader } from "@/components/config/ImportMethod/FileUploader";
-import { ImageIcon, BarChart3, Upload, Paperclip, Cloud, X } from "lucide-react";
+import { ImageIcon, BarChart3, Upload, Paperclip, Cloud, X, ArrowUp, Search, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ChartGenerator } from "../visualization/ChartGenerator";
@@ -14,6 +14,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 
 interface ChatInputContainerProps {
   input: string;
@@ -45,6 +51,7 @@ export const ChatInputContainer = ({
   const [showChartGenerator, setShowChartGenerator] = useState(false);
   const [uploadInProgress, setUploadInProgress] = useState(false);
   const [currentFiles, setCurrentFiles] = useState<File[]>([]);
+  const [activeModel, setActiveModel] = useState<'mixtral' | 'deepseek' | 'search'>('mixtral');
   const { isConnected: isDriveConnected, reconnectGoogleDrive } = useGoogleDriveStatus();
 
   const handleGenerateImage = async (type: 'illustration' | 'chart') => {
@@ -101,7 +108,6 @@ export const ChatInputContainer = ({
       await onFilesSelected(files);
       setCurrentFiles([]);
       
-      // Notification de succès
       if (files.length === 1) {
         toast({
           title: "Fichier ajouté",
@@ -196,43 +202,74 @@ export const ChatInputContainer = ({
     setCurrentFiles([]);
   };
 
+  const handleModelSelect = (model: 'mixtral' | 'deepseek' | 'search') => {
+    setActiveModel(model);
+    
+    let modelName = "";
+    switch(model) {
+      case 'mixtral':
+        modelName = "Mixtral";
+        break;
+      case 'deepseek':
+        modelName = "DeepSeek";
+        break;
+      case 'search':
+        modelName = "Recherche Internet";
+        break;
+    }
+    
+    toast({
+      title: "Modèle sélectionné",
+      description: `Vous utilisez maintenant ${modelName}`,
+    });
+  };
+
   return (
-    <form onSubmit={onSubmit} className="p-4 border-t flex flex-col gap-4">
-      <div className="flex gap-2">
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Entrez votre message..."
-          className="flex-1 min-h-[80px]"
-        />
-      </div>
-      
-      {currentFiles.length > 0 && (
-        <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-md">
-          {currentFiles.map((file, index) => (
-            <div key={index} className="flex items-center gap-1 px-2 py-1 bg-white border rounded-md text-xs">
-              <Paperclip className="h-3 w-3 text-gray-500" />
-              <span className="truncate max-w-[150px]">{file.name}</span>
-              <button 
-                type="button" 
-                onClick={() => {
-                  setCurrentFiles(currentFiles.filter((_, i) => i !== index));
-                }}
-                className="ml-1 text-gray-500 hover:text-gray-700"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
+    <form onSubmit={onSubmit} className="p-4 border-t flex flex-col gap-4 relative">
+      <div className="flex flex-col gap-2">
+        {currentFiles.length > 0 && (
+          <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-md">
+            {currentFiles.map((file, index) => (
+              <div key={index} className="flex items-center gap-1 px-2 py-1 bg-white border rounded-md text-xs">
+                <Paperclip className="h-3 w-3 text-gray-500" />
+                <span className="truncate max-w-[150px]">{file.name}</span>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setCurrentFiles(currentFiles.filter((_, i) => i !== index));
+                  }}
+                  className="ml-1 text-gray-500 hover:text-gray-700"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            <button 
+              type="button" 
+              onClick={clearFiles}
+              className="text-xs text-red-500 hover:text-red-700 ml-auto"
+            >
+              Tout effacer
+            </button>
+          </div>
+        )}
+        
+        <div className="flex relative">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Entrez votre message..."
+            className="flex-1 min-h-[80px] pr-12"
+          />
           <button 
-            type="button" 
-            onClick={clearFiles}
-            className="text-xs text-red-500 hover:text-red-700 ml-auto"
+            type="submit"
+            disabled={isLoading || (!input.trim() && currentFiles.length === 0)}
+            className="absolute right-2 bottom-2 p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:bg-gray-400"
           >
-            Tout effacer
+            <ArrowUp className="h-5 w-5" />
           </button>
         </div>
-      )}
+      </div>
       
       {showChartGenerator && csvData && (
         <ChartGenerator 
@@ -241,75 +278,155 @@ export const ChatInputContainer = ({
         />
       )}
       
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => handleGenerateImage('illustration')}
-            disabled={isLoading || isGeneratingImage}
-            title="Générer une image"
-          >
-            <ImageIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => handleGenerateImage('chart')}
-            disabled={isLoading || isGeneratingImage}
-            title="Générer un graphique"
-          >
-            <BarChart3 className="h-4 w-4" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                disabled={isLoading}
-                title="Ajouter des fichiers"
-              >
-                <Upload className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => setShowUploader(!showUploader)}>
-                <Paperclip className="h-4 w-4 mr-2" />
-                <span>Depuis mon appareil</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleUploadToDrive} disabled={uploadInProgress}>
-                <Cloud className="h-4 w-4 mr-2" />
-                <span>Vers Google Drive</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2 items-center">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleGenerateImage('illustration')}
+                  disabled={isLoading || isGeneratingImage}
+                >
+                  <ImageIcon className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Générer une image</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleGenerateImage('chart')}
+                  disabled={isLoading || isGeneratingImage}
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Générer un graphique</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      disabled={isLoading}
+                    >
+                      <Upload className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem onClick={() => setShowUploader(!showUploader)}>
+                      <Paperclip className="h-4 w-4 mr-2" />
+                      <span>Depuis mon appareil</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleUploadToDrive} disabled={uploadInProgress}>
+                      <Cloud className="h-4 w-4 mr-2" />
+                      <span>Vers Google Drive</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Ajouter des fichiers</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
-        <div className="flex gap-2">
-          {currentFiles.length > 0 && (
-            <Button 
-              type="button"
-              variant="outline"
-              onClick={handleProcessFiles.bind(null, currentFiles)}
-              disabled={uploadInProgress || currentFiles.length === 0}
-              className="gap-2"
-            >
-              <Paperclip className="h-4 w-4" />
-              <span className="hidden sm:inline">Joindre {currentFiles.length > 1 ? `${currentFiles.length} fichiers` : 'le fichier'}</span>
-              <span className="sm:hidden">Joindre</span>
-            </Button>
-          )}
-          <Button 
-            type="submit"
-            disabled={isLoading || (!input.trim() && currentFiles.length === 0)}
-          >
-            Envoyer
-          </Button>
+        <div className="flex gap-2 p-1 bg-gray-100 rounded-md">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant={activeModel === 'mixtral' ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => handleModelSelect('mixtral')}
+                  className={`transition-colors ${activeModel === 'mixtral' ? 'bg-blue-100' : ''}`}
+                >
+                  <Sparkles className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline text-xs">Mixtral</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Modèle Mixtral (HuggingFace)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant={activeModel === 'deepseek' ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => handleModelSelect('deepseek')}
+                  className={`transition-colors ${activeModel === 'deepseek' ? 'bg-purple-100' : ''}`}
+                >
+                  <Sparkles className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline text-xs">DeepSeek</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Modèle DeepSeek</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant={activeModel === 'search' ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => handleModelSelect('search')}
+                  className={`transition-colors ${activeModel === 'search' ? 'bg-green-100' : ''}`}
+                >
+                  <Search className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline text-xs">Recherche</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Recherche Internet</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
+
+      {currentFiles.length > 0 && (
+        <Button 
+          type="button"
+          variant="outline"
+          onClick={handleProcessFiles.bind(null, currentFiles)}
+          disabled={uploadInProgress || currentFiles.length === 0}
+          className="gap-2 mt-2"
+        >
+          <Paperclip className="h-4 w-4" />
+          <span className="hidden sm:inline">Joindre {currentFiles.length > 1 ? `${currentFiles.length} fichiers` : 'le fichier'}</span>
+          <span className="sm:hidden">Joindre</span>
+        </Button>
+      )}
 
       {showUploader && (
         <FileUploader
@@ -322,3 +439,4 @@ export const ChatInputContainer = ({
     </form>
   );
 };
+

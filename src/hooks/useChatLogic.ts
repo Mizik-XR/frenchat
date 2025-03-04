@@ -86,7 +86,6 @@ export function useChatLogic(selectedConversationId: string | null) {
       }
 
       // Ajout d'information sur le type de service IA utilisé dans les métadonnées
-      // Correction du type pour s'assurer qu'il est toujours "local" ou "cloud"
       const aiServiceInfo = {
         type: serviceType === 'hybrid' ? 'cloud' : (serviceType as 'local' | 'cloud'),
         endpoint: serviceType === 'local' ? localAIUrl : 'cloud'
@@ -104,6 +103,20 @@ export function useChatLogic(selectedConversationId: string | null) {
               top_p: 0.95,
             }
           });
+          break;
+
+        case 'deepseek':
+          const { data: deepseekData, error: deepseekError } = await supabase.functions.invoke('text-generation', {
+            body: { 
+              model: "deepseek-ai/deepseek-coder-33b-instruct", 
+              prompt: `${getSystemPrompt(webUIConfig.analysisMode)}\n\n${prompt}`,
+              max_tokens: webUIConfig.maxTokens,
+              temperature: webUIConfig.temperature
+            }
+          });
+          
+          if (deepseekError) throw deepseekError;
+          response = [{ generated_text: deepseekData.text }];
           break;
 
         case 'internet-search':
