@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { getBaseUrl } from '@/utils/environmentUtils';
 
-const SUPABASE_URL = "https://dbdueopvtlanxgumenpu.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZHVlb3B2dGxhbnhndW1lbnB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NzQ0NTIsImV4cCI6MjA1NTU1MDQ1Mn0.lPPbNJANU8Zc7i5OB9_atgDZ84Yp5SBjXCiIqjA79Tk";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://dbdueopvtlanxgumenpu.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZHVlb3B2dGxhbnhndW1lbnB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NzQ0NTIsImV4cCI6MjA1NTU1MDQ1Mn0.lPPbNJANU8Zc7i5OB9_atgDZ84Yp5SBjXCiIqjA79Tk";
 
 // Export SITE_URL for OAuth redirects
 export const SITE_URL = getBaseUrl();
@@ -16,6 +16,7 @@ export const preloadSession = async () => {
     console.log("Tentative de préchargement de la session Supabase...");
     console.log("URL Supabase:", SUPABASE_URL);
     console.log("Clé Supabase définie:", !!SUPABASE_PUBLISHABLE_KEY);
+    console.log("Source des paramètres:", import.meta.env.VITE_SUPABASE_URL ? "Variables d'environnement" : "Valeurs par défaut");
     
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       throw new Error("Configuration Supabase incomplète");

@@ -64,12 +64,13 @@ const handleLoadError = (error: any) => {
 const startApp = async () => {
   try {
     // Vérification des paramètres Supabase
-    const supabaseUrl = "https://dbdueopvtlanxgumenpu.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZHVlb3B2dGxhbnhndW1lbnB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NzQ0NTIsImV4cCI6MjA1NTU1MDQ1Mn0.lPPbNJANU8Zc7i5OB9_atgDZ84Yp5SBjXCiIqjA79Tk";
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://dbdueopvtlanxgumenpu.supabase.co";
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZHVlb3B2dGxhbnhndW1lbnB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NzQ0NTIsImV4cCI6MjA1NTU1MDQ1Mn0.lPPbNJANU8Zc7i5OB9_atgDZ84Yp5SBjXCiIqjA79Tk";
     
     console.log("Vérification des paramètres Supabase:", {
       url: supabaseUrl ? "Définie" : "Non définie",
-      key: supabaseKey ? "Définie" : "Non définie"
+      key: supabaseKey ? "Définie" : "Non définie",
+      fromEnv: import.meta.env.VITE_SUPABASE_URL ? "Variables d'environnement" : "Valeurs par défaut"
     });
     
     if (!supabaseUrl || !supabaseKey) {
