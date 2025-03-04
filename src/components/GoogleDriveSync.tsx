@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { CloudSync } from 'lucide-react';
+import { CloudUpload } from 'lucide-react';
 
 export const GoogleDriveSync = () => {
   const [syncing, setSyncing] = useState(false);
@@ -39,7 +39,7 @@ export const GoogleDriveSync = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-          <CloudSync className="mr-2 h-5 w-5" />
+          <CloudUpload className="mr-2 h-5 w-5" />
           Synchronisation Google Drive
         </CardTitle>
         <CardDescription>

@@ -12,7 +12,7 @@ import GoogleDrive from './pages/GoogleDrive';
 import Indexing from './pages/Indexing';
 import DatabaseView from './pages/DatabaseView';
 import Debug from './pages/Debug';
-import { ToastProvider } from './hooks/use-toast';
+import { Toaster } from './components/ui/toaster';
 import { ThemeProvider } from './components/ThemeProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from './contexts/SettingsContext';
@@ -41,17 +41,16 @@ const AppRouter = () => {
 function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
-      <ToastProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <SettingsProvider>
-              <Router>
-                <AppRouter />
-              </Router>
-            </SettingsProvider>
-          </AuthProvider>
-        </QueryClientProvider>
-      </ToastProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <SettingsProvider>
+            <Router>
+              <AppRouter />
+              <Toaster />
+            </Router>
+          </SettingsProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }
