@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Plus, Search, Archive, ChevronDown, ChevronRight, Folder, X } from "lucide-react";
 import { Conversation } from "@/types/chat";
@@ -26,11 +25,14 @@ interface ConversationListProps {
   onUpdateConversation: (params: { id: string; title?: string; folderId?: string | null; isPinned?: boolean; isArchived?: boolean }) => void;
   onExportToDoc?: (id: string) => void;
   onDelete?: (id: string) => void;
+  
+  selectedConversationId?: string;
 }
 
 export const ConversationList = ({
   conversations,
   selectedId,
+  selectedConversationId,
   onSelect,
   onNew,
   onUpdateConversation,
@@ -45,7 +47,6 @@ export const ConversationList = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Initialiser tous les dossiers comme ouverts par défaut
     const initialState: Record<string, boolean> = {};
     folders.forEach(folder => {
       initialState[folder.id] = true;
@@ -84,7 +85,6 @@ export const ConversationList = ({
     setIsSearchFocused(false);
   };
 
-  // Focus sur la recherche avec raccourci clavier (Ctrl+F)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
@@ -97,7 +97,6 @@ export const ConversationList = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Rendu des icônes de toggle pour les sections
   const renderCollapsibleIcon = (isOpen: boolean) => {
     return isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />;
   };

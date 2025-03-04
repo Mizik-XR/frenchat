@@ -2,8 +2,7 @@
 import { ConversationList } from "../ConversationList";
 import { ChatContainer } from "./ChatContainer";
 import { PriorityTopicsPanel } from "../PriorityTopicsPanel";
-import { AIProvider, WebUIConfig, AnalysisMode, Message } from "@/types/chat";
-import { type Conversation } from "@/types/chat";
+import { AIProvider, WebUIConfig, AnalysisMode, Message, type Conversation } from "@/types/chat";
 
 interface MainLayoutProps {
   conversations: Conversation[];
@@ -77,9 +76,9 @@ export const MainLayout = ({
       <div className="w-72 border-r bg-gray-50 dark:bg-gray-900">
         <ConversationList
           conversations={conversations}
-          selectedConversationId={selectedConversationId}
-          onConversationSelect={onConversationSelect}
-          onNewConversation={onNewConversation}
+          selectedId={selectedConversationId || undefined}
+          onSelect={onConversationSelect}
+          onNew={onNewConversation}
           onUpdateConversation={onUpdateConversation}
         />
       </div>
