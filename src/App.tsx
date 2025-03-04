@@ -110,11 +110,18 @@ function App() {
         });
     };
     
-    // Vérifier et traiter les erreurs de chargement des scripts
+    // Fixed: Vérifier et traiter les erreurs de chargement des scripts
     document.addEventListener('error', function(e) {
       const target = e.target as HTMLElement;
       if (target.tagName === 'SCRIPT' || target.tagName === 'LINK' || target.tagName === 'IMG') {
-        console.error(`Erreur de chargement de ressource: ${(target as HTMLImageElement | HTMLScriptElement | HTMLLinkElement).src || (target as HTMLLinkElement).href}`);
+        // Fixed type issue: Check the element type before accessing src/href properties
+        const resourceUrl = target instanceof HTMLImageElement || target instanceof HTMLScriptElement 
+          ? target.src 
+          : target instanceof HTMLLinkElement 
+            ? target.href 
+            : 'unknown resource';
+        
+        console.error(`Erreur de chargement de ressource: ${resourceUrl}`);
       }
     }, true);
 
