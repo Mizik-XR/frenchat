@@ -101,11 +101,13 @@ const startApp = async () => {
     const root = createRoot(rootElement);
     
     root.render(
-      <ErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <App />
-        </QueryClientProvider>
-      </ErrorBoundary>
+      <React.StrictMode>
+        <ErrorBoundary>
+          <QueryClientProvider client={queryClient}>
+            <App />
+          </QueryClientProvider>
+        </ErrorBoundary>
+      </React.StrictMode>
     );
     
     console.log("Application React montée avec succès");
