@@ -17,7 +17,13 @@ export function useModelSelection() {
       case 'mixtral':
         modelName = "Mixtral";
         modelType = "huggingface";
+        
+        toast({
+          title: "Modèle Mixtral activé",
+          description: "Le modèle Mixtral via Hugging Face est maintenant utilisé",
+        });
         break;
+        
       case 'deepseek':
         modelName = "DeepThink";
         modelType = "deepseek";
@@ -27,28 +33,40 @@ export function useModelSelection() {
           await fetch('https://api-inference.huggingface.co/models/deepseek-ai/deepseek-coder-33b-instruct', {
             method: 'HEAD'
           });
+          
+          toast({
+            title: "Service DeepThink",
+            description: "Mode DeepThink activé (analyse avancée)",
+          });
         } catch (error) {
+          console.log("DeepThink service check error:", error);
+          // Still show toast even if service check fails
           toast({
             title: "Service DeepThink",
             description: "Mode DeepThink activé (analyse avancée)",
           });
         }
         break;
+        
       case 'search':
         modelName = "Recherche Internet";
         modelType = "internet-search";
         
         // Test web search functionality
         try {
-          await supabase.functions.invoke('web-search', {
+          const { data, error } = await supabase.functions.invoke('web-search', {
             body: { query: 'test' }
           });
+          
+          if (error) throw error;
           
           toast({
             title: "Service de recherche",
             description: "Recherche Internet activée",
           });
         } catch (error) {
+          console.log("Web search service check error:", error);
+          // Fallback toast
           toast({
             title: "Service de recherche",
             description: "Le service de recherche est prêt",
@@ -56,11 +74,6 @@ export function useModelSelection() {
         }
         break;
     }
-    
-    toast({
-      title: "Modèle sélectionné",
-      description: `Vous utilisez maintenant ${modelName}`,
-    });
 
     return modelType as AIProvider;
   };

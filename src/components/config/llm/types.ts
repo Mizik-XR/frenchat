@@ -49,11 +49,51 @@ export const LOCAL_MODELS: AIModel[] = [
 
 export const CLOUD_MODELS: AIModel[] = [
   {
-    id: "huggingface/mistral",
-    name: "Mistral AI",
+    id: "huggingface/mixtral",
+    name: "Mixtral-8x7B",
     description: "Modèle performant via Hugging Face (recommandé)",
     requiresKey: false,
-    modelId: "mistralai/Mistral-7B-Instruct-v0.1",
+    modelId: "mistralai/Mixtral-8x7B-Instruct-v0.1",
+    apiType: "huggingface"
+  },
+  {
+    id: "huggingface/phi-3",
+    name: "Phi-3 (Microsoft)",
+    description: "Modèle léger et efficace de Microsoft",
+    requiresKey: false,
+    modelId: "microsoft/phi-3-mini-4k-instruct",
+    apiType: "huggingface"
+  },
+  {
+    id: "huggingface/llama-3",
+    name: "Llama-3 (Meta)",
+    description: "Modèle polyvalent pour diverses tâches",
+    requiresKey: false,
+    modelId: "meta-llama/Llama-3-8B-Instruct",
+    apiType: "huggingface"
+  },
+  {
+    id: "huggingface/bert",
+    name: "BERT",
+    description: "Excellent pour l'analyse de texte",
+    requiresKey: false,
+    modelId: "bert-base-uncased",
+    apiType: "huggingface"
+  },
+  {
+    id: "huggingface/t5",
+    name: "T5",
+    description: "Efficace pour la génération et le résumé",
+    requiresKey: false,
+    modelId: "google/t5-base",
+    apiType: "huggingface"
+  },
+  {
+    id: "huggingface/falcon",
+    name: "Falcon",
+    description: "Alternative légère pour du texte",
+    requiresKey: false,
+    modelId: "tiiuae/falcon-7b-instruct",
     apiType: "huggingface"
   },
   {
@@ -69,27 +109,27 @@ export const CLOUD_MODELS: AIModel[] = [
   },
   {
     id: "openai/gpt4",
-    name: "GPT-4 (OpenAI)",
-    description: "Modèle avancé OpenAI (optionnel)",
+    name: "GPT-4o mini",
+    description: "Modèle rapide et économique d'OpenAI",
     requiresKey: true,
     docsUrl: "https://platform.openai.com/api-keys",
     apiType: "openai",
+    modelId: "gpt-4o-mini",
     configFields: {
       apiKey: true,
-      modelName: true,
       temperature: true
     }
   },
   {
-    id: "openai/gpt35",
-    name: "GPT-3.5 Turbo",
-    description: "Version rapide et économique de GPT",
+    id: "openai/gpt4o",
+    name: "GPT-4o",
+    description: "Modèle avancé d'OpenAI",
     requiresKey: true,
     docsUrl: "https://platform.openai.com/api-keys",
     apiType: "openai",
+    modelId: "gpt-4o",
     configFields: {
       apiKey: true,
-      modelName: true,
       temperature: true
     }
   },

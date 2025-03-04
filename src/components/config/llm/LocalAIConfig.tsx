@@ -1,179 +1,177 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardDescription, CardTitle } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 import { LLMProviderType } from "@/types/config";
-import { useHuggingFace } from "@/hooks/useHuggingFace";
-import { PathSelectionDialog } from "./components/PathSelectionDialog";
-import { CompanionDownloadDialog } from "./components/CompanionDownloadDialog";
-import { ServiceStatusAlert } from "./components/ServiceStatusAlert";
-import { ProviderSelector } from "./components/ProviderSelector";
-import { ConfigurationTabs } from "./components/ConfigurationTabs";
+import { ModelPathSelector } from "./components/ModelPathSelector";
 import { ModelPathWizard } from "./components/wizard/ModelPathWizard";
+import { LOCAL_MODELS, CLOUD_MODELS } from "./types";
+import { ModelSelector } from "./ModelSelector";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CloudIcon, ServerIcon } from "lucide-react";
 
-export interface LocalAIConfigProps {
-  modelPath?: string;
-  onModelPathChange?: (path: string) => void;
-  provider?: LLMProviderType;
-  onProviderChange?: (provider: LLMProviderType) => void;
-  onSave?: () => void;
+interface LocalAIConfigProps {
+  modelPath: string;
+  provider: LLMProviderType;
+  onProviderChange: (provider: LLMProviderType) => void;
+  onModelPathChange: (path: string) => void;
+  onSave: () => void;
+  defaultMode?: "local" | "cloud";
 }
 
-export function LocalAIConfig({
-  modelPath = "",
-  onModelPathChange = () => {},
-  provider = "huggingface",
-  onProviderChange = () => {},
-  onSave
-}: LocalAIConfigProps) {
-  const [pathDialogOpen, setPathDialogOpen] = useState(false);
-  const [companionDialogOpen, setCompanionDialogOpen] = useState(false);
-  const [wizardDialogOpen, setWizardDialogOpen] = useState(false);
-  const defaultModelPath = `${process.env.APPDATA || process.env.HOME}/filechat/models`;
-  const [localModelPath, setLocalModelPath] = useState(modelPath || defaultModelPath);
-  const [localProvider, setLocalProvider] = useState<LLMProviderType>(provider);
-  const [serviceAvailable, setServiceAvailable] = useState<boolean | null>(null);
-  const { checkLocalService, setLocalProviderConfig, localAIUrl } = useHuggingFace();
-  
-  // Default model for companion download
-  const [selectedModelId, setSelectedModelId] = useState<string>("TheBloke/Mistral-7B-Instruct-v0.2-GGUF");
-  const [selectedModelName, setSelectedModelName] = useState<string>("Mistral 7B Instruct");
+export const LocalAIConfig = ({
+  modelPath,
+  provider,
+  onProviderChange,
+  onModelPathChange,
+  onSave,
+  defaultMode = "local"
+}: LocalAIConfigProps) => {
+  const [mode, setMode] = useState<"local" | "cloud">(defaultMode);
+  const [localSelectedModel, setLocalSelectedModel] = useState<string>("mistral-local");
+  const [cloudSelectedModel, setCloudSelectedModel] = useState<string>("huggingface/mixtral");
+  const [showPathWizard, setShowPathWizard] = useState(false);
 
+  // Synchroniser le provider avec les sélections de modèle
   useEffect(() => {
-    // Vérifier si le service local est disponible au chargement
-    const checkService = async () => {
-      const serviceResult = await checkLocalService(localAIUrl || '');
-      setServiceAvailable(serviceResult.available);
-    };
-    
-    checkService();
-
-    // Vérifier le service toutes les 30 secondes
-    const interval = setInterval(checkService, 30000);
-    return () => clearInterval(interval);
-  }, [checkLocalService, localAIUrl]);
-
-  const handleLocalPathChange = (path: string) => {
-    setLocalModelPath(path);
-    onModelPathChange(path);
-  };
-
-  const handleLocalProviderChange = (newProvider: LLMProviderType) => {
-    setLocalProvider(newProvider);
-    onProviderChange(newProvider);
-    setLocalProviderConfig(newProvider);
-    
-    toast({
-      title: `Fournisseur local changé pour ${newProvider}`,
-      description: "L'IA utilisera ce fournisseur pour les modèles locaux"
-    });
-  };
-
-  const handlePathConfirm = () => {
-    setPathDialogOpen(false);
-    toast({
-      title: "Chemin d'installation mis à jour",
-      description: "Les modèles seront installés dans ce dossier"
-    });
-    
-    if (onSave) {
-      onSave();
+    if (mode === "local") {
+      // Extraire le provider à partir de l'ID du modèle local
+      const modelId = localSelectedModel;
+      let newProvider: LLMProviderType = "mistral"; // Par défaut
+      
+      if (modelId.includes("mistral")) {
+        newProvider = "mistral";
+      } else if (modelId.includes("deepseek")) {
+        newProvider = "deepseek";
+      } else if (modelId.includes("qwen")) {
+        newProvider = "qwen";
+      } else if (modelId.includes("ollama")) {
+        newProvider = "ollama";
+      } else {
+        newProvider = "local";
+      }
+      
+      if (newProvider !== provider) {
+        onProviderChange(newProvider);
+      }
+    } else {
+      // Mode cloud
+      const modelId = cloudSelectedModel;
+      let newProvider: LLMProviderType = "huggingface"; // Par défaut
+      
+      if (modelId.includes("openai")) {
+        newProvider = "openai";
+      } else if (modelId.includes("anthropic")) {
+        newProvider = "anthropic";
+      } else if (modelId.includes("perplexity")) {
+        newProvider = "perplexity";
+      } else {
+        newProvider = "huggingface";
+      }
+      
+      if (newProvider !== provider) {
+        onProviderChange(newProvider);
+      }
     }
+  }, [mode, localSelectedModel, cloudSelectedModel]);
+
+  const handleSave = () => {
+    onSave();
   };
 
-  const handleDownloadCompanion = () => {
-    setCompanionDialogOpen(true);
+  const handleModeChange = (newMode: "local" | "cloud") => {
+    setMode(newMode);
   };
 
-  const handleOpenWizard = () => {
-    setWizardDialogOpen(true);
+  const handleLocalModelSelect = (modelId: string) => {
+    setLocalSelectedModel(modelId);
   };
 
-  const handleCloseWizard = () => {
-    setWizardDialogOpen(false);
-  };
-
-  const handleWizardPathSelected = (path: string) => {
-    handleLocalPathChange(path);
-    if (onSave) {
-      onSave();
-    }
-    toast({
-      title: "Chemin d'installation mis à jour",
-      description: "Les modèles seront installés dans ce dossier"
-    });
-  };
-
-  const handleDownloadSuccess = () => {
-    toast({
-      title: "Téléchargement terminé",
-      description: "Le modèle a été téléchargé avec succès et est prêt à être utilisé"
-    });
+  const handleCloudModelSelect = (modelId: string) => {
+    setCloudSelectedModel(modelId);
   };
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Configuration de l'IA locale</CardTitle>
-          <CardDescription>
-            Utilisez des modèles d'IA en local pour plus de confidentialité et de rapidité
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4">
-            <ServiceStatusAlert serviceAvailable={serviceAvailable} />
+    <div className="space-y-6">
+      <Tabs 
+        defaultValue={mode} 
+        value={mode}
+        onValueChange={(value) => handleModeChange(value as "local" | "cloud")}
+        className="w-full mb-4"
+      >
+        <TabsList className="grid grid-cols-2 w-full max-w-md">
+          <TabsTrigger value="local" className="flex items-center gap-2">
+            <ServerIcon className="h-4 w-4" />
+            Local
+          </TabsTrigger>
+          <TabsTrigger value="cloud" className="flex items-center gap-2">
+            <CloudIcon className="h-4 w-4" />
+            Cloud
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
-            <ProviderSelector 
-              localProvider={localProvider}
-              onProviderChange={handleLocalProviderChange}
-            />
-
-            <ConfigurationTabs
-              localModelPath={localModelPath}
-              defaultModelPath={defaultModelPath}
-              onPathChange={handleLocalPathChange}
-              onPathSelect={() => setPathDialogOpen(true)}
-              onDownloadCompanion={handleDownloadCompanion}
-              onOpenWizard={handleOpenWizard}
-              localAIUrl={localAIUrl}
-            />
-          </div>
-          
-          {onSave && (
-            <div className="flex justify-end mt-4">
-              <Button onClick={onSave}>
-                Enregistrer la configuration
-              </Button>
+      <div className="space-y-6">
+        {mode === "local" ? (
+          <>
+            <div className="space-y-4">
+              <ModelSelector
+                models={LOCAL_MODELS}
+                selectedModel={localSelectedModel}
+                onModelSelect={handleLocalModelSelect}
+                onModelAdd={(model) => {}}
+                label="Sélectionner un modèle local"
+                type="local"
+              />
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">
+                  Chemin du modèle local
+                </label>
+                <div className="flex gap-2">
+                  <ModelPathSelector
+                    path={modelPath}
+                    onPathChange={onModelPathChange}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowPathWizard(true)}
+                  >
+                    Assistant
+                  </Button>
+                </div>
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </>
+        ) : (
+          <ModelSelector
+            models={CLOUD_MODELS}
+            selectedModel={cloudSelectedModel}
+            onModelSelect={handleCloudModelSelect}
+            onModelAdd={(model) => {}}
+            label="Sélectionner un service cloud"
+            type="cloud"
+          />
+        )}
 
-      <PathSelectionDialog
-        open={pathDialogOpen}
-        onOpenChange={setPathDialogOpen}
-        modelPath={localModelPath}
-        defaultModelPath={defaultModelPath}
-        onPathChange={handleLocalPathChange}
-        onConfirm={handlePathConfirm}
-      />
+        <Button
+          type="button"
+          onClick={handleSave}
+          className="w-full"
+        >
+          Enregistrer la configuration
+        </Button>
+      </div>
 
-      <CompanionDownloadDialog
-        open={companionDialogOpen}
-        onOpenChange={setCompanionDialogOpen}
-        modelId={selectedModelId}
-        modelName={selectedModelName}
-        onSuccess={handleDownloadSuccess}
-      />
-
-      <ModelPathWizard 
-        isOpen={wizardDialogOpen}
-        onClose={handleCloseWizard}
-        onPathSelected={handleWizardPathSelected}
-        defaultPath={localModelPath || defaultModelPath}
-      />
+      {showPathWizard && (
+        <ModelPathWizard
+          isOpen={showPathWizard}
+          onClose={() => setShowPathWizard(false)}
+          onPathSelected={onModelPathChange}
+          defaultPath={modelPath}
+        />
+      )}
     </div>
   );
-}
+};
