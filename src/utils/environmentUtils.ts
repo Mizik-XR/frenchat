@@ -48,7 +48,16 @@ export const getRedirectUrl = (path: string): string => {
 export const getBaseUrl = () => {
   // Si on est en mode preview, utiliser l'origine actuelle
   if (isPreviewEnvironment()) {
-    // Extraire le chemin de base pour Lovable
+    // Détection spécifique pour Lovable
+    if (window.location.hostname.includes('lovable')) {
+      // Extraire le chemin de base pour Lovable incluant l'ID du projet
+      const pathMatch = window.location.pathname.match(/\/projects\/([^\/]+)/);
+      if (pathMatch && pathMatch[1]) {
+        return `${window.location.origin}/projects/${pathMatch[1]}`;
+      }
+    }
+    
+    // Pour les autres environnements de prévisualisation
     const pathParts = window.location.pathname.split('/');
     // Conserver uniquement le domaine et le premier segment si présent (projet ID)
     const basePath = pathParts.length > 1 ? `/${pathParts[1]}` : '';
