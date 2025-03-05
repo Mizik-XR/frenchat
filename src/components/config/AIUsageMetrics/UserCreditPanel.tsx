@@ -47,7 +47,7 @@ export const UserCreditPanel: React.FC = () => {
         )}
         
         {creditUsage.hasLowCredit && !creditUsage.isOutOfCredit && (
-          <Alert variant="warning" className="mb-4 bg-amber-50 border-amber-200">
+          <Alert variant="default" className="mb-4 bg-amber-50 border-amber-200">
             <AlertCircle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-700">
               Votre crédit est presque épuisé. Pensez à recharger votre compte.

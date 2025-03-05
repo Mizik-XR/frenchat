@@ -89,7 +89,7 @@ export function useUserCreditUsage() {
         toast({
           title: "Crédit IA faible",
           description: `Vous avez $${remainingCredit.toFixed(2)} de crédit restant. Pensez à recharger votre compte.`,
-          variant: "warning",
+          variant: "default",
         });
       } else if (isOutOfCredit) {
         toast({
