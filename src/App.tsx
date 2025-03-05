@@ -29,6 +29,7 @@ const AppRouter = () => {
       <Route path="/auth" element={<Auth />} />
       <Route path="/config" element={<Config />} />
       <Route path="/config/advanced" element={<AdvancedConfig />} />
+      <Route path="/advanced" element={<AdvancedConfig />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/document/:id" element={<DocumentView />} />
       <Route path="/google-drive" element={<GoogleDrive />} />
