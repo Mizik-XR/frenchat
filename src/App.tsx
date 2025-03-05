@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
 import Chat from './pages/Chat';
 import DocumentView from './pages/DocumentView';
@@ -45,15 +45,13 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
         <QueryClientProvider client={queryClient}>
-          <Router>
-            <AuthProvider>
-              <SettingsProvider>
-                <ReactErrorMonitor />
-                <AppRouter />
-                <Toaster />
-              </SettingsProvider>
-            </AuthProvider>
-          </Router>
+          <AuthProvider>
+            <SettingsProvider>
+              <ReactErrorMonitor />
+              <AppRouter />
+              <Toaster />
+            </SettingsProvider>
+          </AuthProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </ErrorBoundary>
