@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { ChatHeader } from "../ChatHeader";
 import { MessageList } from "../MessageList";
 import { ChatInputContainer } from "./ChatInputContainer";
-import { SettingsPanel } from "../SettingsPanel";
+import { SettingsPanel } from "../settings/SettingsPanel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Message, WebUIConfig, AIProvider, AnalysisMode } from "@/types/chat";
