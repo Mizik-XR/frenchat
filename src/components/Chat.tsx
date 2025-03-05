@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AIProvider, WebUIConfig, AnalysisMode, Message } from "@/types/chat";
 import { useChatMessages } from '@/hooks/useChatMessages';
 import { useConversations } from '@/hooks/useConversations';
@@ -16,11 +16,16 @@ export const Chat = () => {
   const [showPriorityTopics, setShowPriorityTopics] = useState(false);
   const [showUploader, setShowUploader] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-  const [modelSource, setModelSource] = useState<'cloud' | 'local'>('cloud');
+  const [modelSource, setModelSource] = useState<'cloud' | 'local'>(
+    localStorage.getItem('aiServiceType') === 'cloud' ? 'cloud' : 'local'
+  );
+  const [operationMode, setOperationMode] = useState<'auto' | 'manual'>(
+    localStorage.getItem('aiServiceType') === 'hybrid' ? 'auto' : 'manual'
+  );
 
   const [webUIConfig, setWebUIConfig] = useState<WebUIConfig>({
-    mode: 'auto',
-    model: 'huggingface',
+    mode: operationMode === 'auto' ? 'auto' : 'manual',
+    model: modelSource === 'cloud' ? 'huggingface' : 'mistral',
     maxTokens: 2000,
     temperature: 0.7,
     streamResponse: true,
@@ -31,7 +36,22 @@ export const Chat = () => {
   const { config: llmConfig, status: llmStatus } = useServiceConfiguration('llm');
   const { messages, clearMessages } = useChatMessages(selectedConversationId);
   const { conversations, createNewConversation, updateConversation } = useConversations();
-  const { isLoading, processMessage, handleReplyToMessage, replyToMessage, clearReplyToMessage } = useChatLogic(selectedConversationId);
+  const { isLoading, processMessage, handleReplyToMessage, replyToMessage, clearReplyToMessage, serviceType } = useChatLogic(selectedConversationId);
+
+  // Update the webUIConfig when operation mode changes
+  useEffect(() => {
+    setWebUIConfig(prev => ({
+      ...prev,
+      mode: operationMode === 'auto' ? 'auto' : 'manual'
+    }));
+  }, [operationMode]);
+
+  // Update localStorage when modelSource changes
+  useEffect(() => {
+    if (operationMode !== 'auto') {
+      localStorage.setItem('aiServiceType', modelSource);
+    }
+  }, [modelSource, operationMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,10 +160,33 @@ export const Chat = () => {
     const defaultModel = source === 'cloud' ? 'huggingface' : 'mistral';
     setWebUIConfig(prev => ({ ...prev, model: defaultModel as AIProvider }));
     
+    // Don't update localStorage if in auto mode
+    if (operationMode !== 'auto') {
+      localStorage.setItem('aiServiceType', source);
+    }
+    
     toast({
       title: "Mode modifié",
       description: `Mode ${source === 'cloud' ? 'Cloud' : 'Local'} activé`,
     });
+  };
+
+  const handleModeChange = (mode: 'auto' | 'manual') => {
+    setOperationMode(mode);
+    
+    if (mode === 'auto') {
+      localStorage.setItem('aiServiceType', 'hybrid');
+      toast({
+        title: "Mode automatique activé",
+        description: "L'IA alternera intelligemment entre modèles locaux et cloud selon vos requêtes",
+      });
+    } else {
+      localStorage.setItem('aiServiceType', modelSource);
+      toast({
+        title: "Mode manuel activé",
+        description: `Vous utilisez uniquement le mode ${modelSource === 'cloud' ? 'Cloud' : 'Local'}`,
+      });
+    }
   };
 
   // Adapt the updateConversation function to match the expected signature in MainLayout
@@ -175,7 +218,7 @@ export const Chat = () => {
       onConversationSelect={setSelectedConversationId}
       onNewConversation={handleNewConversation}
       onUpdateConversation={handleUpdateConversation}
-      onModeChange={(mode) => setWebUIConfig(prev => ({ ...prev, mode }))}
+      onModeChange={handleModeChange}
       onWebUIConfigChange={(config) => setWebUIConfig(prev => ({ ...prev, ...config }))}
       onProviderChange={handleProviderChange}
       onReplyToMessage={handleReplyToMessage}

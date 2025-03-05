@@ -18,6 +18,9 @@ export async function executeAIRequest(
 ): Promise<TextGenerationResponse[]> {
   console.log(`Exécution de la requête IA avec stratégie: ${executionStrategy}`);
   
+  // Sauvegarde du service utilisé pour référence future (utile pour le mode automatique)
+  localStorage.setItem('lastServiceUsed', executionStrategy);
+  
   // Si la stratégie est locale mais qu'un téléchargement est en cours, notifier l'utilisateur
   if (executionStrategy === 'local' && modelDownloadStatus.status === 'downloading') {
     const modelName = modelDownloadStatus.model || 'IA';
@@ -30,6 +33,7 @@ export async function executeAIRequest(
     
     // Basculer temporairement vers le cloud
     executionStrategy = 'cloud';
+    localStorage.setItem('lastServiceUsed', 'cloud');
   }
 
   try {
@@ -115,6 +119,9 @@ export async function executeAIRequest(
         description: "Basculement automatique vers le service cloud. Vérifiez votre configuration locale.",
         variant: "default",
       });
+      
+      // Mise à jour du service utilisé
+      localStorage.setItem('lastServiceUsed', 'cloud');
       
       // Appel récursif avec stratégie cloud
       return executeAIRequest(options, 'cloud', localAIUrl, localProvider, modelDownloadStatus, cloudProvider);

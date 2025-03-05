@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
@@ -23,6 +24,11 @@ export function useChatLogic(selectedConversationId: string | null) {
       toast({
         title: "Service IA local détecté",
         description: "Utilisation du modèle IA local pour de meilleures performances",
+      });
+    } else if (serviceType === 'hybrid') {
+      toast({
+        title: "Mode automatique activé",
+        description: "L'IA alternera intelligemment entre modèles locaux et cloud selon vos requêtes",
       });
     }
   }, [serviceType, localAIUrl]);
@@ -88,8 +94,9 @@ export function useChatLogic(selectedConversationId: string | null) {
       }
 
       // Ajout d'information sur le type de service IA utilisé dans les métadonnées
+      // Mode "hybrid" sera déterminé automatiquement au moment de la requête
       const aiServiceInfo = {
-        type: serviceType === 'hybrid' ? 'cloud' : (serviceType as 'local' | 'cloud'),
+        type: serviceType,
         endpoint: serviceType === 'local' ? localAIUrl : 'cloud'
       };
 
@@ -144,6 +151,10 @@ export function useChatLogic(selectedConversationId: string | null) {
           }, user?.id);
       }
 
+      // Mise à jour du type de service potentiellement choisi automatiquement
+      // On récupère le service effectivement utilisé (peut avoir été automatiquement basculé)
+      const serviceUsed = localStorage.getItem('lastServiceUsed') || serviceType;
+
       await chatService.sendAssistantMessage(
         response[0].generated_text,
         selectedConversationId,
@@ -152,7 +163,10 @@ export function useChatLogic(selectedConversationId: string | null) {
         { 
           provider: webUIConfig.model,
           analysisMode: webUIConfig.analysisMode,
-          aiService: aiServiceInfo
+          aiService: {
+            ...aiServiceInfo,
+            actualServiceUsed: serviceUsed
+          }
         }
       );
 

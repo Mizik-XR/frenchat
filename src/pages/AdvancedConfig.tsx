@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +10,8 @@ import {
   ServerIcon, 
   FolderIcon, 
   BookOpenIcon, 
-  InfoIcon 
+  InfoIcon,
+  ZapIcon 
 } from "lucide-react";
 import { CloudAIConfig } from "@/components/config/CloudAIConfig";
 import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
@@ -20,11 +21,19 @@ import { toast } from "@/hooks/use-toast";
 import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function AdvancedConfig() {
   const navigate = useNavigate();
   const [modelPath, setModelPath] = useState("");
   const [provider, setProvider] = useState<LLMProviderType>("huggingface");
+  const [aiMode, setAIMode] = useState<"auto" | "local" | "cloud">(
+    localStorage.getItem("aiServiceType") === "hybrid" ? "auto" : 
+    localStorage.getItem("aiServiceType") as any || "local"
+  );
+  
   const { 
     isConnected: isGoogleDriveConnected, 
     isChecking: isGoogleDriveChecking,
@@ -33,10 +42,19 @@ export default function AdvancedConfig() {
     disconnectGoogleDrive
   } = useGoogleDriveStatus();
 
+  useEffect(() => {
+    // Update localStorage when mode changes
+    if (aiMode === "auto") {
+      localStorage.setItem("aiServiceType", "hybrid");
+    } else {
+      localStorage.setItem("aiServiceType", aiMode);
+    }
+  }, [aiMode]);
+
   const handleLLMSave = () => {
     toast({
       title: "Configuration IA sauvegardée",
-      description: "Vos paramètres d'IA locale ont été enregistrés avec succès.",
+      description: "Vos paramètres d'IA ont été enregistrés avec succès.",
     });
     // Ici, vous pourriez ajouter la logique pour sauvegarder dans localStorage ou votre base de données
   };
@@ -108,6 +126,69 @@ export default function AdvancedConfig() {
                   </div>
                 </div>
                 
+                <Card className="bg-gray-50 border-gray-200 shadow-sm mb-6">
+                  <CardHeader className="pb-2 bg-gray-100 rounded-t-lg">
+                    <CardTitle className="flex items-center text-lg">
+                      <ZapIcon className="h-5 w-5 mr-2 text-amber-500" />
+                      Mode d'exécution IA
+                    </CardTitle>
+                    <CardDescription>
+                      Choisissez comment votre IA doit fonctionner pour équilibrer performance et coût
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <RadioGroup 
+                      value={aiMode} 
+                      onValueChange={(value) => setAIMode(value as "auto" | "local" | "cloud")}
+                      className="flex flex-col space-y-4"
+                    >
+                      <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
+                        <RadioGroupItem value="auto" id="auto" className="flex-shrink-0" />
+                        <div className="ml-2 flex-1">
+                          <Label htmlFor="auto" className="text-base font-medium cursor-pointer">Mode Automatique</Label>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Alterne intelligemment entre modèles locaux et cloud selon la complexité de la requête.
+                            Les requêtes simples utilisent des modèles locaux, les plus complexes sont dirigées vers le cloud.
+                          </p>
+                          {aiMode === 'auto' && (
+                            <div className="mt-3 px-3 py-2 bg-blue-50 text-blue-700 text-sm rounded border border-blue-100">
+                              <p className="font-medium mb-1">Logique automatique active :</p>
+                              <ul className="list-disc list-inside text-xs space-y-1">
+                                <li>Requêtes courtes → modèles locaux</li>
+                                <li>Requêtes complexes → modèles cloud</li>
+                                <li>Génération de documents → modèles cloud</li>
+                                <li>Conversations simples → modèles locaux</li>
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
+                        <RadioGroupItem value="local" id="local" />
+                        <div className="ml-2 flex-1">
+                          <Label htmlFor="local" className="text-base font-medium cursor-pointer">Mode Local uniquement</Label>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Utilise exclusivement des modèles locaux ou open source. 
+                            Gratuit mais peut être limité pour les tâches complexes.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2 p-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
+                        <RadioGroupItem value="cloud" id="cloud" />
+                        <div className="ml-2 flex-1">
+                          <Label htmlFor="cloud" className="text-base font-medium cursor-pointer">Mode Cloud uniquement</Label>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Utilise exclusivement des services cloud comme OpenAI ou Hugging Face.
+                            Plus puissant mais peut entraîner des coûts.
+                          </p>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </CardContent>
+                </Card>
+                
                 <LocalAIConfig 
                   modelPath={modelPath}
                   onModelPathChange={setModelPath}
@@ -128,8 +209,7 @@ export default function AdvancedConfig() {
                       <h3 className="font-medium text-blue-800 mb-1">Services Cloud</h3>
                       <p className="text-sm text-blue-700 leading-relaxed">
                         Ces services sont fournis par des entreprises commerciales et nécessitent généralement 
-                        des clés API pour un accès complet. Ils incluent les IA propriétaires (OpenAI, Claude, etc.) 
-                        et les services d'intégration comme Microsoft Teams.
+                        des clés API pour un accès complet. Ils incluent les IA propriétaires (OpenAI, Claude, etc.).
                       </p>
                     </div>
                   </div>
