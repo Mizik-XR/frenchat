@@ -22,6 +22,7 @@ const Indexing = lazy(() => import('./pages/Indexing'));
 const DatabaseView = lazy(() => import('./pages/DatabaseView'));
 const Debug = lazy(() => import('./pages/Debug'));
 const OllamaSetup = lazy(() => import('./pages/OllamaSetup'));
+const Index = lazy(() => import('./pages/Index'));
 
 // Créer une nouvelle instance QueryClient avec configuration de retry
 const queryClient = new QueryClient({
@@ -38,10 +39,14 @@ const AppRouter = () => {
   return (
     <Suspense fallback={<LoadingScreen message="Chargement de la page..." />}>
       <Routes>
-        {/* Définir explicitement la racine comme Home sans redirection */}
-        <Route path="/" element={<Home />} />
+        {/* Route principale - maintenant rediriger vers Index explicitement */}
+        <Route path="/" element={<Index />} />
+        
+        {/* Garder les routes alternatives pour l'accueil */}
         <Route path="/home" element={<Home />} />
-        <Route path="/index" element={<Home />} />
+        <Route path="/index" element={<Index />} />
+        
+        {/* Autres routes standard */}
         <Route path="/auth" element={<Auth />} />
         <Route path="/config" element={<Config />} />
         <Route path="/config/advanced" element={<AdvancedConfig />} />
@@ -53,10 +58,11 @@ const AppRouter = () => {
         <Route path="/database" element={<DatabaseView />} />
         <Route path="/debug" element={<Debug />} />
         <Route path="/ollama-setup" element={<OllamaSetup />} />
+        
         {/* Nouvelle route pour /ai qui redirige vers la page de configuration IA */}
         <Route path="/ai" element={<Navigate to="/config" replace />} />
-        {/* Route de secours pour l'accueil si d'autres routes sont utilisées */}
-        {/* Capture les routes inconnues */}
+        
+        {/* Route de secours pour les chemins inconnus */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
@@ -64,6 +70,14 @@ const AppRouter = () => {
 };
 
 function App() {
+  // Vérification que nous sommes dans un navigateur avant le rendu complet
+  const isClient = typeof window !== 'undefined';
+  
+  // Si nous ne sommes pas dans un navigateur, renvoyer un contenu minimal
+  if (!isClient) {
+    return <div>Chargement de l'application...</div>;
+  }
+
   return (
     <ErrorBoundary>
       {/* L'ordre des providers est important */}

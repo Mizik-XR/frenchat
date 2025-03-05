@@ -3,6 +3,7 @@ import { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LogoImage } from "@/components/common/LogoImage";
+import { LoadingScreen } from "@/components/auth/LoadingScreen";
 
 interface Props {
   children: ReactNode;
@@ -13,28 +14,69 @@ interface State {
   hasError: boolean;
   error?: Error;
   errorInfo?: ErrorInfo;
+  isCritical: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { 
+      hasError: false,
+      isCritical: false
+    };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    // Déterminer si l'erreur est critique (liée au rendu React)
+    const errorMessage = error.message || '';
+    const isCritical = 
+      errorMessage.includes('unstable_scheduleCallback') || 
+      errorMessage.includes('useLayoutEffect') ||
+      errorMessage.includes('React.createRoot');
+    
+    return { 
+      hasError: true, 
+      error,
+      isCritical
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error("Erreur non gérée dans l'application:", error, errorInfo);
-    this.setState({ errorInfo });
     
-    // On pourrait envoyer ces erreurs à un service de monitoring
-    // sendErrorToMonitoringService(error, errorInfo);
+    // Mettre à jour l'état avec les informations d'erreur
+    this.setState({ 
+      errorInfo,
+      isCritical: this.state.isCritical || 
+        error.message.includes('unstable_scheduleCallback') ||
+        error.message.includes('useLayoutEffect')
+    });
+    
+    // Enregistrer l'erreur pour diagnostic
+    localStorage.setItem('last_error', JSON.stringify({
+      message: error.message,
+      stack: error.stack,
+      time: new Date().toISOString(),
+      url: window.location.href
+    }));
   }
 
   render() {
     if (this.state.hasError) {
+      // Si c'est une erreur critique de rendu React, utiliser un écran de chargement spécial
+      if (this.state.isCritical) {
+        return (
+          <LoadingScreen
+            message="Erreur critique de rendu React"
+            showRetry={true}
+            onRetry={() => {
+              localStorage.setItem('app_loading_issue', 'true');
+              window.location.href = '/?forceCloud=true&mode=cloud&client=true';
+            }}
+          />
+        );
+      }
+      
       // Si un fallback personnalisé est fourni, l'utiliser
       if (this.props.fallback) {
         return this.props.fallback;
@@ -74,7 +116,12 @@ export class ErrorBoundary extends Component<Props, State> {
               
               <Button
                 variant="ghost"
-                onClick={() => window.location.href = "/"}
+                onClick={() => {
+                  // Réinitialiser le stockage local pour éviter une boucle d'erreurs
+                  localStorage.removeItem('app_loading_issue');
+                  localStorage.removeItem('last_route');
+                  window.location.href = "/";
+                }}
                 className="w-full"
               >
                 Retour à l'accueil

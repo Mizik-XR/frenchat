@@ -3,7 +3,7 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title Assistant de démarrage FileChat
+title Assistant de démarrage Frenchat
 
 REM Configuration de l'interface graphique (meilleure présentation)
 mode con cols=100 lines=30

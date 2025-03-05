@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Info, Home, Settings } from "lucide-react";
+import { RefreshCw, Info, Home, Settings, AlertTriangle } from "lucide-react";
 import { LogoImage } from "@/components/common/LogoImage";
-import { Link } from "react-router-dom";
 
 interface LoadingScreenProps {
   message?: string;
@@ -20,6 +19,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   const [loadingTime, setLoadingTime] = useState(0);
   const [isPreviewEnvironment, setIsPreviewEnvironment] = useState(false);
   const [hasLayoutEffect, setHasLayoutEffect] = useState(false);
+  const [criticalErrors, setCriticalErrors] = useState<string[]>([]);
   
   useEffect(() => {
     // Détecter l'environnement de prévisualisation
@@ -37,25 +37,40 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
     // Vérifier si nous avons l'erreur useLayoutEffect dans la console
     const originalError = console.error;
     console.error = (...args) => {
-      if (args[0] && typeof args[0] === 'string' && args[0].includes('useLayoutEffect')) {
-        setHasLayoutEffect(true);
+      if (args[0] && typeof args[0] === 'string') {
+        if (args[0].includes('useLayoutEffect')) {
+          setHasLayoutEffect(true);
+          setCriticalErrors(prev => [...prev, 'useLayoutEffect error']);
+        } else if (args[0].includes('Cannot read properties of undefined')) {
+          setCriticalErrors(prev => [...prev, 'Propriété undefined: ' + args[0]]);
+        }
       }
       originalError.apply(console, args);
     };
+    
+    // Stocker l'information que nous avons rencontré un problème de chargement
+    if (loadingTime > 5) {
+      localStorage.setItem('app_loading_issue', 'true');
+    }
     
     return () => {
       clearInterval(timer);
       console.error = originalError;
     };
-  }, []);
+  }, [loadingTime]);
   
   // Afficher un bouton de relance après 10 secondes de chargement
-  const shouldShowRetry = showRetry || loadingTime > 10 || hasLayoutEffect;
+  const shouldShowRetry = showRetry || loadingTime > 10 || hasLayoutEffect || criticalErrors.length > 0;
   
   const handleRetry = () => {
     if (onRetry) {
       onRetry();
     } else {
+      // Réinitialisation du cache de route
+      localStorage.removeItem('app_loading_issue');
+      localStorage.removeItem('last_route');
+      
+      // Rechargement de la page
       window.location.href = window.location.pathname.includes('auth') 
         ? '/' 
         : window.location.pathname;
@@ -63,7 +78,17 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   };
 
   const navigateHome = () => {
-    window.location.href = '/';
+    // Réinitialisation forcée
+    localStorage.removeItem('app_loading_issue');
+    localStorage.removeItem('last_route');
+    window.location.href = '/?forceCloud=true&mode=cloud&client=true';
+  };
+  
+  const clearLocalStorage = () => {
+    // Nettoyage complet en cas de problème sévère
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = '/?reset=true';
   };
   
   return (
@@ -77,6 +102,20 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         <p className="text-gray-600 text-sm text-center mb-4">
           {loadingTime > 5 ? "Le chargement prend plus de temps que prévu..." : "Initialisation de l'application..."}
         </p>
+        
+        {criticalErrors.length > 0 && (
+          <div className="mb-4 p-3 bg-red-50 rounded-md w-full">
+            <div className="flex items-center gap-2 text-red-700 mb-1">
+              <AlertTriangle className="h-5 w-5" />
+              <p className="font-medium">Erreurs critiques détectées</p>
+            </div>
+            <ul className="text-sm text-red-600 list-disc pl-5">
+              {criticalErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         
         {hasLayoutEffect && (
           <div className="mb-4 p-3 bg-amber-50 rounded-md w-full text-sm">
@@ -103,7 +142,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         )}
         
         {shouldShowRetry && (
-          <div className="flex flex-col items-center mt-2 space-y-2">
+          <div className="flex flex-col items-center mt-2 space-y-2 w-full">
             <Button 
               onClick={handleRetry}
               variant="outline"
@@ -119,8 +158,19 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
               className="flex items-center gap-2 w-full"
             >
               <Home className="h-4 w-4" />
-              Aller à l'accueil
+              Mode de secours (Cloud)
             </Button>
+            
+            {(loadingTime > 15 || criticalErrors.length > 0) && (
+              <Button 
+                onClick={clearLocalStorage}
+                variant="destructive"
+                className="flex items-center gap-2 w-full"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                Réinitialisation complète
+              </Button>
+            )}
             
             <Button
               variant="link"
@@ -142,6 +192,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             <p>Environnement de prévisualisation: {isPreviewEnvironment ? "Oui" : "Non"}</p>
             <p>Problème useLayoutEffect détecté: {hasLayoutEffect ? "Oui" : "Non"}</p>
             <p>Route actuelle: {window.location.pathname}</p>
+            <p>Erreurs critiques: {criticalErrors.length}</p>
           </div>
         )}
       </div>

@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import { initializeLovable } from './utils/lovable/editingUtils';
+import { showInitialLoadingMessage, initializeAppWithErrorRecovery } from './utils/startup/loadingUtils';
 
 // Vérifier si le code s'exécute côté client
 const isClient = typeof window !== 'undefined';
@@ -15,50 +16,73 @@ if (import.meta.env.MODE !== 'production') {
   initializeLovable();
 }
 
-// Solution pour le problème de useLayoutEffect côté serveur
+// Solution pour éviter les problèmes de rendu
 if (isClient) {
-  // Importez le composant LoadingScreen pour l'afficher pendant le chargement
-  import('./components/auth/LoadingScreen').then(({ LoadingScreen }) => {
-    const rootElement = document.getElementById('root');
+  const rootElement = document.getElementById('root');
+  
+  if (rootElement) {
+    // Afficher un écran de chargement initial
+    showInitialLoadingMessage();
     
-    if (rootElement) {
-      // Afficher un écran de chargement initial
-      const root = ReactDOM.createRoot(rootElement);
-      root.render(<LoadingScreen message="Chargement de l'application..." />);
-      
-      // Suppression de l'écran de chargement statique HTML si présent
-      const loadingScreen = document.getElementById('loading-screen');
-      if (loadingScreen) {
-        loadingScreen.style.display = 'none';
+    // Fonction pour rendre l'application avec gestion d'erreurs
+    const renderApp = () => {
+      try {
+        // Importer le composant LoadingScreen de manière asynchrone pour éviter les erreurs
+        import('./components/auth/LoadingScreen').then(({ LoadingScreen }) => {
+          const root = ReactDOM.createRoot(rootElement);
+          
+          // Afficher d'abord un écran de chargement
+          root.render(<LoadingScreen message="Initialisation de l'application..." />);
+          
+          // Suppression de l'écran de chargement statique HTML si présent
+          const loadingScreen = document.getElementById('loading-screen');
+          if (loadingScreen) {
+            loadingScreen.style.display = 'none';
+          }
+          
+          // Charger l'application complète après un court délai
+          setTimeout(() => {
+            try {
+              root.render(
+                <React.StrictMode>
+                  <BrowserRouter>
+                    <App />
+                  </BrowserRouter>
+                </React.StrictMode>
+              );
+              console.log("Application chargée avec succès");
+            } catch (error) {
+              console.error("Erreur lors du rendu de l'application:", error);
+              root.render(
+                <LoadingScreen 
+                  message="Erreur lors du chargement de l'application" 
+                  showRetry={true} 
+                />
+              );
+            }
+          }, 300); // Délai légèrement plus long pour éviter les problèmes de useLayoutEffect
+        }).catch(error => {
+          console.error("Erreur critique lors du chargement:", error);
+          document.body.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 20px;">
+              <h1 style="color: #e11d48; margin-bottom: 1rem;">Erreur critique</h1>
+              <p>Impossible de charger l'application. Essayez de rafraîchir la page.</p>
+              <button onclick="window.location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background-color: #4f46e5; color: white; border: none; border-radius: 0.25rem; cursor: pointer;">
+                Rafraîchir
+              </button>
+            </div>
+          `;
+        });
+      } catch (error) {
+        console.error("Erreur fatale lors de l'initialisation:", error);
       }
-      
-      // Charger l'application après un court délai pour éviter les problèmes de useLayoutEffect
-      setTimeout(() => {
-        try {
-          root.render(
-            <React.StrictMode>
-              <BrowserRouter>
-                <App />
-              </BrowserRouter>
-            </React.StrictMode>
-          );
-          console.log("Application chargée avec succès");
-        } catch (error) {
-          console.error("Erreur lors du rendu de l'application:", error);
-          root.render(
-            <LoadingScreen 
-              message="Erreur de chargement" 
-              showRetry={true} 
-            />
-          );
-        }
-      }, 100);
-    } else {
-      console.error("Élément racine 'root' non trouvé dans le DOM");
-    }
-  }).catch(error => {
-    console.error("Erreur lors du chargement du composant LoadingScreen:", error);
-  });
+    };
+    
+    // Initialiser l'application avec récupération d'erreur
+    renderApp();
+  } else {
+    console.error("Élément racine 'root' non trouvé dans le DOM");
+  }
 } else {
   console.log("Environnement non-client détecté, rendu reporté");
 }

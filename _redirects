@@ -2,7 +2,7 @@
 # Redirection pour toutes les routes vers index.html (SPA)
 /* /index.html 200
 
-# Assurer que / et /home sont accessibles directement
+# Assurer que / et /home et /index sont accessibles directement
 / /index.html 200 
 /home /index.html 200
 /index /index.html 200
@@ -13,6 +13,13 @@
 /?client=true /index.html?client=true 200
 /?hideDebug=true /index.html?hideDebug=true 200
 
+# Pages principales avec fallback
+/auth /index.html 200
+/config /index.html 200
+/chat /index.html 200
+/google-drive /index.html 200
+/document/* /index.html 200
+
 # Combinaisons fréquentes de paramètres
 /?client=true&hideDebug=true /index.html?client=true&hideDebug=true 200
 /?client=true&forceCloud=true /index.html?client=true&forceCloud=true 200
@@ -22,7 +29,6 @@
 
 # Préservation des paramètres pour l'authentification
 /auth/* /index.html 200
-/home /index.html 200
 
 # Redirection des API vers les fonctions Netlify
 /api/* /.netlify/functions/:splat 200
