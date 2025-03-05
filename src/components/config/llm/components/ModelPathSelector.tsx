@@ -13,7 +13,7 @@ interface ModelPathSelectorProps {
   onPathSelect?: () => void;
   onDownloadCompanion?: () => void;
   onOpenWizard?: () => void;
-  className?: string; // Add className prop to the interface
+  className?: string;
 }
 
 export function ModelPathSelector({ 
@@ -44,42 +44,17 @@ export function ModelPathSelector({
 
   return (
     <div className={`space-y-6 ${className || ''}`}>
-      {isOllamaAvailable === true && (
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <h4 className="text-sm font-medium text-green-800 flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Ollama détecté!
-          </h4>
-          <p className="text-sm text-gray-600 mt-1">
-            Ollama est installé et fonctionne sur votre machine. C'est la méthode recommandée pour utiliser l'IA locale.
-          </p>
-          <Button
-            variant="outline" 
-            size="sm"
-            className="mt-2"
-            onClick={() => {
-              localStorage.setItem('localProvider', 'ollama');
-              localStorage.setItem('localAIUrl', 'http://localhost:11434');
-              localStorage.setItem('aiServiceType', 'local');
-              alert("Configuration avec Ollama terminée! L'application utilisera maintenant Ollama pour l'IA locale.");
-            }}
-          >
-            Configurer automatiquement
-          </Button>
-        </div>
-      )}
-    
-      <div className="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+      <div className="space-y-4 bg-white rounded-lg border border-gray-200 p-4">
         <div className="flex items-center justify-between">
           <Label className="block text-sm font-medium text-gray-700 flex items-center">
-            Dossier d'installation des modèles
+            Chemin du modèle
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
                   <HelpCircle className="h-4 w-4 ml-1 text-gray-400" />
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">
+                <TooltipContent className="bg-white p-2 z-50 shadow-lg border border-gray-200">
+                  <p className="max-w-xs text-sm">
                     Les modèles d'IA seront téléchargés et installés dans ce dossier
                     lors de la première utilisation.
                   </p>
@@ -87,16 +62,6 @@ export function ModelPathSelector({
               </Tooltip>
             </TooltipProvider>
           </Label>
-          
-          <Button
-            variant="secondary"
-            size="sm"
-            className="flex items-center gap-1"
-            onClick={onDownloadCompanion}
-          >
-            <Download className="h-3.5 w-3.5" />
-            Télécharger IA Locale
-          </Button>
         </div>
         
         <div className="flex gap-2">
@@ -107,12 +72,12 @@ export function ModelPathSelector({
             className="flex-1 bg-white"
           />
           <Button
-            variant="default"
+            variant="outline"
             onClick={onOpenWizard}
-            className="gap-2"
+            className="gap-2 whitespace-nowrap"
           >
             <Folder className="h-4 w-4" />
-            Assistant d'installation
+            Parcourir
           </Button>
         </div>
         
