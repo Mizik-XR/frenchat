@@ -146,20 +146,6 @@ export default function AdvancedConfig() {
                     <CloudAIConfig />
                   </CardContent>
                 </Card>
-                
-                <Separator className="my-6" />
-                
-                <Card className="border-gray-200 shadow-sm bg-white">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-medium">Microsoft Teams</CardTitle>
-                    <CardDescription>
-                      Connectez votre compte Microsoft Teams pour indexer vos documents et conversations
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <MicrosoftTeamsConfig />
-                  </CardContent>
-                </Card>
               </div>
             </TabsContent>
             
@@ -255,6 +241,18 @@ export default function AdvancedConfig() {
                         </Button>
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white shadow-sm border-gray-200 mb-6">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-medium">Microsoft Teams</CardTitle>
+                    <CardDescription>
+                      Connectez et indexez vos documents et conversations Microsoft Teams
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <MicrosoftTeamsConfig />
                   </CardContent>
                 </Card>
 
