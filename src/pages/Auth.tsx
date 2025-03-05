@@ -56,6 +56,7 @@ export default function Auth() {
     return <AuthLoadingScreen />;
   }
 
+  // Si l'utilisateur est authentifié, le rediriger vers la page demandée ou l'accueil
   if (session) {
     console.log("User is authenticated, redirecting to:", redirectTo);
     return <Navigate to={redirectTo} replace />;

@@ -41,7 +41,7 @@ export function useAuthSession() {
     setUser(session?.user ?? null);
     
     // Ne pas rediriger si nous sommes sur la page d'accueil ou la racine
-    const isHomePage = location.pathname === '/' || location.pathname === '/home';
+    const isHomePage = location.pathname === '/' || location.pathname === '/home' || location.pathname === '/index';
     
     if (!session?.user && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
       navigate(getNavigationPath('/auth'), { state: { from: location.pathname } });
@@ -106,7 +106,7 @@ export function useAuthSession() {
       console.log("Initial session check:", session?.user?.id ? "User authenticated" : "No user");
       
       // Ne pas rediriger si nous sommes sur la page d'accueil ou la racine
-      const isHomePage = location.pathname === '/' || location.pathname === '/home';
+      const isHomePage = location.pathname === '/' || location.pathname === '/home' || location.pathname === '/index';
       
       if (session?.user) {
         updateCachedUser(session.user);

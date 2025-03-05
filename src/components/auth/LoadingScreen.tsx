@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Info } from "lucide-react";
+import { RefreshCw, Info, Home, Settings } from "lucide-react";
 import { LogoImage } from "@/components/common/LogoImage";
+import { Link } from "react-router-dom";
 
 interface LoadingScreenProps {
   message?: string;
@@ -60,6 +61,10 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         : window.location.pathname;
     }
   };
+
+  const navigateHome = () => {
+    window.location.href = '/';
+  };
   
   return (
     <div className="flex flex-col justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
@@ -98,14 +103,23 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         )}
         
         {shouldShowRetry && (
-          <div className="flex flex-col items-center mt-2">
+          <div className="flex flex-col items-center mt-2 space-y-2">
             <Button 
               onClick={handleRetry}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full"
             >
               <RefreshCw className="h-4 w-4" />
               Réessayer
+            </Button>
+            
+            <Button 
+              onClick={navigateHome}
+              variant="default"
+              className="flex items-center gap-2 w-full"
+            >
+              <Home className="h-4 w-4" />
+              Aller à l'accueil
             </Button>
             
             <Button
@@ -127,6 +141,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             <p>Mode: {import.meta.env.MODE || "production"}</p>
             <p>Environnement de prévisualisation: {isPreviewEnvironment ? "Oui" : "Non"}</p>
             <p>Problème useLayoutEffect détecté: {hasLayoutEffect ? "Oui" : "Non"}</p>
+            <p>Route actuelle: {window.location.pathname}</p>
           </div>
         )}
       </div>

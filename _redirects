@@ -5,6 +5,7 @@
 # Assurer que / et /home sont accessibles directement
 / /index.html 200 
 /home /index.html 200
+/index /index.html 200
 
 # Redirections avec paramètres d'URL importants
 /?mode=cloud /index.html?mode=cloud 200

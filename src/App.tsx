@@ -34,7 +34,7 @@ const queryClient = new QueryClient({
 const AppRouter = () => {
   return (
     <Routes>
-      {/* Rediriger la racine vers Home explicitement */}
+      {/* Définir explicitement la racine comme Home sans redirection */}
       <Route path="/" element={<Home />} />
       <Route path="/home" element={<Home />} />
       <Route path="/auth" element={<Auth />} />
@@ -50,6 +50,8 @@ const AppRouter = () => {
       <Route path="/ollama-setup" element={<OllamaSetup />} />
       {/* Nouvelle route pour /ai qui redirige vers la page de configuration IA */}
       <Route path="/ai" element={<Navigate to="/config" replace />} />
+      {/* Route de secours pour l'accueil si d'autres routes sont utilisées */}
+      <Route path="/index" element={<Navigate to="/" replace />} />
       {/* Capture les routes inconnues */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
