@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,19 @@ import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
 import { MicrosoftTeamsConfig } from "@/components/config/MicrosoftTeamsConfig";
 import { LLMProviderType } from "@/types/config";
 import { toast } from "@/hooks/use-toast";
+import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
 
 export default function AdvancedConfig() {
   const navigate = useNavigate();
   const [modelPath, setModelPath] = useState("");
   const [provider, setProvider] = useState<LLMProviderType>("huggingface");
+  const { 
+    isConnected: isGoogleDriveConnected, 
+    isChecking: isGoogleDriveChecking,
+    connectionData: googleDriveConnectionData,
+    reconnectGoogleDrive,
+    disconnectGoogleDrive
+  } = useGoogleDriveStatus();
 
   const handleLLMSave = () => {
     toast({
@@ -52,7 +60,7 @@ export default function AdvancedConfig() {
               </TabsTrigger>
               <TabsTrigger value="storage" className="flex items-center gap-2">
                 <FolderIcon className="h-4 w-4" />
-                Stockage Cloud
+                Bibliothèques Intelligentes
               </TabsTrigger>
             </TabsList>
 
@@ -100,6 +108,83 @@ export default function AdvancedConfig() {
               
               <div className="space-y-8">
                 <div className="pt-4">
+                  <h3 className="text-lg font-semibold mb-4">Google Drive</h3>
+                  <div className="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-blue-700">
+                      Connectez et indexez vos documents Google Drive pour les analyser avec l'IA.
+                    </p>
+                  </div>
+                  
+                  <Card className="bg-white border border-gray-200">
+                    <CardContent className="pt-6">
+                      {isGoogleDriveChecking ? (
+                        <div className="py-4 text-center">
+                          <p className="text-sm text-gray-500">Vérification de la connexion...</p>
+                        </div>
+                      ) : isGoogleDriveConnected ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-green-700">Google Drive connecté</h4>
+                              <p className="text-sm text-gray-600">
+                                Connecté en tant que: {googleDriveConnectionData?.email || "Utilisateur Google"}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => navigate("/google-drive")}
+                              >
+                                Gérer les dossiers
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive" 
+                                onClick={disconnectGoogleDrive}
+                              >
+                                Déconnecter
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="border-t border-gray-100 pt-4">
+                            <div className="flex justify-between items-center">
+                              <Button 
+                                variant="default" 
+                                size="sm"
+                                onClick={() => navigate("/documents")}
+                              >
+                                Indexer un dossier
+                              </Button>
+                              <p className="text-xs text-gray-500">
+                                Dernière connexion: {
+                                  googleDriveConnectionData?.connectedSince 
+                                    ? new Date(googleDriveConnectionData.connectedSince).toLocaleDateString() 
+                                    : "Récemment"
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="py-2 space-y-4">
+                          <div>
+                            <h4 className="font-medium text-gray-700">Google Drive non connecté</h4>
+                            <p className="text-sm text-gray-500">
+                              Connectez votre compte Google Drive pour accéder à vos documents.
+                            </p>
+                          </div>
+                          <Button onClick={reconnectGoogleDrive}>
+                            Connecter Google Drive
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="pt-4 border-t border-gray-200">
                   <h3 className="text-lg font-semibold mb-4">Microsoft Teams</h3>
                   <div className="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-md">
                     <p className="text-sm text-blue-700">
@@ -107,15 +192,6 @@ export default function AdvancedConfig() {
                     </p>
                   </div>
                   <MicrosoftTeamsConfig />
-                </div>
-                
-                <div className="pt-4 border-t border-gray-200">
-                  <h3 className="text-lg font-semibold mb-4">Google Drive</h3>
-                  <div className="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-blue-700">
-                      Configuration disponible dans la section "Sources" de la configuration principale.
-                    </p>
-                  </div>
                 </div>
                 
                 <div className="p-6 text-center text-gray-500 border-t border-gray-200 pt-4">
