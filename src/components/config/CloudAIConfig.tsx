@@ -1,188 +1,27 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 import { ServiceType } from "@/types/config";
-import { useAuthSession } from "@/hooks/useAuthSession";
-
-interface APIConfig {
-  provider: ServiceType;
-  apiKey: string;
-}
-
-interface ConfigData {
-  apiKey?: string;
-  [key: string]: any;
-}
+import { ProviderConfigCard } from "./cloudai/ProviderConfigCard";
+import { OnlineAlert } from "./cloudai/OnlineAlert";
+import { OfflineAlert } from "./cloudai/OfflineAlert";
+import { providerInfo } from "./cloudai/providerData";
+import { useCloudAIConfig } from "./cloudai/useCloudAIConfig";
 
 export const CloudAIConfig = () => {
   const navigate = useNavigate();
-  const { session } = useAuthSession();
-  const [configs, setConfigs] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState<Record<string, boolean>>({});
-  const [showKey, setShowKey] = useState<Record<string, boolean>>({});
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadConfigs();
-  }, []);
-
-  const loadConfigs = async () => {
-    try {
-      setLoadError(null);
-      
-      // Vérifier si l'utilisateur est connecté
-      if (!session) {
-        console.log("Aucun utilisateur connecté, impossible de charger les configurations");
-        return;
-      }
-
-      // Utiliser une approche plus simple pour éviter les problèmes de RLS
-      const { data: existingConfigs, error } = await supabase
-        .from('service_configurations')
-        .select('service_type, config');
-      
-      if (error) {
-        console.error('Erreur lors du chargement des configurations:', error);
-        setLoadError(`Erreur de base de données: ${error.message}`);
-        return;
-      }
-
-      if (!existingConfigs || existingConfigs.length === 0) {
-        console.log("Aucune configuration trouvée");
-        return;
-      }
-
-      const formattedConfigs = existingConfigs.reduce((acc, curr) => {
-        // Accéder de manière sécurisée à la propriété apiKey
-        const configObj = typeof curr.config === 'object' 
-          ? curr.config as ConfigData 
-          : (typeof curr.config === 'string' ? JSON.parse(curr.config) : {});
-        
-        const apiKey = configObj.apiKey || '';
-        acc[curr.service_type] = apiKey;
-        return acc;
-      }, {} as Record<string, string>);
-
-      setConfigs(formattedConfigs);
-    } catch (error: any) {
-      console.error('Erreur lors du chargement des configurations:', error);
-      setLoadError(error.message || "Erreur inconnue lors du chargement des configurations");
-      
-      // Éviter d'afficher des toasts multiples pour la même erreur
-      if (!loadError) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger les configurations existantes",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const toggleShowKey = (provider: string) => {
-    setShowKey(prev => ({
-      ...prev,
-      [provider]: !prev[provider]
-    }));
-  };
-
-  const testAPIKey = async (provider: ServiceType, apiKey: string): Promise<boolean> => {
-    // Ici, nous pourrions implémenter des tests spécifiques pour chaque fournisseur
-    // Pour l'instant, nous vérifions juste que la clé n'est pas vide
-    return apiKey.length > 0;
-  };
-
-  const handleSaveConfig = async (provider: ServiceType, apiKey: string) => {
-    setIsSubmitting(prev => ({ ...prev, [provider]: true }));
-    
-    try {
-      const isValid = await testAPIKey(provider, apiKey);
-      if (!isValid) {
-        throw new Error("La clé API semble invalide");
-      }
-
-      // Mode de secours : stockage local si Supabase pose problème
-      if (loadError) {
-        // Stocker localement en cas d'erreur de base de données
-        localStorage.setItem(`api_key_${provider}`, apiKey);
-        setConfigs(prev => ({
-          ...prev,
-          [provider]: apiKey
-        }));
-        
-        toast({
-          title: "Configuration sauvegardée localement",
-          description: `La clé API pour ${provider} a été mise à jour localement (mode hors ligne)`,
-        });
-        setIsSubmitting(prev => ({ ...prev, [provider]: false }));
-        return;
-      }
-
-      // Chiffrer les clés API dans la base de données (utilisation de service_configurations)
-      const { error } = await supabase
-        .from('service_configurations')
-        .upsert({
-          service_type: provider,
-          config: { apiKey }, // Objet avec la propriété apiKey
-          status: 'configured',
-        }, {
-          onConflict: 'service_type'
-        });
-
-      if (error) throw error;
-
-      setConfigs(prev => ({
-        ...prev,
-        [provider]: apiKey
-      }));
-
-      toast({
-        title: "Configuration sauvegardée",
-        description: `La clé API pour ${provider} a été mise à jour avec succès`,
-      });
-    } catch (error: any) {
-      console.error('Erreur lors de la sauvegarde:', error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Impossible de sauvegarder la configuration",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(prev => ({ ...prev, [provider]: false }));
-    }
-  };
-
-  const providerInfo = {
-    openai: {
-      name: "OpenAI",
-      description: "Configuration de l'API OpenAI (GPT-4, GPT-3.5)",
-      placeholder: "sk-..."
-    },
-    perplexity: {
-      name: "Perplexity",
-      description: "Configuration de l'API Perplexity AI",
-      placeholder: "pplx-..."
-    },
-    deepseek: {
-      name: "DeepSeek",
-      description: "Configuration de l'API DeepSeek",
-      placeholder: "Clé API DeepSeek"
-    },
-    anthropic: {
-      name: "Anthropic",
-      description: "Configuration de l'API Anthropic (Claude)",
-      placeholder: "sk-ant-..."
-    }
-  };
+  const { 
+    configs, 
+    isSubmitting, 
+    loadError, 
+    handleApiKeyChange, 
+    handleSaveConfig 
+  } = useCloudAIConfig();
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -201,67 +40,21 @@ export const CloudAIConfig = () => {
         </CardHeader>
         <CardContent className="space-y-6">
           {loadError ? (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Impossible de charger les configurations existantes. Mode hors-ligne activé. 
-                Les clés seront stockées localement jusqu'à la résolution du problème.
-                <div className="mt-2 text-xs">
-                  Détails: {loadError}
-                </div>
-              </AlertDescription>
-            </Alert>
+            <OfflineAlert errorMessage={loadError} />
           ) : (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Vos clés API sont stockées de manière sécurisée et chiffrée. 
-                Configurez au moins un fournisseur pour utiliser les fonctionnalités d'IA.
-              </AlertDescription>
-            </Alert>
+            <OnlineAlert />
           )}
 
           {Object.entries(providerInfo).map(([provider, info]) => (
-            <div key={provider} className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="text-lg font-semibold">{info.name}</Label>
-                {configs[provider] && (
-                  <span className="text-sm text-green-600 font-medium">
-                    Configuré ✓
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-gray-600 mb-2">{info.description}</p>
-              <div className="flex gap-4 relative">
-                <div className="flex-1 relative">
-                  <Input
-                    type={showKey[provider] ? "text" : "password"}
-                    placeholder={info.placeholder}
-                    value={configs[provider] || ''}
-                    onChange={(e) => setConfigs(prev => ({
-                      ...prev,
-                      [provider]: e.target.value
-                    }))}
-                    className="w-full pr-10"
-                    aria-label={`${info.name} API Key`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => toggleShowKey(provider)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    aria-label={showKey[provider] ? "Masquer la clé" : "Afficher la clé"}
-                  >
-                    {showKey[provider] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                <Button 
-                  onClick={() => handleSaveConfig(provider as ServiceType, configs[provider] || '')}
-                  disabled={isSubmitting[provider] || !configs[provider]}
-                >
-                  {isSubmitting[provider] ? "Sauvegarde..." : "Sauvegarder"}
-                </Button>
-              </div>
-            </div>
+            <ProviderConfigCard
+              key={provider}
+              provider={provider}
+              info={info}
+              apiKey={configs[provider] || ''}
+              isSubmitting={isSubmitting[provider] || false}
+              onApiKeyChange={(value) => handleApiKeyChange(provider, value)}
+              onSaveConfig={handleSaveConfig}
+            />
           ))}
         </CardContent>
       </Card>
