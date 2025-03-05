@@ -4,6 +4,7 @@ import { showInitialLoadingMessage } from './utils/startup/loadingUtils';
 import { handleLoadError, checkForFallbackMode, renderFallbackScreen } from './utils/startup/errorHandlingUtils';
 import { checkReactDependencies, setupReactDOM, preloadSupabaseSession, setupNetworkListeners } from './utils/startup/setupUtils';
 import { createQueryClient, startRendering } from './utils/startup/appRenderer';
+import { checkLovableIntegration, injectLovableScript } from './utils/lovable/editingUtils';
 import { LoadingScreen } from '@/components/auth/LoadingScreen';
 import './index.css';
 
@@ -13,6 +14,16 @@ console.log("Initialisation de l'application...");
 // Fonction pour démarrer l'application de manière robuste
 const startApp = async () => {
   try {
+    // Vérifier l'intégration Lovable en mode développement
+    if (import.meta.env.DEV) {
+      checkLovableIntegration();
+      try {
+        await injectLovableScript();
+      } catch (e) {
+        console.warn("Impossible d'injecter dynamiquement le script Lovable:", e);
+      }
+    }
+    
     // Afficher un message de chargement pour feedback immédiat
     showInitialLoadingMessage();
     
