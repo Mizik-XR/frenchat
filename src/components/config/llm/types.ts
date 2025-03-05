@@ -16,34 +16,46 @@ export interface AIModel {
     modelName?: boolean;
     temperature?: boolean;
   };
+  isOpenSource?: boolean;
+  pricingInfo?: string;
 }
 
 export const LOCAL_MODELS: AIModel[] = [
   {
     id: "mistral-local",
     name: "Mistral 7B",
-    description: "Modèle local performant, recommandé par défaut"
+    description: "Modèle local performant, recommandé par défaut",
+    isOpenSource: true,
+    pricingInfo: "Gratuit, exécution locale"
   },
   {
     id: "deepseek-local",
     name: "DeepSeek",
-    description: "Modèle local DeepSeek optimisé pour le traitement rapide"
+    description: "Modèle local DeepSeek optimisé pour le traitement rapide",
+    isOpenSource: true,
+    pricingInfo: "Gratuit, exécution locale"
   },
   {
     id: "qwen-local",
     name: "Qwen 2.5",
-    description: "Version locale de Qwen, rapide et efficace"
+    description: "Version locale de Qwen, rapide et efficace",
+    isOpenSource: true,
+    pricingInfo: "Gratuit, exécution locale"
   },
   {
     id: "ollama-local",
     name: "Ollama",
-    description: "Modèles locaux via Ollama, faciles à installer"
+    description: "Modèles locaux via Ollama, faciles à installer",
+    isOpenSource: true,
+    pricingInfo: "Gratuit, exécution locale via Ollama"
   },
   {
     id: "huggingface-custom",
     name: "Modèle Hugging Face personnalisé",
     description: "Utilisez n'importe quel modèle compatible de Hugging Face",
-    isCustom: true
+    isCustom: true,
+    isOpenSource: true,
+    pricingInfo: "Gratuit ou payant selon le modèle choisi"
   }
 ];
 
@@ -54,7 +66,9 @@ export const CLOUD_MODELS: AIModel[] = [
     description: "Modèle performant via Hugging Face (recommandé)",
     requiresKey: false,
     modelId: "mistralai/Mixtral-8x7B-Instruct-v0.1",
-    apiType: "huggingface"
+    apiType: "huggingface",
+    isOpenSource: true,
+    pricingInfo: "Gratuit via l'API Hugging Face"
   },
   {
     id: "huggingface/phi-3",
@@ -62,7 +76,9 @@ export const CLOUD_MODELS: AIModel[] = [
     description: "Modèle léger et efficace de Microsoft",
     requiresKey: false,
     modelId: "microsoft/phi-3-mini-4k-instruct",
-    apiType: "huggingface"
+    apiType: "huggingface",
+    isOpenSource: true,
+    pricingInfo: "Gratuit via l'API Hugging Face"
   },
   {
     id: "huggingface/llama-3",
@@ -70,7 +86,9 @@ export const CLOUD_MODELS: AIModel[] = [
     description: "Modèle polyvalent pour diverses tâches",
     requiresKey: false,
     modelId: "meta-llama/Llama-3-8B-Instruct",
-    apiType: "huggingface"
+    apiType: "huggingface",
+    isOpenSource: true,
+    pricingInfo: "Gratuit via l'API Hugging Face"
   },
   {
     id: "huggingface/bert",
@@ -78,7 +96,9 @@ export const CLOUD_MODELS: AIModel[] = [
     description: "Excellent pour l'analyse de texte",
     requiresKey: false,
     modelId: "bert-base-uncased",
-    apiType: "huggingface"
+    apiType: "huggingface",
+    isOpenSource: true,
+    pricingInfo: "Gratuit via l'API Hugging Face"
   },
   {
     id: "huggingface/t5",
@@ -86,7 +106,9 @@ export const CLOUD_MODELS: AIModel[] = [
     description: "Efficace pour la génération et le résumé",
     requiresKey: false,
     modelId: "google/t5-base",
-    apiType: "huggingface"
+    apiType: "huggingface",
+    isOpenSource: true,
+    pricingInfo: "Gratuit via l'API Hugging Face"
   },
   {
     id: "huggingface/falcon",
@@ -94,7 +116,9 @@ export const CLOUD_MODELS: AIModel[] = [
     description: "Alternative légère pour du texte",
     requiresKey: false,
     modelId: "tiiuae/falcon-7b-instruct",
-    apiType: "huggingface"
+    apiType: "huggingface",
+    isOpenSource: true,
+    pricingInfo: "Gratuit via l'API Hugging Face"
   },
   {
     id: "anthropic/claude",
@@ -105,7 +129,9 @@ export const CLOUD_MODELS: AIModel[] = [
     apiType: "other",
     configFields: {
       apiKey: true
-    }
+    },
+    isOpenSource: false,
+    pricingInfo: "Service payant (~$15/million de tokens)"
   },
   {
     id: "openai/gpt4",
@@ -118,7 +144,9 @@ export const CLOUD_MODELS: AIModel[] = [
     configFields: {
       apiKey: true,
       temperature: true
-    }
+    },
+    isOpenSource: false,
+    pricingInfo: "Service payant (~$5/million de tokens)"
   },
   {
     id: "openai/gpt4o",
@@ -131,7 +159,9 @@ export const CLOUD_MODELS: AIModel[] = [
     configFields: {
       apiKey: true,
       temperature: true
-    }
+    },
+    isOpenSource: false,
+    pricingInfo: "Service payant (~$15/million de tokens)"
   },
   {
     id: "perplexity/pplx",
@@ -142,6 +172,8 @@ export const CLOUD_MODELS: AIModel[] = [
     apiType: "other",
     configFields: {
       apiKey: true
-    }
+    },
+    isOpenSource: false,
+    pricingInfo: "Service payant (tarification variable)"
   }
 ];

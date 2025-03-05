@@ -3,8 +3,9 @@ import { LocalAIConfig } from "../llm/LocalAIConfig";
 import { ImageConfig } from "../ImageConfig";
 import { LLMProviderType } from "@/types/config";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CloudIcon, ServerIcon } from "lucide-react";
+import { CloudIcon, ServerIcon, InfoIcon } from "lucide-react";
 import { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface IntelligenceStepProps {
   modelPath: string;
@@ -39,6 +40,14 @@ export const IntelligenceStep = ({
     <div className="animate-fade-in space-y-6">
       <h2 className="text-xl font-semibold mb-4">Configuration de l'intelligence artificielle</h2>
       
+      <Alert className="bg-blue-50 border-blue-200 mb-4">
+        <InfoIcon className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-700">
+          Les modèles open source sont gratuits et peuvent être exécutés localement ou via des API gratuites comme Hugging Face.
+          Les modèles propriétaires sont généralement plus performants mais nécessitent des clés API et ont un coût d'utilisation.
+        </AlertDescription>
+      </Alert>
+      
       <div className="mb-6">
         <h3 className="text-lg font-medium mb-3">Mode de fonctionnement</h3>
         <Tabs 
@@ -50,18 +59,18 @@ export const IntelligenceStep = ({
           <TabsList className="grid grid-cols-2 w-full max-w-md">
             <TabsTrigger value="local" className="flex items-center gap-2">
               <ServerIcon className="h-4 w-4" />
-              Local
+              Open Source
             </TabsTrigger>
             <TabsTrigger value="cloud" className="flex items-center gap-2">
               <CloudIcon className="h-4 w-4" />
-              Cloud
+              Services Cloud
             </TabsTrigger>
           </TabsList>
         </Tabs>
         <p className="text-sm text-gray-600 mt-2">
           {aiMode === "local" 
-            ? "Mode local : utilise les ressources de votre ordinateur, sans envoi de données externes." 
-            : "Mode cloud : utilise des API en ligne pour de meilleures performances (nécessite une connexion internet)."}
+            ? "Mode open source : modèles libres et gratuits, exécutés localement ou via des API gratuites." 
+            : "Mode cloud : services IA professionnels (nécessitent généralement une clé API et un coût d'utilisation)."}
         </p>
       </div>
       
