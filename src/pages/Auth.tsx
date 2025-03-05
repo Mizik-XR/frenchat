@@ -48,7 +48,8 @@ export default function Auth() {
     };
   }, []);
 
-  const redirectTo = location.state?.from?.pathname || '/';
+  // Si nous avons un état de redirection, l'utiliser, sinon rediriger vers la page d'accueil
+  const redirectTo = location.state?.from || '/';
 
   if (loading) {
     return <AuthLoadingScreen />;

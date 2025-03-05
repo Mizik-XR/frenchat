@@ -17,6 +17,7 @@
 
 # Préservation des paramètres pour l'authentification
 /auth/* /index.html 200
+/home /index.html 200
 
 # Redirection des API vers les fonctions Netlify
 /api/* /.netlify/functions/:splat 200

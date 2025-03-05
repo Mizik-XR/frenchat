@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -75,7 +76,7 @@ export function useAuthSession() {
         if ((isFirstLogin || needsConfig) && location.pathname === '/auth') {
           console.log("Redirection vers la configuration (nouveau compte ou configuration requise)");
           navigate(getNavigationPath('/config'));
-        } else if (location.pathname === '/auth' || location.pathname === '/' || location.pathname === '/index') {
+        } else if (location.pathname === '/auth' || location.pathname === '/index') {
           console.log("Redirection vers la page d'accueil (utilisateur déjà configuré)");
           navigate(getNavigationPath('/home'));
         }
@@ -128,16 +129,18 @@ export function useAuthSession() {
           const needsConfig = !configs || !configs.length || !configs.some(c => c.status === 'configured');
           const isFirstLogin = profile?.is_first_login;
 
+          // Modifier la condition pour ne pas rediriger automatiquement depuis la page d'accueil
           if ((isFirstLogin || needsConfig) && 
-              (location.pathname === '/' || location.pathname === '/auth' || location.pathname === '/index') &&
+              location.pathname === '/auth' &&
               !location.pathname.startsWith('/auth/google')) {
             console.log("Redirection vers configuration (vérification initiale)");
             navigate(getNavigationPath('/config'));
-          } else if ((location.pathname === '/' || location.pathname === '/auth' || location.pathname === '/index') && 
+          } else if (location.pathname === '/auth' && 
                     !location.pathname.startsWith('/auth/google')) {
             console.log("Redirection vers home (vérification initiale)");
             navigate(getNavigationPath('/home'));
           }
+          // Ne pas rediriger automatiquement si l'utilisateur est sur la page d'accueil
         } catch (error) {
           console.error("Erreur lors de la vérification du statut d'utilisateur (session initiale):", error);
         }
