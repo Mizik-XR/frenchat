@@ -79,39 +79,49 @@ export default function AdvancedConfig() {
               <div className="p-4 mb-4 bg-amber-50 border border-amber-200 rounded-md">
                 <h3 className="font-medium text-amber-800 mb-2">Services Cloud</h3>
                 <p className="text-sm text-amber-700">
-                  Ces services sont fournis par des entreprises commerciales et nécessitent généralement des clés API ou des configurations spécifiques.
-                  Ils incluent les IA propriétaires (OpenAI, Claude, etc.) et les services collaboratifs comme Microsoft Teams.
+                  Ces services sont fournis par des entreprises commerciales et nécessitent généralement des clés API pour un accès complet.
+                  Ils incluent les IA propriétaires (OpenAI, Claude, etc.) pour le traitement et l'analyse de contenu.
                 </p>
               </div>
               
-              <div className="space-y-8">
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">IA Propriétaires</h3>
-                  <CloudAIConfig />
-                </div>
-                
-                <div className="pt-4 border-t border-gray-200">
-                  <h3 className="text-lg font-semibold mb-4">Microsoft Teams</h3>
-                  <div className="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-blue-700">
-                      Configuration de l'intégration avec Microsoft Teams pour accéder à vos fichiers et conversations Teams.
-                    </p>
-                  </div>
-                  <MicrosoftTeamsConfig />
-                </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-4">IA Propriétaires</h3>
+                <CloudAIConfig />
               </div>
             </TabsContent>
             
             <TabsContent value="storage">
               <div className="p-4 mb-4 bg-purple-50 border border-purple-200 rounded-md">
-                <h3 className="font-medium text-purple-800 mb-2">Stockage Cloud</h3>
+                <h3 className="font-medium text-purple-800 mb-2">Bibliothèques Intelligentes</h3>
                 <p className="text-sm text-purple-700">
-                  Configurez l'accès aux services de stockage cloud comme Google Drive, Dropbox ou OneDrive.
+                  Connectez et indexez vos documents stockés dans des services cloud pour permettre à l'IA de les analyser et d'y accéder.
                 </p>
               </div>
-              <div className="p-6 text-center text-gray-500">
-                <p>Les intégrations de stockage supplémentaires seront disponibles prochainement.</p>
-                <p className="text-sm mt-2">Actuellement, Google Drive est disponible via la section "Sources" de la configuration.</p>
+              
+              <div className="space-y-8">
+                <div className="pt-4">
+                  <h3 className="text-lg font-semibold mb-4">Microsoft Teams</h3>
+                  <div className="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-blue-700">
+                      Intégrez Microsoft Teams pour indexer et analyser vos fichiers, documents et conversations partagés.
+                    </p>
+                  </div>
+                  <MicrosoftTeamsConfig />
+                </div>
+                
+                <div className="pt-4 border-t border-gray-200">
+                  <h3 className="text-lg font-semibold mb-4">Google Drive</h3>
+                  <div className="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-blue-700">
+                      Configuration disponible dans la section "Sources" de la configuration principale.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="p-6 text-center text-gray-500 border-t border-gray-200 pt-4">
+                  <p>D'autres intégrations de stockage cloud seront disponibles prochainement.</p>
+                  <p className="text-sm mt-2">(Dropbox, OneDrive, SharePoint...)</p>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
