@@ -71,53 +71,31 @@
         margin-top: 1rem;
       }
     </style>
-    <!-- Script de pré-initialisation pour améliorer le chargement -->
+    <!-- Script de gestion d'erreur et de récupération -->
     <script>
-      // Définition des variables globales accessibles par l'application
-      window.APP_CONFIG = {
-        forceCloudMode: false,
-        debugMode: false
-      };
-      
-      // Lecture des paramètres d'URL pour configuration initiale
-      document.addEventListener('DOMContentLoaded', function() {
-        // Analyser les paramètres d'URL
-        const urlParams = new URLSearchParams(window.location.search);
-        
-        // Configurer le mode cloud si demandé
-        if (urlParams.has('mode') && urlParams.get('mode') === 'cloud') {
-          window.APP_CONFIG.forceCloudMode = true;
-          console.log('Mode cloud activé via paramètre URL');
-          localStorage.setItem('aiServiceType', 'cloud');
-        }
-        
-        // Activer le mode debug si demandé
-        if (urlParams.has('debug') && urlParams.get('debug') === 'true') {
-          window.APP_CONFIG.debugMode = true;
-          console.log('Mode debug activé via paramètre URL');
-        }
-        
-        // Définir un timeout pour afficher un bouton de rechargement si le chargement prend trop de temps
-        setTimeout(function() {
-          const loadingEl = document.getElementById('loading-screen');
-          if (loadingEl) {
-            const retryBtn = document.querySelector('.retry-btn');
-            const errorMsg = document.querySelector('.error-message');
-            if (retryBtn) retryBtn.style.display = 'inline-block';
-            if (errorMsg) errorMsg.style.display = 'block';
-          }
-        }, 10000); // 10 secondes
-      });
-      
-      // Fonction de rechargement de la page
-      function reloadPage() {
-        window.location.reload();
+      // Fonction pour rediriger vers la page d'accueil avec des paramètres forcés de mode cloud
+      function forceHomepageInCloudMode() {
+        window.location.href = '/?forceCloud=true&mode=cloud&client=true';
       }
       
-      // Fonction de lancement en mode cloud (fallback)
-      function startCloudMode() {
-        window.location.href = window.location.pathname + '?forceCloud=true';
-      }
+      // Détection et récupération en cas d'erreur de chargement
+      window.addEventListener('error', function(event) {
+        if (event.message && event.message.includes('useLayoutEffect')) {
+          console.warn('Erreur useLayoutEffect détectée, tentative de récupération...');
+          
+          // Afficher le bouton de récupération après 5 secondes sans chargement
+          setTimeout(function() {
+            var loadingEl = document.getElementById('loading-screen');
+            var retryBtn = document.querySelector('.retry-btn');
+            var errorMsg = document.querySelector('.error-message');
+            
+            if (loadingEl && errorMsg && retryBtn) {
+              errorMsg.style.display = 'block';
+              retryBtn.style.display = 'inline-block';
+            }
+          }, 5000);
+        }
+      }, true);
     </script>
   </head>
   <body>
@@ -139,8 +117,8 @@
           <div class="loading-bar"><div class="loading-bar-progress"></div></div>
           <p style="font-size: 0.8rem; color: #6b7280;">Si le chargement échoue, essayez de rafraîchir la page.</p>
           <div class="error-message">Le chargement semble prendre plus de temps que prévu.</div>
-          <button class="retry-btn" onclick="reloadPage()">Rafraîchir la page</button>
-          <button class="retry-btn" onclick="startCloudMode()" style="margin-left: 8px;">Mode cloud</button>
+          <button class="retry-btn" onclick="window.location.reload()">Rafraîchir la page</button>
+          <button class="retry-btn" onclick="forceHomepageInCloudMode()" style="margin-left: 8px; background-color: #6366f1;">Mode cloud</button>
         </div>
       </div>
     </div>

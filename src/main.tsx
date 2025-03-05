@@ -6,45 +6,59 @@ import App from './App';
 import './index.css';
 import { initializeLovable } from './utils/lovable/editingUtils';
 
+// Vérifier si le code s'exécute côté client
+const isClient = typeof window !== 'undefined';
+
 // Initialiser Lovable au démarrage de l'application
 if (import.meta.env.MODE !== 'production') {
   console.log("Initialisation de l'environnement d'édition");
   initializeLovable();
 }
 
-// Créer une fonction pour rendre l'application après le chargement du DOM
-const renderApp = () => {
-  // Obtenir l'élément racine
-  const rootElement = document.getElementById('root');
-
-  // Vérifier que l'élément existe
-  if (!rootElement) {
-    console.error("Élément racine 'root' non trouvé dans le DOM");
-    return;
-  }
-
-  // Supprimer l'écran de chargement initial s'il existe
-  const loadingScreen = document.getElementById('loading-screen');
-  if (loadingScreen) {
-    loadingScreen.style.display = 'none';
-  }
-
-  // Utiliser createRoot pour assurer la compatibilité avec React 18
-  const root = ReactDOM.createRoot(rootElement);
-
-  // Assurer que les composants sont rendus dans un environnement client (browser) pour éviter les problèmes de useLayoutEffect
-  root.render(
-    <React.StrictMode>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </React.StrictMode>
-  );
-};
-
-// Exécuter le rendu immédiatement si le DOM est déjà chargé
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', renderApp);
+// Solution pour le problème de useLayoutEffect côté serveur
+if (isClient) {
+  // Importez le composant LoadingScreen pour l'afficher pendant le chargement
+  import('./components/auth/LoadingScreen').then(({ LoadingScreen }) => {
+    const rootElement = document.getElementById('root');
+    
+    if (rootElement) {
+      // Afficher un écran de chargement initial
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(<LoadingScreen message="Chargement de l'application..." />);
+      
+      // Suppression de l'écran de chargement statique HTML si présent
+      const loadingScreen = document.getElementById('loading-screen');
+      if (loadingScreen) {
+        loadingScreen.style.display = 'none';
+      }
+      
+      // Charger l'application après un court délai pour éviter les problèmes de useLayoutEffect
+      setTimeout(() => {
+        try {
+          root.render(
+            <React.StrictMode>
+              <BrowserRouter>
+                <App />
+              </BrowserRouter>
+            </React.StrictMode>
+          );
+          console.log("Application chargée avec succès");
+        } catch (error) {
+          console.error("Erreur lors du rendu de l'application:", error);
+          root.render(
+            <LoadingScreen 
+              message="Erreur de chargement" 
+              showRetry={true} 
+            />
+          );
+        }
+      }, 100);
+    } else {
+      console.error("Élément racine 'root' non trouvé dans le DOM");
+    }
+  }).catch(error => {
+    console.error("Erreur lors du chargement du composant LoadingScreen:", error);
+  });
 } else {
-  renderApp();
+  console.log("Environnement non-client détecté, rendu reporté");
 }

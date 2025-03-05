@@ -1,24 +1,27 @@
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
-import Chat from './pages/Chat';
-import DocumentView from './pages/DocumentView';
-import Auth from './pages/Auth';
-import Config from './pages/Config';
-import Home from './pages/Home';
-import AdvancedConfig from './pages/AdvancedConfig';
-import GoogleDrive from './pages/GoogleDrive';
-import Indexing from './pages/Indexing';
-import DatabaseView from './pages/DatabaseView';
-import Debug from './pages/Debug';
+import { LoadingScreen } from './components/auth/LoadingScreen';
 import { Toaster } from './components/ui/toaster';
 import { ThemeProvider } from './components/ThemeProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from './contexts/SettingsContext';
-import OllamaSetup from './pages/OllamaSetup';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { ErrorBoundary } from './components/ErrorBoundary';
+
+// Importation différée des composants pour améliorer les performances de chargement initial
+const Home = lazy(() => import('./pages/Home'));
+const Auth = lazy(() => import('./pages/Auth'));
+const Config = lazy(() => import('./pages/Config'));
+const AdvancedConfig = lazy(() => import('./pages/AdvancedConfig'));
+const Chat = lazy(() => import('./pages/Chat'));
+const DocumentView = lazy(() => import('./pages/DocumentView'));
+const GoogleDrive = lazy(() => import('./pages/GoogleDrive'));
+const Indexing = lazy(() => import('./pages/Indexing'));
+const DatabaseView = lazy(() => import('./pages/DatabaseView'));
+const Debug = lazy(() => import('./pages/Debug'));
+const OllamaSetup = lazy(() => import('./pages/OllamaSetup'));
 
 // Créer une nouvelle instance QueryClient avec configuration de retry
 const queryClient = new QueryClient({
@@ -33,28 +36,30 @@ const queryClient = new QueryClient({
 
 const AppRouter = () => {
   return (
-    <Routes>
-      {/* Définir explicitement la racine comme Home sans redirection */}
-      <Route path="/" element={<Home />} />
-      <Route path="/home" element={<Home />} />
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/config" element={<Config />} />
-      <Route path="/config/advanced" element={<AdvancedConfig />} />
-      <Route path="/advanced" element={<AdvancedConfig />} />
-      <Route path="/chat" element={<Chat />} />
-      <Route path="/document/:id" element={<DocumentView />} />
-      <Route path="/google-drive" element={<GoogleDrive />} />
-      <Route path="/indexing" element={<Indexing />} />
-      <Route path="/database" element={<DatabaseView />} />
-      <Route path="/debug" element={<Debug />} />
-      <Route path="/ollama-setup" element={<OllamaSetup />} />
-      {/* Nouvelle route pour /ai qui redirige vers la page de configuration IA */}
-      <Route path="/ai" element={<Navigate to="/config" replace />} />
-      {/* Route de secours pour l'accueil si d'autres routes sont utilisées */}
-      <Route path="/index" element={<Navigate to="/" replace />} />
-      {/* Capture les routes inconnues */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Suspense fallback={<LoadingScreen message="Chargement de la page..." />}>
+      <Routes>
+        {/* Définir explicitement la racine comme Home sans redirection */}
+        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/index" element={<Home />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/config" element={<Config />} />
+        <Route path="/config/advanced" element={<AdvancedConfig />} />
+        <Route path="/advanced" element={<AdvancedConfig />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/document/:id" element={<DocumentView />} />
+        <Route path="/google-drive" element={<GoogleDrive />} />
+        <Route path="/indexing" element={<Indexing />} />
+        <Route path="/database" element={<DatabaseView />} />
+        <Route path="/debug" element={<Debug />} />
+        <Route path="/ollama-setup" element={<OllamaSetup />} />
+        {/* Nouvelle route pour /ai qui redirige vers la page de configuration IA */}
+        <Route path="/ai" element={<Navigate to="/config" replace />} />
+        {/* Route de secours pour l'accueil si d'autres routes sont utilisées */}
+        {/* Capture les routes inconnues */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 };
 
