@@ -1,3 +1,4 @@
+
 import { toast } from '@/hooks/use-toast';
 import { TextGenerationParameters, TextGenerationResponse, AIServiceType, ModelDownloadStatus } from '../types';
 import { validateTextGenerationInput } from '../validation/inputValidation';
@@ -7,6 +8,7 @@ import { LLMProviderType } from '@/types/config';
 import { cacheService } from '@/services/cacheService';
 import { truncateToMaxTokens, estimateTokenCount } from '@/utils/chunking/smartChunking';
 import { useUserCreditUsage } from '@/hooks/user/useUserCreditUsage';
+import { useAuth } from '@/components/AuthProvider';
 
 const DEFAULT_TOKEN_LIMITS: Record<string, number> = {
   'openai': 2000,
@@ -114,6 +116,40 @@ export async function generateText(
       options.parameters = { max_length: maxTokens };
     }
     
+    // Vérifier si l'utilisateur a suffisamment de crédits (uniquement en mode cloud)
+    if ((executionStrategy === 'cloud' || isCloudModeForced) && userId) {
+      try {
+        // Estimer le coût potentiel avant d'exécuter la requête
+        const estimatedOutputTokens = maxTokens; // Cas du pire: utilisation de tous les tokens disponibles
+        const totalEstimatedTokens = estimatedInputTokens + estimatedOutputTokens;
+        const estimatedCost = calculateTokenCost(totalEstimatedTokens, provider);
+        
+        const { supabase } = await import('@/integrations/supabase/client');
+        
+        // Vérifier le solde de crédits de l'utilisateur
+        const { data: response } = await supabase.functions.invoke('manage-user-credits', {
+          body: { 
+            action: 'check_balance',
+            userId
+          }
+        });
+        
+        if (response && response.credit_balance < estimatedCost) {
+          // Si l'utilisateur n'a pas assez de crédits et que ce n'est pas très peu coûteux
+          if (estimatedCost > 0.001) {
+            throw new Error(`Crédit insuffisant pour cette opération. Coût estimé: $${estimatedCost.toFixed(4)}, Crédit disponible: $${response.credit_balance.toFixed(2)}`);
+          }
+          // Sinon, on permet quand même la requête car le coût est négligeable
+        }
+      } catch (creditError) {
+        if (creditError.message?.includes('Crédit insuffisant')) {
+          throw creditError; // Remonter l'erreur de crédit insuffisant
+        }
+        console.warn("Erreur lors de la vérification du crédit utilisateur:", creditError);
+        // Continue même en cas d'erreur de vérification pour ne pas bloquer l'utilisateur
+      }
+    }
+    
     // Exécuter la requête
     const response = await executeAIRequest(
       options, 
@@ -148,6 +184,24 @@ export async function generateText(
             provider,
             false
           );
+          
+          // Déduire le coût des crédits de l'utilisateur
+          const cost = calculateTokenCost(totalTokens, provider);
+          if (cost > 0) {
+            try {
+              const { supabase } = await import('@/integrations/supabase/client');
+              await supabase.functions.invoke('manage-user-credits', {
+                body: { 
+                  action: 'use_credits',
+                  userId,
+                  amount: cost
+                }
+              });
+            } catch (deductError) {
+              console.warn("Erreur lors de la déduction des crédits:", deductError);
+              // Ne pas bloquer l'opération si la déduction échoue
+            }
+          }
         }
         
         console.log(`Réponse mise en cache (${totalTokens} tokens estimés)`);
@@ -271,4 +325,12 @@ function getProviderCostPerToken(provider: string): number {
   }
   
   return costs['default'];
+}
+
+/**
+ * Calcule le coût total basé sur le nombre de tokens et le fournisseur
+ */
+function calculateTokenCost(totalTokens: number, provider: string): number {
+  const costPerToken = getProviderCostPerToken(provider);
+  return totalTokens * costPerToken;
 }

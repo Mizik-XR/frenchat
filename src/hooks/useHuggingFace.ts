@@ -9,7 +9,7 @@ import {
 
 import { 
   checkLocalService,
-  setLocalProviderConfig,
+  setLocalProviderConfig as configureLocalProvider,
   detectLocalServices,
   notifyServiceChange
 } from './ai/aiServiceUtils';
@@ -21,8 +21,10 @@ import {
   checkBrowserCompatibilityAndSetMode,
   ensureDefaultServiceModeSet
 } from './ai/serviceManagement/compatibilityCheck';
+import { useAuth } from '@/components/AuthProvider';
 
 export function useHuggingFace(provider: string = 'huggingface') {
+  const { user } = useAuth();
   // Vérifier immédiatement si le mode cloud est forcé
   const cloudModeForced = isCloudModeForced();
   
@@ -79,7 +81,10 @@ export function useHuggingFace(provider: string = 'huggingface') {
   }, [cloudModeForced]);
 
   // Fonction principale de génération de texte
-  const textGeneration = async (options: TextGenerationParameters): Promise<TextGenerationResponse[]> => {
+  const textGeneration = async (
+    options: TextGenerationParameters, 
+    userId?: string
+  ): Promise<TextGenerationResponse[]> => {
     return generateText(
       options,
       serviceType,
@@ -89,12 +94,13 @@ export function useHuggingFace(provider: string = 'huggingface') {
       modelDownloadStatus,
       provider,
       setIsLoading,
-      setError
+      setError,
+      userId || user?.id
     );
   };
 
   const setLocalProviderConfig = useCallback((provider: LLMProviderType) => {
-    const updatedProvider = setLocalProviderConfig(provider);
+    const updatedProvider = configureLocalProvider(provider);
     setLocalProvider(updatedProvider);
     return updatedProvider;
   }, []);

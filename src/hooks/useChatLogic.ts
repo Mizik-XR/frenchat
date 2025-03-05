@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
 import { chatService } from "@/services/chatService";
 import { supabase } from "@/integrations/supabase/client";
 import { AIProvider, WebUIConfig, Message } from "@/types/chat";
+import { useAuth } from "@/components/AuthProvider";
 
 export function useChatLogic(selectedConversationId: string | null) {
   const [isLoading, setIsLoading] = useState(false);
@@ -14,6 +14,8 @@ export function useChatLogic(selectedConversationId: string | null) {
     serviceType, 
     localAIUrl 
   } = useHuggingFace();
+  
+  const { user } = useAuth();
 
   useEffect(() => {
     // Notification à l'utilisateur sur le type de service utilisé
@@ -102,7 +104,7 @@ export function useChatLogic(selectedConversationId: string | null) {
               temperature: webUIConfig.temperature,
               top_p: 0.95,
             }
-          });
+          }, user?.id);
           break;
 
         case 'deepseek':
@@ -111,7 +113,8 @@ export function useChatLogic(selectedConversationId: string | null) {
               model: "deepseek-ai/deepseek-coder-33b-instruct", 
               prompt: `${getSystemPrompt(webUIConfig.analysisMode)}\n\n${prompt}`,
               max_tokens: webUIConfig.maxTokens,
-              temperature: webUIConfig.temperature
+              temperature: webUIConfig.temperature,
+              userId: user?.id
             }
           });
           
@@ -121,7 +124,10 @@ export function useChatLogic(selectedConversationId: string | null) {
 
         case 'internet-search':
           const { data: searchData, error: searchError } = await supabase.functions.invoke('web-search', {
-            body: { query: message }
+            body: { 
+              query: message,
+              userId: user?.id
+            }
           });
           if (searchError) throw searchError;
           response = [{ generated_text: searchData.results }];
@@ -135,7 +141,7 @@ export function useChatLogic(selectedConversationId: string | null) {
               max_length: webUIConfig.maxTokens,
               temperature: webUIConfig.temperature
             }
-          });
+          }, user?.id);
       }
 
       await chatService.sendAssistantMessage(

@@ -41,19 +41,20 @@ export function useUserCreditUsage() {
     setError(null);
     
     try {
-      // Récupérer le solde des crédits de l'utilisateur
-      const { data: creditData, error: creditError } = await supabase
-        .from('user_credits')
-        .select('credit_balance')
-        .eq('user_id', user.id)
-        .single();
+      // Utiliser la fonction Edge pour obtenir le solde de l'utilisateur
+      const { data: creditResponse, error: creditError } = await supabase.functions.invoke('manage-user-credits', {
+        body: { 
+          action: 'check_balance',
+          userId: user.id
+        }
+      });
       
-      if (creditError && creditError.code !== 'PGRST116') {
+      if (creditError) {
         throw creditError;
       }
       
-      // Créer un solde par défaut si aucun trouvé
-      const creditBalance = creditData?.credit_balance || 5.00; // $5 de crédit gratuit par défaut
+      // Obtenir le solde de crédits
+      const creditBalance = creditResponse?.credit_balance || 0;
       
       // Récupérer l'utilisation des tokens
       const { data: usageData, error: usageError } = await supabase
@@ -129,37 +130,28 @@ export function useUserCreditUsage() {
     }
     
     try {
-      // Récupérer le solde actuel
-      const { data: currentCredit, error: fetchError } = await supabase
-        .from('user_credits')
-        .select('credit_balance')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError;
-      }
-      
-      const newBalance = (currentCredit?.credit_balance || 0) + amount;
-      
-      // Upsert pour mettre à jour ou créer l'entrée
-      const { error } = await supabase
-        .from('user_credits')
-        .upsert({
-          user_id: user.id,
-          credit_balance: newBalance,
-          last_updated: new Date().toISOString()
-        });
+      const { data: response, error } = await supabase.functions.invoke('manage-user-credits', {
+        body: { 
+          action: 'add_credits',
+          userId: user.id,
+          amount: amount,
+          paymentToken: 'simulated_payment' // À remplacer par un vrai token de paiement
+        }
+      });
       
       if (error) throw error;
       
-      toast({
-        title: "Crédits ajoutés",
-        description: `${amount.toFixed(2)}$ ont été ajoutés à votre compte`,
-      });
-      
-      // Mettre à jour l'affichage des crédits
-      await fetchUserCreditUsage();
+      if (response && response.success) {
+        toast({
+          title: "Crédits ajoutés",
+          description: `${amount.toFixed(2)}$ ont été ajoutés à votre compte`,
+        });
+        
+        // Mettre à jour l'affichage des crédits
+        await fetchUserCreditUsage();
+      } else {
+        throw new Error("Échec de l'ajout de crédits");
+      }
       
     } catch (e) {
       console.error("Erreur lors de l'ajout de crédits:", e);
