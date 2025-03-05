@@ -27,7 +27,7 @@ interface ImageConfigProps {
 }
 
 export const ImageConfig = ({ onSave }: ImageConfigProps) => {
-  const { config, status, updateConfig } = useServiceConfiguration('stable_diffusion');
+  const { config, status, updateConfig, error } = useServiceConfiguration('stable_diffusion');
   const [selectedModel, setSelectedModel] = useState(config?.model || 'sd-v1.5');
 
   const handleModelChange = async (model: string) => {
@@ -50,7 +50,7 @@ export const ImageConfig = ({ onSave }: ImageConfigProps) => {
           </p>
         </div>
         
-        {status === 'configured' && (
+        {status === 'configured' && !error && (
           <Alert className="max-w-xs">
             <AlertDescription className="text-green-600">
               Modèle actuel : {selectedModel}
@@ -58,6 +58,14 @@ export const ImageConfig = ({ onSave }: ImageConfigProps) => {
           </Alert>
         )}
       </div>
+
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>
+            Impossible de charger la configuration. Les changements seront stockés localement.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-6">
         <div className="space-y-4">

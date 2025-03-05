@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ServiceType } from "@/types/config";
+import { useAuthSession } from "@/hooks/useAuthSession";
 
 interface APIConfig {
   provider: ServiceType;
@@ -24,9 +25,11 @@ interface ConfigData {
 
 export const CloudAIConfig = () => {
   const navigate = useNavigate();
+  const { session } = useAuthSession();
   const [configs, setConfigs] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState<Record<string, boolean>>({});
   const [showKey, setShowKey] = useState<Record<string, boolean>>({});
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     loadConfigs();
@@ -34,13 +37,29 @@ export const CloudAIConfig = () => {
 
   const loadConfigs = async () => {
     try {
+      setLoadError(null);
+      
+      // Vérifier si l'utilisateur est connecté
+      if (!session) {
+        console.log("Aucun utilisateur connecté, impossible de charger les configurations");
+        return;
+      }
+
+      // Utiliser une approche plus simple pour éviter les problèmes de RLS
       const { data: existingConfigs, error } = await supabase
         .from('service_configurations')
-        .select('service_type, config')
-        .in('service_type', ['openai', 'perplexity', 'deepseek', 'anthropic'])
-        .eq('status', 'configured');
+        .select('service_type, config');
+      
+      if (error) {
+        console.error('Erreur lors du chargement des configurations:', error);
+        setLoadError(`Erreur de base de données: ${error.message}`);
+        return;
+      }
 
-      if (error) throw error;
+      if (!existingConfigs || existingConfigs.length === 0) {
+        console.log("Aucune configuration trouvée");
+        return;
+      }
 
       const formattedConfigs = existingConfigs.reduce((acc, curr) => {
         // Accéder de manière sécurisée à la propriété apiKey
@@ -54,13 +73,18 @@ export const CloudAIConfig = () => {
       }, {} as Record<string, string>);
 
       setConfigs(formattedConfigs);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors du chargement des configurations:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les configurations existantes",
-        variant: "destructive",
-      });
+      setLoadError(error.message || "Erreur inconnue lors du chargement des configurations");
+      
+      // Éviter d'afficher des toasts multiples pour la même erreur
+      if (!loadError) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les configurations existantes",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -84,6 +108,23 @@ export const CloudAIConfig = () => {
       const isValid = await testAPIKey(provider, apiKey);
       if (!isValid) {
         throw new Error("La clé API semble invalide");
+      }
+
+      // Mode de secours : stockage local si Supabase pose problème
+      if (loadError) {
+        // Stocker localement en cas d'erreur de base de données
+        localStorage.setItem(`api_key_${provider}`, apiKey);
+        setConfigs(prev => ({
+          ...prev,
+          [provider]: apiKey
+        }));
+        
+        toast({
+          title: "Configuration sauvegardée localement",
+          description: `La clé API pour ${provider} a été mise à jour localement (mode hors ligne)`,
+        });
+        setIsSubmitting(prev => ({ ...prev, [provider]: false }));
+        return;
       }
 
       // Chiffrer les clés API dans la base de données (utilisation de service_configurations)
@@ -159,13 +200,26 @@ export const CloudAIConfig = () => {
           <CardTitle>Configuration des Modèles d'IA Cloud</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Vos clés API sont stockées de manière sécurisée et chiffrée. 
-              Configurez au moins un fournisseur pour utiliser les fonctionnalités d'IA.
-            </AlertDescription>
-          </Alert>
+          {loadError ? (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Impossible de charger les configurations existantes. Mode hors-ligne activé. 
+                Les clés seront stockées localement jusqu'à la résolution du problème.
+                <div className="mt-2 text-xs">
+                  Détails: {loadError}
+                </div>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Vos clés API sont stockées de manière sécurisée et chiffrée. 
+                Configurez au moins un fournisseur pour utiliser les fonctionnalités d'IA.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {Object.entries(providerInfo).map(([provider, info]) => (
             <div key={provider} className="space-y-4">
