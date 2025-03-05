@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { LLMProviderType } from "@/types/config";
@@ -37,7 +36,6 @@ export const LocalAIConfig = ({
   const { capabilities } = useSystemCapabilities();
   const [isOllamaDetected, setIsOllamaDetected] = useState(false);
   
-  // Vérifier si Ollama est disponible
   useEffect(() => {
     const checkOllama = async () => {
       try {
@@ -46,7 +44,6 @@ export const LocalAIConfig = ({
         });
         setIsOllamaDetected(response.ok);
         
-        // Si Ollama est détecté, le définir comme provider par défaut
         if (response.ok && provider !== 'ollama') {
           onProviderChange('ollama');
         }
@@ -58,12 +55,10 @@ export const LocalAIConfig = ({
     checkOllama();
   }, []);
 
-  // Synchroniser le provider avec les sélections de modèle
   useEffect(() => {
     if (mode === "local") {
-      // Extraire le provider à partir de l'ID du modèle local
       const modelId = localSelectedModel;
-      let newProvider: LLMProviderType = "mistral"; // Par défaut
+      let newProvider: LLMProviderType = "mistral";
       
       if (modelId.includes("mistral")) {
         newProvider = "mistral";
@@ -81,9 +76,8 @@ export const LocalAIConfig = ({
         onProviderChange(newProvider);
       }
     } else {
-      // Mode cloud
       const modelId = cloudSelectedModel;
-      let newProvider: LLMProviderType = "huggingface"; // Par défaut
+      let newProvider: LLMProviderType = "huggingface";
       
       if (modelId.includes("openai")) {
         newProvider = "openai";

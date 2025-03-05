@@ -13,6 +13,7 @@ interface ModelPathSelectorProps {
   onPathSelect?: () => void;
   onDownloadCompanion?: () => void;
   onOpenWizard?: () => void;
+  className?: string; // Add className prop to the interface
 }
 
 export function ModelPathSelector({ 
@@ -21,7 +22,8 @@ export function ModelPathSelector({
   onPathChange, 
   onPathSelect,
   onDownloadCompanion,
-  onOpenWizard
+  onOpenWizard,
+  className
 }: ModelPathSelectorProps) {
   const [isOllamaAvailable, setIsOllamaAvailable] = useState<boolean | null>(null);
   
@@ -41,7 +43,7 @@ export function ModelPathSelector({
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${className || ''}`}>
       {isOllamaAvailable === true && (
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <h4 className="text-sm font-medium text-green-800 flex items-center gap-2">
