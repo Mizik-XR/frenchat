@@ -1,5 +1,6 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { isLocalAIAllowed } from '@/hooks/ai/environment/environmentDetection';
 
 interface SettingsContextType {
   theme: 'light' | 'dark' | 'system';
@@ -8,6 +9,7 @@ interface SettingsContextType {
   setLocalAIUrl: (url: string) => void;
   aiServiceType: 'local' | 'cloud' | 'hybrid';
   setAiServiceType: (type: 'local' | 'cloud' | 'hybrid') => void;
+  isLocalAIAvailable: boolean;
 }
 
 const defaultSettings: SettingsContextType = {
@@ -17,6 +19,7 @@ const defaultSettings: SettingsContextType = {
   setLocalAIUrl: () => {},
   aiServiceType: 'local',
   setAiServiceType: () => {},
+  isLocalAIAvailable: true,
 };
 
 const SettingsContext = createContext<SettingsContextType>(defaultSettings);
@@ -33,6 +36,26 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [aiServiceType, setAiServiceType] = useState<'local' | 'cloud' | 'hybrid'>(
     (localStorage.getItem('aiServiceType') as 'local' | 'cloud' | 'hybrid') || 'local'
   );
+  const [isLocalAIAvailable, setIsLocalAIAvailable] = useState<boolean>(isLocalAIAllowed());
+
+  // Vérifier si l'IA locale est disponible au chargement
+  useEffect(() => {
+    const checkLocalAIAvailability = () => {
+      setIsLocalAIAvailable(isLocalAIAllowed());
+      
+      // Si l'IA locale n'est pas disponible et que l'utilisateur a sélectionné 'local',
+      // basculer automatiquement vers 'cloud'
+      if (!isLocalAIAllowed() && aiServiceType === 'local') {
+        updateAiServiceType('cloud');
+      }
+    };
+    
+    checkLocalAIAvailability();
+    
+    // Vérifier également au changement d'URL (pour les paramètres d'URL)
+    window.addEventListener('popstate', checkLocalAIAvailability);
+    return () => window.removeEventListener('popstate', checkLocalAIAvailability);
+  }, []);
 
   const updateTheme = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
@@ -45,6 +68,12 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateAiServiceType = (type: 'local' | 'cloud' | 'hybrid') => {
+    // Si l'IA locale n'est pas disponible, on ne peut pas basculer en mode local
+    if (type === 'local' && !isLocalAIAvailable) {
+      console.warn("L'IA locale n'est pas disponible dans cet environnement.");
+      return;
+    }
+    
     setAiServiceType(type);
     localStorage.setItem('aiServiceType', type);
   };
@@ -58,6 +87,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         setLocalAIUrl: updateLocalAIUrl,
         aiServiceType,
         setAiServiceType: updateAiServiceType,
+        isLocalAIAvailable,
       }}
     >
       {children}

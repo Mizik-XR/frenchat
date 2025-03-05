@@ -24,7 +24,7 @@ export const AutoModeToggle = ({ isAutoMode, onAutoModeChange }: AutoModeToggleP
       </div>
       <p className="text-xs text-gray-500">
         {isAutoMode 
-          ? "L'IA alterne automatiquement entre modèles locaux et cloud selon vos requêtes" 
+          ? "L'IA alterne automatiquement entre modèles locaux et IA propriétaire selon vos requêtes" 
           : "Vous utilisez uniquement le mode que vous avez sélectionné"}
       </p>
     </div>

@@ -48,7 +48,7 @@ export const ChatHeader = ({
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Label>Cloud</Label>
+            <Label>IA propriétaire</Label>
             <Switch
               checked={modelSource === 'local'}
               onCheckedChange={(checked) => onModelSourceChange(checked ? 'local' : 'cloud')}
@@ -61,7 +61,7 @@ export const ChatHeader = ({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="max-w-xs">
-                    Mode Cloud: Utilise les modèles Hugging Face en ligne<br />
+                    Mode IA propriétaire: Utilise les modèles Hugging Face en ligne<br />
                     Mode Local: Utilise les modèles installés sur votre machine
                   </p>
                 </TooltipContent>

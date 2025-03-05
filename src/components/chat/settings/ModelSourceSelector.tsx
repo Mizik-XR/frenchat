@@ -31,7 +31,7 @@ export const ModelSourceSelector = ({
           <RadioGroupItem value="cloud" id="model-cloud" />
           <Label htmlFor="model-cloud" className="flex items-center cursor-pointer">
             <CloudIcon className="h-4 w-4 mr-1 text-blue-600" />
-            <span>Cloud</span>
+            <span>IA propriétaire</span>
           </Label>
         </div>
       </RadioGroup>

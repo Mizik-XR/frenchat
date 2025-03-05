@@ -51,3 +51,29 @@ export function setCloudMode(enabled: boolean): void {
     window.localStorage.removeItem('FORCE_CLOUD_MODE');
   }
 }
+
+/**
+ * Vérifie si l'application est en environnement Netlify
+ * @returns true si l'application est hébergée sur Netlify
+ */
+export function isNetlifyEnvironment(): boolean {
+  return typeof process !== 'undefined' && process.env.NETLIFY === 'true' || 
+         import.meta.env.VITE_ENVIRONMENT === 'production' ||
+         window.location.hostname.includes('netlify.app');
+}
+
+/**
+ * Détermine l'URL de base pour les appels API en fonction de l'environnement
+ * @returns URL de base pour les appels API
+ */
+export function getApiBaseUrl(): string {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  if (isNetlifyEnvironment()) {
+    return '/.netlify/functions';
+  }
+  
+  return 'http://localhost:8000';
+}

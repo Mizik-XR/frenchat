@@ -75,7 +75,7 @@ export const ModelConfigurator = ({
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label>Modèle {isAutoMode ? "" : (modelSource === 'cloud' ? '(Cloud)' : '(Local)')}</Label>
+        <Label>Modèle {isAutoMode ? "" : (modelSource === 'cloud' ? '(IA propriétaire)' : '(Local)')}</Label>
         <ModelSelector
           models={availableModels}
           selectedModel={webUIConfig.model}
