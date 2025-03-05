@@ -12,7 +12,7 @@ export type MessageMetadata = {
   confidence?: number;
   analysisMode?: AnalysisMode;
   aiService?: {
-    type: 'local' | 'cloud';
+    type: 'local' | 'cloud' | 'hybrid';
     endpoint: string;
     actualServiceUsed?: 'local' | 'cloud';
   };

@@ -34,8 +34,8 @@ interface MainLayoutProps {
   onTopicSelect: (id: string) => void;
   onResetConversation: () => void;
   onAnalysisModeChange: (mode: AnalysisMode) => void;
-  modelSource?: 'cloud' | 'local';
-  onModelSourceChange?: (source: 'cloud' | 'local') => void;
+  modelSource: 'cloud' | 'local';
+  onModelSourceChange: (source: 'cloud' | 'local') => void;
 }
 
 export const MainLayout = ({
@@ -68,8 +68,8 @@ export const MainLayout = ({
   onTopicSelect,
   onResetConversation,
   onAnalysisModeChange,
-  modelSource = 'cloud',
-  onModelSourceChange = () => {}
+  modelSource,
+  onModelSourceChange
 }: MainLayoutProps) => {
   return (
     <div className="flex h-full">
@@ -107,6 +107,8 @@ export const MainLayout = ({
             onFilesSelected={onFilesSelected}
             onResetConversation={onResetConversation}
             onAnalysisModeChange={onAnalysisModeChange}
+            modelSource={modelSource}
+            onModelSourceChange={onModelSourceChange}
           />
         </div>
         

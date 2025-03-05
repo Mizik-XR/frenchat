@@ -8,7 +8,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Message, WebUIConfig, AIProvider, AnalysisMode } from "@/types/chat";
 import { NavigationControls } from "@/components/navigation/NavigationControls";
-import { useState } from "react";
 
 interface ChatContainerProps {
   messages: Message[];
@@ -61,22 +60,6 @@ export const ChatContainer = ({
   modelSource,
   onModelSourceChange
 }: ChatContainerProps) => {
-  // No longer needed as we're passing modelSource and onModelSourceChange from props
-  // const [modelSource, setModelSource] = useState<'cloud' | 'local'>('cloud');
-
-  // This function is no longer needed as we're passing onModelSourceChange from props
-  // const handleModelSourceChange = (source: 'cloud' | 'local') => {
-  //   setModelSource(source);
-  //   // Update available models based on source
-  //   if (source === 'cloud') {
-  //     // Set to default cloud model
-  //     onProviderChange('huggingface');
-  //   } else {
-  //     // Set to default local model
-  //     onProviderChange('huggingface'); // Start with default, this can be enhanced to select best local model
-  //   }
-  // };
-
   return (
     <Card className="h-full flex flex-col bg-white dark:bg-gray-800 shadow-sm">
       <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
@@ -120,6 +103,7 @@ export const ChatContainer = ({
         <MessageList 
           messages={messages} 
           isLoading={isLoading}
+          onReplyToMessage={onReplyToMessage}
         />
       </div>
 
