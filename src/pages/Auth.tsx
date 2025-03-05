@@ -50,6 +50,7 @@ export default function Auth() {
 
   // Si nous avons un état de redirection, l'utiliser, sinon rediriger vers la page d'accueil
   const redirectTo = location.state?.from || '/';
+  console.log("Redirection path if authenticated:", redirectTo);
 
   if (loading) {
     return <AuthLoadingScreen />;

@@ -18,6 +18,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [loadingTime, setLoadingTime] = useState(0);
   const [isPreviewEnvironment, setIsPreviewEnvironment] = useState(false);
+  const [hasLayoutEffect, setHasLayoutEffect] = useState(false);
   
   useEffect(() => {
     // Détecter l'environnement de prévisualisation
@@ -32,11 +33,33 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
       setLoadingTime(prev => prev + 1);
     }, 1000);
     
-    return () => clearInterval(timer);
+    // Vérifier si nous avons l'erreur useLayoutEffect dans la console
+    const originalError = console.error;
+    console.error = (...args) => {
+      if (args[0] && typeof args[0] === 'string' && args[0].includes('useLayoutEffect')) {
+        setHasLayoutEffect(true);
+      }
+      originalError.apply(console, args);
+    };
+    
+    return () => {
+      clearInterval(timer);
+      console.error = originalError;
+    };
   }, []);
   
   // Afficher un bouton de relance après 10 secondes de chargement
-  const shouldShowRetry = showRetry || loadingTime > 10;
+  const shouldShowRetry = showRetry || loadingTime > 10 || hasLayoutEffect;
+  
+  const handleRetry = () => {
+    if (onRetry) {
+      onRetry();
+    } else {
+      window.location.href = window.location.pathname.includes('auth') 
+        ? '/' 
+        : window.location.pathname;
+    }
+  };
   
   return (
     <div className="flex flex-col justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
@@ -49,6 +72,18 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         <p className="text-gray-600 text-sm text-center mb-4">
           {loadingTime > 5 ? "Le chargement prend plus de temps que prévu..." : "Initialisation de l'application..."}
         </p>
+        
+        {hasLayoutEffect && (
+          <div className="mb-4 p-3 bg-amber-50 rounded-md w-full text-sm">
+            <div className="flex items-center gap-2 text-amber-700 mb-1">
+              <Info className="h-5 w-5" />
+              <p className="font-medium">Problème de rendu détecté</p>
+            </div>
+            <p className="text-amber-600">
+              Un problème avec useLayoutEffect a été détecté. Essayez de rafraîchir la page ou utilisez le bouton ci-dessous.
+            </p>
+          </div>
+        )}
         
         {isPreviewEnvironment && (
           <div className="mb-4 p-3 bg-blue-50 rounded-md w-full">
@@ -65,7 +100,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         {shouldShowRetry && (
           <div className="flex flex-col items-center mt-2">
             <Button 
-              onClick={onRetry || (() => window.location.reload())}
+              onClick={handleRetry}
               variant="outline"
               className="flex items-center gap-2"
             >
@@ -91,6 +126,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             <p>Timestamp: {new Date().toISOString()}</p>
             <p>Mode: {import.meta.env.MODE || "production"}</p>
             <p>Environnement de prévisualisation: {isPreviewEnvironment ? "Oui" : "Non"}</p>
+            <p>Problème useLayoutEffect détecté: {hasLayoutEffect ? "Oui" : "Non"}</p>
           </div>
         )}
       </div>

@@ -40,7 +40,8 @@ export function useAuthSession() {
     updateCachedUser(session?.user ?? null);
     setUser(session?.user ?? null);
     
-    const urlParams = getUrlParams();
+    // Ne pas rediriger si nous sommes sur la page d'accueil ou la racine
+    const isHomePage = location.pathname === '/' || location.pathname === '/home';
     
     if (!session?.user && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
       navigate(getNavigationPath('/auth'), { state: { from: location.pathname } });
@@ -73,10 +74,11 @@ export function useAuthSession() {
         const needsConfig = !configs || !configs.length || !configs.some(c => c.status === 'configured');
         const isFirstLogin = profile?.is_first_login;
 
+        // Ne rediriger vers la configuration que si nous ne sommes pas sur la page d'accueil
         if ((isFirstLogin || needsConfig) && location.pathname === '/auth') {
           console.log("Redirection vers la configuration (nouveau compte ou configuration requise)");
           navigate(getNavigationPath('/config'));
-        } else if (location.pathname === '/auth' || location.pathname === '/index') {
+        } else if (location.pathname === '/auth') {
           console.log("Redirection vers la page d'accueil (utilisateur déjà configuré)");
           navigate(getNavigationPath('/home'));
         }
@@ -87,7 +89,8 @@ export function useAuthSession() {
         }
       }
     } else if (_event === 'SIGNED_OUT') {
-      if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+      // Ne pas rediriger si nous sommes sur la page d'accueil ou la racine
+      if (!isHomePage && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
         navigate(getNavigationPath('/'));
       }
     }
@@ -101,6 +104,9 @@ export function useAuthSession() {
       console.log("Checking initial session...");
       const { data: { session } } = await supabase.auth.getSession();
       console.log("Initial session check:", session?.user?.id ? "User authenticated" : "No user");
+      
+      // Ne pas rediriger si nous sommes sur la page d'accueil ou la racine
+      const isHomePage = location.pathname === '/' || location.pathname === '/home';
       
       if (session?.user) {
         updateCachedUser(session.user);
@@ -130,12 +136,12 @@ export function useAuthSession() {
           const isFirstLogin = profile?.is_first_login;
 
           // Modifier la condition pour ne pas rediriger automatiquement depuis la page d'accueil
-          if ((isFirstLogin || needsConfig) && 
+          if (!isHomePage && (isFirstLogin || needsConfig) && 
               location.pathname === '/auth' &&
               !location.pathname.startsWith('/auth/google')) {
             console.log("Redirection vers configuration (vérification initiale)");
             navigate(getNavigationPath('/config'));
-          } else if (location.pathname === '/auth' && 
+          } else if (!isHomePage && location.pathname === '/auth' && 
                     !location.pathname.startsWith('/auth/google')) {
             console.log("Redirection vers home (vérification initiale)");
             navigate(getNavigationPath('/home'));
@@ -144,7 +150,7 @@ export function useAuthSession() {
         } catch (error) {
           console.error("Erreur lors de la vérification du statut d'utilisateur (session initiale):", error);
         }
-      } else if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+      } else if (!isHomePage && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
         navigate(getNavigationPath('/auth'), { state: { from: location.pathname } });
       }
     } catch (error) {

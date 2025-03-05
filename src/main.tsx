@@ -12,14 +12,22 @@ if (import.meta.env.MODE !== 'production') {
   initializeLovable();
 }
 
-// Utiliser createRoot pour assurer la compatibilité avec React 18
-const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
+// Obtenir l'élément racine
+const rootElement = document.getElementById('root');
 
-// Assurer que StrictMode englobe toute l'application pour une meilleure détection d'erreurs
-root.render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
-);
+// Vérifier que l'élément existe
+if (!rootElement) {
+  console.error("Élément racine 'root' non trouvé dans le DOM");
+} else {
+  // Utiliser createRoot pour assurer la compatibilité avec React 18
+  const root = ReactDOM.createRoot(rootElement);
+
+  // Assurer que les composants sont rendus dans un environnement client (browser) pour éviter les problèmes de useLayoutEffect
+  root.render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </React.StrictMode>
+  );
+}

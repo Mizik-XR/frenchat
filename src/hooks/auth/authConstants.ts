@@ -6,7 +6,7 @@ export const PROTECTED_ROUTES = [
   '/documents', 
   '/monitoring', 
   '/ai-config', 
-  '/home',
+  // '/home' ne doit pas être protégé pour permettre l'accès à la page d'accueil
   '/system-status',
   '/profile'
 ];

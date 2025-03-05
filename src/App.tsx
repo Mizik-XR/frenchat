@@ -34,6 +34,7 @@ const queryClient = new QueryClient({
 const AppRouter = () => {
   return (
     <Routes>
+      {/* Rediriger la racine vers Home explicitement */}
       <Route path="/" element={<Home />} />
       <Route path="/home" element={<Home />} />
       <Route path="/auth" element={<Auth />} />
@@ -58,9 +59,10 @@ const AppRouter = () => {
 function App() {
   return (
     <ErrorBoundary>
-      {/* Ordre important: ThemeProvider en premier, puis QueryClientProvider */}
+      {/* L'ordre des providers est important */}
       <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
         <QueryClientProvider client={queryClient}>
+          {/* Wrap AuthProvider autour de SettingsProvider pour éviter les problèmes de contexte */}
           <AuthProvider>
             <SettingsProvider>
               <ReactErrorMonitor />
