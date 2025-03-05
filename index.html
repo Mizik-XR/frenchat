@@ -111,6 +111,11 @@
       
       // Fonction de rechargement de la page
       function reloadPage() {
+        window.location.reload();
+      }
+      
+      // Fonction de lancement en mode cloud (fallback)
+      function startCloudMode() {
         window.location.href = window.location.pathname + '?forceCloud=true';
       }
     </script>
@@ -129,12 +134,13 @@
     <div id="root">
       <div id="loading-screen">
         <div class="loading-container">
-          <h1 class="loading-title">FileChat</h1>
+          <h1 class="loading-title">Frenchat</h1>
           <p>Chargement de votre assistant d'intelligence documentaire...</p>
           <div class="loading-bar"><div class="loading-bar-progress"></div></div>
           <p style="font-size: 0.8rem; color: #6b7280;">Si le chargement échoue, essayez de rafraîchir la page.</p>
           <div class="error-message">Le chargement semble prendre plus de temps que prévu.</div>
-          <button class="retry-btn" onclick="reloadPage()">Essayer en mode cloud</button>
+          <button class="retry-btn" onclick="reloadPage()">Rafraîchir la page</button>
+          <button class="retry-btn" onclick="startCloudMode()" style="margin-left: 8px;">Mode cloud</button>
         </div>
       </div>
     </div>

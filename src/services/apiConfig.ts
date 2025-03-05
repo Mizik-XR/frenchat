@@ -12,11 +12,18 @@ export const apiConfig = {
   isProduction: ENVIRONMENT === 'production',
   
   async getHeaders() {
-    const { data: { session } } = await supabase.auth.getSession();
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '',
-    };
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '',
+      };
+    } catch (error) {
+      console.error("Erreur lors de la récupération de la session:", error);
+      return {
+        'Content-Type': 'application/json',
+      };
+    }
   },
 
   endpoints: {
@@ -89,8 +96,15 @@ export const secureApiRequest = async <T>(
     const response = await fetch(url, options);
     
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Request failed with status ${response.status}`);
+      // Tenter de récupérer des informations d'erreur JSON
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error || `Request failed with status ${response.status}`);
+      } catch (jsonError) {
+        // Si la réponse n'est pas JSON, utiliser le texte brut ou un message par défaut
+        const errorText = await response.text().catch(() => '');
+        throw new Error(errorText || `Request failed with status ${response.status}`);
+      }
     }
     
     return await response.json();

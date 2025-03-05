@@ -20,7 +20,16 @@ import OllamaSetup from './pages/OllamaSetup';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-const queryClient = new QueryClient();
+// Créer une nouvelle instance QueryClient avec configuration de retry
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      retryDelay: 1000,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 const AppRouter = () => {
   return (
@@ -49,6 +58,7 @@ const AppRouter = () => {
 function App() {
   return (
     <ErrorBoundary>
+      {/* Ordre important: ThemeProvider en premier, puis QueryClientProvider */}
       <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
         <QueryClientProvider client={queryClient}>
           <AuthProvider>

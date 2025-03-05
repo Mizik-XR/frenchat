@@ -57,7 +57,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
               <p className="font-medium">Environnement de prévisualisation</p>
             </div>
             <p className="text-sm text-blue-600">
-              Dans cet environnement, les fonctionnalités d'IA locale et certaines intégrations sont désactivées.
+              Dans cet environnement, les fonctionnalités d'IA locale et certaines intégrations sont limitées.
             </p>
           </div>
         )}

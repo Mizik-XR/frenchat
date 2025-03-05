@@ -12,7 +12,11 @@ if (import.meta.env.MODE !== 'production') {
   initializeLovable();
 }
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+// Utiliser createRoot pour assurer la compatibilité avec React 18
+const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
+
+// Assurer que StrictMode englobe toute l'application pour une meilleure détection d'erreurs
+root.render(
   <React.StrictMode>
     <BrowserRouter>
       <App />
