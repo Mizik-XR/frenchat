@@ -32,6 +32,8 @@ interface ChatContainerProps {
   onFilesSelected: (files: File[]) => Promise<void>;
   onResetConversation: () => void;
   onAnalysisModeChange: (mode: AnalysisMode) => void;
+  modelSource: 'cloud' | 'local';
+  onModelSourceChange: (source: 'cloud' | 'local') => void;
 }
 
 export const ChatContainer = ({
@@ -55,21 +57,25 @@ export const ChatContainer = ({
   onSubmit,
   onFilesSelected,
   onResetConversation,
-  onAnalysisModeChange
+  onAnalysisModeChange,
+  modelSource,
+  onModelSourceChange
 }: ChatContainerProps) => {
-  const [modelSource, setModelSource] = useState<'cloud' | 'local'>('cloud');
+  // No longer needed as we're passing modelSource and onModelSourceChange from props
+  // const [modelSource, setModelSource] = useState<'cloud' | 'local'>('cloud');
 
-  const handleModelSourceChange = (source: 'cloud' | 'local') => {
-    setModelSource(source);
-    // Update available models based on source
-    if (source === 'cloud') {
-      // Set to default cloud model
-      onProviderChange('huggingface');
-    } else {
-      // Set to default local model
-      onProviderChange('huggingface'); // Start with default, this can be enhanced to select best local model
-    }
-  };
+  // This function is no longer needed as we're passing onModelSourceChange from props
+  // const handleModelSourceChange = (source: 'cloud' | 'local') => {
+  //   setModelSource(source);
+  //   // Update available models based on source
+  //   if (source === 'cloud') {
+  //     // Set to default cloud model
+  //     onProviderChange('huggingface');
+  //   } else {
+  //     // Set to default local model
+  //     onProviderChange('huggingface'); // Start with default, this can be enhanced to select best local model
+  //   }
+  // };
 
   return (
     <Card className="h-full flex flex-col bg-white dark:bg-gray-800 shadow-sm">
@@ -83,7 +89,7 @@ export const ChatContainer = ({
           onResetConversation={onResetConversation}
           setShowUploader={setShowUploader}
           modelSource={modelSource}
-          onModelSourceChange={handleModelSourceChange}
+          onModelSourceChange={onModelSourceChange}
         />
       </div>
 
@@ -104,6 +110,8 @@ export const ChatContainer = ({
             onProviderChange={onProviderChange}
             onAnalysisModeChange={onAnalysisModeChange}
             modelSource={modelSource}
+            onModelSourceChange={onModelSourceChange}
+            onModeChange={onModeChange}
           />
         </div>
       )}

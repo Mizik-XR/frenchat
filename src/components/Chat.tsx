@@ -158,7 +158,7 @@ export const Chat = () => {
     setModelSource(source);
     // Adjust model based on source
     const defaultModel = source === 'cloud' ? 'huggingface' : 'mistral';
-    setWebUIConfig(prev => ({ ...prev, model: defaultModel as AIProvider }));
+    setWebUIConfig(prev => ({ ...prev, model: defaultModel }));
     
     // Don't update localStorage if in auto mode
     if (operationMode !== 'auto') {

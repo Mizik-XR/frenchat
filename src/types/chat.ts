@@ -1,4 +1,5 @@
-export type AIProvider = 'auto' | 'huggingface' | 'internet-search' | 'deepseek' | 'stable-diffusion';
+
+export type AIProvider = 'auto' | 'huggingface' | 'internet-search' | 'deepseek' | 'stable-diffusion' | 'mistral' | 'ollama';
 
 export type MessageType = 'text' | 'document' | 'image' | 'chart';
 
@@ -13,6 +14,7 @@ export type MessageMetadata = {
   aiService?: {
     type: 'local' | 'cloud';
     endpoint: string;
+    actualServiceUsed?: 'local' | 'cloud';
   };
   replyTo?: {
     id: string;

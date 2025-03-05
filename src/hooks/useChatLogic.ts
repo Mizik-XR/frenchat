@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useHuggingFace } from "@/hooks/useHuggingFace";
@@ -140,6 +139,29 @@ export function useChatLogic(selectedConversationId: string | null) {
           response = [{ generated_text: searchData.results }];
           break;
 
+        case 'mistral':
+          response = await textGeneration({
+            model: "mistralai/Mistral-7B-Instruct-v0.1",
+            inputs: prompt,
+            parameters: {
+              max_length: webUIConfig.maxTokens,
+              temperature: webUIConfig.temperature
+            }
+          }, user?.id);
+          break;
+
+        case 'ollama':
+          response = await textGeneration({
+            model: "ollama/mistral",
+            inputs: prompt,
+            parameters: {
+              max_length: webUIConfig.maxTokens,
+              temperature: webUIConfig.temperature
+            },
+            forceLocal: true
+          }, user?.id);
+          break;
+
         default:
           response = await textGeneration({
             model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
@@ -155,19 +177,22 @@ export function useChatLogic(selectedConversationId: string | null) {
       // On récupère le service effectivement utilisé (peut avoir été automatiquement basculé)
       const serviceUsed = localStorage.getItem('lastServiceUsed') || serviceType;
 
+      // Create a type-safe metadata object
+      const metadata = { 
+        provider: webUIConfig.model,
+        analysisMode: webUIConfig.analysisMode,
+        aiService: {
+          ...aiServiceInfo,
+          actualServiceUsed: serviceUsed as 'local' | 'cloud'
+        }
+      };
+
       await chatService.sendAssistantMessage(
         response[0].generated_text,
         selectedConversationId,
         'text',
         documentId,
-        { 
-          provider: webUIConfig.model,
-          analysisMode: webUIConfig.analysisMode,
-          aiService: {
-            ...aiServiceInfo,
-            actualServiceUsed: serviceUsed
-          }
-        }
+        metadata
       );
 
       return { content: response[0].generated_text };
