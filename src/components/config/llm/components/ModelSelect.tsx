@@ -34,12 +34,12 @@ export function ModelSelect({ models, selectedModel, onModelSelect, type }: Mode
                     </Badge>
                   )}
                   {model.isOpenSource ? (
-                    <Badge className="ml-1" variant="outline" className="bg-green-100 text-green-700 border-green-200">
+                    <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
                       <Unlock className="h-3 w-3 mr-1" />
                       Open Source
                     </Badge>
                   ) : (
-                    <Badge className="ml-1" variant="outline" className="bg-amber-100 text-amber-700 border-amber-200">
+                    <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200">
                       <Lock className="h-3 w-3 mr-1" />
                       Propriétaire
                     </Badge>

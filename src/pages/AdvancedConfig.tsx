@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CloudIcon, ServerIcon, BriefcaseIcon, FolderIcon } from "lucide-react";
+import { ArrowLeft, CloudIcon, ServerIcon, FolderIcon } from "lucide-react";
 import { CloudAIConfig } from "@/components/config/CloudAIConfig";
 import { LocalAIConfig } from "@/components/config/llm/LocalAIConfig";
 import { MicrosoftTeamsConfig } from "@/components/config/MicrosoftTeamsConfig";
@@ -48,11 +48,7 @@ export default function AdvancedConfig() {
               </TabsTrigger>
               <TabsTrigger value="ai-cloud" className="flex items-center gap-2">
                 <CloudIcon className="h-4 w-4" />
-                IA Propriétaire
-              </TabsTrigger>
-              <TabsTrigger value="services" className="flex items-center gap-2">
-                <BriefcaseIcon className="h-4 w-4" />
-                Services externes
+                Services Cloud
               </TabsTrigger>
               <TabsTrigger value="storage" className="flex items-center gap-2">
                 <FolderIcon className="h-4 w-4" />
@@ -81,23 +77,29 @@ export default function AdvancedConfig() {
 
             <TabsContent value="ai-cloud">
               <div className="p-4 mb-4 bg-amber-50 border border-amber-200 rounded-md">
-                <h3 className="font-medium text-amber-800 mb-2">Services IA Propriétaires</h3>
+                <h3 className="font-medium text-amber-800 mb-2">Services Cloud</h3>
                 <p className="text-sm text-amber-700">
-                  Ces services IA sont fournis par des entreprises commerciales et nécessitent généralement des clés API et des paiements en fonction de l'utilisation.
-                  Ils offrent souvent des performances supérieures mais à un coût plus élevé.
+                  Ces services sont fournis par des entreprises commerciales et nécessitent généralement des clés API ou des configurations spécifiques.
+                  Ils incluent les IA propriétaires (OpenAI, Claude, etc.) et les services collaboratifs comme Microsoft Teams.
                 </p>
               </div>
-              <CloudAIConfig />
-            </TabsContent>
-
-            <TabsContent value="services">
-              <div className="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-md">
-                <h3 className="font-medium text-blue-800 mb-2">Services collaboratifs</h3>
-                <p className="text-sm text-blue-700">
-                  Configuration des intégrations avec Microsoft Teams et autres plateformes collaboratives.
-                </p>
+              
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">IA Propriétaires</h3>
+                  <CloudAIConfig />
+                </div>
+                
+                <div className="pt-4 border-t border-gray-200">
+                  <h3 className="text-lg font-semibold mb-4">Microsoft Teams</h3>
+                  <div className="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-blue-700">
+                      Configuration de l'intégration avec Microsoft Teams pour accéder à vos fichiers et conversations Teams.
+                    </p>
+                  </div>
+                  <MicrosoftTeamsConfig />
+                </div>
               </div>
-              <MicrosoftTeamsConfig />
             </TabsContent>
             
             <TabsContent value="storage">
