@@ -1,11 +1,15 @@
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, PlusCircle } from "lucide-react";
 import type { AIModel } from "./types";
 import { CustomModelForm } from "./CustomModelForm";
 import { ModelSelect } from "./components/ModelSelect";
 import { ModelConfigurationFields } from "./components/ModelConfigurationFields";
 import { CustomModelFields } from "./components/CustomModelFields";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 interface ModelSelectorProps {
   models: AIModel[];
@@ -25,6 +29,7 @@ export function ModelSelector({
   type 
 }: ModelSelectorProps) {
   const selectedModelConfig = models.find(m => m.id === selectedModel);
+  const [showCustomForm, setShowCustomForm] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -37,8 +42,8 @@ export function ModelSelector({
                 <TooltipTrigger>
                   <HelpCircle className="h-4 w-4 text-gray-400" />
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs bg-white p-2">
-                  <p>
+                <TooltipContent className="max-w-xs bg-white p-2 shadow-lg border border-gray-200">
+                  <p className="text-sm text-gray-700">
                     {type === "local" 
                       ? "Les modèles locaux s'exécutent sur votre machine sans clé API" 
                       : "Les modèles cloud offrent de meilleures performances via des API"
@@ -48,6 +53,15 @@ export function ModelSelector({
               </Tooltip>
             </TooltipProvider>
           </label>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+            onClick={() => setShowCustomForm(!showCustomForm)}
+          >
+            <PlusCircle className="h-4 w-4 mr-1" />
+            Ajouter un modèle personnalisé
+          </Button>
         </div>
 
         <ModelSelect
@@ -58,23 +72,40 @@ export function ModelSelector({
         />
       </div>
 
-      {selectedModelConfig && (
-        <>
-          <ModelConfigurationFields
-            model={selectedModelConfig}
-            onModelUpdate={onModelAdd}
-          />
-          <CustomModelFields
-            model={selectedModelConfig}
-            onModelUpdate={onModelAdd}
-          />
-        </>
+      {showCustomForm && (
+        <Card className="border-purple-200 shadow-sm bg-purple-50 mt-4">
+          <CardContent className="pt-6">
+            <h3 className="text-sm font-medium text-purple-800 mb-3">Ajouter un modèle personnalisé</h3>
+            <CustomModelForm 
+              type={type}
+              onModelAdd={(model) => {
+                onModelAdd(model);
+                setShowCustomForm(false);
+              }}
+            />
+          </CardContent>
+        </Card>
       )}
 
-      <CustomModelForm 
-        type={type}
-        onModelAdd={onModelAdd}
-      />
+      {selectedModelConfig && (
+        <>
+          <Separator className="my-6" />
+          
+          <div className="space-y-6">
+            <h3 className="text-base font-medium">Configuration du modèle</h3>
+            
+            <ModelConfigurationFields
+              model={selectedModelConfig}
+              onModelUpdate={onModelAdd}
+            />
+            
+            <CustomModelFields
+              model={selectedModelConfig}
+              onModelUpdate={onModelAdd}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }
