@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
 import Chat from './pages/Chat';
 import DocumentView from './pages/DocumentView';
@@ -37,6 +37,10 @@ const AppRouter = () => {
       <Route path="/database" element={<DatabaseView />} />
       <Route path="/debug" element={<Debug />} />
       <Route path="/ollama-setup" element={<OllamaSetup />} />
+      {/* Nouvelle route pour /ai qui redirige vers la page de configuration IA */}
+      <Route path="/ai" element={<Navigate to="/config" replace />} />
+      {/* Capture les routes inconnues */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
