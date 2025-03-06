@@ -9,6 +9,10 @@ interface NavLinkProps {
   children: React.ReactNode;
 }
 
+interface NavbarProps {
+  onJoinBeta?: () => void;
+}
+
 function NavLink({ href, children }: NavLinkProps) {
   return (
     <Link to={href} className="text-gray-300 hover:text-white transition-colors relative group">
@@ -18,7 +22,7 @@ function NavLink({ href, children }: NavLinkProps) {
   );
 }
 
-export default function Navbar() {
+export default function Navbar({ onJoinBeta }: NavbarProps) {
   return (
     <motion.nav
       initial={{ y: -100 }}
@@ -31,18 +35,21 @@ export default function Navbar() {
       </Link>
 
       <div className="hidden md:flex items-center space-x-8">
-        <NavLink href="/features">Fonctionnalités</NavLink>
-        <NavLink href="/how-it-works">Comment ça marche</NavLink>
-        <NavLink href="/examples">Exemples</NavLink>
-        <NavLink href="/pricing">Tarifs</NavLink>
+        <NavLink href="/landing?section=features">Fonctionnalités</NavLink>
+        <NavLink href="/landing?section=how-it-works">Comment ça marche</NavLink>
+        <NavLink href="/landing?section=examples">Exemples</NavLink>
+        <NavLink href="/landing?section=pricing">Tarifs</NavLink>
       </div>
 
       <div className="hidden md:flex items-center space-x-4">
         <Button variant="ghost" className="text-white hover:text-blue-400" asChild>
           <Link to="/auth">Connexion</Link>
         </Button>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
-          <Link to="/config">Démarrer</Link>
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700 text-white" 
+          onClick={onJoinBeta}
+        >
+          Démarrer
         </Button>
       </div>
 

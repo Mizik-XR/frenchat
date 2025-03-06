@@ -2,22 +2,15 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Users, Sparkles } from "lucide-react";
-import { FloatingPaper } from "./FloatingPaper";
-import { FrenchAnimation } from "./FrenchAnimation";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { FloatingPaper } from "@/components/landing/FloatingPaper";
+import { FrenchAnimation } from "@/components/landing/FrenchAnimation";
 
-export default function Hero() {
-  const navigate = useNavigate();
-  
-  const handleJoinBeta = () => {
-    navigate("/auth");
-  };
-  
-  const handleViewExamples = () => {
-    navigate("/chat");
-  };
+interface HeroProps {
+  onJoinBeta?: () => void;
+  onSeeExamples?: () => void;
+}
 
+export default function Hero({ onJoinBeta, onSeeExamples }: HeroProps) {
   return (
     <div className="relative min-h-[calc(100vh-76px)] flex items-center">
       {/* Floating papers background */}
@@ -65,11 +58,20 @@ export default function Hero() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8" onClick={handleJoinBeta}>
+            <Button 
+              size="lg" 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8"
+              onClick={onJoinBeta}
+            >
               <Users className="mr-2 h-5 w-5" />
               Rejoindre la Beta
             </Button>
-            <Button size="lg" variant="outline" className="text-white border-red-500 hover:bg-red-500/20" onClick={handleViewExamples}>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="text-white border-red-500 hover:bg-red-500/20"
+              onClick={onSeeExamples}
+            >
               <Sparkles className="mr-2 h-5 w-5" />
               Voir les Exemples
             </Button>

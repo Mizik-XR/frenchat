@@ -40,10 +40,18 @@ export function useAuthSession() {
     updateCachedUser(session?.user ?? null);
     setUser(session?.user ?? null);
     
-    // Ne pas rediriger si nous sommes sur la page d'accueil ou la racine
-    const isHomePage = location.pathname === '/' || location.pathname === '/home' || location.pathname === '/index';
+    // Ne pas rediriger si nous sommes sur la page d'accueil, la landing page ou certaines routes publiques
+    const isPublicPage = 
+      location.pathname === '/' || 
+      location.pathname === '/landing' || 
+      location.pathname.startsWith('/landing') ||
+      location.pathname === '/home' || 
+      location.pathname === '/index';
+    
+    const isAuthPage = location.pathname === '/auth' || location.pathname.startsWith('/auth/');
     
     if (!session?.user && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+      console.log("Redirection vers auth depuis route protégée:", location.pathname);
       navigate(getNavigationPath('/auth'), { state: { from: location.pathname } });
       updateSessionLoading(false);
       setIsLoading(false);
@@ -74,23 +82,25 @@ export function useAuthSession() {
         const needsConfig = !configs || !configs.length || !configs.some(c => c.status === 'configured');
         const isFirstLogin = profile?.is_first_login;
 
-        // Ne rediriger vers la configuration que si nous ne sommes pas sur la page d'accueil
-        if ((isFirstLogin || needsConfig) && location.pathname === '/auth') {
-          console.log("Redirection vers la configuration (nouveau compte ou configuration requise)");
-          navigate(getNavigationPath('/config'));
-        } else if (location.pathname === '/auth') {
-          console.log("Redirection vers la page d'accueil (utilisateur déjà configuré)");
-          navigate(getNavigationPath('/home'));
+        // Rediriger vers la configuration ou le chat selon la situation
+        if (isAuthPage) {
+          if (isFirstLogin || needsConfig) {
+            console.log("Redirection vers la configuration (nouveau compte ou configuration requise)");
+            navigate(getNavigationPath('/config'));
+          } else {
+            console.log("Redirection vers le chat (utilisateur déjà configuré)");
+            navigate(getNavigationPath('/chat'));
+          }
         }
       } catch (error) {
         console.error("Erreur lors de la vérification du statut d'utilisateur:", error);
-        if (location.pathname === '/auth') {
-          navigate(getNavigationPath('/home'));
+        if (isAuthPage) {
+          navigate(getNavigationPath('/chat'));
         }
       }
     } else if (_event === 'SIGNED_OUT') {
-      // Ne pas rediriger si nous sommes sur la page d'accueil ou la racine
-      if (!isHomePage && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+      // Ne pas rediriger si nous sommes sur une page publique
+      if (!isPublicPage && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
         navigate(getNavigationPath('/'));
       }
     }
@@ -105,8 +115,15 @@ export function useAuthSession() {
       const { data: { session } } = await supabase.auth.getSession();
       console.log("Initial session check:", session?.user?.id ? "User authenticated" : "No user");
       
-      // Ne pas rediriger si nous sommes sur la page d'accueil ou la racine
-      const isHomePage = location.pathname === '/' || location.pathname === '/home' || location.pathname === '/index';
+      // Ne pas rediriger si nous sommes sur la page d'accueil, la landing page ou certaines routes publiques
+      const isPublicPage = 
+        location.pathname === '/' || 
+        location.pathname === '/landing' || 
+        location.pathname.startsWith('/landing') ||
+        location.pathname === '/home' || 
+        location.pathname === '/index';
+      
+      const isAuthPage = location.pathname === '/auth' || location.pathname.startsWith('/auth/');
       
       if (session?.user) {
         updateCachedUser(session.user);
@@ -135,22 +152,21 @@ export function useAuthSession() {
           const needsConfig = !configs || !configs.length || !configs.some(c => c.status === 'configured');
           const isFirstLogin = profile?.is_first_login;
 
-          // Modifier la condition pour ne pas rediriger automatiquement depuis la page d'accueil
-          if (!isHomePage && (isFirstLogin || needsConfig) && 
-              location.pathname === '/auth' &&
-              !location.pathname.startsWith('/auth/google')) {
-            console.log("Redirection vers configuration (vérification initiale)");
-            navigate(getNavigationPath('/config'));
-          } else if (!isHomePage && location.pathname === '/auth' && 
-                    !location.pathname.startsWith('/auth/google')) {
-            console.log("Redirection vers home (vérification initiale)");
-            navigate(getNavigationPath('/home'));
+          // Rediriger vers la configuration ou le chat selon la situation pour les pages d'auth
+          if (isAuthPage) {
+            if (isFirstLogin || needsConfig) {
+              console.log("Redirection vers configuration (vérification initiale)");
+              navigate(getNavigationPath('/config'));
+            } else {
+              console.log("Redirection vers chat (vérification initiale)");
+              navigate(getNavigationPath('/chat'));
+            }
           }
-          // Ne pas rediriger automatiquement si l'utilisateur est sur la page d'accueil
+          // Ne jamais rediriger automatiquement depuis les pages publiques
         } catch (error) {
           console.error("Erreur lors de la vérification du statut d'utilisateur (session initiale):", error);
         }
-      } else if (!isHomePage && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+      } else if (!isPublicPage && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
         navigate(getNavigationPath('/auth'), { state: { from: location.pathname } });
       }
     } catch (error) {

@@ -7,6 +7,7 @@ export function FloatingPaper({ count = 5 }) {
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
   useEffect(() => {
+    // Update dimensions only on client side
     setDimensions({
       width: window.innerWidth,
       height: window.innerHeight,
@@ -34,7 +35,11 @@ export function FloatingPaper({ count = 5 }) {
             y: Math.random() * dimensions.height,
           }}
           animate={{
-            x: [Math.random() * dimensions.width, Math.random() * dimensions.width, Math.random() * dimensions.width],
+            x: [
+              Math.random() * dimensions.width, 
+              Math.random() * dimensions.width, 
+              Math.random() * dimensions.width
+            ],
             y: [
               Math.random() * dimensions.height,
               Math.random() * dimensions.height,
@@ -50,7 +55,13 @@ export function FloatingPaper({ count = 5 }) {
         >
           <div className="relative w-16 h-20 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 flex items-center justify-center transform hover:scale-110 transition-transform">
             <FileText
-              className={`w-8 h-8 ${i % 3 === 0 ? "text-blue-400/50" : i % 3 === 1 ? "text-white/50" : "text-red-400/50"}`}
+              className={`w-8 h-8 ${
+                i % 3 === 0 
+                  ? "text-blue-400/50" 
+                  : i % 3 === 1 
+                    ? "text-white/50" 
+                    : "text-red-400/50"
+              }`}
             />
           </div>
         </motion.div>

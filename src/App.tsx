@@ -40,17 +40,13 @@ const AppRouter = () => {
   return (
     <Suspense fallback={<LoadingScreen message="Chargement de la page..." />}>
       <Routes>
-        {/* Route principale - maintenant rediriger vers Index explicitement */}
+        {/* Route racine - affiche Index qui décidera de rediriger ou d'afficher Landing */}
         <Route path="/" element={<Index />} />
         
-        {/* Nouvelle route pour la page d'accueil */}
-        <Route path="/landing" element={<Landing />} />
+        {/* Landing est maintenant rendu via Index quand nécessaire, pas besoin d'une route séparée */}
         
-        {/* Garder les routes alternatives pour l'accueil */}
+        {/* Routes importantes */}
         <Route path="/home" element={<Home />} />
-        <Route path="/index" element={<Index />} />
-        
-        {/* Autres routes standard */}
         <Route path="/auth" element={<Auth />} />
         <Route path="/config" element={<Config />} />
         <Route path="/config/advanced" element={<AdvancedConfig />} />
@@ -63,11 +59,14 @@ const AppRouter = () => {
         <Route path="/debug" element={<Debug />} />
         <Route path="/ollama-setup" element={<OllamaSetup />} />
         
-        {/* Routes temporaires pour les démos de fonctionnalités */}
-        <Route path="/features" element={<Navigate to="/" replace />} />
-        <Route path="/how-it-works" element={<Navigate to="/chat" replace />} />
-        <Route path="/examples" element={<Navigate to="/chat" replace />} />
-        <Route path="/pricing" element={<Navigate to="/config" replace />} />
+        {/* Routes pour la navigation marketing (redirigent vers les routes appropriées) */}
+        <Route path="/features" element={<Navigate to="/landing?section=features" replace />} />
+        <Route path="/how-it-works" element={<Navigate to="/landing?section=how-it-works" replace />} />
+        <Route path="/examples" element={<Navigate to="/landing?section=examples" replace />} />
+        <Route path="/pricing" element={<Navigate to="/landing?section=pricing" replace />} />
+        
+        {/* Nouvelle route explicite pour Landing quand accédée directement */}
+        <Route path="/landing" element={<Landing />} />
         
         {/* Nouvelle route pour /ai qui redirige vers la page de configuration IA */}
         <Route path="/ai" element={<Navigate to="/config" replace />} />

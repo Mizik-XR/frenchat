@@ -2,10 +2,16 @@
 # Redirection pour toutes les routes vers index.html (SPA)
 /* /index.html 200
 
-# Assurer que / et /home et /index sont accessibles directement
+# Assurer que / est accessible directement
 / /index.html 200 
-/home /index.html 200
-/index /index.html 200
+
+# Assurer l'accès à la landing page
+/landing /index.html 200
+/landing?section=* /index.html 200
+
+# Assurer que /chat est accessible
+/chat /index.html 200
+/chat/* /index.html 200
 
 # Redirections avec paramètres d'URL importants
 /?mode=cloud /index.html?mode=cloud 200
@@ -16,7 +22,6 @@
 # Pages principales avec fallback
 /auth /index.html 200
 /config /index.html 200
-/chat /index.html 200
 /google-drive /index.html 200
 /document/* /index.html 200
 
