@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface StatusIndicatorProps {
   mode: "auto" | "manual";
@@ -26,7 +27,16 @@ export const StatusIndicator = ({ mode, model, modelSource }: StatusIndicatorPro
         <span> - {model || "Non spécifié"}</span>
         
         {!model && (
-          <Info className="h-3.5 w-3.5 text-amber-500 cursor-help" title="Modèle non spécifié" />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3.5 w-3.5 text-amber-500 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Modèle non spécifié</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
     </div>

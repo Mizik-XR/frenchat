@@ -3,21 +3,23 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, handleProfileQuery } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import { SignInForm } from '@/components/auth/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm';
 import { AuthContainer } from '@/components/auth/AuthContainer';
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen';
 import { useAuthForms } from '@/hooks/useAuthForms';
+import { toast } from '@/hooks/use-toast';
 
 export default function Auth() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const location = useLocation();
   const authForms = useAuthForms();
   
-  // Récupérer l'onglet sélectionné depuis l'état de navigation
+  // Get selected tab from navigation state
   const defaultTab = location.state?.tab || 'signin';
 
   useEffect(() => {
@@ -26,11 +28,18 @@ export default function Auth() {
       try {
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         if (error) {
-          console.error('Erreur lors de la récupération de la session:', error);
+          console.error('Error retrieving session:', error);
+          setError('Une erreur est survenue lors de la vérification de votre session.');
+          toast({
+            title: "Erreur d'authentification",
+            description: "Problème de connexion avec le serveur. Veuillez réessayer.",
+            variant: "destructive",
+          });
         }
         setSession(currentSession);
       } catch (error) {
-        console.error('Erreur dans checkSession:', error);
+        console.error('Error in checkSession:', error);
+        setError('Une erreur inattendue est survenue.');
       } finally {
         setLoading(false);
       }
@@ -41,6 +50,16 @@ export default function Auth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log("Auth state changed", _event, session);
       setSession(session);
+      
+      // If user just signed up or signed in, check for database errors
+      if (session && (_event === 'SIGNED_IN' || _event === 'SIGNED_UP')) {
+        handleProfileQuery(session.user.id)
+          .then(({ error }) => {
+            if (error) {
+              console.warn("Profile issue detected, but continuing with session:", error);
+            }
+          });
+      }
     });
 
     return () => {
@@ -48,7 +67,7 @@ export default function Auth() {
     };
   }, []);
 
-  // Si nous avons un état de redirection, l'utiliser, sinon rediriger vers la page d'accueil
+  // Use redirect path from state, or default to home
   const redirectTo = location.state?.from || '/';
   console.log("Redirection path if authenticated:", redirectTo);
 
@@ -56,7 +75,7 @@ export default function Auth() {
     return <AuthLoadingScreen />;
   }
 
-  // Si l'utilisateur est authentifié, le rediriger vers la page demandée ou l'accueil
+  // If user is authenticated, redirect to requested page or home
   if (session) {
     console.log("User is authenticated, redirecting to:", redirectTo);
     return <Navigate to={redirectTo} replace />;
@@ -107,6 +126,12 @@ export default function Auth() {
           </Tabs>
         </CardHeader>
       </Card>
+      
+      {error && (
+        <div className="mt-4 p-3 bg-red-100 text-red-800 rounded-md text-sm">
+          {error}
+        </div>
+      )}
     </AuthContainer>
   );
 }

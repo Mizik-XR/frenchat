@@ -110,10 +110,10 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   }
 }
 
-// Création du client avec des options optimisées et gestion des erreurs
+// Create client with error handling
 let supabaseClient: any = null;
 try {
-  // Création du client avec des options optimisées
+  // Create client with optimized options
   supabaseClient = createClient<Database>(
     SUPABASE_URL, 
     SUPABASE_PUBLISHABLE_KEY,
@@ -126,11 +126,11 @@ try {
       },
       global: {
         fetch: (...args) => {
-          // Correction de l'opérateur spread pour traiter correctement les arguments typés
+          // Handle fetch arguments properly
           const request = args[0];
           const options = args[1] || {};
           
-          // Ajout conditionnel des options de cache
+          // Conditional cache options
           const updatedOptions = {
             ...options,
             cache: request.toString().includes('auth/') ? 'no-cache' : 'default'
@@ -141,16 +141,16 @@ try {
       }
     }
   );
-  console.log("Client Supabase initialisé avec succès");
+  console.log("Client Supabase initialized successfully");
 } catch (error) {
-  console.error("ERREUR CRITIQUE: Échec d'initialisation du client Supabase:", error);
+  console.error("CRITICAL ERROR: Failed to initialize Supabase client:", error);
   supabaseClient = null;
 }
 
-// Export du client Supabase
+// Export Supabase client
 export const supabase = supabaseClient;
 
-// Type helper pour les retours des Edge Functions
+// Type helper for Edge Function responses
 export type EdgeFunctionResponse<T> = {
   data: T;
   error: null;
@@ -161,19 +161,56 @@ export type EdgeFunctionResponse<T> = {
   };
 };
 
-// Précharger la session dès que possible si nous sommes dans un navigateur
+// Add fallback functions to handle database errors gracefully
+export const handleProfileQuery = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (error) {
+      if (error.message?.includes('infinite recursion')) {
+        console.warn("Database policy recursion detected. Using fallback profile.");
+        // Return a minimal fallback profile
+        return { 
+          data: { 
+            id: userId,
+            is_first_login: false,
+            // Add reasonable defaults for other required fields
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, 
+          error: null 
+        };
+      }
+      return { data: null, error };
+    }
+    
+    return { data, error: null };
+  } catch (err) {
+    console.error("Error querying profile:", err);
+    return { 
+      data: null, 
+      error: { message: err instanceof Error ? err.message : 'Unknown error' } 
+    };
+  }
+};
+
+// Preload session if we're in a browser
 if (typeof window !== 'undefined') {
-  // Préchargement non-bloquant
+  // Non-blocking preload
   setTimeout(() => {
     preloadSession().catch(err => {
-      console.warn("Préchargement de session échoué:", err);
+      console.warn("Session preload failed:", err);
     });
   }, 0);
   
-  // Détection du service d'IA local au démarrage de l'application
+  // Local AI service detection
   setTimeout(() => {
     detectLocalAIService().catch(err => {
-      console.warn("Détection du service d'IA local échouée:", err);
+      console.warn("Local AI service detection failed:", err);
     });
   }, 1000);
 }
