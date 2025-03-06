@@ -1,110 +1,55 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/components/AuthProvider";
-import { toast } from "@/hooks/use-toast";
-import { 
-  getGoogleRedirectUrl, 
-  initiateGoogleDriveAuth, 
-  revokeGoogleDriveAccess,
-  refreshGoogleDriveToken,
-  checkGoogleDriveTokenStatus
-} from '@/utils/googleDriveUtils';
-
-// Export these functions for backward compatibility
-export { 
-  getGoogleRedirectUrl,
-  initiateGoogleDriveAuth, 
-  revokeGoogleDriveAccess 
-} from '@/utils/googleDriveUtils';
-
-// Also re-export getRedirectUrl for backward compatibility
-export { getRedirectUrl } from '@/utils/environment';
+import { useState, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
 
 export interface ConnectionData {
   email: string;
-  connectedSince: Date;
-  metadata: any;
+  connectedSince: Date | null;
+  tokenExpiry?: Date | null;
 }
-
-// Temps en secondes avant l'expiration où nous considérons qu'un refresh est nécessaire
-const REFRESH_THRESHOLD_SECONDS = 300; // 5 minutes
 
 export const useGoogleDriveStatus = () => {
   const [isConnected, setIsConnected] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
+  const [isChecking, setIsChecking] = useState(false);
   const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
+  const { toast } = useToast();
   const { user } = useAuth();
 
   const checkGoogleDriveConnection = useCallback(async () => {
-    // Si pas d'utilisateur connecté, pas besoin de vérifier
-    if (!user) {
-      setIsConnected(false);
-      setIsChecking(false);
-      setConnectionData(null);
-      return;
-    }
-
+    if (!user) return;
+    
+    setIsChecking(true);
     try {
-      setIsChecking(true);
-      console.log('Vérification du statut Google Drive pour user:', user.id);
-      
-      // Récupération des métadonnées du token (email, date de connexion)
+      // Vérifier le statut de la connexion à Google Drive
       const { data, error } = await supabase
-        .from('oauth_tokens')
-        .select('created_at, metadata')
+        .from('service_configurations')
+        .select('status, created_at, config_data')
         .eq('user_id', user.id)
-        .eq('provider', 'google')
-        .maybeSingle();
+        .eq('service_type', 'google_drive')
+        .single();
 
       if (error) {
-        console.error("Erreur lors de la vérification des tokens:", error);
+        console.error('Erreur lors de la vérification du statut Google Drive:', error);
         setIsConnected(false);
-        setIsChecking(false);
         setConnectionData(null);
-        return;
-      }
-
-      // Vérification si le token existe
-      if (data) {
-        // Extraction de l'email avec vérification de type
-        let userEmail = "Utilisateur Google";
-        if (data.metadata && typeof data.metadata === 'object') {
-          userEmail = (data.metadata as Record<string, any>).email || userEmail;
-        }
+      } else if (data && data.status === 'configured') {
+        setIsConnected(true);
         
-        // Mise à jour des données de connexion
+        // Extraire les informations de connexion
+        const configData = data.config_data as Record<string, any>;
         setConnectionData({
-          email: userEmail,
-          connectedSince: new Date(data.created_at),
-          metadata: data.metadata
+          email: configData?.email || 'Utilisateur Google',
+          connectedSince: data.created_at ? new Date(data.created_at) : null,
+          tokenExpiry: configData?.expires_at ? new Date(configData.expires_at) : null
         });
-        
-        // Vérification de la validité du token via l'Edge Function
-        const { isValid, expiresIn } = await checkGoogleDriveTokenStatus(user.id);
-        
-        if (!isValid) {
-          console.log("Le token est expiré, tentative de rafraîchissement...");
-          
-          // Tentative de rafraîchissement du token
-          const refreshed = await refreshGoogleDriveToken(user.id);
-          setIsConnected(refreshed);
-        } else {
-          // Si le token est valide mais proche de l'expiration, le rafraîchir préventivement
-          if (expiresIn !== undefined && expiresIn < REFRESH_THRESHOLD_SECONDS) {
-            console.log(`Token valide mais expire bientôt (${expiresIn}s), rafraîchissement préventif...`);
-            await refreshGoogleDriveToken(user.id);
-          }
-          
-          setIsConnected(true);
-        }
       } else {
-        console.log('Aucun token trouvé pour cet utilisateur');
         setIsConnected(false);
         setConnectionData(null);
       }
-    } catch (err) {
-      console.error("Erreur lors de la vérification de la connexion Google Drive:", err);
+    } catch (error) {
+      console.error('Erreur lors de la vérification de la connexion:', error);
       setIsConnected(false);
       setConnectionData(null);
     } finally {
@@ -112,76 +57,71 @@ export const useGoogleDriveStatus = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    // Vérification initiale
-    checkGoogleDriveConnection();
-
-    // Mettre en place un intervalle pour vérifier régulièrement
-    const interval = setInterval(checkGoogleDriveConnection, 60000); // Vérification toutes les minutes
-
-    return () => clearInterval(interval);
-  }, [checkGoogleDriveConnection]);
-
-  const reconnectGoogleDrive = async () => {
-    if (!user) {
-      toast({
-        title: "Erreur",
-        description: "Vous devez être connecté pour utiliser cette fonctionnalité",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const reconnectGoogleDrive = useCallback(async () => {
+    // Rediriger vers le flow d'OAuth de Google
     try {
-      toast({
-        title: "Connexion à Google Drive",
-        description: "Vous allez être redirigé vers Google pour autoriser l'accès",
+      // Cette URL doit correspondre à votre configuration Supabase/Google OAuth
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          scopes: 'https://www.googleapis.com/auth/drive.readonly',
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
       });
-      
-      const authUrl = await initiateGoogleDriveAuth(user.id);
-      
-      // Rediriger après un court délai pour que l'utilisateur voie la notification
-      setTimeout(() => {
-        window.location.href = authUrl;
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Erreur lors de l\'initialisation de l\'auth Google:', error);
-      toast({
-        title: "Erreur de configuration",
-        description: error instanceof Error ? error.message : "Impossible d'initialiser la connexion à Google Drive",
-        variant: "destructive",
-      });
-    }
-  };
 
-  const disconnectGoogleDrive = async () => {
-    if (!user) {
-      return;
-    }
-
-    try {
-      const success = await revokeGoogleDriveAccess(user.id);
-      
-      if (success) {
-        // Mise à jour de l'état
-        setIsConnected(false);
-        setConnectionData(null);
-        
+      if (error) {
+        console.error('Erreur lors de la connexion à Google:', error);
         toast({
-          title: "Déconnexion réussie",
-          description: "Votre compte Google Drive a été déconnecté",
+          title: "Erreur de connexion",
+          description: "Impossible de se connecter à Google Drive.",
+          variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("Erreur lors de la déconnexion de Google Drive:", error);
+      console.error('Erreur lors de la reconnexion:', error);
       toast({
-        title: "Erreur de déconnexion",
-        description: error instanceof Error ? error.message : "Impossible de déconnecter votre compte Google Drive",
+        title: "Erreur de connexion",
+        description: "Une erreur s'est produite lors de la tentative de connexion.",
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
+
+  const disconnectGoogleDrive = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      // Supprimer la configuration Google Drive pour cet utilisateur
+      const { error } = await supabase
+        .from('service_configurations')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('service_type', 'google_drive');
+
+      if (error) {
+        console.error('Erreur lors de la déconnexion de Google Drive:', error);
+        toast({
+          title: "Erreur de déconnexion",
+          description: "Impossible de déconnecter Google Drive.",
+          variant: "destructive",
+        });
+      } else {
+        setIsConnected(false);
+        setConnectionData(null);
+        toast({
+          title: "Déconnexion réussie",
+          description: "Vous avez été déconnecté de Google Drive.",
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: "Une erreur s'est produite lors de la tentative de déconnexion.",
+        variant: "destructive",
+      });
+    }
+  }, [user, toast]);
 
   return {
     isConnected,
