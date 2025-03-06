@@ -1,8 +1,8 @@
-
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
+import { getRedirectUrl } from '@/utils/environment/urlUtils';
 
 export interface ConnectionData {
   email: string;
@@ -129,6 +129,9 @@ export const useGoogleDriveStatus = () => {
     connectionData,
     checkGoogleDriveConnection,
     reconnectGoogleDrive,
-    disconnectGoogleDrive
+    disconnectGoogleDrive,
+    getRedirectUrl
   };
 };
+
+export { getRedirectUrl };
