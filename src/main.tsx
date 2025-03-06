@@ -5,7 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import './styles/chat.css';
-import { initializeLovable } from './utils/lovable/editingUtils';
+import { initializeLovable } from './utils/lovable/lovableIntegration';
 import { showInitialLoadingMessage, initializeAppWithErrorRecovery } from './utils/startup/loadingUtils';
 
 // Vérifier si le code s'exécute côté client
