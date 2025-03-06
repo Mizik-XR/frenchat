@@ -23,6 +23,7 @@ const DatabaseView = lazy(() => import('./pages/DatabaseView'));
 const Debug = lazy(() => import('./pages/Debug'));
 const OllamaSetup = lazy(() => import('./pages/OllamaSetup'));
 const Index = lazy(() => import('./pages/Index'));
+const Landing = lazy(() => import('./pages/Landing'));
 
 // Créer une nouvelle instance QueryClient avec configuration de retry
 const queryClient = new QueryClient({
@@ -42,6 +43,9 @@ const AppRouter = () => {
         {/* Route principale - maintenant rediriger vers Index explicitement */}
         <Route path="/" element={<Index />} />
         
+        {/* Nouvelle route pour la page d'accueil */}
+        <Route path="/landing" element={<Landing />} />
+        
         {/* Garder les routes alternatives pour l'accueil */}
         <Route path="/home" element={<Home />} />
         <Route path="/index" element={<Index />} />
@@ -58,6 +62,12 @@ const AppRouter = () => {
         <Route path="/database" element={<DatabaseView />} />
         <Route path="/debug" element={<Debug />} />
         <Route path="/ollama-setup" element={<OllamaSetup />} />
+        
+        {/* Routes temporaires pour les démos de fonctionnalités */}
+        <Route path="/features" element={<Navigate to="/" replace />} />
+        <Route path="/how-it-works" element={<Navigate to="/chat" replace />} />
+        <Route path="/examples" element={<Navigate to="/chat" replace />} />
+        <Route path="/pricing" element={<Navigate to="/config" replace />} />
         
         {/* Nouvelle route pour /ai qui redirige vers la page de configuration IA */}
         <Route path="/ai" element={<Navigate to="/config" replace />} />
