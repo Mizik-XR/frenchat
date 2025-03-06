@@ -8,9 +8,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface StatusIndicatorProps {
   serviceType: string;
   localAIUrl?: string | null;
+  mode?: "auto" | "manual";
+  model?: string; 
+  modelSource?: 'cloud' | 'local';
 }
 
-export const StatusIndicator = ({ serviceType, localAIUrl }: StatusIndicatorProps) => {
+export const StatusIndicator = ({ serviceType, localAIUrl, mode, model, modelSource }: StatusIndicatorProps) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isBackendReachable, setIsBackendReachable] = useState(!APP_STATE.isOfflineMode);
   const [pingResult, setPingResult] = useState<string | null>(null);
@@ -128,6 +131,9 @@ export const StatusIndicator = ({ serviceType, localAIUrl }: StatusIndicatorProp
           <div className="text-xs">
             <p>Status: {isOnline ? "Connecté" : "Déconnecté"}</p>
             <p>Service: {serviceType === 'local' ? "Local" : "Cloud"}</p>
+            {modelSource && <p>Mode: {modelSource === 'local' ? "Local" : "Cloud"}</p>}
+            {mode && <p>Mode opération: {mode === 'auto' ? "Automatique" : "Manuel"}</p>}
+            {model && <p>Modèle: {model}</p>}
             {pingResult && <p>Diagnostic: {pingResult}</p>}
             {APP_STATE.isOfflineMode && (
               <p className="text-orange-600">Mode hors ligne activé</p>

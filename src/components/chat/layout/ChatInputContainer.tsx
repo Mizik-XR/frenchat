@@ -62,6 +62,7 @@ export const ChatInputContainer = ({
       )}
 
       <StatusIndicator 
+        serviceType={modelSource === 'local' ? 'local' : 'cloud'}
         mode={mode}
         model={model}
         modelSource={modelSource}
