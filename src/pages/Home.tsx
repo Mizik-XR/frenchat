@@ -17,7 +17,7 @@ export default function Home() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [apiKey, setApiKey] = useState('');
+  const [huggingFaceApiKey, setHuggingFaceApiKey] = useState('');
   const [description, setDescription] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export default function Home() {
   }, [user, navigate]);
 
   const handleApiKeyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setApiKey(event.target.value);
+    setHuggingFaceApiKey(event.target.value);
   };
 
   const handleDescriptionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -76,14 +76,20 @@ export default function Home() {
           <CardContent className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Clé API
+                Clé API Hugging Face (optionnelle)
               </label>
               <Input
                 type="password"
-                value={apiKey}
+                value={huggingFaceApiKey}
                 onChange={handleApiKeyChange}
-                placeholder="Entrez votre clé API"
+                placeholder="Entrez votre clé API Hugging Face pour utiliser leurs modèles d'IA"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Cette clé est utilisée pour accéder aux modèles d'IA de Hugging Face. 
+                <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline ml-1">
+                  Obtenir une clé
+                </a>
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -92,7 +98,7 @@ export default function Home() {
               <Textarea
                 value={description}
                 onChange={handleDescriptionChange}
-                placeholder="Ajoutez une description"
+                placeholder="Ajoutez une description pour votre compte"
               />
             </div>
           </CardContent>
