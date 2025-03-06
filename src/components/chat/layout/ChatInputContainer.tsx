@@ -45,9 +45,10 @@ export const ChatInputContainer = ({
     }
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(e);
+  // Fix the signature to match expected function type
+  const handleSendMessage = () => {
+    const dummyEvent = { preventDefault: () => {} } as React.FormEvent;
+    onSubmit(dummyEvent);
   };
 
   return (

@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { AIProvider } from '@/types/chat';
 
 export function useModelSelection() {
-  // Utiliser les états pour les propriétés manquantes
   const [selectedModel, setSelectedModel] = useState<string>("mistral-7b");
   const [activeModel, setActiveModel] = useState<"search" | "deepseek" | "mixtral">("mixtral");
 

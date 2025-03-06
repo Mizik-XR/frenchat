@@ -31,6 +31,14 @@ export type SystemCapabilities = {
     name: string;
     version: string;
   };
+  // Adding missing properties needed by components
+  gpuAvailable: boolean;
+  memoryGB?: number;
+  cpuCores?: number;
+  isHighEndSystem: boolean;
+  isMidEndSystem: boolean;
+  isLowEndSystem: boolean;
+  recommendedModels: string[];
 };
 
 export function useSystemCapabilities() {
@@ -43,10 +51,17 @@ export function useSystemCapabilities() {
     diskSpace: { total: 0, available: 0 },
     network: { online: navigator.onLine, latency: null },
     browser: { name: 'unknown', version: 'unknown' },
+    // Initialize the new properties
+    gpuAvailable: false,
+    memoryGB: 0,
+    cpuCores: 0,
+    isHighEndSystem: false,
+    isMidEndSystem: false,
+    isLowEndSystem: true,
+    recommendedModels: ['mistral-7b', 'llama-2-7b', 'phi-2']
   });
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  // Ajout de la propriété llmStatus qui manquait
   const [llmStatus, setLlmStatus] = useState<ServiceStatus>('checking');
 
   const analyzeSystem = async () => {
@@ -54,8 +69,15 @@ export function useSystemCapabilities() {
     // Simuler une analyse système pour le moment
     
     setTimeout(() => {
+      // Update all capabilities with more realistic values
       setCapabilities({
         ...capabilities,
+        gpuAvailable: navigator.gpu !== undefined,
+        memoryGB: 16, // Example value
+        cpuCores: navigator.hardwareConcurrency || 4,
+        isHighEndSystem: navigator.hardwareConcurrency > 8,
+        isMidEndSystem: navigator.hardwareConcurrency >= 4 && navigator.hardwareConcurrency <= 8,
+        isLowEndSystem: navigator.hardwareConcurrency < 4,
         network: { ...capabilities.network, online: navigator.onLine },
       });
       
@@ -90,7 +112,6 @@ export function useSystemCapabilities() {
     capabilities,
     isAnalyzing,
     analyzeSystem,
-    // Exposer la propriété llmStatus
     llmStatus
   };
 }

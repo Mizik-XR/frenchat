@@ -31,7 +31,6 @@ export type WebUIConfig = {
   streamResponse: boolean;
   analysisMode: AnalysisMode;
   useMemory: boolean;
-  // Ajout des propriétés manquantes
   autoMode: boolean;
   modelSource: 'local' | 'cloud';
 };
@@ -45,10 +44,8 @@ export type Message = {
   metadata?: MessageMetadata;
   conversationId: string;
   timestamp: Date;
-  // Renommage de createdAt pour correspondre à timestamp lors des références
-  createdAt?: Date;
-  // Ajout de la propriété replyTo
-  replyTo?: string;
+  createdAt?: Date; // This is now an alias for timestamp for compatibility
+  replyTo?: string; // Added for compatibility with references
   quotedMessageId?: string;
 };
 
