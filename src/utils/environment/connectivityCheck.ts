@@ -87,7 +87,7 @@ export function enableOfflineMode(reason: string): void {
     toast({
       title: "Mode hors ligne activé",
       description: `Raison: ${reason}. Certaines fonctionnalités seront limitées.`,
-      variant: "warning"
+      variant: "default" // Changé de "warning" à "default"
     });
   }
 }
