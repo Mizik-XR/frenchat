@@ -1,30 +1,30 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/AuthProvider";
-import { GoogleDriveConnectionStatus } from "@/components/GoogleDriveConnectionStatus";
-import { UserCreditPanel } from "@/components/config/AIUsageMetrics/UserCreditPanel";
+import { useGoogleDrivePicker } from "@/hooks/useGoogleDrivePicker";
+import { useGoogleDriveFolders } from "@/hooks/useGoogleDriveFolders";
+import { FolderTree } from "@/components/FolderTree";
+import { GoogleDriveSync } from "@/components/GoogleDriveSync";
 import { OllamaPromotion } from "@/components/ollama/OllamaPromotion";
-import { 
-  BookOpen, 
-  MessageCircle, 
-  Upload, 
-  FileText, 
-  Settings, 
-  BarChart, 
-  ArrowRight,
-  Folder,
-  Database,
-  HelpCircle
-} from "lucide-react";
+import { UserCreditPanel } from "@/components/config/AIUsageMetrics/UserCreditPanel";
+import { GoogleDriveConnectionStatus } from "@/components/GoogleDriveConnectionStatus";
 
 export default function Home() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [huggingFaceApiKey, setHuggingFaceApiKey] = useState('');
+  const [description, setDescription] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const { refreshFolders } = useGoogleDriveFolders();
+  const { pickFolder } = useGoogleDrivePicker();
 
   useEffect(() => {
     if (!user) {
@@ -32,229 +32,107 @@ export default function Home() {
     }
   }, [user, navigate]);
 
-  const handleGetStarted = () => {
-    navigate('/chat');
+  const handleApiKeyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setHuggingFaceApiKey(event.target.value);
+  };
+
+  const handleDescriptionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(event.target.value);
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    // Simuler une synchronisation
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsSyncing(false);
+    toast({
+      title: "Synchronisation réussie!",
+      description: "Vos données ont été synchronisées avec succès.",
+    });
+  };
+
+  const handleFolderSelect = (folderId: string) => {
+    setSelectedFolderId(folderId);
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold tracking-tight">FileChat</h1>
-          <p className="text-xl text-muted-foreground mt-3 max-w-2xl mx-auto">
-            Votre assistant d'intelligence documentaire qui connecte tous vos fichiers avec le pouvoir de l'IA.
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">Bienvenue sur FileChat</h1>
+          <p className="text-gray-500">
+            Commencez à discuter avec vos fichiers en toute simplicité.
           </p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-          <Card className="col-span-1 md:col-span-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-100 dark:border-blue-900">
-            <CardContent className="p-8">
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className="flex-1">
-                  <h2 className="text-2xl font-semibold mb-2">Bienvenue sur FileChat</h2>
-                  <p className="text-muted-foreground mb-4">
-                    Posez des questions à vos documents, générez du contenu et explorez vos fichiers grâce à l'intelligence artificielle.
-                  </p>
-                  <Button size="lg" onClick={handleGetStarted} className="gap-2">
-                    Commencer une discussion <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="w-full md:w-1/3 rounded-lg overflow-hidden shadow-lg">
-                  <img 
-                    src="/filechat-animation.gif" 
-                    alt="FileChat Demo" 
-                    className="w-full h-auto"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <GoogleDriveConnectionStatus />
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-blue-500" />
-                <span>Documents indexés</span>
-              </CardTitle>
-              <CardDescription>
-                Explorez et gérez vos documents indexés
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">0</p>
-              <p className="text-sm text-muted-foreground">Documents prêts pour l'analyse</p>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" onClick={() => navigate('/indexing')}>
-                Gérer les documents
-              </Button>
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 text-green-500" />
-                <span>Conversations</span>
-              </CardTitle>
-              <CardDescription>
-                Reprenez vos conversations avec l'IA
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">0</p>
-              <p className="text-sm text-muted-foreground">Discussions actives</p>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" onClick={() => navigate('/chat')}>
-                Voir les conversations
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-6">Commencer avec FileChat</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <Card className="hover:shadow-md transition-all">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Upload className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Importer des fichiers</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Téléchargez des fichiers pour les analyser avec l'IA
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="pt-0">
-                <Button variant="ghost" size="sm" className="w-full justify-start gap-1" onClick={() => navigate('/indexing')}>
-                  Importer <ArrowRight className="h-3 w-3" />
-                </Button>
-              </CardFooter>
-            </Card>
-            
-            <Card className="hover:shadow-md transition-all">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <MessageCircle className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Discuter avec l'IA</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Posez des questions sur vos documents
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="pt-0">
-                <Button variant="ghost" size="sm" className="w-full justify-start gap-1" onClick={() => navigate('/chat')}>
-                  Discuter <ArrowRight className="h-3 w-3" />
-                </Button>
-              </CardFooter>
-            </Card>
-            
-            <Card className="hover:shadow-md transition-all">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Folder className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Google Drive</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Connectez et analysez vos fichiers Google Drive
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="pt-0">
-                <Button variant="ghost" size="sm" className="w-full justify-start gap-1" onClick={() => navigate('/google-drive')}>
-                  Connecter <ArrowRight className="h-3 w-3" />
-                </Button>
-              </CardFooter>
-            </Card>
-            
-            <Card className="hover:shadow-md transition-all">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <FileText className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Créer un document</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Générez des documents à partir de vos conversations
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="pt-0">
-                <Button variant="ghost" size="sm" className="w-full justify-start gap-1" onClick={() => navigate('/document/new')}>
-                  Créer <ArrowRight className="h-3 w-3" />
-                </Button>
-              </CardFooter>
-            </Card>
-            
-            <Card className="hover:shadow-md transition-all">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Settings className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Configuration IA</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Personnalisez vos modèles d'IA et paramètres
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="pt-0">
-                <Button variant="ghost" size="sm" className="w-full justify-start gap-1" onClick={() => navigate('/config')}>
-                  Configurer <ArrowRight className="h-3 w-3" />
-                </Button>
-              </CardFooter>
-            </Card>
-            
-            <Card className="hover:shadow-md transition-all">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <HelpCircle className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Aide et support</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Consultez la documentation et obtenez de l'aide
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="pt-0">
-                <Button variant="ghost" size="sm" className="w-full justify-start gap-1" onClick={() => navigate('/debug')}>
-                  Aide <ArrowRight className="h-3 w-3" />
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-        </div>
-
+        
+        {/* Promotion Ollama */}
+        <OllamaPromotion />
+        
         {/* Affichage des crédits IA utilisateur */}
         {user && <UserCreditPanel />}
         
-        {/* Promotion Ollama */}
-        <div className="mt-8">
-          <OllamaPromotion />
-        </div>
+        {/* Statut de connexion Google Drive */}
+        <GoogleDriveConnectionStatus />
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Configuration du compte</CardTitle>
+            <CardDescription>
+              Mettez à jour les informations de votre compte.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Clé API Hugging Face (optionnelle)
+              </label>
+              <Input
+                type="password"
+                value={huggingFaceApiKey}
+                onChange={handleApiKeyChange}
+                placeholder="Entrez votre clé API Hugging Face pour utiliser leurs modèles d'IA"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Cette clé est utilisée pour accéder aux modèles d'IA de Hugging Face. 
+                <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline ml-1">
+                  Obtenir une clé
+                </a>
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <Textarea
+                value={description}
+                onChange={handleDescriptionChange}
+                placeholder="Ajoutez une description pour votre compte"
+              />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button>Mettre à jour</Button>
+          </CardFooter>
+        </Card>
+
+        <GoogleDriveSync />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Sélection du dossier Google Drive</CardTitle>
+            <CardDescription>
+              Choisissez le dossier à partir duquel synchroniser les fichiers.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FolderTree onFolderSelect={handleFolderSelect} />
+          </CardContent>
+          <CardFooter>
+            <Button onClick={pickFolder}>Choisir un autre dossier</Button>
+          </CardFooter>
+        </Card>
+
+        <Button onClick={() => navigate('/chat')}>Aller au Chat</Button>
       </div>
     </div>
   );

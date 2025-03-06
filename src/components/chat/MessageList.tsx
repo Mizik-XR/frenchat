@@ -34,19 +34,19 @@ export const MessageList = ({
   onArchiveMessage
 }: MessageListProps) => {
   return (
-    <div className="flex-1 overflow-y-auto space-y-4 p-4 scrollbar-thin">
+    <div className="flex-1 overflow-y-auto space-y-4 p-4">
       {conversationContext && (
-        <div className="bg-blue-50 p-4 rounded-lg mb-4 text-sm text-[#002654]">
+        <div className="bg-blue-50 p-4 rounded-lg mb-4 text-sm text-blue-700">
           <div className="font-medium mb-1">
             Conversation en cours : {conversationContext.title}
           </div>
           {conversationContext.documentDate && (
-            <div className="text-[#002654]">
+            <div className="text-blue-600">
               Document uploadé le {format(conversationContext.documentDate, 'dd/MM/yyyy', { locale: fr })}
             </div>
           )}
           {conversationContext.type && (
-            <div className="text-[#002654]">
+            <div className="text-blue-600">
               Type : {conversationContext.type}
             </div>
           )}
@@ -61,21 +61,21 @@ export const MessageList = ({
           }`}
         >
           <div
-            className={`relative max-w-[80%] ${
+            className={`relative max-w-[80%] p-4 rounded-lg ${
               message.role === 'user'
-                ? 'message-bubble-user'
-                : 'message-bubble-assistant'
-            }`}
+                ? 'bg-blue-500 text-white rounded-tr-none'
+                : 'bg-gray-100 text-gray-800 rounded-tl-none'
+            } shadow-sm`}
           >
             {message.role === 'assistant' && (
-              <div className="flex items-center gap-2 mb-2 text-[#002654]">
+              <div className="flex items-center gap-2 mb-2 text-gray-600">
                 <Bot className="h-4 w-4" />
                 <span className="text-xs">Assistant IA</span>
               </div>
             )}
             
             {message.metadata?.replyTo && (
-              <div className="reply-indicator">
+              <div className="bg-gray-500/10 p-2 rounded mb-2 text-xs border-l-2 border-blue-400">
                 <div className="font-medium mb-1">En réponse à :</div>
                 <div className="line-clamp-2">{message.metadata.replyTo.content}</div>
               </div>
@@ -104,7 +104,7 @@ export const MessageList = ({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button 
-                        className={`p-1 rounded ${message.role === 'user' ? 'hover:bg-[#001c40]/30' : 'hover:bg-gray-200/30'}`}
+                        className="p-1 rounded hover:bg-gray-200/30"
                         onClick={() => onReplyToMessage && onReplyToMessage(message)}
                       >
                         <Reply className="h-3.5 w-3.5" />
@@ -124,7 +124,7 @@ export const MessageList = ({
               </div>
             </div>
             
-            <div className="message-timestamp">
+            <div className="text-xs opacity-70 mt-1 text-right">
               {message.timestamp && format(message.timestamp, 'HH:mm', { locale: fr })}
             </div>
           </div>
@@ -132,9 +132,9 @@ export const MessageList = ({
       ))}
       
       {isLoading && (
-        <div className="flex justify-center items-center gap-2 p-4 bg-white/80 dark:bg-black/40 rounded-full shadow-sm text-[#002654] dark:text-white mt-2 backdrop-blur-sm w-fit mx-auto">
-          <Loader className="h-4 w-4 animate-spin" />
-          <span className="text-sm">L'IA réfléchit...</span>
+        <div className="flex justify-center items-center gap-2 p-4 text-gray-500">
+          <Loader className="h-5 w-5 animate-spin" />
+          <span>L'IA réfléchit...</span>
         </div>
       )}
     </div>

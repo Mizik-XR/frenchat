@@ -61,23 +61,23 @@ export const ChatContainer = ({
   onModelSourceChange
 }: ChatContainerProps) => {
   return (
-    <Card className="h-full flex flex-col shadow-md mx-6 my-0 py-4 bg-[#f8f9fa] dark:bg-gray-900 overflow-hidden border border-gray-200 dark:border-gray-800 rounded-lg">
-      <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+    <Card className="h-full flex flex-col bg-white dark:bg-gray-800 shadow-sm">
+      <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
         <NavigationControls />
         <ChatHeader 
-          mode={webUIConfig.mode} 
-          onModeChange={onModeChange} 
-          showSettings={showSettings} 
-          setShowSettings={setShowSettings} 
-          onResetConversation={onResetConversation} 
-          setShowUploader={setShowUploader} 
-          modelSource={modelSource} 
-          onModelSourceChange={onModelSourceChange} 
+          mode={webUIConfig.mode}
+          onModeChange={onModeChange}
+          showSettings={showSettings}
+          setShowSettings={setShowSettings}
+          onResetConversation={onResetConversation}
+          setShowUploader={setShowUploader}
+          modelSource={modelSource}
+          onModelSourceChange={onModelSourceChange}
         />
       </div>
 
       {llmStatus !== 'configured' && (
-        <Alert variant="destructive" className="m-4 shadow-sm animate-fadeIn">
+        <Alert variant="destructive" className="m-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Veuillez configurer un modèle de langage dans les paramètres pour utiliser le chat.
@@ -86,39 +86,39 @@ export const ChatContainer = ({
       )}
 
       {showSettings && (
-        <div className="absolute top-16 right-4 z-50 w-80 animate-fadeIn">
-          <SettingsPanel 
-            webUIConfig={webUIConfig} 
-            onWebUIConfigChange={onWebUIConfigChange} 
-            onProviderChange={onProviderChange} 
-            onAnalysisModeChange={onAnalysisModeChange} 
-            modelSource={modelSource} 
-            onModelSourceChange={onModelSourceChange} 
-            onModeChange={onModeChange} 
+        <div className="absolute top-16 right-4 z-50 w-80">
+          <SettingsPanel
+            webUIConfig={webUIConfig}
+            onWebUIConfigChange={onWebUIConfigChange}
+            onProviderChange={onProviderChange}
+            onAnalysisModeChange={onAnalysisModeChange}
+            modelSource={modelSource}
+            onModelSourceChange={onModelSourceChange}
+            onModeChange={onModeChange}
           />
         </div>
       )}
 
-      <div className="flex-1 overflow-hidden chat-container bg-france-pattern">
+      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-800">
         <MessageList 
           messages={messages} 
-          isLoading={isLoading} 
-          onReplyToMessage={onReplyToMessage} 
+          isLoading={isLoading}
+          onReplyToMessage={onReplyToMessage}
         />
       </div>
 
-      <ChatInputContainer 
-        input={input} 
-        setInput={setInput} 
-        isLoading={isLoading} 
-        selectedDocumentId={selectedDocumentId} 
-        onSubmit={onSubmit} 
-        mode={webUIConfig.mode} 
-        model={webUIConfig.model} 
-        showUploader={showUploader} 
-        setShowUploader={setShowUploader} 
-        onFilesSelected={onFilesSelected} 
-        modelSource={modelSource} 
+      <ChatInputContainer
+        input={input}
+        setInput={setInput}
+        isLoading={isLoading}
+        selectedDocumentId={selectedDocumentId}
+        onSubmit={onSubmit}
+        mode={webUIConfig.mode}
+        model={webUIConfig.model}
+        showUploader={showUploader}
+        setShowUploader={setShowUploader}
+        onFilesSelected={onFilesSelected}
+        modelSource={modelSource}
       />
     </Card>
   );

@@ -3,10 +3,9 @@ import { useEffect } from 'react';
 import { useGoogleDriveStatus } from '@/hooks/useGoogleDriveStatus';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, CloudOff, CloudCog, RefreshCw, ExternalLink } from 'lucide-react';
+import { Check, CloudOff, CloudCog, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale/fr';
-import { Badge } from "@/components/ui/badge";
+import fr from 'date-fns/locale/fr';
 
 export const GoogleDriveConnectionStatus = () => {
   const { 
@@ -29,21 +28,18 @@ export const GoogleDriveConnectionStatus = () => {
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow duration-300 animate-fadeIn">
-      <CardHeader className={`${isConnected ? 'bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
-        <CardTitle className="flex items-center gap-2 text-lg">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
           {isConnected ? (
             <>
               <CloudCog className="h-5 w-5 text-green-500" />
-              <span className="text-green-700 dark:text-green-300">Google Drive connecté</span>
-              <Badge variant="outline" className="ml-2 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-xs">
-                Actif
-              </Badge>
+              <span>Google Drive connecté</span>
             </>
           ) : (
             <>
               <CloudOff className="h-5 w-5 text-gray-500" />
-              <span className="text-gray-700 dark:text-gray-300">Google Drive non connecté</span>
+              <span>Google Drive non connecté</span>
             </>
           )}
         </CardTitle>
@@ -54,35 +50,25 @@ export const GoogleDriveConnectionStatus = () => {
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="pt-4 pb-2">
+      <CardContent>
         {isConnected && connectionData ? (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm">
+          <div className="text-sm">
+            <div className="flex items-center gap-1 mb-1">
               <Check className="h-4 w-4 text-green-500" />
               <span>Connexion active</span>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 pl-6">
+            <p className="text-gray-500">
               Connecté {getTimeAgo(connectionData.connectedSince)}
             </p>
-            {connectionData.tokenExpiry && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 pl-6">
-                Expiration: {connectionData.tokenExpiry.toLocaleDateString()}
-              </p>
-            )}
           </div>
         ) : (
-          <div className="flex flex-col gap-2 py-2">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Aucune connexion active à Google Drive
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              La connexion vous permet de synchroniser vos documents et dossiers Google Drive pour les utiliser dans vos conversations.
-            </p>
-          </div>
+          <p className="text-sm text-gray-500">
+            Aucune connexion active à Google Drive
+          </p>
         )}
       </CardContent>
       
-      <CardFooter className="flex gap-3 pt-2 pb-4">
+      <CardFooter className="flex gap-3">
         {isConnected ? (
           <>
             <Button 
@@ -90,9 +76,8 @@ export const GoogleDriveConnectionStatus = () => {
               variant="outline" 
               onClick={checkGoogleDriveConnection}
               disabled={isChecking}
-              className="text-xs"
             >
-              <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isChecking ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 mr-1 ${isChecking ? 'animate-spin' : ''}`} />
               Vérifier
             </Button>
             <Button 
@@ -100,7 +85,6 @@ export const GoogleDriveConnectionStatus = () => {
               variant="destructive" 
               onClick={disconnectGoogleDrive}
               disabled={isChecking}
-              className="text-xs"
             >
               Déconnecter
             </Button>
@@ -109,9 +93,7 @@ export const GoogleDriveConnectionStatus = () => {
           <Button 
             onClick={reconnectGoogleDrive}
             disabled={isChecking}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
           >
-            <ExternalLink className="h-4 w-4 mr-2" />
             Connecter à Google Drive
           </Button>
         )}
