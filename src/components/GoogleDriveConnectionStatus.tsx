@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, CloudOff, CloudCog, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import fr from 'date-fns/locale/fr';
+import { fr } from 'date-fns/locale/fr';
 
 export const GoogleDriveConnectionStatus = () => {
   const { 

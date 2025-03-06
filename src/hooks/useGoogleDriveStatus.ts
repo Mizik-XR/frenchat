@@ -10,6 +10,11 @@ export interface ConnectionData {
   tokenExpiry?: Date | null;
 }
 
+// Fonction pour obtenir l'URL de redirection pour Google OAuth
+export const getGoogleRedirectUrl = (): string => {
+  return `${window.location.origin}/auth/callback`;
+};
+
 export const useGoogleDriveStatus = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
@@ -65,7 +70,7 @@ export const useGoogleDriveStatus = () => {
         provider: 'google',
         options: {
           scopes: 'https://www.googleapis.com/auth/drive.readonly',
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: getGoogleRedirectUrl()
         }
       });
 
