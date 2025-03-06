@@ -99,7 +99,7 @@ export const ChatContainer = ({
         </div>
       )}
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-800">
         <MessageList 
           messages={messages} 
           isLoading={isLoading}
