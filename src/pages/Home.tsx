@@ -13,6 +13,7 @@ import { FolderTree } from "@/components/FolderTree";
 import { GoogleDriveSync } from "@/components/GoogleDriveSync";
 import { OllamaPromotion } from "@/components/ollama/OllamaPromotion";
 import { UserCreditPanel } from "@/components/config/AIUsageMetrics/UserCreditPanel";
+import { GoogleDriveConnectionStatus } from "@/components/GoogleDriveConnectionStatus";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -69,6 +70,9 @@ export default function Home() {
         
         {/* Affichage des crédits IA utilisateur */}
         {user && <UserCreditPanel />}
+        
+        {/* Statut de connexion Google Drive */}
+        <GoogleDriveConnectionStatus />
         
         <Card>
           <CardHeader>
