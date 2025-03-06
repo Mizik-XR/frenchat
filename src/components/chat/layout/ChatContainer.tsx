@@ -61,7 +61,7 @@ export const ChatContainer = ({
   onModelSourceChange
 }: ChatContainerProps) => {
   return (
-    <Card className="h-full flex flex-col shadow-md mx-6 my-0 py-4 bg-[#f6f6f6] dark:bg-gray-900 overflow-hidden">
+    <Card className="h-full flex flex-col shadow-md mx-6 my-0 py-4 bg-[#f8f9fa] dark:bg-gray-900 overflow-hidden border border-gray-200 dark:border-gray-800 rounded-lg">
       <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
         <NavigationControls />
         <ChatHeader 
@@ -99,7 +99,7 @@ export const ChatContainer = ({
         </div>
       )}
 
-      <div className="flex-1 overflow-hidden chat-container bg-[#e5ddd5] dark:bg-gray-800 bg-pattern">
+      <div className="flex-1 overflow-hidden chat-container bg-france-pattern">
         <MessageList 
           messages={messages} 
           isLoading={isLoading} 

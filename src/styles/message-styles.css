@@ -37,9 +37,10 @@
   }
 }
 
-/* Message bubble styles - WhatsApp style */
+/* Message bubble styles - French flag inspired */
 .message-bubble-user {
-  background-color: #dcf8c6;
+  background-color: #002654; /* French flag blue */
+  color: white;
   border-radius: 0.75rem;
   border-top-right-radius: 0;
   padding: 0.75rem 1rem;
@@ -53,7 +54,7 @@
 }
 
 .dark .message-bubble-user {
-  background-color: #025c4c;
+  background-color: #003380; /* Slightly lighter blue for dark mode */
   color: white;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
@@ -65,16 +66,17 @@
   right: -0.5rem;
   width: 0.5rem;
   height: 0.5rem;
-  background-color: #dcf8c6;
+  background-color: #002654;
   clip-path: polygon(0 0, 0% 100%, 100% 0);
 }
 
 .dark .message-bubble-user::after {
-  background-color: #025c4c;
+  background-color: #003380;
 }
 
 .message-bubble-assistant {
-  background-color: white;
+  background-color: white; /* White from French flag */
+  color: #111;
   border-radius: 0.75rem;
   border-top-left-radius: 0;
   padding: 0.75rem 1rem;
@@ -88,7 +90,7 @@
 }
 
 .dark .message-bubble-assistant {
-  background-color: #2a2d35;
+  background-color: #1f2937;
   color: white;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
@@ -105,19 +107,23 @@
 }
 
 .dark .message-bubble-assistant::after {
-  background-color: #2a2d35;
+  background-color: #1f2937;
 }
 
 /* Message timestamp */
 .message-timestamp {
   font-size: 0.65rem;
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.7);
   text-align: right;
   margin-top: 0.25rem;
   display: block;
 }
 
-.dark .message-timestamp {
+.message-bubble-assistant .message-timestamp {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.dark .message-bubble-assistant .message-timestamp {
   color: rgba(255, 255, 255, 0.6);
 }
 
@@ -126,11 +132,11 @@
   font-size: 0.8rem;
   font-weight: 600;
   margin-bottom: 0.25rem;
-  color: #128c7e;
+  color: #ED2939; /* French flag red */
 }
 
 .dark .message-sender {
-  color: #25d366;
+  color: #ff4a4a;
 }
 
 /* Message status indicators */
@@ -161,8 +167,8 @@
 
 /* Reply indicator */
 .reply-indicator {
-  background-color: rgba(0, 0, 0, 0.05);
-  border-left: 3px solid #128c7e;
+  background-color: rgba(0, 38, 84, 0.1); /* Light blue from French flag */
+  border-left: 3px solid #ED2939; /* French flag red */
   padding: 0.25rem 0.5rem;
   margin-bottom: 0.5rem;
   border-radius: 0.25rem;
@@ -170,6 +176,6 @@
 }
 
 .dark .reply-indicator {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-left-color: #25d366;
+  background-color: rgba(0, 51, 128, 0.2);
+  border-left-color: #ff4a4a;
 }

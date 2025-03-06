@@ -35,7 +35,8 @@ export const ChatHeader = ({
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <img src="/filechat-animation.gif" alt="Frenchat Logo" className="h-7 w-7" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Frenchat</h2>
+          <h2 className="text-lg font-semibold text-[#002654] dark:text-gray-100">Frenchat</h2>
+          <span className="text-[#ED2939] font-bold">🇫🇷</span>
         </div>
 
         <div className="flex items-center gap-4">
@@ -48,7 +49,7 @@ export const ChatHeader = ({
                     <Switch 
                       checked={modelSource === 'local'} 
                       onCheckedChange={checked => onModelSourceChange(checked ? 'local' : 'cloud')} 
-                      className="data-[state=checked]:bg-green-500"
+                      className="data-[state=checked]:bg-[#002654]"
                     />
                   </div>
                 </TooltipTrigger>
@@ -67,7 +68,7 @@ export const ChatHeader = ({
             <Switch 
               checked={mode === 'auto'} 
               onCheckedChange={checked => onModeChange(checked ? 'auto' : 'manual')} 
-              className="data-[state=checked]:bg-blue-500"
+              className="data-[state=checked]:bg-[#ED2939]"
             />
           </div>
         </div>
@@ -79,7 +80,7 @@ export const ChatHeader = ({
             variant="ghost" 
             size="icon" 
             onClick={() => setShowUploader(true)} 
-            className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full" 
+            className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-[#002654]" 
             title="Ajouter un document"
           >
             <Plus className="h-5 w-5" />
@@ -90,7 +91,7 @@ export const ChatHeader = ({
           variant="outline" 
           size="sm" 
           onClick={onResetConversation} 
-          className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-xs" 
+          className="flex items-center gap-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-xs border-[#002654] text-[#002654]" 
           title="Réinitialiser la conversation"
         >
           <RefreshCw className="h-3.5 w-3.5" />
@@ -101,7 +102,7 @@ export const ChatHeader = ({
           variant={showSettings ? "default" : "ghost"} 
           size="icon" 
           onClick={() => setShowSettings(!showSettings)} 
-          className={`hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full ${showSettings ? 'bg-primary text-white' : ''}`} 
+          className={`hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full ${showSettings ? 'bg-[#002654] text-white' : 'text-[#002654]'}`} 
           title="Paramètres"
         >
           <Settings className="h-5 w-5" />

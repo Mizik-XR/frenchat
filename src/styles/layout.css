@@ -27,9 +27,9 @@
   animation: slideUp 0.3s ease-out;
 }
 
-/* Conversation list styling */
+/* Conversation list styling - French flag inspired */
 .conversation-list {
-  background-color: #f6f6f6;
+  background-color: #f8f9fa;
   border-right: 1px solid #e0e0e0;
   height: 100%;
   overflow-y: auto;
@@ -52,21 +52,21 @@
 }
 
 .conversation-item:hover {
-  background-color: #f0f0f0;
+  background-color: rgba(0, 38, 84, 0.05); /* Very light blue */
 }
 
 .dark .conversation-item:hover {
-  background-color: #2c2c2c;
+  background-color: rgba(0, 51, 128, 0.15);
 }
 
 .conversation-item.active {
-  background-color: #e8e8e8;
-  border-left: 3px solid #25d366;
+  background-color: rgba(0, 38, 84, 0.1); /* Light blue */
+  border-left: 3px solid #ED2939; /* French flag red */
 }
 
 .dark .conversation-item.active {
-  background-color: #333;
-  border-left: 3px solid #25d366;
+  background-color: rgba(0, 51, 128, 0.2);
+  border-left: 3px solid #ff4a4a;
 }
 
 /* Conversation item details */
@@ -120,16 +120,16 @@
 /* Input container */
 .input-container {
   padding: 0.75rem;
-  background-color: #f0f0f0;
+  background-color: #f8f9fa;
   border-top: 1px solid #e0e0e0;
 }
 
 .dark .input-container {
-  background-color: #2a2d35;
+  background-color: #1f1f1f;
   border-top: 1px solid #333;
 }
 
-/* Input field */
+/* Input field - French flag theme */
 .chat-input {
   display: flex;
   align-items: center;
@@ -137,11 +137,13 @@
   border-radius: 1.5rem;
   padding: 0.5rem 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 38, 84, 0.2); /* Light blue border */
 }
 
 .dark .chat-input {
-  background-color: #3a3f4b;
+  background-color: #2a2d35;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 51, 128, 0.3);
 }
 
 .chat-input input {
@@ -187,10 +189,26 @@
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 38, 84, 0.2); /* Light blue scrollbar */
   border-radius: 3px;
 }
 
 .dark .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 51, 128, 0.3);
+}
+
+/* French flag inspired chat background */
+.bg-france-pattern {
+  background-color: #f8f9fa;
+  background-image: 
+    linear-gradient(rgba(237, 41, 57, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 38, 84, 0.02) 1px, transparent 1px);
+  background-size: 20px 20px, 20px 20px;
+}
+
+.dark .bg-france-pattern {
+  background-color: #121212;
+  background-image: 
+    linear-gradient(rgba(255, 74, 74, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 51, 128, 0.03) 1px, transparent 1px);
 }
