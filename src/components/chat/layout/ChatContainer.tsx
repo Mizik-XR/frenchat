@@ -61,8 +61,15 @@ export const ChatContainer = ({
   onModelSourceChange
 }: ChatContainerProps) => {
   return (
-    <Card className="h-full flex flex-col bg-white dark:bg-gray-800 shadow-sm">
-      <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
+    <Card className="h-full flex flex-col bg-white dark:bg-gray-900 shadow-sm relative overflow-hidden border-none">
+      {/* Tricolor header accent */}
+      <div className="absolute top-0 left-0 right-0 h-1 flex">
+        <div className="w-1/3 bg-blue-600"></div>
+        <div className="w-1/3 bg-white"></div>
+        <div className="w-1/3 bg-red-600"></div>
+      </div>
+      
+      <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-800 mt-1">
         <NavigationControls />
         <ChatHeader 
           mode={webUIConfig.mode}
@@ -99,7 +106,7 @@ export const ChatContainer = ({
         </div>
       )}
 
-      <div className="flex-1 overflow-hidden bg-white dark:bg-gray-800">
+      <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900 chat-container">
         <MessageList 
           messages={messages} 
           isLoading={isLoading}
@@ -107,19 +114,21 @@ export const ChatContainer = ({
         />
       </div>
 
-      <ChatInputContainer
-        input={input}
-        setInput={setInput}
-        isLoading={isLoading}
-        selectedDocumentId={selectedDocumentId}
-        onSubmit={onSubmit}
-        mode={webUIConfig.mode}
-        model={webUIConfig.model}
-        showUploader={showUploader}
-        setShowUploader={setShowUploader}
-        onFilesSelected={onFilesSelected}
-        modelSource={modelSource}
-      />
+      <div className="chat-input-wrapper">
+        <ChatInputContainer
+          input={input}
+          setInput={setInput}
+          isLoading={isLoading}
+          selectedDocumentId={selectedDocumentId}
+          onSubmit={onSubmit}
+          mode={webUIConfig.mode}
+          model={webUIConfig.model}
+          showUploader={showUploader}
+          setShowUploader={setShowUploader}
+          onFilesSelected={onFilesSelected}
+          modelSource={modelSource}
+        />
+      </div>
     </Card>
   );
 };

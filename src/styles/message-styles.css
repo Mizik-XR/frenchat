@@ -14,20 +14,21 @@
   animation: typing 1s infinite;
 }
 
-/* Message bubble styles - WhatsApp style */
+/* Message bubble styles - French flag theme */
 .message-bubble-user {
-  background-color: #dcf8c6;
+  background-color: #002395; /* Bleu */
+  color: white;
   border-radius: 0.75rem;
   border-top-right-radius: 0;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.25rem;
   position: relative;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
 .dark .message-bubble-user {
-  background-color: #056162;
+  background-color: #003bbf; /* Bleu plus clair en dark mode */
   color: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .message-bubble-user::after {
@@ -37,27 +38,29 @@
   right: -0.5rem;
   width: 0.5rem;
   height: 0.5rem;
-  background-color: #dcf8c6;
+  background-color: #002395;
   clip-path: polygon(0 0, 0% 100%, 100% 0);
 }
 
 .dark .message-bubble-user::after {
-  background-color: #056162;
+  background-color: #003bbf;
 }
 
 .message-bubble-assistant {
   background-color: white;
+  border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
   border-top-left-radius: 0;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.25rem;
   position: relative;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .dark .message-bubble-assistant {
-  background-color: #2a2d35;
+  background-color: #1e293b;
   color: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  border-color: #334155;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .message-bubble-assistant::after {
@@ -72,5 +75,73 @@
 }
 
 .dark .message-bubble-assistant::after {
-  background-color: #2a2d35;
+  background-color: #1e293b;
+}
+
+/* Styles for message actions */
+.message-actions {
+  display: flex;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.message-container:hover .message-actions {
+  opacity: 1;
+}
+
+.message-action-button {
+  background-color: transparent;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.message-action-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark .message-action-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* French flag style divider */
+.tricolor-divider {
+  display: flex;
+  height: 3px;
+  width: 100%;
+  margin: 12px 0;
+}
+
+.tricolor-divider .blue {
+  background-color: #002395;
+  flex: 1;
+}
+
+.tricolor-divider .white {
+  background-color: #FFFFFF;
+  flex: 1;
+}
+
+.tricolor-divider .red {
+  background-color: #ED2939;
+  flex: 1;
+}
+
+/* Animation pour le chargement de messages */
+@keyframes typing {
+  0%, 100% { 
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% { 
+    opacity: 1;
+    transform: translateY(-2px);
+  }
 }

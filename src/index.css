@@ -13,10 +13,13 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 201 89% 58%;
+    
+    /* Couleurs du drapeau français */
+    --primary: 210 80% 40%; /* Bleu */
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 0 75% 50%; /* Rouge */
+    --secondary-foreground: 0 0% 100%;
+    
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96.1%;
@@ -25,7 +28,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 201 89% 58%;
+    --ring: 210 80% 40%;
     --radius: 0.5rem;
   }
  
@@ -36,10 +39,13 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 201 89% 58%;
+    
+    /* Couleurs du drapeau français en dark mode */
+    --primary: 210 80% 50%; /* Bleu */
     --primary-foreground: 0 0% 100%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 75% 50%; /* Rouge */
+    --secondary-foreground: 0 0% 100%;
+    
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
     --accent: 217.2 32.6% 17.5%;
@@ -48,7 +54,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 201 89% 58%;
+    --ring: 210 80% 50%;
   }
 
   * {
@@ -90,4 +96,23 @@
 
 .input-field {
   @apply w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200;
+}
+
+/* Styles spécifiques pour les couleurs tricolores */
+.tricolor-border {
+  background: linear-gradient(to right, #002395, #FFFFFF, #ED2939);
+  padding: 2px;
+  border-radius: var(--radius);
+}
+
+.tricolor-hover:hover {
+  background: linear-gradient(to right, #002395, #FFFFFF, #ED2939);
+  background-size: 200% 100%;
+  animation: gradient-shift 2s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
