@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase, handleProfileQuery } from "@/integrations/supabase/client";
+import { supabase, handleProfileQuery, APP_STATE } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
@@ -19,6 +19,7 @@ export function useAuthSession() {
   const location = useLocation();
   const [user, setUser] = useState<User | null>(cachedUser);
   const [isLoading, setIsLoading] = useState(isSessionLoading);
+  const [offlineMode, setOfflineMode] = useState(APP_STATE.isOfflineMode);
   const signOut = useSignOut();
 
   const getUrlParams = () => {
@@ -35,8 +36,34 @@ export function useAuthSession() {
     return `${path}${persistedParams}`;
   };
 
+  // Gérer le mode hors ligne
+  useEffect(() => {
+    const handleOfflineChange = () => {
+      setOfflineMode(APP_STATE.isOfflineMode);
+    };
+    
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'OFFLINE_MODE') {
+        handleOfflineChange();
+      }
+    });
+    
+    return () => {
+      window.removeEventListener('storage', handleOfflineChange);
+    };
+  }, []);
+
   const handleAuthChange = useCallback(async (_event: string, session: any) => {
     console.log("Auth state changed:", _event, "session:", session?.user?.id ? "User authenticated" : "No user");
+    
+    // Si on est en mode hors ligne, pas besoin de vérifier la session
+    if (APP_STATE.isOfflineMode) {
+      updateCachedUser(null);
+      setUser(null);
+      updateSessionLoading(false);
+      setIsLoading(false);
+      return;
+    }
     
     updateCachedUser(session?.user ?? null);
     setUser(session?.user ?? null);
@@ -75,13 +102,20 @@ export function useAuthSession() {
         }
 
         // Vérifier l'état des configurations des services
-        const { data: configs, error: configError } = await supabase
-          .from('service_configurations')
-          .select('service_type, status')
-          .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
-
-        if (configError) {
-          console.error("Erreur lors de la récupération des configurations:", configError);
+        let configs = null;
+        let configError = null;
+        
+        try {
+          const result = await supabase
+            .from('service_configurations')
+            .select('service_type, status')
+            .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
+          
+          configs = result.data;
+          configError = result.error;
+        } catch (err) {
+          console.error("Erreur lors de la récupération des configurations:", err);
+          configError = err instanceof Error ? err : new Error("Erreur inconnue");
         }
 
         const needsConfig = !configs || !configs.length || !configs.some(c => c.status === 'configured');
@@ -116,8 +150,29 @@ export function useAuthSession() {
   }, [navigate, location.pathname, location.search]);
 
   const checkSession = useCallback(async () => {
+    // Si on est en mode hors ligne, pas besoin de vérifier la session
+    if (APP_STATE.isOfflineMode) {
+      console.log("Mode hors ligne actif, pas de vérification de session");
+      updateCachedUser(null);
+      setUser(null);
+      updateSessionLoading(false);
+      setIsLoading(false);
+      
+      // Si on est sur une route protégée, rediriger vers la page d'accueil
+      if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+        navigate(getNavigationPath('/'));
+      }
+      
+      return;
+    }
+    
     try {
       console.log("Checking initial session...");
+      
+      if (!supabase) {
+        throw new Error("Client Supabase non disponible");
+      }
+      
       const { data: { session } } = await supabase.auth.getSession();
       console.log("Initial session check:", session?.user?.id ? "User authenticated" : "No user");
       
@@ -149,13 +204,19 @@ export function useAuthSession() {
           }
 
           // Vérifier l'état des configurations des services
-          const { data: configs, error: configError } = await supabase
-            .from('service_configurations')
-            .select('service_type, status')
-            .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
-
-          if (configError) {
-            console.error("Erreur lors de la récupération des configurations:", configError);
+          let configs = null;
+          let configError = null;
+          
+          try {
+            const result = await supabase
+              .from('service_configurations')
+              .select('service_type, status')
+              .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
+            
+            configs = result.data;
+            configError = result.error;
+          } catch (err) {
+            console.error("Erreur lors de la récupération des configurations:", err);
           }
 
           const needsConfig = !configs || !configs.length || !configs.some(c => c.status === 'configured');
@@ -181,6 +242,16 @@ export function useAuthSession() {
     } catch (error) {
       console.error("Erreur lors de la vérification de la session:", error);
       updateCachedUser(null);
+      
+      // Si l'erreur est liée à la connectivité, activer le mode hors ligne
+      if (error instanceof Error && (
+        error.message.includes('Failed to fetch') || 
+        error.message.includes('NetworkError') || 
+        error.message.includes('Network request failed')
+      )) {
+        APP_STATE.setOfflineMode(true);
+        setOfflineMode(true);
+      }
     } finally {
       updateSessionLoading(false);
       setIsLoading(false);
@@ -188,16 +259,34 @@ export function useAuthSession() {
   }, [navigate, location.pathname]);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
+    let subscription: { unsubscribe: () => void } | null = null;
+    
+    if (supabase) {
+      const { data } = supabase.auth.onAuthStateChange(handleAuthChange);
+      subscription = data.subscription;
+    }
     
     checkSession();
     
     return () => {
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, [handleAuthChange, checkSession]);
 
-  return { user, isLoading, signOut };
+  // Fonction pour basculer manuellement le mode hors ligne
+  const toggleOfflineMode = (value?: boolean) => {
+    const newValue = value !== undefined ? value : !APP_STATE.isOfflineMode;
+    APP_STATE.setOfflineMode(newValue);
+    setOfflineMode(newValue);
+  };
+
+  return { 
+    user, 
+    isLoading, 
+    signOut,
+    isOfflineMode: offlineMode,
+    toggleOfflineMode
+  };
 }
 
 export { PROTECTED_ROUTES };

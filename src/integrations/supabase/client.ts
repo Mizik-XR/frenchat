@@ -11,25 +11,52 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJh
 // Export SITE_URL for OAuth redirects
 export const SITE_URL = getBaseUrl();
 
+// Global app state for handling offline mode
+export const APP_STATE = {
+  isOfflineMode: false,
+  hasSupabaseError: false,
+  lastSupabaseError: null as Error | null,
+  setOfflineMode(value: boolean) {
+    this.isOfflineMode = value;
+    localStorage.setItem('OFFLINE_MODE', value ? 'true' : 'false');
+    console.log(`Application ${value ? 'entered' : 'exited'} offline mode`);
+  },
+  logSupabaseError(error: Error) {
+    this.hasSupabaseError = true;
+    this.lastSupabaseError = error;
+    console.error('Supabase error:', error);
+  }
+};
+
 // Préchargement de la session Supabase
 export const preloadSession = async () => {
+  if (APP_STATE.isOfflineMode) {
+    console.log("Application en mode hors ligne, préchargement de session ignoré.");
+    return { session: null };
+  }
+  
   try {
     console.log("Tentative de préchargement de la session Supabase...");
     console.log("URL Supabase:", SUPABASE_URL);
     console.log("Clé Supabase définie:", !!SUPABASE_PUBLISHABLE_KEY);
     
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-      throw new Error("Configuration Supabase incomplète");
+      const error = new Error("Configuration Supabase incomplète");
+      APP_STATE.logSupabaseError(error);
+      throw error;
     }
     
     // Vérifier d'abord si le client est défini
     if (!supabase) {
-      throw new Error("Client Supabase non initialisé");
+      const error = new Error("Client Supabase non initialisé");
+      APP_STATE.logSupabaseError(error);
+      throw error;
     }
     
     const { data, error } = await supabase.auth.getSession();
     
     if (error) {
+      APP_STATE.logSupabaseError(error);
       throw error;
     }
     
@@ -37,6 +64,19 @@ export const preloadSession = async () => {
     return data;
   } catch (error) {
     console.error("Erreur de préchargement de session Supabase:", error);
+    if (error instanceof Error) {
+      APP_STATE.logSupabaseError(error);
+    }
+    
+    // Activer le mode hors ligne si nous rencontrons des erreurs de connexion
+    if (error instanceof Error && (
+      error.message.includes('Failed to fetch') || 
+      error.message.includes('NetworkError') || 
+      error.message.includes('Network request failed')
+    )) {
+      APP_STATE.setOfflineMode(true);
+    }
+    
     throw error;
   }
 };
@@ -44,6 +84,13 @@ export const preloadSession = async () => {
 // Détection dynamique du service d'IA locale
 export const detectLocalAIService = async () => {
   try {
+    // Si déjà en mode hors ligne, ignore la détection
+    if (APP_STATE.isOfflineMode) {
+      console.log("Mode hors ligne activé, utilisation du service cloud par défaut");
+      localStorage.setItem('aiServiceType', 'cloud');
+      return { available: false, url: null };
+    }
+    
     // Teste si un serveur d'IA local est disponible
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000); // Timeout après 2 secondes
@@ -59,6 +106,7 @@ export const detectLocalAIService = async () => {
     
     for (const url of localBaseUrls) {
       try {
+        console.log(`Tentative de connexion à ${url}/health...`);
         const response = await fetch(`${url}/health`, {
           method: 'GET',
           signal: controller.signal
@@ -67,9 +115,11 @@ export const detectLocalAIService = async () => {
         if (response.ok) {
           localAIAvailable = true;
           localAIUrl = url;
+          console.log(`Service d'IA local détecté: ${url}`);
           break;
         }
       } catch (e) {
+        console.log(`Échec de connexion à ${url}: ${e instanceof Error ? e.message : String(e)}`);
         // Ignore les erreurs et continue avec l'URL suivante
         continue;
       }
@@ -95,6 +145,16 @@ export const detectLocalAIService = async () => {
   }
 };
 
+// Vérifier si l'application est en mode hors ligne
+export const checkOfflineMode = () => {
+  const savedMode = localStorage.getItem('OFFLINE_MODE');
+  if (savedMode === 'true') {
+    APP_STATE.setOfflineMode(true);
+    return true;
+  }
+  return false;
+};
+
 // Tester la validation des paramètres Supabase
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   console.error("ERREUR CRITIQUE: Configuration Supabase manquante!");
@@ -114,38 +174,49 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
 // Create client with error handling
 let supabaseClient: any = null;
 try {
-  // Create client with optimized options
-  supabaseClient = createClient<Database>(
-    SUPABASE_URL, 
-    SUPABASE_PUBLISHABLE_KEY,
-    {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        storageKey: 'supabase.auth.token'
-      },
-      global: {
-        fetch: (...args) => {
-          // Handle fetch arguments properly
-          const request = args[0];
-          const options = args[1] || {};
-          
-          // Conditional cache options
-          const updatedOptions = {
-            ...options,
-            cache: request.toString().includes('auth/') ? 'no-cache' : 'default'
-          };
-          
-          return fetch(request, updatedOptions);
+  // Vérifier si on devrait utiliser le mode hors ligne
+  checkOfflineMode();
+  
+  if (APP_STATE.isOfflineMode) {
+    console.warn("Application en mode hors ligne, client Supabase non initialisé");
+  } else {
+    // Create client with optimized options
+    supabaseClient = createClient<Database>(
+      SUPABASE_URL, 
+      SUPABASE_PUBLISHABLE_KEY,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storageKey: 'supabase.auth.token'
+        },
+        global: {
+          fetch: (...args) => {
+            // Handle fetch arguments properly
+            const request = args[0];
+            const options = args[1] || {};
+            
+            // Conditional cache options
+            const updatedOptions = {
+              ...options,
+              cache: request.toString().includes('auth/') ? 'no-cache' : 'default'
+            };
+            
+            return fetch(request, updatedOptions);
+          }
         }
       }
-    }
-  );
-  console.log("Client Supabase initialized successfully");
+    );
+    console.log("Client Supabase initialized successfully");
+  }
 } catch (error) {
   console.error("CRITICAL ERROR: Failed to initialize Supabase client:", error);
+  if (error instanceof Error) {
+    APP_STATE.logSupabaseError(error);
+  }
   supabaseClient = null;
+  APP_STATE.setOfflineMode(true);
 }
 
 // Export Supabase client
@@ -164,6 +235,20 @@ export type EdgeFunctionResponse<T> = {
 
 // Add fallback functions to handle database errors gracefully
 export const handleProfileQuery = async (userId: string) => {
+  // Si on est en mode hors ligne, fournir un profil par défaut
+  if (APP_STATE.isOfflineMode || !supabase) {
+    console.log("Mode hors ligne actif, utilisation d'un profil par défaut");
+    return { 
+      data: { 
+        id: userId,
+        is_first_login: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, 
+      error: null 
+    };
+  }
+  
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -225,10 +310,30 @@ export const handleProfileQuery = async (userId: string) => {
     return { data, error: null };
   } catch (err) {
     console.error("Error querying profile:", err);
+    
+    // En cas d'erreur, fournir un profil de secours
     return { 
-      data: null, 
+      data: { 
+        id: userId,
+        is_first_login: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, 
       error: { message: err instanceof Error ? err.message : 'Unknown error' } 
     };
+  }
+};
+
+// Fonction simplifiée pour vérifier la connexion à Supabase
+export const checkSupabaseConnection = async (): Promise<boolean> => {
+  if (APP_STATE.isOfflineMode) return false;
+  
+  try {
+    const { error } = await supabase.from('profiles').select('count').limit(1);
+    return !error;
+  } catch (err) {
+    console.error("Erreur de connexion à Supabase:", err);
+    return false;
   }
 };
 

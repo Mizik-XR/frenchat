@@ -10,6 +10,11 @@ interface ReplyBadgeProps {
 }
 
 export const ReplyBadge = ({ replyToMessage, onClearReply }: ReplyBadgeProps) => {
+  // Protection contre les messages null/undefined
+  if (!replyToMessage) {
+    return null;
+  }
+  
   // Vérifier si le contenu du message est disponible pour éviter les erreurs
   const messageContent = replyToMessage?.content || "Message non disponible";
   
