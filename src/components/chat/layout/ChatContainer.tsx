@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { ChatHeader } from "../ChatHeader";
 import { MessageList } from "../MessageList";
@@ -8,7 +7,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Message, WebUIConfig, AIProvider, AnalysisMode } from "@/types/chat";
 import { NavigationControls } from "@/components/navigation/NavigationControls";
-
 interface ChatContainerProps {
   messages: Message[];
   isLoading: boolean;
@@ -34,7 +32,6 @@ interface ChatContainerProps {
   modelSource: 'cloud' | 'local';
   onModelSourceChange: (source: 'cloud' | 'local') => void;
 }
-
 export const ChatContainer = ({
   messages,
   isLoading,
@@ -60,66 +57,27 @@ export const ChatContainer = ({
   modelSource,
   onModelSourceChange
 }: ChatContainerProps) => {
-  return (
-    <Card className="h-full flex flex-col bg-white dark:bg-gray-800 shadow-sm">
+  return <Card className="h-full flex flex-col shadow-sm mx-[36px] my-0 py-[71px] bg-red-50">
       <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
         <NavigationControls />
-        <ChatHeader 
-          mode={webUIConfig.mode}
-          onModeChange={onModeChange}
-          showSettings={showSettings}
-          setShowSettings={setShowSettings}
-          onResetConversation={onResetConversation}
-          setShowUploader={setShowUploader}
-          modelSource={modelSource}
-          onModelSourceChange={onModelSourceChange}
-        />
+        <ChatHeader mode={webUIConfig.mode} onModeChange={onModeChange} showSettings={showSettings} setShowSettings={setShowSettings} onResetConversation={onResetConversation} setShowUploader={setShowUploader} modelSource={modelSource} onModelSourceChange={onModelSourceChange} />
       </div>
 
-      {llmStatus !== 'configured' && (
-        <Alert variant="destructive" className="m-4">
+      {llmStatus !== 'configured' && <Alert variant="destructive" className="m-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Veuillez configurer un modèle de langage dans les paramètres pour utiliser le chat.
           </AlertDescription>
-        </Alert>
-      )}
+        </Alert>}
 
-      {showSettings && (
-        <div className="absolute top-16 right-4 z-50 w-80">
-          <SettingsPanel
-            webUIConfig={webUIConfig}
-            onWebUIConfigChange={onWebUIConfigChange}
-            onProviderChange={onProviderChange}
-            onAnalysisModeChange={onAnalysisModeChange}
-            modelSource={modelSource}
-            onModelSourceChange={onModelSourceChange}
-            onModeChange={onModeChange}
-          />
-        </div>
-      )}
+      {showSettings && <div className="absolute top-16 right-4 z-50 w-80">
+          <SettingsPanel webUIConfig={webUIConfig} onWebUIConfigChange={onWebUIConfigChange} onProviderChange={onProviderChange} onAnalysisModeChange={onAnalysisModeChange} modelSource={modelSource} onModelSourceChange={onModelSourceChange} onModeChange={onModeChange} />
+        </div>}
 
       <div className="flex-1 overflow-hidden bg-white dark:bg-gray-800">
-        <MessageList 
-          messages={messages} 
-          isLoading={isLoading}
-          onReplyToMessage={onReplyToMessage}
-        />
+        <MessageList messages={messages} isLoading={isLoading} onReplyToMessage={onReplyToMessage} />
       </div>
 
-      <ChatInputContainer
-        input={input}
-        setInput={setInput}
-        isLoading={isLoading}
-        selectedDocumentId={selectedDocumentId}
-        onSubmit={onSubmit}
-        mode={webUIConfig.mode}
-        model={webUIConfig.model}
-        showUploader={showUploader}
-        setShowUploader={setShowUploader}
-        onFilesSelected={onFilesSelected}
-        modelSource={modelSource}
-      />
-    </Card>
-  );
+      <ChatInputContainer input={input} setInput={setInput} isLoading={isLoading} selectedDocumentId={selectedDocumentId} onSubmit={onSubmit} mode={webUIConfig.mode} model={webUIConfig.model} showUploader={showUploader} setShowUploader={setShowUploader} onFilesSelected={onFilesSelected} modelSource={modelSource} />
+    </Card>;
 };
