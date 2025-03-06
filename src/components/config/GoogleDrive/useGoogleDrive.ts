@@ -1,11 +1,43 @@
-import { useCallback, useState } from 'react';
+
+import { useCallback, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getRedirectUrl } from '@/utils/environment/urlUtils';
 import { useToast } from '@/hooks/use-toast';
 
 export const useGoogleDrive = (user, onSuccess) => {
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const { toast } = useToast();
+  
+  // Check if user is connected to Google Drive on component mount
+  useEffect(() => {
+    const checkConnectionStatus = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('service_configurations')
+          .select('status')
+          .eq('user_id', user.id)
+          .eq('service_type', 'google_drive')
+          .single();
+        
+        if (!error && data && data.status === 'configured') {
+          setIsConnected(true);
+          if (onSuccess && typeof onSuccess === 'function') {
+            onSuccess();
+          }
+        } else {
+          setIsConnected(false);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la vérification de la connexion:", error);
+        setIsConnected(false);
+      }
+    };
+    
+    checkConnectionStatus();
+  }, [user, onSuccess]);
   
   const initiateGoogleAuth = useCallback(async () => {
     if (!user) return;
@@ -46,6 +78,7 @@ export const useGoogleDrive = (user, onSuccess) => {
   
   return {
     isConnecting,
+    isConnected,
     initiateGoogleAuth,
   };
 };
