@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
@@ -8,19 +8,24 @@ import { PricingSection } from "@/components/landing/PricingSection";
 import { SparklesCore } from "@/components/landing/SparklesCore";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
+import { LoadingScreen } from "@/components/auth/LoadingScreen";
 
 export default function Landing() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+  const [isPageReady, setIsPageReady] = useState(false);
   
   // Récupérer la section cible des paramètres d'URL
   const urlParams = new URLSearchParams(location.search);
   const targetSection = urlParams.get('section');
 
   useEffect(() => {
-    // Si l'utilisateur est connecté et arrive sur cette page, le rediriger vers /chat
-    if (user) {
+    console.log("Landing page loaded, auth status:", user ? "Authenticated" : "Not authenticated", "isLoading:", isLoading);
+    
+    // Si l'utilisateur est connecté et que la vérification est terminée, le rediriger vers /chat
+    if (!isLoading && user) {
+      console.log("Redirecting authenticated user from Landing to /chat");
       navigate('/chat');
       return;
     }
@@ -28,19 +33,30 @@ export default function Landing() {
     // Changer le thème en sombre pour cette page spécifique
     document.documentElement.classList.add("dark");
     
-    // Faire défiler jusqu'à la section cible si spécifiée
-    if (targetSection) {
-      const element = document.getElementById(targetSection);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
+    // Marquer la page comme prête après un court délai pour éviter le flash
+    const timer = setTimeout(() => {
+      setIsPageReady(true);
+      
+      // Faire défiler jusqu'à la section cible si spécifiée
+      if (targetSection && isPageReady) {
+        const element = document.getElementById(targetSection);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
       }
-    }
+    }, 100);
     
     return () => {
       // Restaurer le thème lorsque l'utilisateur quitte la page
       document.documentElement.classList.remove("dark");
+      clearTimeout(timer);
     };
-  }, [user, navigate, targetSection]);
+  }, [user, navigate, targetSection, isLoading, isPageReady]);
+
+  // Afficher un écran de chargement pendant la vérification de l'authentification
+  if (isLoading || !isPageReady) {
+    return <LoadingScreen message="Préparation de la page d'accueil..." />;
+  }
 
   // Gestionnaires d'événements pour les boutons
   const handleJoinBeta = () => {

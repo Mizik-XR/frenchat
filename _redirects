@@ -5,25 +5,23 @@
 # Assurer que / est accessible directement
 / /index.html 200 
 
-# Assurer l'accès à la landing page
+# Assurer l'accès à la landing page avec priorité élevée
 /landing /index.html 200
 /landing?section=* /index.html 200
 
-# Assurer que /chat est accessible
+# Assurer que les autres routes sont accessibles
 /chat /index.html 200
 /chat/* /index.html 200
+/auth /index.html 200
+/auth/* /index.html 200
+/config /index.html 200
+/config/* /index.html 200
 
 # Redirections avec paramètres d'URL importants
 /?mode=cloud /index.html?mode=cloud 200
 /?forceCloud=true /index.html?forceCloud=true 200
 /?client=true /index.html?client=true 200
 /?hideDebug=true /index.html?hideDebug=true 200
-
-# Pages principales avec fallback
-/auth /index.html 200
-/config /index.html 200
-/google-drive /index.html 200
-/document/* /index.html 200
 
 # Combinaisons fréquentes de paramètres
 /?client=true&hideDebug=true /index.html?client=true&hideDebug=true 200
