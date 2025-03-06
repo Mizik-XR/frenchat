@@ -1,6 +1,7 @@
 
 import { useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { APP_STATE } from '@/integrations/supabase/client';
 
 /**
  * Composant qui surveille et capture les erreurs React non gérées
@@ -22,18 +23,25 @@ export const ReactErrorMonitor = () => {
         return;
       }
       
+      // Détection des problèmes liés à React
+      const isReactError = event.message && (
+        event.message.includes('React') ||
+        event.message.includes('useLayoutEffect') ||
+        event.message.includes('unstable_scheduleCallback') ||
+        event.message.includes('createElement')
+      );
+      
+      if (isReactError) {
+        console.warn('Erreur React potentielle détectée, mise en mode fallback...');
+        APP_STATE.isOfflineMode = true;
+      }
+      
       // Notification à l'utilisateur
       toast({
         title: "Problème détecté",
         description: "Une erreur s'est produite. L'application tente de récupérer automatiquement.",
         variant: "destructive"
       });
-      
-      // En fonction du type d'erreur, on peut tenter différentes stratégies de récupération
-      if (event.message && event.message.includes('undefined is not an object')) {
-        console.log("Tentative de récupération après une erreur de type 'undefined is not an object'");
-        // Récupération spécifique si nécessaire
-      }
     };
 
     // Fonction pour gérer les rejets de promesses non capturés
@@ -48,10 +56,25 @@ export const ReactErrorMonitor = () => {
         return;
       }
       
+      // Détecter les problèmes de connexion à l'API
+      const isConnectionError = event.reason && (
+        event.reason.message?.includes('fetch') ||
+        event.reason.message?.includes('network') ||
+        event.reason.message?.includes('ECONNREFUSED') ||
+        event.reason.message?.includes('localhost')
+      );
+      
+      if (isConnectionError) {
+        console.warn('Problème de connexion détecté, activation du mode hors ligne...');
+        APP_STATE.isOfflineMode = true;
+      }
+      
       // Notification à l'utilisateur
       toast({
         title: "Opération échouée",
-        description: "Une requête a échoué. Veuillez réessayer.",
+        description: isConnectionError 
+          ? "Problème de connexion détecté. Mode hors ligne activé." 
+          : "Une requête a échoué. Veuillez réessayer.",
         variant: "destructive"
       });
     };
