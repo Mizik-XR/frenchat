@@ -1,15 +1,23 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Reply, Forward, Quote, Copy, Trash2, Check } from "lucide-react";
+import { 
+  MoreHorizontal, 
+  Reply, 
+  Forward, 
+  Quote, 
+  Copy, 
+  Trash2, 
+  Check 
+} from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { toast } from "@/hooks/use-toast";
-import { Message } from "@/types/chat";
+import { useToast } from "@/hooks/use-toast";
+import type { Message } from "@/types/chat";
 
 interface ChatMessageProps {
   message: Message;
@@ -17,7 +25,7 @@ interface ChatMessageProps {
   onReply: () => void;
   onForward: () => void;
   onQuote: () => void;
-  isCurrentUser: boolean;
+  isUser: boolean;
 }
 
 export function ChatMessage({ 
@@ -26,14 +34,15 @@ export function ChatMessage({
   onReply, 
   onForward, 
   onQuote, 
-  isCurrentUser 
+  isUser 
 }: ChatMessageProps) {
   const [showActions, setShowActions] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
-  // Trouver le message auquel celui-ci répond, le cas échéant
-  const replyToMessage = message.quotedMessageId ? 
-    messages.find((m) => m.id === message.quotedMessageId) : null;
+  // Find the message this is replying to, if any
+  const replyToMessage = message.replyTo ? 
+    messages.find((m) => m.id === message.replyTo) : null;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(message.content);
@@ -47,13 +56,13 @@ export function ChatMessage({
 
   return (
     <div
-      className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
+      className={`flex ${isUser ? "justify-end" : "justify-start"}`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
       <div
         className={`max-w-[80%] ${
-          isCurrentUser
+          isUser
             ? "bg-french-blue text-white rounded-tl-lg rounded-tr-lg rounded-bl-lg"
             : "bg-muted rounded-tl-lg rounded-tr-lg rounded-br-lg"
         } p-3 relative group`}
@@ -61,7 +70,7 @@ export function ChatMessage({
         {replyToMessage && (
           <div className="mb-2 pb-2 border-b border-opacity-20 text-sm opacity-80">
             <div className="flex items-center">
-              <div className={`w-1 h-full ${isCurrentUser ? "bg-white" : "bg-french-blue"} mr-2`} />
+              <div className={`w-1 h-full ${isUser ? "bg-white" : "bg-french-blue"} mr-2`} />
               <div className="truncate">
                 <span className="font-medium">Réponse à: </span>
                 {replyToMessage.content}
@@ -84,7 +93,7 @@ export function ChatMessage({
         </div>
 
         <div className="text-xs opacity-70 mt-1 text-right">
-          {message.timestamp && new Date(message.timestamp).toLocaleTimeString([], {
+          {new Date(message.createdAt).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           })}
@@ -93,7 +102,7 @@ export function ChatMessage({
         {showActions && (
           <div
             className={`absolute ${
-              isCurrentUser ? "left-0 -translate-x-full" : "right-0 translate-x-full"
+              isUser ? "left-0 -translate-x-full" : "right-0 translate-x-full"
             } top-0 flex items-center gap-1`}
           >
             <Button
@@ -129,12 +138,12 @@ export function ChatMessage({
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align={isCurrentUser ? "end" : "start"}>
+              <DropdownMenuContent align={isUser ? "end" : "start"}>
                 <DropdownMenuItem onClick={copyToClipboard}>
                   {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
                   Copier
                 </DropdownMenuItem>
-                {isCurrentUser && (
+                {isUser && (
                   <DropdownMenuItem className="text-destructive">
                     <Trash2 className="mr-2 h-4 w-4" />
                     Supprimer

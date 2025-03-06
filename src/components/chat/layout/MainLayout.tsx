@@ -1,130 +1,101 @@
 
-import { ConversationSidebar } from "../ConversationSidebar";
-import { MainChatContainer } from "./MainChatContainer";
-import { PriorityTopicsPanel } from "../PriorityTopicsPanel";
+import React, { useState, useEffect } from "react";
+import { Sidebar } from "@/components/chat/ConversationSidebar";
+import { MainChatContainer } from "@/components/chat/layout/MainChatContainer";
 import { FrenchTitle } from "@/components/ui/FrenchTitle";
-import { useState, useEffect } from "react";
 import { useConversations } from "@/hooks/useConversations";
 import { useChatState } from "@/hooks/useChatState";
 import { useChatMessages } from "@/hooks/useChatMessages";
-import { useChatActions } from "@/hooks/useChatActions";
-import { useChatLogic } from "@/hooks/useChatLogic";
-import { Message } from "@/types/chat";
+import { useSystemCapabilities } from "@/hooks/useSystemCapabilities";
+import { useModelSelection } from "@/hooks/useModelSelection";
 
-export const MainLayout = () => {
-  const {
-    conversations,
-    selectedConversationId,
-    setSelectedConversationId,
-    createNewConversation,
-    updateConversation
-  } = useConversations();
+export function MainLayout() {
+  const { conversations, createNewConversation, updateConversation } = useConversations();
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const { messages, isLoading, sendMessage, fetchMessages } = useChatMessages();
+  const { llmStatus } = useSystemCapabilities();
+  const { webUIConfig, updateWebUIConfig } = useChatState();
+  const { selectedModel, setSelectedModel } = useModelSelection();
+  
+  useEffect(() => {
+    if (conversations && conversations.length > 0 && !selectedConversationId) {
+      setSelectedConversationId(conversations[0].id);
+    }
+  }, [conversations, selectedConversationId]);
 
-  const {
-    input,
-    setInput,
-    selectedDocumentId,
-    showSettings,
-    setShowSettings,
-    showPriorityTopics,
-    setShowPriorityTopics,
-    showUploader,
-    setShowUploader,
-    webUIConfig,
-    modelSource,
-    operationMode,
-    handleModelSourceChange,
-    handleModeChange,
-    handleProviderChange,
-    handleWebUIConfigChange
-  } = useChatState();
+  useEffect(() => {
+    if (selectedConversationId) {
+      fetchMessages(selectedConversationId);
+    }
+  }, [selectedConversationId, fetchMessages]);
 
-  const {
-    messages,
-    isLoading: messagesLoading,
-    clearMessages,
-    addUserMessage,
-    setAssistantResponse
-  } = useChatMessages(selectedConversationId);
+  const handleCreateNewConversation = async () => {
+    const newConversation = await createNewConversation(webUIConfig);
+    if (newConversation) {
+      setSelectedConversationId(newConversation.id);
+    }
+  };
 
-  const {
-    isLoading: processingLoading,
-    replyToMessage,
-    processMessage,
-    handleReplyToMessage,
-    clearReplyToMessage,
-    serviceType,
-    localAIUrl
-  } = useChatLogic(selectedConversationId);
+  const handleSelectConversation = (id: string) => {
+    setSelectedConversationId(id);
+  };
 
-  const {
-    isProcessing,
-    handleSubmit,
-    handleResetConversation,
-    handleAnalysisModeChange,
-    handleFilesSelected
-  } = useChatActions(
-    selectedConversationId,
-    webUIConfig,
-    processMessage,
-    clearMessages,
-    createNewConversation,
-    messages
-  );
+  const handleModelChange = (model: string) => {
+    setSelectedModel(model);
+  };
 
-  const isLoading = messagesLoading || processingLoading || isProcessing;
-  const llmStatus = serviceType === 'configured' ? 'configured' : 'not_configured';
+  const handleIAModeChange = (mode: "cloud" | "auto" | "local") => {
+    let modelSource: 'local' | 'cloud' = 'cloud';
+    if (mode === 'local') {
+      modelSource = 'local';
+    } else if (mode === 'cloud') {
+      modelSource = 'cloud';
+    }
+    
+    updateWebUIConfig({
+      ...webUIConfig,
+      modelSource: modelSource,
+      autoMode: mode === 'auto'
+    });
+  };
+
+  const currentConversation = conversations?.find(c => c.id === selectedConversationId) || null;
+  const currentIAMode = webUIConfig.autoMode 
+    ? "auto" 
+    : webUIConfig.modelSource === "local" 
+    ? "local" 
+    : "cloud";
+
+  const handleFileUpload = async (files: File[]) => {
+    // Cette fonction est juste un stub, elle sera connectée à la vraie fonction plus tard
+    console.log("Files to upload:", files);
+    return Promise.resolve();
+  };
 
   return (
-    <div className="flex h-full">
-      <ConversationSidebar
-        conversations={conversations}
-        selectedConversationId={selectedConversationId}
-        onConversationSelect={setSelectedConversationId}
-        onNewConversation={createNewConversation}
+    <main className="flex h-screen overflow-hidden">
+      <Sidebar
+        conversations={conversations || []}
+        currentConversation={currentConversation}
+        onSelectConversation={handleSelectConversation}
+        onCreateNewConversation={handleCreateNewConversation}
       />
-      
-      <div className="flex-1 flex flex-col">
+      <div className="flex flex-col flex-1 overflow-hidden">
         <div className="flex items-center justify-center h-14 border-b relative">
           <FrenchTitle />
         </div>
-        
-        <div className="flex flex-1 overflow-hidden">
-          <div className="flex-1 h-full relative max-h-full">
-            <MainChatContainer
-              messages={messages}
-              isLoading={isLoading}
-              webUIConfig={webUIConfig}
-              selectedConversationId={selectedConversationId}
-              input={input}
-              setInput={setInput}
-              replyToMessage={replyToMessage}
-              onClearReply={clearReplyToMessage}
-              onSubmit={(e) => handleSubmit(e, input, setInput, selectedDocumentId, llmStatus)}
-              onReplyToMessage={handleReplyToMessage}
-              onResetConversation={handleResetConversation}
-              modelSource={modelSource}
-              onModelSourceChange={handleModelSourceChange}
-              onModeChange={handleModeChange}
-              onWebUIConfigChange={handleWebUIConfigChange}
-              onProviderChange={handleProviderChange}
-              onAnalysisModeChange={handleAnalysisModeChange}
-              onFilesSelected={handleFilesSelected}
-              llmStatus={llmStatus}
-            />
-          </div>
-          
-          {showPriorityTopics && (
-            <div className="w-72 border-l bg-gray-50 dark:bg-gray-900">
-              <PriorityTopicsPanel
-                messages={messages}
-                onClose={() => setShowPriorityTopics(false)}
-                onTopicSelect={(id) => {}}
-              />
-            </div>
-          )}
-        </div>
+        <MainChatContainer
+          conversation={currentConversation}
+          messages={messages}
+          isLoading={isLoading}
+          iaMode={currentIAMode as "cloud" | "auto" | "local"}
+          onIAModeChange={handleIAModeChange}
+          selectedModel={selectedModel}
+          onModelChange={handleModelChange}
+          onSendMessage={sendMessage}
+          onFileUpload={handleFileUpload}
+        />
       </div>
-    </div>
+    </main>
   );
-};
+}

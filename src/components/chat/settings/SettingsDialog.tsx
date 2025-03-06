@@ -15,39 +15,14 @@ import { Label } from "@/components/ui/label";
 import { Settings } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WebUIConfig, AIProvider, AnalysisMode } from "@/types/chat";
-import { ModelConfigurator } from "./ModelConfigurator";
-import { ModelSourceSelector } from "./ModelSourceSelector";
-import { AutoModeToggle } from "./AutoModeToggle";
+import { toast } from "@/hooks/use-toast";
 
-interface SettingsDialogProps {
-  webUIConfig: WebUIConfig;
-  onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
-  onProviderChange: (provider: AIProvider) => void;
-  onAnalysisModeChange: (mode: AnalysisMode) => void;
-  modelSource: 'cloud' | 'local';
-  onModelSourceChange: (source: 'cloud' | 'local') => void;
-  onModeChange: (mode: "auto" | "manual") => void;
-  autoMode: boolean;
-  setAutoMode: (isAuto: boolean) => void;
-}
-
-export function SettingsDialog({
-  webUIConfig,
-  onWebUIConfigChange,
-  onProviderChange,
-  onAnalysisModeChange,
-  modelSource,
-  onModelSourceChange,
-  onModeChange,
-  autoMode,
-  setAutoMode
-}: SettingsDialogProps) {
-  const handleAutoModeChange = (isEnabled: boolean) => {
-    setAutoMode(isEnabled);
-    
-    // Notify parent
-    onModeChange(isEnabled ? "auto" : "manual");
+export function SettingsDialog() {
+  const handleSaveSettings = () => {
+    toast({
+      title: "Paramètres enregistrés",
+      description: "Vos préférences ont été mises à jour.",
+    });
   };
 
   return (
@@ -72,54 +47,37 @@ export function SettingsDialog({
 
           <TabsContent value="general" className="space-y-4 pt-4">
             <div className="space-y-4">
-              <AutoModeToggle 
-                isAutoMode={autoMode} 
-                onAutoModeChange={handleAutoModeChange} 
-              />
-
               <div className="flex items-center justify-between">
                 <div>
                   <Label htmlFor="history">Historique des conversations</Label>
                   <p className="text-sm text-muted-foreground">Conserver l'historique des conversations</p>
                 </div>
-                <Switch 
-                  id="history" 
-                  checked={webUIConfig.useMemory}
-                  onCheckedChange={(checked) => onWebUIConfigChange({ useMemory: checked })}
-                />
+                <Switch id="history" defaultChecked />
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="streaming">Réponses en streaming</Label>
-                  <p className="text-sm text-muted-foreground">Afficher les réponses au fur et à mesure</p>
+                  <Label htmlFor="notifications">Notifications</Label>
+                  <p className="text-sm text-muted-foreground">Activer les notifications</p>
                 </div>
-                <Switch 
-                  id="streaming" 
-                  checked={webUIConfig.streamResponse}
-                  onCheckedChange={(checked) => onWebUIConfigChange({ streamResponse: checked })}
-                />
+                <Switch id="notifications" />
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="models" className="space-y-4 pt-4">
             <div className="space-y-4">
-              {!autoMode && (
-                <ModelSourceSelector 
-                  modelSource={modelSource} 
-                  onModelSourceChange={onModelSourceChange} 
-                />
-              )}
+              <div>
+                <Label htmlFor="api-key">Clé API OpenAI</Label>
+                <Input id="api-key" placeholder="sk-..." type="password" />
+                <p className="text-xs text-muted-foreground mt-1">Utilisée pour les modèles OpenAI en mode cloud</p>
+              </div>
 
-              <ModelConfigurator 
-                webUIConfig={webUIConfig}
-                onWebUIConfigChange={onWebUIConfigChange}
-                onProviderChange={onProviderChange}
-                onAnalysisModeChange={onAnalysisModeChange}
-                modelSource={modelSource}
-                isAutoMode={autoMode}
-              />
+              <div>
+                <Label htmlFor="model-path">Chemin du modèle local</Label>
+                <Input id="model-path" placeholder="/chemin/vers/modele" />
+                <p className="text-xs text-muted-foreground mt-1">Chemin vers le modèle local sur votre machine</p>
+              </div>
             </div>
           </TabsContent>
 
@@ -145,7 +103,7 @@ export function SettingsDialog({
         </Tabs>
 
         <DialogFooter>
-          <Button type="submit">Enregistrer les modifications</Button>
+          <Button type="submit" onClick={handleSaveSettings}>Enregistrer les modifications</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

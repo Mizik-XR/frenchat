@@ -4,32 +4,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Folder, Plus, Search, ChevronDown, ChevronRight } from "lucide-react";
-import { Conversation } from "@/types/chat";
 
-interface ConversationSidebarProps {
-  conversations: Conversation[];
-  selectedConversationId: string | null;
-  onConversationSelect: (id: string) => void;
-  onNewConversation: () => void;
+interface SidebarProps {
+  conversations: any[];
+  currentConversation: any;
+  onSelectConversation: (id: string) => void;
+  onCreateNewConversation: () => void;
 }
 
-export function ConversationSidebar({
+export function Sidebar({
   conversations,
-  selectedConversationId,
-  onConversationSelect,
-  onNewConversation,
-}: ConversationSidebarProps) {
+  currentConversation,
+  onSelectConversation,
+  onCreateNewConversation,
+}: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFolders, setShowFolders] = useState(true);
 
   const filteredConversations = conversations.filter((conv) =>
-    conv.title ? conv.title.toLowerCase().includes(searchQuery.toLowerCase()) : false
+    conv.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
     <div className="w-72 border-r flex flex-col h-full bg-muted/30">
       <div className="p-4">
-        <Button className="w-full bg-french-blue hover:bg-french-blue/90 text-white" onClick={onNewConversation}>
+        <Button 
+          className="w-full bg-french-blue hover:bg-french-blue/90 text-white" 
+          onClick={onCreateNewConversation}
+        >
           <Plus className="mr-2 h-4 w-4" /> Nouvelle conversation
         </Button>
       </div>
@@ -61,11 +63,11 @@ export function ConversationSidebar({
                 key={conversation.id}
                 variant="ghost"
                 className={`w-full justify-start mb-1 ${
-                  selectedConversationId === conversation.id ? "bg-accent" : ""
+                  currentConversation?.id === conversation.id ? "bg-accent" : ""
                 }`}
-                onClick={() => onConversationSelect(conversation.id)}
+                onClick={() => onSelectConversation(conversation.id)}
               >
-                {conversation.title || "Nouvelle conversation"}
+                {conversation.title}
               </Button>
             ))}
           </div>

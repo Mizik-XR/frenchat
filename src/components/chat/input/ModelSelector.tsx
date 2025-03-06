@@ -12,18 +12,20 @@ import { Check } from "lucide-react";
 interface ModelSelectorProps {
   selectedModel: string;
   onSelectModel: (model: string) => void;
-  modelSource: 'cloud' | 'local';
+  modelSource?: 'cloud' | 'local';
 }
 
-export function ModelSelector({ selectedModel, onSelectModel, modelSource }: ModelSelectorProps) {
+export function ModelSelector({ selectedModel, onSelectModel, modelSource = 'cloud' }: ModelSelectorProps) {
   const cloudModels = [
-    { id: "huggingface", name: "Hugging Face" },
-    { id: "internet-search", name: "Recherche Internet" },
-    { id: "deepseek", name: "DeepThink" },
+    { id: "gpt-4o", name: "GPT-4o" },
+    { id: "mistral-large", name: "Mistral Large" },
+    { id: "claude-3", name: "Claude 3" },
+    { id: "gemini-pro", name: "Gemini Pro" },
   ];
 
   const localModels = [
-    { id: "mistral", name: "Mistral 7B" },
+    { id: "mistral-7b", name: "Mistral 7B" },
+    { id: "llama-3", name: "Llama 3" },
     { id: "ollama", name: "Ollama" },
   ];
 

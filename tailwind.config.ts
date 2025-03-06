@@ -8,6 +8,7 @@ export default {
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
+    "*.{js,ts,jsx,tsx,mdx}",
   ],
   prefix: "",
   theme: {
@@ -49,6 +50,9 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        "french-blue": "#0055A4",
+        "french-white": "#FFFFFF",
+        "french-red": "#EF4135",
       },
       borderRadius: {
         lg: "var(--radius)",
