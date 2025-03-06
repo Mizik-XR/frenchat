@@ -1,20 +1,22 @@
 
-/* Typing indicator */
-.typing-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
+/* 
+ * Message Styles - Main CSS for chat message components
+ * Organization:
+ * 1. Core Bubbles
+ * 2. Message Actions
+ * 3. Message Quotes
+ * 4. Animations
+ * 5. Scrollbar & Transitions
+ */
+
+/* ---------- 1. CORE BUBBLES ---------- */
+/* Base message container */
+.message-container {
+  position: relative;
+  padding: 0.25rem 0;
 }
 
-.typing-dot {
-  width: 4px;
-  height: 4px;
-  background-color: currentColor;
-  border-radius: 50%;
-  animation: typing 1s infinite;
-}
-
-/* Message bubble styles - French flag theme */
+/* User message bubble - Blue (French flag theme) */
 .message-bubble-user {
   background-color: #002395; /* Bleu */
   color: white;
@@ -29,12 +31,6 @@
   word-break: break-word;
 }
 
-.dark .message-bubble-user {
-  background-color: #003bbf; /* Bleu plus clair en dark mode */
-  color: white;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-}
-
 .message-bubble-user::after {
   content: '';
   position: absolute;
@@ -46,10 +42,7 @@
   clip-path: polygon(0 0, 0% 100%, 100% 0);
 }
 
-.dark .message-bubble-user::after {
-  background-color: #003bbf;
-}
-
+/* Assistant message bubble - White (French flag theme) */
 .message-bubble-assistant {
   background-color: white;
   border: 1px solid #e5e7eb;
@@ -64,13 +57,6 @@
   word-break: break-word;
 }
 
-.dark .message-bubble-assistant {
-  background-color: #1e293b;
-  color: white;
-  border-color: #334155;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
 .message-bubble-assistant::after {
   content: '';
   position: absolute;
@@ -82,26 +68,42 @@
   clip-path: polygon(100% 0, 0 0, 100% 100%);
 }
 
+/* Time indicators */
+.message-time {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  margin-top: 0.25rem;
+  text-align: right;
+}
+
+/* Dark mode adjustments */
+.dark .message-bubble-user {
+  background-color: #003bbf; /* Bleu plus clair en dark mode */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.dark .message-bubble-user::after {
+  background-color: #003bbf;
+}
+
+.dark .message-bubble-assistant {
+  background-color: #1e293b;
+  color: white;
+  border-color: #334155;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
 .dark .message-bubble-assistant::after {
   background-color: #1e293b;
 }
 
-/* Message quote styling */
-.message-quote {
-  background-color: rgba(0, 0, 0, 0.05);
-  border-left: 3px solid #002395;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.9em;
-  border-radius: 0.25rem;
+/* Hover effects */
+.message-bubble-user:hover, 
+.message-bubble-assistant:hover {
+  filter: brightness(0.95);
 }
 
-.dark .message-quote {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-left-color: #003bbf;
-}
-
-/* Styles for message actions */
+/* ---------- 2. MESSAGE ACTIONS ---------- */
 .message-actions {
   display: flex;
   gap: 0.5rem;
@@ -110,11 +112,6 @@
   position: absolute;
   bottom: -1.5rem;
   right: 0;
-}
-
-.message-container {
-  position: relative;
-  padding: 0.25rem 0;
 }
 
 .message-container:hover .message-actions {
@@ -142,6 +139,43 @@
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* ---------- 3. MESSAGE QUOTES ---------- */
+/* Quote styling */
+.message-quote {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-left: 3px solid #002395;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9em;
+  border-radius: 0.25rem;
+}
+
+.dark .message-quote {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left-color: #003bbf;
+}
+
+/* Quoted message styling */
+.quoted-message {
+  background-color: rgba(0, 35, 149, 0.05);
+  border-left: 4px solid #002395;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.quoted-message:hover {
+  background-color: rgba(0, 35, 149, 0.1);
+}
+
+.dark .quoted-message {
+  background-color: rgba(0, 59, 191, 0.1);
+  border-left-color: #003bbf;
+}
+
 /* French flag style divider */
 .tricolor-divider {
   display: flex;
@@ -165,7 +199,22 @@
   flex: 1;
 }
 
-/* Animation pour le chargement de messages */
+/* ---------- 4. ANIMATIONS ---------- */
+/* Typing indicator */
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.typing-dot {
+  width: 4px;
+  height: 4px;
+  background-color: currentColor;
+  border-radius: 50%;
+  animation: typing 1s infinite;
+}
+
 @keyframes typing {
   0%, 100% { 
     opacity: 0.3;
@@ -177,40 +226,17 @@
   }
 }
 
-/* Styles pour messages cités */
-.quoted-message {
-  background-color: rgba(0, 35, 149, 0.05);
-  border-left: 4px solid #002395;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.9em;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+/* Message highlight effect */
+.highlight-message {
+  animation: highlight 2s ease;
 }
 
-.quoted-message:hover {
-  background-color: rgba(0, 35, 149, 0.1);
+@keyframes highlight {
+  0% { background-color: rgba(0, 35, 149, 0.1); }
+  100% { background-color: transparent; }
 }
 
-.dark .quoted-message {
-  background-color: rgba(0, 59, 191, 0.1);
-  border-left-color: #003bbf;
-}
-
-/* Hover effect on messages */
-.message-bubble-user:hover, .message-bubble-assistant:hover {
-  filter: brightness(0.95);
-}
-
-/* Time and status indicators */
-.message-time {
-  font-size: 0.7rem;
-  opacity: 0.7;
-  margin-top: 0.25rem;
-  text-align: right;
-}
-
+/* ---------- 5. SCROLLBAR & TRANSITIONS ---------- */
 /* Enhanced scrollbar for message list */
 .message-list::-webkit-scrollbar {
   width: 6px;
