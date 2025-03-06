@@ -11,10 +11,10 @@ interface ConnectionData {
 }
 
 // Function to get the Google OAuth redirect URL
-export const getRedirectUrl = (): string => {
+export const getRedirectUrl = (path?: string): string => {
   // Implementation of the getRedirectUrl function that returns the Google OAuth redirect URL
   const baseUrl = window.location.origin;
-  return `${baseUrl}/google-auth-callback`;
+  return path ? `${baseUrl}/${path}` : `${baseUrl}/google-auth-callback`;
 };
 
 // Hook for managing Google Drive connection status
