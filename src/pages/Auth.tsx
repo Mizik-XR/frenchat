@@ -51,12 +51,17 @@ export default function Auth() {
       console.log("Auth state changed", _event, session);
       setSession(session);
       
-      // If user just signed up or signed in, check for database errors
+      // Si user vient de s'inscrire ou de se connecter, vérifier les erreurs de base de données
       if (session && (_event === 'SIGNED_IN' || _event === 'SIGNED_UP')) {
         handleProfileQuery(session.user.id)
           .then(({ error }) => {
             if (error) {
-              console.warn("Profile issue detected, but continuing with session:", error);
+              console.warn("Problème de profil détecté, mais continuation avec la session:", error);
+              toast({
+                title: "Avertissement",
+                description: "Votre profil a été initialisé avec des valeurs par défaut.",
+                duration: 5000,
+              });
             }
           });
       }

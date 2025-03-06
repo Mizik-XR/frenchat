@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, handleProfileQuery } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
@@ -12,6 +12,7 @@ import {
 } from "./auth/authConstants";
 import { useSignOut } from "./auth/authActions";
 import { getFormattedUrlParams } from "@/utils/environment";
+import { toast } from "@/hooks/use-toast";
 
 export function useAuthSession() {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export function useAuthSession() {
     updateCachedUser(session?.user ?? null);
     setUser(session?.user ?? null);
     
-    // Ne pas rediriger si nous sommes sur la page d'accueil, la landing page ou certaines routes publiques
+    // Déterminer si nous sommes sur une page publique pour éviter les redirections inutiles
     const isPublicPage = 
       location.pathname === '/' || 
       location.pathname === '/landing' || 
@@ -50,6 +51,7 @@ export function useAuthSession() {
     
     const isAuthPage = location.pathname === '/auth' || location.pathname.startsWith('/auth/');
     
+    // Si l'utilisateur n'est pas connecté et essaie d'accéder à une route protégée
     if (!session?.user && PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
       console.log("Redirection vers auth depuis route protégée:", location.pathname);
       navigate(getNavigationPath('/auth'), { state: { from: location.pathname } });
@@ -60,16 +62,19 @@ export function useAuthSession() {
     
     if (_event === 'SIGNED_IN') {
       try {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_first_login')
-          .eq('id', session.user.id)
-          .single();
+        // Vérifier si le profil existe et le créer si nécessaire
+        const { data: profile, error: profileError } = await handleProfileQuery(session.user.id);
           
-        if (profileError && profileError.code !== 'PGRST116') {
+        if (profileError) {
           console.error("Erreur lors de la récupération du profil:", profileError);
+          toast({
+            title: "Erreur de profil",
+            description: "Impossible de récupérer votre profil. Certaines fonctionnalités peuvent être limitées.",
+            variant: "destructive",
+          });
         }
 
+        // Vérifier l'état des configurations des services
         const { data: configs, error: configError } = await supabase
           .from('service_configurations')
           .select('service_type, status')
@@ -95,6 +100,7 @@ export function useAuthSession() {
       } catch (error) {
         console.error("Erreur lors de la vérification du statut d'utilisateur:", error);
         if (isAuthPage) {
+          // En cas d'erreur, rediriger vers le chat par défaut
           navigate(getNavigationPath('/chat'));
         }
       }
@@ -115,7 +121,7 @@ export function useAuthSession() {
       const { data: { session } } = await supabase.auth.getSession();
       console.log("Initial session check:", session?.user?.id ? "User authenticated" : "No user");
       
-      // Ne pas rediriger si nous sommes sur la page d'accueil, la landing page ou certaines routes publiques
+      // Déterminer si nous sommes sur une page publique
       const isPublicPage = 
         location.pathname === '/' || 
         location.pathname === '/landing' || 
@@ -130,16 +136,19 @@ export function useAuthSession() {
         setUser(session.user);
         
         try {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('is_first_login')
-            .eq('id', session.user.id)
-            .single();
+          // Vérifier si le profil existe et le créer si nécessaire
+          const { data: profile, error: profileError } = await handleProfileQuery(session.user.id);
             
-          if (profileError && profileError.code !== 'PGRST116') {
+          if (profileError) {
             console.error("Erreur lors de la récupération du profil:", profileError);
+            toast({
+              title: "Erreur de profil",
+              description: "Impossible de récupérer votre profil. Certaines fonctionnalités peuvent être limitées.",
+              variant: "destructive",
+            });
           }
 
+          // Vérifier l'état des configurations des services
           const { data: configs, error: configError } = await supabase
             .from('service_configurations')
             .select('service_type, status')

@@ -10,6 +10,9 @@ interface ReplyBadgeProps {
 }
 
 export const ReplyBadge = ({ replyToMessage, onClearReply }: ReplyBadgeProps) => {
+  // Vérifier si le contenu du message est disponible pour éviter les erreurs
+  const messageContent = replyToMessage?.content || "Message non disponible";
+  
   return (
     <div className="flex items-center mb-2 p-2 bg-gray-100 dark:bg-gray-700 rounded border-l-2 border-blue-500 dark:border-blue-400">
       <div className="flex items-start gap-1.5 flex-1 overflow-hidden">
@@ -19,7 +22,7 @@ export const ReplyBadge = ({ replyToMessage, onClearReply }: ReplyBadgeProps) =>
             En réponse à:
           </div>
           <div className="text-sm truncate max-w-full pr-2">
-            {replyToMessage.content}
+            {messageContent}
           </div>
         </div>
       </div>
