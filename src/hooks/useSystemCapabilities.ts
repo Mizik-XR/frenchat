@@ -1,96 +1,96 @@
 
 import { useState, useEffect } from 'react';
 
-interface SystemCapabilities {
-  memoryGB: number | null;
-  cpuCores: number | null;
-  gpuAvailable: boolean;
-  recommendedModels: string[];
-  browserCompatible: boolean;
-  isHighEndSystem: boolean;
-  isMidEndSystem: boolean;
-  isLowEndSystem: boolean;
-}
+export type ServiceStatus = 'online' | 'offline' | 'checking' | 'error';
+
+export type SystemCapabilities = {
+  cuda: boolean;
+  gpu: {
+    available: boolean;
+    name: string | null;
+    memory: number | null;
+  };
+  ram: {
+    total: number;
+    available: number;
+  };
+  cpu: {
+    cores: number;
+    model: string | null;
+  };
+  os: string;
+  diskSpace: {
+    total: number;
+    available: number;
+  };
+  network: {
+    online: boolean;
+    latency: number | null;
+  };
+  browser: {
+    name: string;
+    version: string;
+  };
+};
 
 export function useSystemCapabilities() {
   const [capabilities, setCapabilities] = useState<SystemCapabilities>({
-    memoryGB: null,
-    cpuCores: null,
-    gpuAvailable: false,
-    recommendedModels: [],
-    browserCompatible: true,
-    isHighEndSystem: false,
-    isMidEndSystem: false,
-    isLowEndSystem: true
+    cuda: false,
+    gpu: { available: false, name: null, memory: null },
+    ram: { total: 0, available: 0 },
+    cpu: { cores: 0, model: null },
+    os: 'unknown',
+    diskSpace: { total: 0, available: 0 },
+    network: { online: navigator.onLine, latency: null },
+    browser: { name: 'unknown', version: 'unknown' },
   });
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  // Ajout de la propriété llmStatus qui manquait
+  const [llmStatus, setLlmStatus] = useState<ServiceStatus>('checking');
 
   const analyzeSystem = async () => {
     setIsAnalyzing(true);
-    try {
-      // Vérification de la mémoire
-      let memoryEstimate = null;
-      // @ts-ignore - deviceMemory n'est pas standard dans tous les navigateurs
-      if (navigator.deviceMemory) {
-        // @ts-ignore
-        memoryEstimate = navigator.deviceMemory;
-      }
-      
-      // Vérification des cœurs CPU
-      let cpuEstimate = null;
-      if (navigator.hardwareConcurrency) {
-        cpuEstimate = navigator.hardwareConcurrency;
-      }
-      
-      // Vérification GPU (via WebGL)
-      const canvas = document.createElement('canvas');
-      const gpuAvailable = !!(
-        window.WebGLRenderingContext &&
-        (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
-      );
-      
-      // Détermination de la catégorie du système
-      const isHighEnd = (memoryEstimate && memoryEstimate >= 8) || 
-                        (cpuEstimate && cpuEstimate >= 8 && gpuAvailable);
-      const isMidEnd = (memoryEstimate && memoryEstimate >= 4) || 
-                       (cpuEstimate && cpuEstimate >= 4);
-      const isLowEnd = !isHighEnd && !isMidEnd;
-      
-      // Recommandation de modèles selon la puissance
-      let recommendedModels = [];
-      if (isHighEnd) {
-        recommendedModels = ['mistral', 'llama3', 'codellama'];
-      } else if (isMidEnd) {
-        recommendedModels = ['llama3-8b', 'phi-2', 'codellama-7b'];
-      } else {
-        recommendedModels = ['tinyllama', 'phi-2', 'gemma-2b'];
-      }
-      
+    // Simuler une analyse système pour le moment
+    
+    setTimeout(() => {
       setCapabilities({
-        memoryGB: memoryEstimate,
-        cpuCores: cpuEstimate,
-        gpuAvailable,
-        recommendedModels,
-        browserCompatible: true,
-        isHighEndSystem: isHighEnd,
-        isMidEndSystem: isMidEnd,
-        isLowEndSystem: isLowEnd
+        ...capabilities,
+        network: { ...capabilities.network, online: navigator.onLine },
       });
-    } catch (error) {
-      console.error("Erreur lors de l'analyse du système:", error);
-    } finally {
+      
+      // Mettre à jour le statut LLM en fonction de la connectivité réseau
+      setLlmStatus(navigator.onLine ? 'online' : 'offline');
+      
       setIsAnalyzing(false);
-    }
+    }, 1000);
   };
 
   useEffect(() => {
     analyzeSystem();
+    
+    const handleOnlineStatusChange = () => {
+      setCapabilities(prev => ({
+        ...prev,
+        network: { ...prev.network, online: navigator.onLine },
+      }));
+      setLlmStatus(navigator.onLine ? 'online' : 'offline');
+    };
+    
+    window.addEventListener('online', handleOnlineStatusChange);
+    window.addEventListener('offline', handleOnlineStatusChange);
+    
+    return () => {
+      window.removeEventListener('online', handleOnlineStatusChange);
+      window.removeEventListener('offline', handleOnlineStatusChange);
+    };
   }, []);
 
   return {
     capabilities,
     isAnalyzing,
-    analyzeSystem
+    analyzeSystem,
+    // Exposer la propriété llmStatus
+    llmStatus
   };
 }

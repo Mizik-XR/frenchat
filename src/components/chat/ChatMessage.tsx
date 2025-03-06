@@ -41,8 +41,8 @@ export function ChatMessage({
   const { toast } = useToast();
 
   // Find the message this is replying to, if any
-  const replyToMessage = message.replyTo ? 
-    messages.find((m) => m.id === message.replyTo) : null;
+  const replyToMessage = message.quotedMessageId ? 
+    messages.find((m) => m.id === message.quotedMessageId) : null;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(message.content);
@@ -93,7 +93,7 @@ export function ChatMessage({
         </div>
 
         <div className="text-xs opacity-70 mt-1 text-right">
-          {new Date(message.createdAt).toLocaleTimeString([], {
+          {new Date(message.timestamp).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           })}

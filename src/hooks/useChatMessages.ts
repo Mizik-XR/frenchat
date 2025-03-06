@@ -1,93 +1,98 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Message, MessageType, MessageMetadata } from '@/types/chat';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-export function useChatMessages(conversationId: string | null) {
+export function useChatMessages(conversationId: string | null = null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!conversationId) {
+  // Ajout de la fonction fetchMessages qui manquait
+  const fetchMessages = useCallback(async (convId: string) => {
+    if (!convId) {
       setMessages([]);
       return;
     }
 
-    const fetchMessages = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('chat_messages')
-          .select('*')
-          .eq('conversation_id', conversationId)
-          .order('created_at', { ascending: true });
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('conversation_id', convId)
+        .order('created_at', { ascending: true });
 
-        if (error) {
-          console.error("Erreur lors du chargement des messages:", error);
-          toast({
-            title: "Erreur",
-            description: "Impossible de charger les messages",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        if (data) {
-          setMessages(data.map((msg: any): Message => ({
-            id: msg.id,
-            role: msg.role === 'user' ? 'user' : 'assistant',
-            content: msg.content,
-            type: msg.message_type as MessageType,
-            context: msg.context,
-            metadata: msg.metadata as MessageMetadata,
-            conversationId: msg.conversation_id,
-            timestamp: new Date(msg.created_at),
-            quotedMessageId: msg.quoted_message_id
-          })));
-        }
-      } catch (e) {
-        console.error("Exception lors du chargement des messages:", e);
+      if (error) {
+        console.error("Erreur lors du chargement des messages:", error);
         toast({
           title: "Erreur",
-          description: "Une erreur est survenue lors du chargement des messages",
+          description: "Impossible de charger les messages",
           variant: "destructive"
         });
-      } finally {
-        setIsLoading(false);
+        return;
       }
-    };
 
-    fetchMessages();
+      if (data) {
+        setMessages(data.map((msg: any): Message => ({
+          id: msg.id,
+          role: msg.role === 'user' ? 'user' : 'assistant',
+          content: msg.content,
+          type: msg.message_type as MessageType,
+          context: msg.context,
+          metadata: msg.metadata as MessageMetadata,
+          conversationId: msg.conversation_id,
+          timestamp: new Date(msg.created_at),
+          quotedMessageId: msg.quoted_message_id
+        })));
+      }
+    } catch (e) {
+      console.error("Exception lors du chargement des messages:", e);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors du chargement des messages",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
+  useEffect(() => {
+    if (conversationId) {
+      fetchMessages(conversationId);
+    }
+    
     // Configuration de la souscription en temps réel
     let subscription: any;
     
-    try {
-      subscription = supabase
-        .channel('chat_messages')
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `conversation_id=eq.${conversationId}`
-        }, (payload) => {
-          const newMsg = payload.new as any;
-          setMessages(prev => [...prev, {
-            id: newMsg.id,
-            role: newMsg.role === 'user' ? 'user' : 'assistant',
-            content: newMsg.content,
-            type: newMsg.message_type as MessageType,
-            context: newMsg.context,
-            metadata: newMsg.metadata as MessageMetadata,
-            conversationId: newMsg.conversation_id,
-            timestamp: new Date(newMsg.created_at),
-            quotedMessageId: newMsg.quoted_message_id
-          }]);
-        })
-        .subscribe();
-    } catch (e) {
-      console.error("Erreur lors de la configuration de la souscription en temps réel:", e);
+    if (conversationId) {
+      try {
+        subscription = supabase
+          .channel('chat_messages')
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chat_messages',
+            filter: `conversation_id=eq.${conversationId}`
+          }, (payload) => {
+            const newMsg = payload.new as any;
+            setMessages(prev => [...prev, {
+              id: newMsg.id,
+              role: newMsg.role === 'user' ? 'user' : 'assistant',
+              content: newMsg.content,
+              type: newMsg.message_type as MessageType,
+              context: newMsg.context,
+              metadata: newMsg.metadata as MessageMetadata,
+              conversationId: newMsg.conversation_id,
+              timestamp: new Date(newMsg.created_at),
+              quotedMessageId: newMsg.quoted_message_id
+            }]);
+          })
+          .subscribe();
+      } catch (e) {
+        console.error("Erreur lors de la configuration de la souscription en temps réel:", e);
+      }
     }
 
     return () => {
@@ -99,7 +104,7 @@ export function useChatMessages(conversationId: string | null) {
         }
       }
     };
-  }, [conversationId]);
+  }, [conversationId, fetchMessages]);
 
   const createMessage = (
     role: 'user' | 'assistant',
@@ -149,6 +154,35 @@ export function useChatMessages(conversationId: string | null) {
     return message;
   };
 
+  // Ajout de la fonction sendMessage qui manquait
+  const sendMessage = async (text: string, convId: string, replyToId?: string) => {
+    if (!convId) return;
+    
+    setIsLoading(true);
+    try {
+      // Créer le message utilisateur
+      const userMsg = addUserMessage(text);
+      
+      // Simuler une réponse IA (à remplacer par votre vraie logique)
+      setTimeout(() => {
+        setAssistantResponse("Voici une réponse de l'assistant", undefined, {
+          replyTo: replyToId ? {
+            id: replyToId,
+            content: text.substring(0, 30) + (text.length > 30 ? "..." : ""),
+            role: 'user'
+          } : undefined
+        });
+        setIsLoading(false);
+      }, 1000);
+      
+      return userMsg;
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du message:", error);
+      setIsLoading(false);
+      throw error;
+    }
+  };
+
   const clearMessages = () => {
     setMessages([]);
   };
@@ -160,6 +194,9 @@ export function useChatMessages(conversationId: string | null) {
     addUserMessage,
     updateLastMessage,
     setAssistantResponse,
-    clearMessages
+    clearMessages,
+    // Ajout des fonctions manquantes
+    fetchMessages,
+    sendMessage
   };
 }

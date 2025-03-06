@@ -24,14 +24,18 @@ export function useChatState() {
     temperature: 0.7,
     streamResponse: true,
     analysisMode: 'default',
-    useMemory: true
+    useMemory: true,
+    // Ajout des propriétés manquantes
+    autoMode: operationMode === 'auto',
+    modelSource: modelSource
   });
 
   // Update the webUIConfig when operation mode changes
   useEffect(() => {
     setWebUIConfig(prev => ({
       ...prev,
-      mode: operationMode === 'auto' ? 'auto' : 'manual'
+      mode: operationMode === 'auto' ? 'auto' : 'manual',
+      autoMode: operationMode === 'auto'
     }));
   }, [operationMode]);
 
@@ -40,13 +44,21 @@ export function useChatState() {
     if (operationMode !== 'auto') {
       localStorage.setItem('aiServiceType', modelSource);
     }
+    setWebUIConfig(prev => ({
+      ...prev,
+      modelSource: modelSource
+    }));
   }, [modelSource, operationMode]);
 
   const handleModelSourceChange = (source: 'cloud' | 'local') => {
     setModelSource(source);
     // Adjust model based on source
     const defaultModel = source === 'cloud' ? 'huggingface' : 'mistral';
-    setWebUIConfig(prev => ({ ...prev, model: defaultModel }));
+    setWebUIConfig(prev => ({ 
+      ...prev, 
+      model: defaultModel,
+      modelSource: source 
+    }));
     
     // Don't update localStorage if in auto mode
     if (operationMode !== 'auto') {
@@ -61,6 +73,12 @@ export function useChatState() {
 
   const handleModeChange = (mode: 'auto' | 'manual') => {
     setOperationMode(mode);
+    
+    setWebUIConfig(prev => ({
+      ...prev,
+      mode: mode === 'auto' ? 'auto' : 'manual',
+      autoMode: mode === 'auto'
+    }));
     
     if (mode === 'auto') {
       localStorage.setItem('aiServiceType', 'hybrid');
@@ -111,6 +129,7 @@ export function useChatState() {
     handleModelSourceChange,
     handleModeChange,
     handleProviderChange,
-    handleWebUIConfigChange
+    handleWebUIConfigChange,
+    updateWebUIConfig: handleWebUIConfigChange // Ajout d'un alias pour la fonction handleWebUIConfigChange
   };
 }

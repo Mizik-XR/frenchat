@@ -12,9 +12,9 @@ import { useModelSelection } from "@/hooks/useModelSelection";
 export function MainLayout() {
   const { conversations, createNewConversation, updateConversation } = useConversations();
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-  const { messages, isLoading, sendMessage, fetchMessages } = useChatMessages();
+  const { messages, isLoading, sendMessage, fetchMessages } = useChatMessages(selectedConversationId);
   const { llmStatus } = useSystemCapabilities();
-  const { webUIConfig, updateWebUIConfig } = useChatState();
+  const { webUIConfig, handleWebUIConfigChange } = useChatState();
   const { selectedModel, setSelectedModel } = useModelSelection();
   
   useEffect(() => {
@@ -52,7 +52,7 @@ export function MainLayout() {
       modelSource = 'cloud';
     }
     
-    updateWebUIConfig({
+    handleWebUIConfigChange({
       ...webUIConfig,
       modelSource: modelSource,
       autoMode: mode === 'auto'

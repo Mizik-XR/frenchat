@@ -1,84 +1,30 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AIProvider } from '@/types/chat';
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 
 export function useModelSelection() {
-  const [activeModel, setActiveModel] = useState<'mixtral' | 'deepseek' | 'search'>('mixtral');
+  // Utiliser les états pour les propriétés manquantes
+  const [selectedModel, setSelectedModel] = useState<string>("mistral-7b");
+  const [activeModel, setActiveModel] = useState<"search" | "deepseek" | "mixtral">("mixtral");
 
-  const handleModelSelect = async (model: 'mixtral' | 'deepseek' | 'search') => {
+  // Fonction pour gérer la sélection de modèle
+  const handleModelSelect = async (model: "search" | "deepseek" | "mixtral"): Promise<AIProvider> => {
     setActiveModel(model);
     
-    let modelName = "";
-    let modelType = "";
+    // Mettre à jour le selectedModel en fonction du activeModel
+    let newModel = "mistral-7b";
+    if (model === "search") newModel = "internet-search";
+    else if (model === "deepseek") newModel = "deepseek";
+    else if (model === "mixtral") newModel = "huggingface";
     
-    switch(model) {
-      case 'mixtral':
-        modelName = "Mixtral";
-        modelType = "huggingface";
-        
-        toast({
-          title: "Modèle Mixtral activé",
-          description: "Le modèle Mixtral via Hugging Face est maintenant utilisé",
-        });
-        break;
-        
-      case 'deepseek':
-        modelName = "DeepThink";
-        modelType = "deepseek";
-        
-        // Test if deep search capabilities are available
-        try {
-          await fetch('https://api-inference.huggingface.co/models/deepseek-ai/deepseek-coder-33b-instruct', {
-            method: 'HEAD'
-          });
-          
-          toast({
-            title: "Service DeepThink",
-            description: "Mode DeepThink activé (analyse avancée)",
-          });
-        } catch (error) {
-          console.log("DeepThink service check error:", error);
-          // Still show toast even if service check fails
-          toast({
-            title: "Service DeepThink",
-            description: "Mode DeepThink activé (analyse avancée)",
-          });
-        }
-        break;
-        
-      case 'search':
-        modelName = "Recherche Internet";
-        modelType = "internet-search";
-        
-        // Test web search functionality
-        try {
-          const { data, error } = await supabase.functions.invoke('web-search', {
-            body: { query: 'test' }
-          });
-          
-          if (error) throw error;
-          
-          toast({
-            title: "Service de recherche",
-            description: "Recherche Internet activée",
-          });
-        } catch (error) {
-          console.log("Web search service check error:", error);
-          // Fallback toast
-          toast({
-            title: "Service de recherche",
-            description: "Le service de recherche est prêt",
-          });
-        }
-        break;
-    }
-
-    return modelType as AIProvider;
+    setSelectedModel(newModel);
+    
+    return model as unknown as AIProvider;
   };
 
   return {
+    selectedModel,
+    setSelectedModel,
     activeModel,
     handleModelSelect
   };
