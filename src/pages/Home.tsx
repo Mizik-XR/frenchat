@@ -12,6 +12,7 @@ import { useGoogleDriveFolders } from "@/hooks/useGoogleDriveFolders";
 import { FolderTree } from "@/components/FolderTree";
 import { GoogleDriveSync } from "@/components/GoogleDriveSync";
 import { OllamaPromotion } from "@/components/ollama/OllamaPromotion";
+import { UserCreditPanel } from "@/components/config/AIUsageMetrics/UserCreditPanel";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -65,6 +66,9 @@ export default function Home() {
         
         {/* Promotion Ollama */}
         <OllamaPromotion />
+        
+        {/* Affichage des crédits IA utilisateur */}
+        {user && <UserCreditPanel />}
         
         <Card>
           <CardHeader>
