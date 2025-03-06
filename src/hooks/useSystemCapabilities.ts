@@ -31,7 +31,7 @@ export type SystemCapabilities = {
     name: string;
     version: string;
   };
-  // Adding missing properties needed by components
+  // Added properties needed by components
   gpuAvailable: boolean;
   memoryGB?: number;
   cpuCores?: number;
@@ -69,10 +69,13 @@ export function useSystemCapabilities() {
     // Simuler une analyse système pour le moment
     
     setTimeout(() => {
+      // Check WebGPU API availability instead of accessing navigator.gpu directly
+      const hasWebGPU = typeof window !== 'undefined' && 'gpu' in navigator;
+      
       // Update all capabilities with more realistic values
       setCapabilities({
         ...capabilities,
-        gpuAvailable: navigator.gpu !== undefined,
+        gpuAvailable: hasWebGPU,
         memoryGB: 16, // Example value
         cpuCores: navigator.hardwareConcurrency || 4,
         isHighEndSystem: navigator.hardwareConcurrency > 8,
