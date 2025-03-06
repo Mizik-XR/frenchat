@@ -30,6 +30,9 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 210 80% 40%;
     --radius: 0.5rem;
+    --french-blue: 210 79% 46%;
+    --french-white: 0 0% 100%;
+    --french-red: 0 84.2% 60.2%;
   }
  
   .dark {
@@ -115,6 +118,36 @@
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+/* Nouvelle classe pour le dégradé du drapeau français */
+.french-flag-gradient {
+  background: linear-gradient(to right, #0055a4 33.33%, white 33.33%, white 66.66%, #ef4135 66.66%);
+}
+
+/* Classes de couleurs françaises */
+.french-blue {
+  color: #0055a4;
+}
+
+.french-red {
+  color: #ef4135;
+}
+
+.french-white {
+  color: white;
+}
+
+.bg-french-blue {
+  background-color: #0055a4;
+}
+
+.bg-french-red {
+  background-color: #ef4135;
+}
+
+.bg-french-white {
+  background-color: white;
 }
 
 /* Styles pour la landing page */

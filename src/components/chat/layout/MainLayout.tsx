@@ -1,126 +1,129 @@
 
-import { ConversationList } from "../ConversationList";
-import { ChatContainer } from "./ChatContainer";
+import { ConversationSidebar } from "../ConversationSidebar";
+import { MainChatContainer } from "./MainChatContainer";
 import { PriorityTopicsPanel } from "../PriorityTopicsPanel";
-import { AIProvider, WebUIConfig, AnalysisMode, Message, type Conversation } from "@/types/chat";
+import { FrenchTitle } from "@/components/ui/FrenchTitle";
+import { useState, useEffect } from "react";
+import { useConversations } from "@/hooks/useConversations";
+import { useChatState } from "@/hooks/useChatState";
+import { useChatMessages } from "@/hooks/useChatMessages";
+import { useChatActions } from "@/hooks/useChatActions";
+import { useChatLogic } from "@/hooks/useChatLogic";
+import { Message } from "@/types/chat";
 
-interface MainLayoutProps {
-  conversations: Conversation[];
-  selectedConversationId: string | null;
-  messages: Message[];
-  isLoading: boolean;
-  llmStatus: string;
-  webUIConfig: WebUIConfig;
-  input: string;
-  selectedDocumentId: string | null;
-  showSettings: boolean;
-  showUploader: boolean;
-  showPriorityTopics: boolean;
-  replyToMessage: Message | null;
-  onClearReply: () => void;
-  onConversationSelect: (id: string) => void;
-  onNewConversation: () => void;
-  onUpdateConversation: (params: { id: string; title?: string; folderId?: string | null; isPinned?: boolean; isArchived?: boolean }) => void;
-  onModeChange: (mode: 'auto' | 'manual') => void;
-  onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
-  onProviderChange: (provider: AIProvider) => void;
-  onReplyToMessage: (message: Message) => void;
-  setInput: (input: string) => void;
-  setShowSettings: (show: boolean) => void;
-  setShowUploader: (show: boolean) => void;
-  setShowPriorityTopics: (show: boolean) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  onFilesSelected: (files: File[]) => Promise<void>;
-  onTopicSelect: (id: string) => void;
-  onResetConversation: () => void;
-  onAnalysisModeChange: (mode: AnalysisMode) => void;
-  modelSource: 'cloud' | 'local';
-  onModelSourceChange: (source: 'cloud' | 'local') => void;
-}
+export const MainLayout = () => {
+  const {
+    conversations,
+    selectedConversationId,
+    setSelectedConversationId,
+    createNewConversation,
+    updateConversation
+  } = useConversations();
 
-export const MainLayout = ({
-  conversations,
-  selectedConversationId,
-  messages,
-  isLoading,
-  llmStatus,
-  webUIConfig,
-  input,
-  selectedDocumentId,
-  showSettings,
-  showUploader,
-  showPriorityTopics,
-  replyToMessage,
-  onClearReply,
-  onConversationSelect,
-  onNewConversation,
-  onUpdateConversation,
-  onModeChange,
-  onWebUIConfigChange,
-  onProviderChange,
-  onReplyToMessage,
-  setInput,
-  setShowSettings,
-  setShowUploader,
-  setShowPriorityTopics,
-  onSubmit,
-  onFilesSelected,
-  onTopicSelect,
-  onResetConversation,
-  onAnalysisModeChange,
-  modelSource,
-  onModelSourceChange
-}: MainLayoutProps) => {
+  const {
+    input,
+    setInput,
+    selectedDocumentId,
+    showSettings,
+    setShowSettings,
+    showPriorityTopics,
+    setShowPriorityTopics,
+    showUploader,
+    setShowUploader,
+    webUIConfig,
+    modelSource,
+    operationMode,
+    handleModelSourceChange,
+    handleModeChange,
+    handleProviderChange,
+    handleWebUIConfigChange
+  } = useChatState();
+
+  const {
+    messages,
+    isLoading: messagesLoading,
+    clearMessages,
+    addUserMessage,
+    setAssistantResponse
+  } = useChatMessages(selectedConversationId);
+
+  const {
+    isLoading: processingLoading,
+    replyToMessage,
+    processMessage,
+    handleReplyToMessage,
+    clearReplyToMessage,
+    serviceType,
+    localAIUrl
+  } = useChatLogic(selectedConversationId);
+
+  const {
+    isProcessing,
+    handleSubmit,
+    handleResetConversation,
+    handleAnalysisModeChange,
+    handleFilesSelected
+  } = useChatActions(
+    selectedConversationId,
+    webUIConfig,
+    processMessage,
+    clearMessages,
+    createNewConversation,
+    messages
+  );
+
+  const isLoading = messagesLoading || processingLoading || isProcessing;
+  const llmStatus = serviceType === 'configured' ? 'configured' : 'not_configured';
+
   return (
     <div className="flex h-full">
-      <div className="w-72 border-r bg-gray-50 dark:bg-gray-900">
-        <ConversationList
-          conversations={conversations}
-          selectedId={selectedConversationId || undefined}
-          onSelect={onConversationSelect}
-          onNew={onNewConversation}
-          onUpdateConversation={onUpdateConversation}
-        />
-      </div>
+      <ConversationSidebar
+        conversations={conversations}
+        selectedConversationId={selectedConversationId}
+        onConversationSelect={setSelectedConversationId}
+        onNewConversation={createNewConversation}
+      />
       
-      <div className="flex-1 flex">
-        <div className="flex-1 h-full relative max-h-full">
-          <ChatContainer
-            messages={messages}
-            isLoading={isLoading}
-            llmStatus={llmStatus}
-            webUIConfig={webUIConfig}
-            input={input}
-            selectedDocumentId={selectedDocumentId}
-            showSettings={showSettings}
-            showUploader={showUploader}
-            replyToMessage={replyToMessage}
-            onClearReply={onClearReply}
-            onModeChange={onModeChange}
-            onWebUIConfigChange={onWebUIConfigChange}
-            onProviderChange={onProviderChange}
-            onReplyToMessage={onReplyToMessage}
-            setInput={setInput}
-            setShowSettings={setShowSettings}
-            setShowUploader={setShowUploader}
-            onSubmit={onSubmit}
-            onFilesSelected={onFilesSelected}
-            onResetConversation={onResetConversation}
-            onAnalysisModeChange={onAnalysisModeChange}
-            modelSource={modelSource}
-            onModelSourceChange={onModelSourceChange}
-          />
+      <div className="flex-1 flex flex-col">
+        <div className="flex items-center justify-center h-14 border-b relative">
+          <FrenchTitle />
         </div>
         
-        {showPriorityTopics && (
-          <div className="w-72 border-l bg-gray-50 dark:bg-gray-900">
-            <PriorityTopicsPanel
+        <div className="flex flex-1 overflow-hidden">
+          <div className="flex-1 h-full relative max-h-full">
+            <MainChatContainer
               messages={messages}
-              onClose={() => setShowPriorityTopics(false)}
-              onTopicSelect={onTopicSelect}
+              isLoading={isLoading}
+              webUIConfig={webUIConfig}
+              selectedConversationId={selectedConversationId}
+              input={input}
+              setInput={setInput}
+              replyToMessage={replyToMessage}
+              onClearReply={clearReplyToMessage}
+              onSubmit={(e) => handleSubmit(e, input, setInput, selectedDocumentId, llmStatus)}
+              onReplyToMessage={handleReplyToMessage}
+              onResetConversation={handleResetConversation}
+              modelSource={modelSource}
+              onModelSourceChange={handleModelSourceChange}
+              onModeChange={handleModeChange}
+              onWebUIConfigChange={handleWebUIConfigChange}
+              onProviderChange={handleProviderChange}
+              onAnalysisModeChange={handleAnalysisModeChange}
+              onFilesSelected={handleFilesSelected}
+              llmStatus={llmStatus}
             />
           </div>
-        )}
+          
+          {showPriorityTopics && (
+            <div className="w-72 border-l bg-gray-50 dark:bg-gray-900">
+              <PriorityTopicsPanel
+                messages={messages}
+                onClose={() => setShowPriorityTopics(false)}
+                onTopicSelect={(id) => {}}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

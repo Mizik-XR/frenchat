@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { WifiOff, Wifi, Check, AlertTriangle, X } from "lucide-react";
+import { WifiOff, Wifi, Check, AlertTriangle, X, Server, Cloud } from "lucide-react";
 import { APP_STATE } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -102,19 +102,19 @@ export const StatusIndicator = ({ serviceType, localAIUrl, mode, model, modelSou
       );
     }
 
-    if (serviceType === 'local') {
+    if (modelSource === 'local') {
       return (
         <Badge variant="default" className="gap-1 bg-green-500 hover:bg-green-600">
-          <Check className="h-3 w-3" />
-          <span>IA locale</span>
+          <Server className="h-3 w-3" />
+          <span>IA locale{mode === 'auto' ? ' (Auto)' : ''}</span>
         </Badge>
       );
     }
 
     return (
       <Badge variant="default" className="gap-1">
-        <Wifi className="h-3 w-3" />
-        <span>IA Cloud</span>
+        <Cloud className="h-3 w-3" />
+        <span>IA Cloud{mode === 'auto' ? ' (Auto)' : ''}</span>
       </Badge>
     );
   };

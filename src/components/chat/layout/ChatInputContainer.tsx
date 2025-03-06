@@ -1,10 +1,12 @@
 
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { Message } from "@/types/chat";
 import { ReplyBadge } from "../input/ReplyBadge";
 import { FileUploader } from "../input/FileUploader";
-import { MessageInput } from "../input/MessageInput";
+import { MessageInputContainer } from "../input/MessageInputContainer";
 import { StatusIndicator } from "../input/StatusIndicator";
+import { Button } from "@/components/ui/button";
+import { ModelSelector } from "../input/ModelSelector";
 
 interface ChatInputContainerProps {
   input: string;
@@ -37,36 +39,54 @@ export const ChatInputContainer = ({
   replyToMessage,
   onClearReply
 }: ChatInputContainerProps) => {
+  const handleAttachment = (type: string) => {
+    if (type === "upload") {
+      setShowUploader(true);
+    }
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(e);
+  };
+
   return (
     <div className="p-3 bg-white dark:bg-gray-800 rounded-b-lg border-t border-gray-200 dark:border-gray-700">
-      {replyToMessage && onClearReply && (
-        <ReplyBadge 
-          replyToMessage={replyToMessage} 
-          onClearReply={onClearReply} 
-        />
-      )}
-
       {showUploader ? (
         <FileUploader 
           onFilesSelected={onFilesSelected}
           setShowUploader={setShowUploader}
         />
       ) : (
-        <MessageInput 
-          input={input}
-          setInput={setInput}
-          isLoading={isLoading}
-          onSubmit={onSubmit}
-          setShowUploader={setShowUploader}
-        />
+        <>
+          <MessageInputContainer
+            inputValue={input}
+            setInputValue={setInput}
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+            replyToMessage={replyToMessage || null}
+            onCancelReply={onClearReply || (() => {})}
+            onAttachment={handleAttachment}
+          />
+          
+          <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
+            <StatusIndicator 
+              serviceType={modelSource === 'local' ? 'local' : 'cloud'}
+              mode={mode}
+              model={model}
+              modelSource={modelSource}
+            />
+            
+            {mode === 'manual' && (
+              <ModelSelector 
+                selectedModel={model} 
+                onSelectModel={() => {}} 
+                modelSource={modelSource} 
+              />
+            )}
+          </div>
+        </>
       )}
-
-      <StatusIndicator 
-        serviceType={modelSource === 'local' ? 'local' : 'cloud'}
-        mode={mode}
-        model={model}
-        modelSource={modelSource}
-      />
     </div>
   );
 };

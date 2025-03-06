@@ -1,7 +1,7 @@
 
-import { Chat as ChatComponent } from "@/components/Chat";
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
+import { MainLayout } from "@/components/chat/layout/MainLayout";
 
 export default function Chat() {
   return (
@@ -12,7 +12,7 @@ export default function Chat() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         }>
-          <ChatComponent />
+          <MainLayout />
         </Suspense>
       </div>
     </div>
