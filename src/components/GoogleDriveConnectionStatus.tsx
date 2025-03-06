@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useGoogleDriveStatus, ConnectionData } from '@/hooks/useGoogleDriveStatus';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, CloudOff, CloudSyncIcon, RefreshCw } from 'lucide-react';
+import { Check, CloudOff, CloudCog, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -33,7 +33,7 @@ export const GoogleDriveConnectionStatus = () => {
         <CardTitle className="flex items-center gap-2">
           {isConnected ? (
             <>
-              <CloudSyncIcon className="h-5 w-5 text-green-500" />
+              <CloudCog className="h-5 w-5 text-green-500" />
               <span>Google Drive connecté</span>
             </>
           ) : (
