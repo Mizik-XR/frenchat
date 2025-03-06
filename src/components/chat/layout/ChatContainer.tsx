@@ -127,6 +127,8 @@ export const ChatContainer = ({
           setShowUploader={setShowUploader}
           onFilesSelected={onFilesSelected}
           modelSource={modelSource}
+          replyToMessage={replyToMessage}
+          onClearReply={onClearReply}
         />
       </div>
     </Card>

@@ -6,6 +6,7 @@ import { useChatLogic } from '@/hooks/useChatLogic';
 import { MainLayout } from "./chat/layout/MainLayout";
 import { useChatState } from '@/hooks/useChatState';
 import { useChatActions } from '@/hooks/useChatActions';
+import { useCallback } from 'react';
 
 export const Chat = () => {
   // Custom hooks to manage state and actions
@@ -52,6 +53,11 @@ export const Chat = () => {
 
   const handleTopicSelect = (messageId: string) => {
     console.log('Topic selected:', messageId);
+    // Trouver le message et le définir comme message de réponse
+    const message = messages.find(m => m.id === messageId);
+    if (message) {
+      handleReplyToMessage(message);
+    }
   };
 
   // Wrapper function to update the UI config with analysis mode
@@ -61,9 +67,13 @@ export const Chat = () => {
   };
 
   // Wrapper for handleSubmit
-  const onSubmit = (e: React.FormEvent) => {
-    handleSubmit(e, input, setInput, selectedDocumentId, llmStatus);
-  };
+  const onSubmit = useCallback((e: React.FormEvent) => {
+    handleSubmit(e, input, setInput, selectedDocumentId, llmStatus, replyToMessage);
+    // Effacer le message de réponse après l'envoi
+    if (replyToMessage) {
+      clearReplyToMessage();
+    }
+  }, [handleSubmit, input, setInput, selectedDocumentId, llmStatus, replyToMessage, clearReplyToMessage]);
 
   // Wrapper for file handling
   const onFilesSelected = async (files: File[]) => {

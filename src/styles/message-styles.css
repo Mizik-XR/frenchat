@@ -23,6 +23,10 @@
   padding: 0.75rem 1.25rem;
   position: relative;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  max-width: 85%;
+  margin-left: auto;
+  margin-bottom: 0.75rem;
+  word-break: break-word;
 }
 
 .dark .message-bubble-user {
@@ -54,6 +58,10 @@
   padding: 0.75rem 1.25rem;
   position: relative;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  max-width: 85%;
+  margin-right: auto;
+  margin-bottom: 0.75rem;
+  word-break: break-word;
 }
 
 .dark .message-bubble-assistant {
@@ -78,12 +86,35 @@
   background-color: #1e293b;
 }
 
+/* Message quote styling */
+.message-quote {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-left: 3px solid #002395;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9em;
+  border-radius: 0.25rem;
+}
+
+.dark .message-quote {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left-color: #003bbf;
+}
+
 /* Styles for message actions */
 .message-actions {
   display: flex;
   gap: 0.5rem;
   opacity: 0;
   transition: opacity 0.2s ease;
+  position: absolute;
+  bottom: -1.5rem;
+  right: 0;
+}
+
+.message-container {
+  position: relative;
+  padding: 0.25rem 0;
 }
 
 .message-container:hover .message-actions {
@@ -144,4 +175,77 @@
     opacity: 1;
     transform: translateY(-2px);
   }
+}
+
+/* Styles pour messages cités */
+.quoted-message {
+  background-color: rgba(0, 35, 149, 0.05);
+  border-left: 4px solid #002395;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.quoted-message:hover {
+  background-color: rgba(0, 35, 149, 0.1);
+}
+
+.dark .quoted-message {
+  background-color: rgba(0, 59, 191, 0.1);
+  border-left-color: #003bbf;
+}
+
+/* Hover effect on messages */
+.message-bubble-user:hover, .message-bubble-assistant:hover {
+  filter: brightness(0.95);
+}
+
+/* Time and status indicators */
+.message-time {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  margin-top: 0.25rem;
+  text-align: right;
+}
+
+/* Enhanced scrollbar for message list */
+.message-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.message-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 35, 149, 0.2);
+  border-radius: 3px;
+}
+
+.dark .message-list::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 59, 191, 0.3);
+}
+
+/* Transition animations */
+.message-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.message-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.message-exit {
+  opacity: 1;
+}
+
+.message-exit-active {
+  opacity: 0;
+  transition: opacity 150ms;
 }
