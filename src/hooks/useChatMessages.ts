@@ -42,7 +42,8 @@ export function useChatMessages(conversationId: string | null) {
             context: msg.context,
             metadata: msg.metadata as MessageMetadata,
             conversationId: msg.conversation_id,
-            timestamp: new Date(msg.created_at)
+            timestamp: new Date(msg.created_at),
+            quotedMessageId: msg.quoted_message_id
           })));
         }
       } catch (e) {
@@ -80,7 +81,8 @@ export function useChatMessages(conversationId: string | null) {
             context: newMsg.context,
             metadata: newMsg.metadata as MessageMetadata,
             conversationId: newMsg.conversation_id,
-            timestamp: new Date(newMsg.created_at)
+            timestamp: new Date(newMsg.created_at),
+            quotedMessageId: newMsg.quoted_message_id
           }]);
         })
         .subscribe();

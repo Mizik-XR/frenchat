@@ -68,7 +68,10 @@ export const Chat = () => {
 
   // Wrapper for handleSubmit
   const onSubmit = useCallback((e: React.FormEvent) => {
-    handleSubmit(e, input, setInput, selectedDocumentId, llmStatus, replyToMessage);
+    // Fix argument count: removing replyToMessage from here since it's already 
+    // available in the chatLogic hook that handleSubmit uses internally
+    handleSubmit(e, input, setInput, selectedDocumentId, llmStatus);
+    
     // Effacer le message de réponse après l'envoi
     if (replyToMessage) {
       clearReplyToMessage();

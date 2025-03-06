@@ -50,7 +50,7 @@ export function useChatProcessing(selectedConversationId: string | null) {
     setIsLoading(true);
 
     try {
-      // Préparer les métadonnées si on répond à un message
+      // Prepare metadata and quoted message ID if replying to message
       const replyMetadata = replyToMessage ? {
         replyTo: {
           id: replyToMessage.id,
@@ -59,16 +59,20 @@ export function useChatProcessing(selectedConversationId: string | null) {
         }
       } : undefined;
 
-      // Envoyer le message utilisateur
+      // Add quotedMessageId if replying to a message
+      const quotedMessageId = replyToMessage ? replyToMessage.id : undefined;
+
+      // Send user message
       await chatService.sendUserMessage(
         message, 
         selectedConversationId, 
         'text', 
         documentId, 
-        replyMetadata
+        replyMetadata,
+        quotedMessageId
       );
 
-      // Réinitialiser le message auquel on répond
+      // Reset reply to message
       clearReplyToMessage();
 
       let prompt = message;
@@ -76,10 +80,10 @@ export function useChatProcessing(selectedConversationId: string | null) {
         prompt = `Contexte précédent:\n${conversationContext}\n\nNouvelle question: ${message}`;
       }
 
-      // Si on répond à un message, ajouter le contexte
+      // If replying to a message, add context
       prompt = buildReplyPrompt(message, replyToMessage);
 
-      // Ajout d'information sur le type de service IA utilisé dans les métadonnées
+      // Add AI service info to metadata
       const aiServiceInfo = {
         type: serviceType as 'local' | 'cloud' | 'hybrid',
         endpoint: serviceType === 'local' ? localAIUrl : 'cloud',
@@ -93,10 +97,10 @@ export function useChatProcessing(selectedConversationId: string | null) {
         webUIConfig
       );
 
-      // Mise à jour du type de service potentiellement choisi automatiquement
+      // Update service type possibly chosen automatically
       const serviceUsed = localStorage.getItem('lastServiceUsed') || serviceType;
 
-      // Create a type-safe metadata object
+      // Create type-safe metadata object
       const metadata = { 
         provider: webUIConfig.model,
         analysisMode: webUIConfig.analysisMode,

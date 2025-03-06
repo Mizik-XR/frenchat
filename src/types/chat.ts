@@ -42,6 +42,7 @@ export type Message = {
   metadata?: MessageMetadata;
   conversationId: string;
   timestamp: Date;
+  quotedMessageId?: string; // Added this property
 };
 
 export type ConversationFolder = {

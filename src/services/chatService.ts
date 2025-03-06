@@ -1,147 +1,84 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { Message, MessageType, MessageMetadata } from "@/types/chat";
-import { apiConfig } from "./apiConfig";
-import { toast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
+import { MessageMetadata, MessageType } from '@/types/chat';
 
 export const chatService = {
+  /**
+   * Send a user message to the chat
+   */
   async sendUserMessage(
     content: string, 
-    conversationId: string,
-    type: MessageType = 'text',
-    documentId?: string | null,
-    metadata?: MessageMetadata
-  ): Promise<Message> {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) throw new Error("User not authenticated");
+    conversationId: string, 
+    messageType: MessageType = 'text',
+    documentId: string | null = null,
+    metadata?: MessageMetadata,
+    quotedMessageId?: string
+  ) {
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert([
+          {
+            content,
+            role: 'user',
+            conversation_id: conversationId,
+            message_type: messageType,
+            document_id: documentId,
+            metadata,
+            quoted_message_id: quotedMessageId
+          }
+        ])
+        .select()
+        .single();
 
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .insert({
-        role: 'user',
-        content,
-        message_type: type,
-        conversation_id: conversationId,
-        context: documentId || null,
-        metadata,
-        user_id: user.user.id
-      })
-      .select()
-      .single();
+      if (error) {
+        console.error("Error sending user message:", error);
+        throw new Error(error.message);
+      }
 
-    if (error) throw error;
-
-    return {
-      id: data.id,
-      role: data.role === 'user' ? 'user' : 'assistant',
-      content: data.content,
-      type: data.message_type as MessageType,
-      context: data.context,
-      metadata: data.metadata as MessageMetadata,
-      conversationId: data.conversation_id,
-      timestamp: new Date(data.created_at)
-    };
+      return data;
+    } catch (error) {
+      console.error("Exception sending user message:", error);
+      throw error;
+    }
   },
 
+  /**
+   * Send an assistant message to the chat
+   */
   async sendAssistantMessage(
     content: string, 
     conversationId: string,
-    type: MessageType = 'text',
-    documentId?: string | null,
-    metadata?: MessageMetadata
-  ): Promise<Message> {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) throw new Error("User not authenticated");
-
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .insert({
-        role: 'assistant',
-        content,
-        message_type: type,
-        conversation_id: conversationId,
-        context: documentId || null,
-        metadata,
-        user_id: user.user.id
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return {
-      id: data.id,
-      role: data.role === 'user' ? 'user' : 'assistant',
-      content: data.content,
-      type: data.message_type as MessageType,
-      context: data.context,
-      metadata: data.metadata as MessageMetadata,
-      conversationId: data.conversation_id,
-      timestamp: new Date(data.created_at)
-    };
-  },
-
-  async generateResponse(prompt: string, systemPrompt?: string): Promise<string> {
+    messageType: MessageType = 'text',
+    documentId: string | null = null,
+    metadata?: MessageMetadata,
+    quotedMessageId?: string
+  ) {
     try {
-      // Récupération de la config API
-      const headers = await apiConfig.getHeaders();
-      const baseURL = apiConfig.baseURL || 'http://localhost:8000';
-      
-      // Préparation des données avec support du prompt système
-      const requestData = {
-        prompt,
-        system_prompt: systemPrompt || "Tu es un assistant IA qui aide l'utilisateur de manière précise et bienveillante."
-      };
-      
-      // Envoi de la requête avec gestion des erreurs améliorée
-      console.log(`Envoi de la requête à ${baseURL}${apiConfig.endpoints.textGeneration}`);
-      
-      const response = await fetch(`${baseURL}${apiConfig.endpoints.textGeneration}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(requestData),
-        signal: AbortSignal.timeout(30000) // 30 secondes de timeout
-      });
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert([
+          {
+            content,
+            role: 'assistant',
+            conversation_id: conversationId,
+            message_type: messageType,
+            document_id: documentId,
+            metadata,
+            quoted_message_id: quotedMessageId
+          }
+        ])
+        .select()
+        .single();
 
-      if (!response.ok) {
-        // Tentative de récupération du message d'erreur
-        try {
-          const errorData = await response.json();
-          throw new Error(`Erreur du serveur: ${errorData.detail || response.statusText}`);
-        } catch (parseError) {
-          throw new Error(`Erreur de connexion au serveur (${response.status})`);
-        }
+      if (error) {
+        console.error("Error sending assistant message:", error);
+        throw new Error(error.message);
       }
 
-      const data = await response.json();
-      
-      // Vérification de la présence du texte généré
-      if (!data.generated_text) {
-        throw new Error("Réponse reçue mais sans contenu");
-      }
-      
-      return data.generated_text;
-    } catch (error: any) {
-      console.error("Erreur lors de la génération:", error);
-      
-      // Message d'erreur convivial pour l'utilisateur
-      if (error.name === 'TimeoutError' || error.name === 'AbortError') {
-        toast({
-          title: "Temps de réponse dépassé",
-          description: "Le serveur IA met trop de temps à répondre. Essayez à nouveau ou vérifiez la configuration.",
-          variant: "destructive"
-        });
-        throw new Error("Le temps de réponse du serveur IA a été dépassé. Veuillez réessayer.");
-      }
-      
-      if (error.message?.includes('fetch') || error.message?.includes('connexion')) {
-        toast({
-          title: "Problème de connexion",
-          description: "Impossible de se connecter au serveur IA local. Vérifiez que le serveur est démarré.",
-          variant: "destructive"
-        });
-      }
-      
+      return data;
+    } catch (error) {
+      console.error("Exception sending assistant message:", error);
       throw error;
     }
   }
