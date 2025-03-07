@@ -4,8 +4,10 @@ import { toast } from "sonner";
 import { useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { handleAuthSession } from "./authSessionHandlers";
-import { useNavigationHelpers } from "./sessionHelpers";
-import { isAuthPagePath, isPublicPagePath, handleProfileAndConfig, handleUserRedirection } from "./sessionHelpers";
+import { useNavigationHelpers } from "./navigation/navigationHelpers";
+import { isAuthPagePath, isPublicPagePath } from "./routes/routeHelpers";
+import { handleProfileAndConfig } from "./profile/profileUtils";
+import { handleUserRedirection } from "./redirection/redirectionUtils";
 import { APP_STATE } from "@/integrations/supabase/client";
 
 /**

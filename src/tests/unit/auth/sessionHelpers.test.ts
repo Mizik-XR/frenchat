@@ -1,6 +1,9 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { useNavigationHelpers, handleProfileAndConfig, handleUserRedirection, checkRouteProtection, isPublicPagePath, isAuthPagePath } from "@/hooks/auth/sessionHelpers";
+import { useNavigationHelpers } from "@/hooks/auth/navigation/navigationHelpers";
+import { handleProfileAndConfig } from "@/hooks/auth/profile/profileUtils";
+import { handleUserRedirection, checkRouteProtection } from "@/hooks/auth/redirection/redirectionUtils";
+import { isPublicPagePath, isAuthPagePath } from "@/hooks/auth/routes/routeHelpers";
 import { resetAuthMocks, setupAuthMocks } from "./__mocks__/authMocks";
 import { Location, NavigateFunction } from "react-router-dom";
 

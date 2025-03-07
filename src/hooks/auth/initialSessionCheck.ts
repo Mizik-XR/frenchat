@@ -3,8 +3,9 @@ import { useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { APP_STATE, supabase } from "@/integrations/supabase/client";
-import { useNavigationHelpers } from "./sessionHelpers";
-import { isPublicPagePath, checkRouteProtection } from "./sessionHelpers";
+import { useNavigationHelpers } from "./navigation/navigationHelpers";
+import { isPublicPagePath } from "./routes/routeHelpers";
+import { checkRouteProtection } from "./redirection/redirectionUtils";
 import { PROTECTED_ROUTES } from "./authConstants";
 
 /**
