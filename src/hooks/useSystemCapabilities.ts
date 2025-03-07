@@ -31,10 +31,10 @@ export type SystemCapabilities = {
     name: string;
     version: string;
   };
-  // Added properties needed by components
+  // Propriétés nécessaires pour les composants
   gpuAvailable: boolean;
-  memoryGB?: number;
-  cpuCores?: number;
+  memoryGB: number;
+  cpuCores: number;
   isHighEndSystem: boolean;
   isMidEndSystem: boolean;
   isLowEndSystem: boolean;
@@ -49,9 +49,9 @@ export function useSystemCapabilities() {
     cpu: { cores: 0, model: null },
     os: 'unknown',
     diskSpace: { total: 0, available: 0 },
-    network: { online: navigator.onLine, latency: null },
+    network: { online: navigator?.onLine || false, latency: null },
     browser: { name: 'unknown', version: 'unknown' },
-    // Initialize the new properties
+    // Initialisation des propriétés
     gpuAvailable: false,
     memoryGB: 0,
     cpuCores: 0,
@@ -65,50 +65,70 @@ export function useSystemCapabilities() {
   const [llmStatus, setLlmStatus] = useState<ServiceStatus>('checking');
 
   const analyzeSystem = async () => {
-    setIsAnalyzing(true);
-    // Simuler une analyse système pour le moment
-    
-    setTimeout(() => {
-      // Check WebGPU API availability instead of accessing navigator.gpu directly
-      const hasWebGPU = typeof window !== 'undefined' && 'gpu' in navigator;
+    try {
+      setIsAnalyzing(true);
+      // Simuler une analyse système pour le moment
       
-      // Update all capabilities with more realistic values
-      setCapabilities({
-        ...capabilities,
-        gpuAvailable: hasWebGPU,
-        memoryGB: 16, // Example value
-        cpuCores: navigator.hardwareConcurrency || 4,
-        isHighEndSystem: navigator.hardwareConcurrency > 8,
-        isMidEndSystem: navigator.hardwareConcurrency >= 4 && navigator.hardwareConcurrency <= 8,
-        isLowEndSystem: navigator.hardwareConcurrency < 4,
-        network: { ...capabilities.network, online: navigator.onLine },
-      });
-      
-      // Mettre à jour le statut LLM en fonction de la connectivité réseau
-      setLlmStatus(navigator.onLine ? 'online' : 'offline');
-      
+      setTimeout(() => {
+        try {
+          // Vérification sécurisée des capacités WebGPU
+          const hasWebGPU = typeof window !== 'undefined' && 'gpu' in navigator;
+          const memoryEstimate = navigator?.deviceMemory || 16;
+          const cpuCores = navigator?.hardwareConcurrency || 4;
+          
+          // Mise à jour des capacités du système
+          setCapabilities({
+            ...capabilities,
+            gpuAvailable: hasWebGPU,
+            memoryGB: memoryEstimate,
+            cpuCores: cpuCores,
+            isHighEndSystem: cpuCores > 8,
+            isMidEndSystem: cpuCores >= 4 && cpuCores <= 8,
+            isLowEndSystem: cpuCores < 4,
+            network: { ...capabilities.network, online: navigator?.onLine || false },
+          });
+          
+          // Mettre à jour le statut LLM en fonction de la connectivité réseau
+          setLlmStatus(navigator?.onLine ? 'online' : 'offline');
+        } catch (error) {
+          console.error("Erreur lors de l'analyse du système:", error);
+          setLlmStatus('error');
+        } finally {
+          setIsAnalyzing(false);
+        }
+      }, 1000);
+    } catch (error) {
+      console.error("Erreur lors de l'initialisation de l'analyse:", error);
       setIsAnalyzing(false);
-    }, 1000);
+      setLlmStatus('error');
+    }
   };
 
   useEffect(() => {
-    analyzeSystem();
-    
-    const handleOnlineStatusChange = () => {
-      setCapabilities(prev => ({
-        ...prev,
-        network: { ...prev.network, online: navigator.onLine },
-      }));
-      setLlmStatus(navigator.onLine ? 'online' : 'offline');
-    };
-    
-    window.addEventListener('online', handleOnlineStatusChange);
-    window.addEventListener('offline', handleOnlineStatusChange);
-    
-    return () => {
-      window.removeEventListener('online', handleOnlineStatusChange);
-      window.removeEventListener('offline', handleOnlineStatusChange);
-    };
+    try {
+      analyzeSystem();
+      
+      const handleOnlineStatusChange = () => {
+        setCapabilities(prev => ({
+          ...prev,
+          network: { ...prev.network, online: navigator?.onLine || false },
+        }));
+        setLlmStatus(navigator?.onLine ? 'online' : 'offline');
+      };
+      
+      // Ajout d'écouteurs d'événements avec gestion des erreurs
+      if (typeof window !== 'undefined') {
+        window.addEventListener('online', handleOnlineStatusChange);
+        window.addEventListener('offline', handleOnlineStatusChange);
+        
+        return () => {
+          window.removeEventListener('online', handleOnlineStatusChange);
+          window.removeEventListener('offline', handleOnlineStatusChange);
+        };
+      }
+    } catch (error) {
+      console.error("Erreur lors de la configuration des écouteurs d'événements:", error);
+    }
   }, []);
 
   return {
