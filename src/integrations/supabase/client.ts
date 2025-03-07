@@ -91,7 +91,24 @@ export const detectLocalAIService = async () => {
       return { available: false, url: null };
     }
     
-    // Teste si un serveur d'IA local est disponible
+    // Teste d'abord Ollama, qui est prioritaire
+    try {
+      const ollamaAvailable = await fetch('http://localhost:11434/api/version', {
+        signal: AbortSignal.timeout(1500)
+      });
+      
+      if (ollamaAvailable.ok) {
+        console.log("Service Ollama détecté à http://localhost:11434");
+        localStorage.setItem('aiServiceType', 'local');
+        localStorage.setItem('localAIUrl', 'http://localhost:11434');
+        localStorage.setItem('localProvider', 'ollama');
+        return { available: true, url: 'http://localhost:11434', provider: 'ollama' };
+      }
+    } catch (e) {
+      console.log("Ollama non détecté:", e instanceof Error ? e.message : String(e));
+    }
+    
+    // Teste ensuite le serveur Python local
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000); // Timeout après 2 secondes
     
@@ -128,10 +145,11 @@ export const detectLocalAIService = async () => {
     clearTimeout(timeoutId);
     
     if (localAIAvailable) {
-      console.log("Service d'IA local détecté:", localAIUrl);
+      console.log("Service d'IA Python local détecté:", localAIUrl);
       localStorage.setItem('aiServiceType', 'local');
       localStorage.setItem('localAIUrl', localAIUrl);
-      return { available: true, url: localAIUrl };
+      localStorage.setItem('localProvider', 'python');
+      return { available: true, url: localAIUrl, provider: 'python' };
     } else {
       console.log("Aucun service d'IA local détecté, utilisation du service cloud");
       localStorage.setItem('aiServiceType', 'cloud');
@@ -353,3 +371,6 @@ if (typeof window !== 'undefined') {
     });
   }, 1000);
 }
+
+// Ce fichier est long, mais il est important que toutes ces fonctions soient regroupées ici pour la cohérence
+// TODO: Considérer de refactoriser ce fichier en modules plus petits lorsque le temps le permettra

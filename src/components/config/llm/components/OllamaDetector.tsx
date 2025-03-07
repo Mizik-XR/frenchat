@@ -14,6 +14,7 @@ export function OllamaDetector({ onOllamaDetected, onConfigureOllama }: OllamaDe
   const [isDetecting, setIsDetecting] = useState(true);
   const [isAvailable, setIsAvailable] = useState(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const detectOllama = async () => {
@@ -37,11 +38,41 @@ export function OllamaDetector({ onOllamaDetected, onConfigureOllama }: OllamaDe
     };
     
     detectOllama();
-  }, [onOllamaDetected]);
+
+    // Auto-retry 3 times avec un délai croissant, utile si Ollama démarre lentement
+    if (retryCount < 3) {
+      const timer = setTimeout(() => {
+        if (!isAvailable) {
+          setRetryCount(prev => prev + 1);
+          detectOllama();
+        }
+      }, 2000 * (retryCount + 1));
+      
+      return () => clearTimeout(timer);
+    }
+  }, [onOllamaDetected, retryCount, isAvailable]);
 
   const handleConfigureOllama = () => {
     configureOllama();
     onConfigureOllama();
+  };
+
+  const handleRetryDetection = async () => {
+    setIsDetecting(true);
+    try {
+      const available = await isOllamaAvailable();
+      setIsAvailable(available);
+      onOllamaDetected(available);
+      
+      if (available) {
+        const models = await getAvailableOllamaModels();
+        setAvailableModels(models || []);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la tentative de reconnexion à Ollama:", error);
+    } finally {
+      setIsDetecting(false);
+    }
   };
 
   if (isDetecting) {
@@ -68,15 +99,25 @@ export function OllamaDetector({ onOllamaDetected, onConfigureOllama }: OllamaDe
             <p className="text-sm mb-2">
               Ollama est recommandé pour utiliser l'IA locale sans configuration complexe.
             </p>
-            <a 
-              href="https://ollama.ai/download" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-amber-700 hover:text-amber-900 flex items-center gap-1 hover:underline"
-            >
-              Télécharger et installer Ollama
-              <ExternalLink className="h-3 w-3" />
-            </a>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <a 
+                href="https://ollama.ai/download" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-amber-700 hover:text-amber-900 flex items-center gap-1 hover:underline"
+              >
+                Télécharger et installer Ollama
+                <ExternalLink className="h-3 w-3" />
+              </a>
+              <Button 
+                variant="outline"
+                size="sm"
+                className="mt-1 sm:mt-0 text-amber-700 border-amber-300 hover:bg-amber-50"
+                onClick={handleRetryDetection}
+              >
+                Réessayer la détection
+              </Button>
+            </div>
           </AlertDescription>
         </div>
       </Alert>

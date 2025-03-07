@@ -10,7 +10,7 @@ export const handleProfileAndConfig = async (userId: string) => {
   try {
     // Récupérer le profil utilisateur
     const { data: profile, error: profileError } = await supabase
-      .from("user_profiles")
+      .from("profiles")  // Utilisation de la table "profiles" au lieu de "user_profiles"
       .select("*")
       .eq("id", userId)
       .single();
