@@ -5,6 +5,8 @@ import { Sidebar } from "@/components/chat/ConversationSidebar";
 import { useConversations } from "@/hooks/useConversations";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { WebUIConfig, Message } from "@/types/chat";
+import "@/styles/message-styles.css";
+import "@/styles/layout.css";
 
 // Configuration par défaut de l'UI
 const defaultWebUIConfig: WebUIConfig = {
@@ -73,7 +75,7 @@ export function MainLayout() {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar 
         conversations={conversations || []} 
         currentConversation={currentConversation}
