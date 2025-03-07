@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import fs from 'fs';
+import type { PluginOption } from 'vite';
 
 // Plugin to ensure scripts in index.html use relative paths
 const ensureRelativePaths = () => {
@@ -11,7 +12,7 @@ const ensureRelativePaths = () => {
     name: 'ensure-relative-paths',
     writeBundle: {
       sequential: true,
-      order: 'post', // Correction: utilisation d'une valeur valide pour order
+      order: "post" as const, // Use literal "post" with const assertion
       handler() {
         const indexPath = path.resolve('./dist/index.html');
         if (fs.existsSync(indexPath)) {
@@ -36,7 +37,7 @@ const ensureLovableScript = () => {
     name: 'ensure-lovable-script',
     writeBundle: {
       sequential: true,
-      order: 'post', // Correction: utilisation d'une valeur valide pour order
+      order: "post" as const, // Use literal "post" with const assertion
       handler() {
         const indexPath = path.resolve('./dist/index.html');
         if (fs.existsSync(indexPath)) {
@@ -96,6 +97,7 @@ const copyRedirectsAndHeaders = () => {
   };
 };
 
+// Use defineConfig to properly type the configuration
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
@@ -105,16 +107,15 @@ export default defineConfig(({ mode }) => ({
     react({
       // Configure React to avoid potential conflicts
       jsxRuntime: 'automatic',
-      // The fastRefresh property is not recognized, let's remove it
       babel: {
         plugins: []
       }
     }),
-    mode === 'development' && componentTagger(),
-    copyRedirectsAndHeaders(), // Plugin to copy the files
-    ensureRelativePaths(), // Plugin to ensure relative paths
-    ensureLovableScript(), // Plugin to ensure Lovable script is included
-  ].filter(Boolean),
+    mode === 'development' ? componentTagger() : undefined,
+    copyRedirectsAndHeaders(), 
+    ensureRelativePaths(), 
+    ensureLovableScript(), 
+  ].filter(Boolean) as PluginOption[],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
