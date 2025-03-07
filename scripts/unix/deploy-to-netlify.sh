@@ -51,13 +51,18 @@ echo "[INFO] Nettoyage des fichiers temporaires..."
 if [ -d "dist" ]; then
     rm -rf dist
 fi
-if [ -d "node_modules" ]; then
-    rm -rf node_modules
-fi
 
 # Installation optimisée pour Netlify
 echo "[INFO] Installation des dépendances avec configuration pour Netlify..."
 npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
+
+# Vérifier la configuration Netlify
+echo "[ÉTAPE 1/3] Vérification de la configuration Netlify..."
+node scripts/ensure-netlify-build.js
+if [ $? -ne 0 ]; then
+    echo "[ATTENTION] Des problèmes ont été détectés avec la configuration Netlify."
+    echo "[INFO] Continuons malgré tout, le script tentera d'appliquer des corrections."
+fi
 
 # Préparer le build
 echo "[ÉTAPE 2/3] Préparation du build pour déploiement..."
@@ -70,6 +75,10 @@ if [ $? -ne 0 ]; then
 fi
 echo "[OK] Build prêt pour déploiement."
 echo
+
+# Vérifier les chemins absolus dans le build
+bash scripts/verify-netlify-deployment.sh
+echo "[OK] Vérification et correction des chemins terminées."
 
 # Vérification de la connexion à Netlify
 echo "[ÉTAPE 3/3] Vérification de la connexion à Netlify..."
