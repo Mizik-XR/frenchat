@@ -1,20 +1,17 @@
 
-# Dépendances principales
-tokenizers==0.15.2
-transformers==4.36.2
-accelerate==0.28.0
-datasets==2.18.0
+# Dépendances principales - Version simplifiée pour Netlify
 fastapi==0.110.0
 uvicorn==0.28.0
-pydantic==2.6.4
-
-# Dépendances conditionnelles pour Windows/Linux
-bitsandbytes-windows==0.41.1;platform_system=="Windows"
-bitsandbytes==0.41.1;platform_system!="Windows"
-
-# Analyse des ressources système et caching
+pydantic>=2.0.0
+aiohttp>=3.8.0
 psutil==5.9.8
-aiohttp==3.9.5
+
+# Note: Les packages nécessitant Rust sont commentés pour le déploiement Netlify
+# tokenizers==0.15.2
+# transformers==4.36.2
+# accelerate==0.28.0
+# datasets==2.18.0
+# bitsandbytes==0.41.1;platform_system!="Windows"
+# bitsandbytes-windows==0.41.1;platform_system=="Windows"
 
 # PyTorch - installé séparément via script
-

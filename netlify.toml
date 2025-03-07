@@ -2,17 +2,20 @@
 # Configuration de build Netlify pour FileChat
 [build]
   publish = "dist"
-  command = "NODE_ENV=production npm run build"
+  command = "SKIP_PYTHON_INSTALLATION=true NODE_ENV=production npm run build"
 
 # Configuration des variables d'environnement par défaut
 [build.environment]
   NODE_VERSION = "18"
-  NPM_FLAGS = "--no-optional --omit=dev"
+  NPM_FLAGS = "--prefer-offline --no-audit --no-fund"
   NODE_OPTIONS = "--max-old-space-size=4096"
-  NO_RUST_INSTALL = "1"  # Désactive l'installation de dépendances nécessitant Rust
+  NO_RUST_INSTALL = "1"
   NETLIFY_USE_YARN = "false"
-  TRANSFORMERS_OFFLINE = "1"  # Évite les problèmes de téléchargement des modèles
+  TRANSFORMERS_OFFLINE = "1"
   CI = "true"
+  SKIP_PYTHON_INSTALLATION = "true"
+  VITE_CLOUD_MODE = "true"
+  VITE_ALLOW_LOCAL_AI = "false"
 
 # Configuration des redirections pour le routage SPA
 [[redirects]]
@@ -31,7 +34,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-  included_files = ["**/*.model", "**/*.py"]
+  included_files = ["**/*.model"]
   external_node_modules = ["@supabase/supabase-js"]
 
 # En-têtes pour améliorer la sécurité

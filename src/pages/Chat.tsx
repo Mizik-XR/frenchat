@@ -25,26 +25,39 @@ export default function Chat() {
     const checkApiAvailability = async () => {
       if (import.meta.env.PROD) {
         try {
+          // Déterminer si nous sommes en mode cloud (priorité à la variable d'environnement)
           const isCloudMode = import.meta.env.VITE_CLOUD_MODE === "true";
           
           if (!isCloudMode) {
-            // Tenter de vérifier l'API locale
-            const response = await fetch("/api/status", { 
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-              signal: AbortSignal.timeout(3000) // Timeout après 3 secondes
-            });
+            // Tenter de vérifier l'API locale avec un timeout court
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
             
-            if (!response.ok) {
-              setApiError(true);
-              toast.warning("Mode cloud activé - API locale non détectée", {
-                duration: 5000,
-                description: "L'application fonctionne en mode cloud. Certaines fonctionnalités peuvent être limitées."
+            try {
+              const response = await fetch("/api/status", { 
+                method: "GET",
+                headers: { "Content-Type": "application/json" },
+                signal: controller.signal
               });
+              
+              clearTimeout(timeoutId);
+              
+              if (!response.ok) {
+                setApiError(true);
+                console.log("Mode cloud activé - API locale non détectée");
+              }
+            } catch (error) {
+              clearTimeout(timeoutId);
+              setApiError(true);
+              console.log("Mode cloud activé - API locale non disponible");
             }
+          } else {
+            // Mode cloud explicitement configuré
+            console.log("Mode cloud configuré par les variables d'environnement");
+            setApiError(false); // Pas d'erreur car c'est voulu
           }
         } catch (error) {
-          console.warn("API locale non disponible, utilisation du mode cloud", error);
+          console.warn("Erreur lors de la vérification de l'API:", error);
           setApiError(true);
         }
       }
@@ -79,7 +92,7 @@ export default function Chat() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      {apiError && (
+      {apiError && import.meta.env.VITE_CLOUD_MODE !== "true" && (
         <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-4 py-2 text-sm text-center">
           Mode cloud activé - API locale non détectée
         </div>
