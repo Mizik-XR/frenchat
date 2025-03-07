@@ -9,6 +9,7 @@ export default function Index() {
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
   const [showLanding, setShowLanding] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   
   useEffect(() => {
     console.log("Index page loaded, user:", user ? "Authenticated" : "Not authenticated", "isLoading:", isLoading);
@@ -16,8 +17,8 @@ export default function Index() {
     // Stocker la route pour la gestion de session
     localStorage.setItem('last_route', '/');
     
-    // Seulement rediriger après que le statut d'authentification soit confirmé
     if (!isLoading) {
+      setAuthChecked(true);
       if (user) {
         console.log("Redirecting authenticated user to /chat");
         navigate('/chat');
@@ -28,8 +29,20 @@ export default function Index() {
     }
   }, [navigate, user, isLoading]);
 
+  // Protection contre l'erreur "Cannot update during an existing state transition"
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isLoading) {
+        console.log("Authentification toujours en cours après délai, affichage de la page d'accueil");
+        setShowLanding(true);
+      }
+    }, 5000); // Délai de sécurité de 5 secondes
+    
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+  
   // Afficher un écran de chargement pendant la vérification de l'authentification
-  if (isLoading) {
+  if (isLoading && !authChecked) {
     return <LoadingScreen message="Chargement de l'application..." />;
   }
   

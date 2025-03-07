@@ -80,22 +80,34 @@
       
       // Détection et récupération en cas d'erreur de chargement
       window.addEventListener('error', function(event) {
-        if (event.message && event.message.includes('useLayoutEffect')) {
-          console.warn('Erreur useLayoutEffect détectée, tentative de récupération...');
+        console.warn('Erreur détectée:', event.message);
+        
+        // Afficher le bouton de récupération après 5 secondes sans chargement
+        setTimeout(function() {
+          var loadingEl = document.getElementById('loading-screen');
+          var retryBtn = document.querySelector('.retry-btn');
+          var errorMsg = document.querySelector('.error-message');
           
-          // Afficher le bouton de récupération après 5 secondes sans chargement
-          setTimeout(function() {
-            var loadingEl = document.getElementById('loading-screen');
-            var retryBtn = document.querySelector('.retry-btn');
-            var errorMsg = document.querySelector('.error-message');
-            
-            if (loadingEl && errorMsg && retryBtn) {
-              errorMsg.style.display = 'block';
-              retryBtn.style.display = 'inline-block';
-            }
-          }, 5000);
-        }
+          if (loadingEl && errorMsg && retryBtn) {
+            errorMsg.style.display = 'block';
+            retryBtn.style.display = 'inline-block';
+          }
+        }, 5000);
       }, true);
+
+      // Vérifier si l'application se charge correctement
+      setTimeout(function() {
+        if (document.getElementById('root').children.length <= 1) {
+          console.warn('Application non chargée après 8 secondes, affichage des options de récupération...');
+          var errorMsg = document.querySelector('.error-message');
+          var retryBtn = document.querySelector('.retry-btn');
+          
+          if (errorMsg && retryBtn) {
+            errorMsg.style.display = 'block';
+            retryBtn.style.display = 'inline-block';
+          }
+        }
+      }, 8000);
     </script>
   </head>
   <body>
