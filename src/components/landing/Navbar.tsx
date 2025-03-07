@@ -46,14 +46,11 @@ export default function Navbar({ onJoinBeta }: NavbarProps) {
       </div>
 
       <div className="hidden md:flex items-center space-x-4">
-        <Button variant="ghost" className="text-white hover:text-blue-400" asChild>
-          <Link to="/auth">Connexion</Link>
-        </Button>
         <Button 
           className="bg-blue-600 hover:bg-blue-700 text-white" 
           onClick={onJoinBeta}
         >
-          Rejoindre la beta
+          Démarrer
         </Button>
       </div>
 
@@ -63,4 +60,3 @@ export default function Navbar({ onJoinBeta }: NavbarProps) {
     </motion.nav>
   );
 }
-
