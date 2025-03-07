@@ -1,6 +1,4 @@
 
-#!/usr/bin/env node
-
 /**
  * Script de pré-build pour Netlify - contourne les problèmes d'installation de dépendances
  */
