@@ -9,7 +9,22 @@ export function useChatMessages(conversationId: string | null) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fonction sécurisée pour récupérer les messages
+  // Fonction pour formater les messages depuis Supabase
+  const formatMessages = useCallback((data: any[]): Message[] => {
+    return data.map((msg: any) => ({
+      id: msg.id,
+      role: msg.role,
+      content: msg.content,
+      type: msg.type || 'text',
+      conversationId: msg.conversation_id,
+      timestamp: new Date(msg.created_at),
+      replyTo: msg.reply_to,
+      quotedMessageId: msg.quoted_message_id,
+      metadata: msg.metadata
+    }));
+  }, []);
+
+  // Fonction pour récupérer les messages
   const fetchMessages = useCallback(async (convoId: string) => {
     if (!convoId) return;
     
@@ -19,7 +34,6 @@ export function useChatMessages(conversationId: string | null) {
     try {
       console.log(`Fetching messages for conversation: ${convoId}`);
       
-      // Récupération des messages depuis Supabase
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
@@ -28,18 +42,7 @@ export function useChatMessages(conversationId: string | null) {
       
       if (error) throw error;
       
-      const formattedMessages: Message[] = data.map((msg: any) => ({
-        id: msg.id,
-        role: msg.role,
-        content: msg.content,
-        type: msg.type || 'text',
-        conversationId: msg.conversation_id,
-        timestamp: new Date(msg.created_at),
-        replyTo: msg.reply_to,
-        quotedMessageId: msg.quoted_message_id,
-        metadata: msg.metadata
-      }));
-      
+      const formattedMessages = formatMessages(data);
       setMessages(formattedMessages);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -48,7 +51,7 @@ export function useChatMessages(conversationId: string | null) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [formatMessages]);
 
   // Charger les messages au changement de conversation
   useEffect(() => {
@@ -60,7 +63,8 @@ export function useChatMessages(conversationId: string | null) {
     }
   }, [conversationId, fetchMessages]);
 
-  const addUserMessage = (content: string, replyToId?: string): Message => {
+  // Fonction pour ajouter un message utilisateur
+  const addUserMessage = useCallback((content: string, replyToId?: string): Message => {
     const newMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -73,9 +77,10 @@ export function useChatMessages(conversationId: string | null) {
     
     setMessages((prev) => [...prev, newMessage]);
     return newMessage;
-  };
+  }, [conversationId]);
 
-  const updateLastMessage = (content: string, context?: string) => {
+  // Fonction pour mettre à jour le dernier message
+  const updateLastMessage = useCallback((content: string, context?: string) => {
     setMessages((prev) => {
       const updated = [...prev];
       if (updated.length > 0) {
@@ -86,9 +91,10 @@ export function useChatMessages(conversationId: string | null) {
       }
       return updated;
     });
-  };
+  }, []);
 
-  const setAssistantResponse = (content: string, context?: string, metadata?: MessageMetadata): Message => {
+  // Fonction pour ajouter une réponse de l'assistant
+  const setAssistantResponse = useCallback((content: string, context?: string, metadata?: MessageMetadata): Message => {
     const newMessage: Message = {
       id: Date.now().toString(),
       role: 'assistant',
@@ -102,15 +108,53 @@ export function useChatMessages(conversationId: string | null) {
     
     setMessages((prev) => [...prev, newMessage]);
     return newMessage;
-  };
+  }, [conversationId]);
 
-  const clearMessages = () => {
+  // Fonction pour effacer tous les messages
+  const clearMessages = useCallback(() => {
     setMessages([]);
     setError(null);
-  };
+  }, []);
 
-  // Fonction améliorée pour envoyer un message
-  const sendMessage = async (content: string, convoId: string, replyToId?: string) => {
+  // Fonction pour sauvegarder un message dans Supabase
+  const saveMessageToSupabase = useCallback(async (messageData: {
+    conversation_id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    type: string;
+    quoted_message_id?: string;
+  }) => {
+    const { error } = await supabase
+      .from('chat_messages')
+      .insert(messageData);
+    
+    if (error) throw error;
+  }, []);
+
+  // Fonction pour simuler une réponse de l'IA
+  const generateAIResponse = useCallback(async (content: string, convoId: string) => {
+    try {
+      const responseText = "Voici une réponse de l'assistant IA à votre message: " + content;
+      
+      await saveMessageToSupabase({
+        conversation_id: convoId,
+        role: 'assistant',
+        content: responseText,
+        type: 'text'
+      });
+      
+      setAssistantResponse(responseText);
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error processing response:", err);
+      setError("Erreur lors du traitement de la réponse");
+      toast.error("Erreur de traitement");
+      setIsLoading(false);
+    }
+  }, [saveMessageToSupabase, setAssistantResponse]);
+
+  // Fonction principale pour envoyer un message
+  const sendMessage = useCallback(async (content: string, convoId: string, replyToId?: string) => {
     if (!content.trim() || !convoId) return;
 
     try {
@@ -118,45 +162,17 @@ export function useChatMessages(conversationId: string | null) {
       setIsLoading(true);
       setError(null);
 
-      // Enregistrement du message utilisateur dans Supabase
-      const { error: userMsgError } = await supabase
-        .from('chat_messages')
-        .insert({
-          conversation_id: convoId,
-          role: 'user',
-          content: content,
-          type: 'text',
-          quoted_message_id: replyToId
-        });
+      await saveMessageToSupabase({
+        conversation_id: convoId,
+        role: 'user',
+        content: content,
+        type: 'text',
+        quoted_message_id: replyToId
+      });
 
-      if (userMsgError) throw userMsgError;
-
-      // Simulation de réponse IA
+      // Simulation de réponse IA avec un délai
       setTimeout(() => {
-        try {
-          const responseText = "Voici une réponse de l'assistant IA à votre message: " + content;
-          
-          // Enregistrement de la réponse de l'assistant dans Supabase
-          supabase
-            .from('chat_messages')
-            .insert({
-              conversation_id: convoId,
-              role: 'assistant',
-              content: responseText,
-              type: 'text'
-            })
-            .then(({ error: assistantMsgError }) => {
-              if (assistantMsgError) throw assistantMsgError;
-            });
-          
-          setAssistantResponse(responseText);
-          setIsLoading(false);
-        } catch (err) {
-          console.error("Error processing response:", err);
-          setError("Erreur lors du traitement de la réponse");
-          toast.error("Erreur de traitement");
-          setIsLoading(false);
-        }
+        generateAIResponse(content, convoId);
       }, 1000);
     } catch (error) {
       console.error("Error sending message:", error);
@@ -164,7 +180,7 @@ export function useChatMessages(conversationId: string | null) {
       toast.error("Erreur d'envoi");
       setIsLoading(false);
     }
-  };
+  }, [addUserMessage, generateAIResponse, saveMessageToSupabase]);
 
   return {
     messages,
