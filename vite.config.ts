@@ -11,8 +11,8 @@ const ensureRelativePaths = () => {
     name: 'ensure-relative-paths',
     writeBundle: {
       sequential: true,
-      order: 'post',
-      handler: () => {
+      order: 'post', // Correction: utilisation d'une valeur valide pour order
+      handler() {
         const indexPath = path.resolve('./dist/index.html');
         if (fs.existsSync(indexPath)) {
           let content = fs.readFileSync(indexPath, 'utf-8');
@@ -36,8 +36,8 @@ const ensureLovableScript = () => {
     name: 'ensure-lovable-script',
     writeBundle: {
       sequential: true,
-      order: 'post',
-      handler: () => {
+      order: 'post', // Correction: utilisation d'une valeur valide pour order
+      handler() {
         const indexPath = path.resolve('./dist/index.html');
         if (fs.existsSync(indexPath)) {
           let content = fs.readFileSync(indexPath, 'utf-8');
@@ -66,7 +66,7 @@ const ensureLovableScript = () => {
 const copyRedirectsAndHeaders = () => {
   return {
     name: 'copy-redirects-headers',
-    closeBundle: () => {
+    closeBundle() {
       // File paths
       const redirectsSrc = path.resolve('./_redirects');
       const redirectsDest = path.resolve('./dist/_redirects');
