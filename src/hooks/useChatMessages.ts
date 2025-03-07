@@ -1,36 +1,54 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Message, MessageMetadata } from "@/types/chat";
+import { toast } from "sonner";
 
 export function useChatMessages(conversationId: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Fonction sécurisée pour récupérer les messages
+  const fetchMessages = useCallback(async (convoId: string) => {
+    if (!convoId) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      console.log(`Fetching messages for conversation: ${convoId}`);
+      
+      // Simulate API call to fetch messages
+      // In a real app, this would be an API call
+      setTimeout(() => {
+        try {
+          const dummyMessages: Message[] = [];
+          setMessages(dummyMessages);
+        } catch (err) {
+          console.error("Error parsing messages:", err);
+          setError("Impossible de charger les messages. Format de données incorrect.");
+          toast.error("Erreur lors du chargement des messages");
+        } finally {
+          setIsLoading(false);
+        }
+      }, 500);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      setError("Impossible de récupérer les messages. Veuillez réessayer.");
+      toast.error("Erreur de connexion");
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Charger les messages au changement de conversation
   useEffect(() => {
     if (conversationId) {
       fetchMessages(conversationId);
     } else {
       setMessages([]);
+      setError(null);
     }
-  }, [conversationId]);
-
-  const fetchMessages = async (convoId: string) => {
-    if (!convoId) return;
-    
-    setIsLoading(true);
-    try {
-      // Simulate API call to fetch messages
-      // In a real app, this would be an API call
-      setTimeout(() => {
-        const dummyMessages: Message[] = [];
-        setMessages(dummyMessages);
-        setIsLoading(false);
-      }, 500);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      setIsLoading(false);
-    }
-  };
+  }, [conversationId, fetchMessages]);
 
   const addUserMessage = (content: string): Message => {
     const newMessage: Message = {
@@ -77,23 +95,34 @@ export function useChatMessages(conversationId: string | null) {
 
   const clearMessages = () => {
     setMessages([]);
+    setError(null);
   };
 
-  // Add the missing send message function
+  // Fonction améliorée pour envoyer un message
   const sendMessage = async (content: string, replyToId?: string) => {
     if (!content.trim() || !conversationId) return;
 
-    const userMessage = addUserMessage(content);
-    setIsLoading(true);
-
     try {
+      const userMessage = addUserMessage(content);
+      setIsLoading(true);
+      setError(null);
+
       // Simulate API call
       setTimeout(() => {
-        setAssistantResponse("This is a response from the AI assistant");
-        setIsLoading(false);
+        try {
+          setAssistantResponse("Voici une réponse de l'assistant IA");
+          setIsLoading(false);
+        } catch (err) {
+          console.error("Error processing response:", err);
+          setError("Erreur lors du traitement de la réponse");
+          toast.error("Erreur de traitement");
+          setIsLoading(false);
+        }
       }, 1000);
     } catch (error) {
       console.error("Error sending message:", error);
+      setError("Impossible d'envoyer le message");
+      toast.error("Erreur d'envoi");
       setIsLoading(false);
     }
   };
@@ -101,6 +130,7 @@ export function useChatMessages(conversationId: string | null) {
   return {
     messages,
     isLoading,
+    error,
     setIsLoading,
     addUserMessage,
     updateLastMessage,

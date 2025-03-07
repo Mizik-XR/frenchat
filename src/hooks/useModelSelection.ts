@@ -1,6 +1,9 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { AIProvider } from '@/types/chat';
+
+// Hook sécurisé pour useLayoutEffect qui bascule vers useEffect côté serveur
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 export function useModelSelection() {
   const [selectedModel, setSelectedModel] = useState<string>("mistral-7b");
@@ -20,6 +23,17 @@ export function useModelSelection() {
     
     return model as unknown as AIProvider;
   };
+
+  // Initialisation sécurisée côté client
+  useIsomorphicLayoutEffect(() => {
+    // Code d'initialisation au montage du composant
+    console.log("Model selection initialized with:", selectedModel);
+    
+    return () => {
+      // Cleanup code au démontage du composant
+      console.log("Model selection cleanup");
+    };
+  }, []);
 
   return {
     selectedModel,
