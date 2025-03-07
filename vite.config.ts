@@ -3,6 +3,37 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import fs from 'fs';
+
+// Plugin pour copier les fichiers _redirects et _headers dans le dossier dist
+const copyRedirectsAndHeaders = () => {
+  return {
+    name: 'copy-redirects-headers',
+    closeBundle: () => {
+      // Chemins des fichiers
+      const redirectsSrc = path.resolve('./_redirects');
+      const redirectsDest = path.resolve('./dist/_redirects');
+      const headersSrc = path.resolve('./scripts/_headers');
+      const headersDest = path.resolve('./dist/_headers');
+      
+      // Copier _redirects si existant
+      if (fs.existsSync(redirectsSrc)) {
+        fs.copyFileSync(redirectsSrc, redirectsDest);
+        console.log('✅ _redirects copied to dist');
+      } else {
+        // Créer un fichier _redirects de base
+        fs.writeFileSync(redirectsDest, '/* /index.html 200\n');
+        console.log('✅ _redirects created in dist');
+      }
+      
+      // Copier _headers si existant
+      if (fs.existsSync(headersSrc)) {
+        fs.copyFileSync(headersSrc, headersDest);
+        console.log('✅ _headers copied to dist');
+      }
+    }
+  };
+};
 
 export default defineConfig(({ mode }) => ({
   server: {
@@ -19,6 +50,7 @@ export default defineConfig(({ mode }) => ({
       }
     }),
     mode === 'development' && componentTagger(),
+    copyRedirectsAndHeaders(), // Plugin pour copier les fichiers
   ].filter(Boolean),
   resolve: {
     alias: {
