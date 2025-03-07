@@ -1,68 +1,77 @@
 
 /**
  * Script de pré-build pour Netlify - contourne les problèmes d'installation de dépendances
- * Python et Rust sur Netlify en configurant les variables d'environnement nécessaires.
  */
-
-console.log('=== NETLIFY PRE-BUILD SCRIPT ===');
-console.log('Préparation de l\'environnement pour le build...');
-
-// Définir les variables d'environnement critiques pour Netlify
-process.env.NO_RUST_INSTALL = '1';
-process.env.TRANSFORMERS_OFFLINE = '1';
-process.env.SKIP_PYTHON_INSTALLATION = 'true';
-process.env.NETLIFY_SKIP_PYTHON_REQUIREMENTS = 'true';
-process.env.NODE_OPTIONS = '--max-old-space-size=4096';
-
-// Configurer le mode cloud
-process.env.VITE_CLOUD_MODE = 'true';
-process.env.VITE_ALLOW_LOCAL_AI = 'false';
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
-// Créer/mettre à jour le fichier .env.production si nécessaire
-try {
-  const envPath = path.resolve(process.cwd(), '.env.production');
-  if (!fs.existsSync(envPath)) {
-    console.log('Création du fichier .env.production...');
-    
-    const envContent = `
+console.log('=================================================');
+console.log('    PRÉPARATION NETLIFY - FILECHAT');
+console.log('=================================================');
+console.log('');
+
+// Vérifier si nous sommes sur Netlify
+const isNetlify = process.env.NETLIFY === 'true';
+console.log(`Environnement Netlify: ${isNetlify ? 'Oui' : 'Non'}`);
+
+// Définir les variables d'environnement
+process.env.NO_RUST_INSTALL = '1';
+process.env.TRANSFORMERS_OFFLINE = '1';
+process.env.SKIP_PYTHON_INSTALLATION = 'true';
+process.env.VITE_CLOUD_MODE = 'true';
+process.env.VITE_ALLOW_LOCAL_AI = 'false';
+process.env.NETLIFY_SKIP_PYTHON_REQUIREMENTS = 'true';
+
+console.log('Variables d\'environnement définies:');
+console.log('NO_RUST_INSTALL:', process.env.NO_RUST_INSTALL);
+console.log('TRANSFORMERS_OFFLINE:', process.env.TRANSFORMERS_OFFLINE);
+console.log('SKIP_PYTHON_INSTALLATION:', process.env.SKIP_PYTHON_INSTALLATION);
+console.log('NETLIFY_SKIP_PYTHON_REQUIREMENTS:', process.env.NETLIFY_SKIP_PYTHON_REQUIREMENTS);
+console.log('');
+
+// Créer un fichier .env.production si nécessaire
+if (!fs.existsSync('.env.production') || isNetlify) {
+  console.log('Création du fichier .env.production pour le déploiement...');
+  const envContent = `
 VITE_API_URL=/.netlify/functions
 VITE_ENVIRONMENT=production
 VITE_SITE_URL=${process.env.URL || 'https://filechat-app.netlify.app'}
 VITE_ALLOW_LOCAL_AI=false
 VITE_SKIP_PYTHON_INSTALLATION=true
 VITE_CLOUD_MODE=true
-`;
-    
-    fs.writeFileSync(envPath, envContent.trim());
-    console.log('Fichier .env.production créé avec succès.');
-  }
-} catch (error) {
-  console.error('Erreur lors de la création du fichier .env.production:', error);
+  `.trim();
+  
+  fs.writeFileSync('.env.production', envContent);
+  console.log('[OK] Fichier .env.production créé.');
 }
 
-// Vérification de requirements.txt pour Netlify
-try {
-  const reqPath = path.resolve(process.cwd(), 'requirements.txt');
-  if (fs.existsSync(reqPath)) {
-    console.log('Simplification du fichier requirements.txt pour Netlify...');
-    
-    const simplifiedRequirements = `
-# Version simplifiée pour Netlify (sans compilation Rust)
+// Modifier le fichier requirements.txt pour contourner les dépendances Rust
+if (fs.existsSync('requirements.txt')) {
+  console.log('Création d\'un requirements.txt minimal pour Netlify...');
+  const minimalRequirements = `
+# Dépendances principales - Version simplifiée pour Netlify
 fastapi==0.110.0
 uvicorn==0.28.0
 pydantic>=2.0.0
 aiohttp>=3.8.0
-`;
-    
-    fs.writeFileSync(reqPath, simplifiedRequirements.trim());
-    console.log('Fichier requirements.txt simplifié pour Netlify.');
-  }
-} catch (error) {
-  console.error('Erreur lors de la modification de requirements.txt:', error);
+psutil==5.9.8
+
+# Note: Les packages nécessitant Rust sont commentés pour le déploiement Netlify
+# tokenizers==0.15.2
+# transformers==4.36.2
+# accelerate==0.28.0
+# datasets==2.18.0
+# bitsandbytes==0.41.1;platform_system!="Windows"
+# bitsandbytes-windows==0.41.1;platform_system=="Windows"
+`.trim();
+
+  fs.writeFileSync('requirements.txt', minimalRequirements);
+  console.log('[OK] Fichier requirements.txt simplifié.');
 }
 
-console.log('Configuration terminée pour le build Netlify.');
-console.log('========================================');
+console.log('');
+console.log('=================================================');
+console.log('    PRÉPARATION TERMINÉE');
+console.log('=================================================');

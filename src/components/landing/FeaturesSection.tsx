@@ -1,24 +1,12 @@
 
 import { motion } from "framer-motion";
-import { Database, Shield, Zap, Cloud, Server, Settings, Layers, FastForward } from "lucide-react";
+import { Database, Shield, Zap, Cloud, Server, Settings } from "lucide-react";
 
 export function FeaturesSection() {
   const features = [
     {
       icon: <Database className="w-10 h-10 text-blue-500" />,
-      title: "Indexation par Lots",
-      description:
-        "Transformez des milliers de documents en base de connaissances en quelques clics grâce à notre technologie d'indexation par lots ultrarapide.",
-    },
-    {
-      icon: <FastForward className="w-10 h-10 text-red-500" />,
-      title: "Traitement Parallèle",
-      description:
-        "Notre système analyse simultanément plusieurs documents, multipliant par 10 la vitesse d'indexation par rapport aux solutions traditionnelles.",
-    },
-    {
-      icon: <Layers className="w-10 h-10 text-white" />,
-      title: "Intégration Globale",
+      title: "Indexation Globale",
       description:
         "Indexez et interrogez l'ensemble de vos bases de données (Google Drive, Microsoft Teams, Dropbox) en un seul endroit.",
     },
@@ -39,6 +27,16 @@ export function FeaturesSection() {
       title: "IA Cloud Open Source",
       description: "Utilisez des modèles d'IA open source hébergés dans le cloud pour des tâches complexes.",
     },
+    {
+      icon: <Server className="w-10 h-10 text-white" />,
+      title: "IA Locale",
+      description: "Traitez vos données sensibles localement sans qu'elles ne quittent votre environnement.",
+    },
+    {
+      icon: <Settings className="w-10 h-10 text-red-500" />,
+      title: "APIs Configurables",
+      description: "Utilisez vos propres API Hugging Face ou d'autres fournisseurs selon vos préférences.",
+    },
   ];
 
   return (
@@ -50,9 +48,9 @@ export function FeaturesSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Indexation Intelligente par Lots</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Fonctionnalités Innovantes</h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Notre technologie révolutionne la façon dont vous exploitez vos documents en transformant vos drives en véritables bases de connaissances interrogeables.
+            Découvrez comment Frenchat révolutionne la gestion et l'exploitation de vos données.
           </p>
         </motion.div>
 
