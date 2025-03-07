@@ -2,7 +2,7 @@
 # Configuration de build Netlify pour FileChat
 [build]
   publish = "dist"
-  command = "node scripts/netlify-prebuild.js && npm run build"
+  command = "npm run build"
 
 # Configuration des variables d'environnement par défaut
 [build.environment]

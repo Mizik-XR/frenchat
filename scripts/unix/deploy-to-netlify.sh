@@ -35,11 +35,16 @@ if ! command -v netlify &> /dev/null; then
     echo "[OK] CLI Netlify installée avec succès."
 fi
 
-# Désactiver l'installation de Rust pour le déploiement
+# Configuration de l'environnement pour Netlify
 export NO_RUST_INSTALL=1
 export NETLIFY_SKIP_PYTHON=true
 export TRANSFORMERS_OFFLINE=1
 export NODE_ENV=production
+export VITE_CLOUD_MODE=true
+export VITE_ALLOW_LOCAL_AI=false
+export SKIP_PYTHON_INSTALLATION=true
+export NETLIFY_SKIP_PYTHON_REQUIREMENTS=true
+export NODE_OPTIONS="--max-old-space-size=4096"
 
 # Nettoyer les fichiers inutiles
 echo "[INFO] Nettoyage des fichiers temporaires..."
@@ -56,7 +61,6 @@ npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=fa
 
 # Préparer le build
 echo "[ÉTAPE 2/3] Préparation du build pour déploiement..."
-export NODE_OPTIONS="--max-old-space-size=4096"
 npm run build
 if [ $? -ne 0 ]; then
     echo "[ERREUR] La construction du projet a échoué."
