@@ -24,11 +24,13 @@ process.env.TRANSFORMERS_OFFLINE = '1';
 process.env.SKIP_PYTHON_INSTALLATION = 'true';
 process.env.VITE_CLOUD_MODE = 'true';
 process.env.VITE_ALLOW_LOCAL_AI = 'false';
+process.env.NETLIFY_SKIP_PYTHON_REQUIREMENTS = 'true';
 
 console.log('Variables d\'environnement définies:');
 console.log('NO_RUST_INSTALL:', process.env.NO_RUST_INSTALL);
 console.log('TRANSFORMERS_OFFLINE:', process.env.TRANSFORMERS_OFFLINE);
 console.log('SKIP_PYTHON_INSTALLATION:', process.env.SKIP_PYTHON_INSTALLATION);
+console.log('NETLIFY_SKIP_PYTHON_REQUIREMENTS:', process.env.NETLIFY_SKIP_PYTHON_REQUIREMENTS);
 console.log('');
 
 // Créer un fichier .env.production si nécessaire
@@ -51,18 +53,20 @@ VITE_CLOUD_MODE=true
 if (fs.existsSync('requirements.txt')) {
   console.log('Création d\'un requirements.txt minimal pour Netlify...');
   const minimalRequirements = `
-# Version simplifiée pour Netlify (sans compilation Rust)
+# Dépendances principales - Version simplifiée pour Netlify
 fastapi==0.110.0
 uvicorn==0.28.0
 pydantic>=2.0.0
 aiohttp>=3.8.0
 psutil==5.9.8
-# Les packages qui nécessitent Rust sont commentés
-# tokenizers
-# transformers
-# accelerate
-# datasets
-# bitsandbytes
+
+# Note: Les packages nécessitant Rust sont commentés pour le déploiement Netlify
+# tokenizers==0.15.2
+# transformers==4.36.2
+# accelerate==0.28.0
+# datasets==2.18.0
+# bitsandbytes==0.41.1;platform_system!="Windows"
+# bitsandbytes-windows==0.41.1;platform_system=="Windows"
 `.trim();
 
   fs.writeFileSync('requirements.txt', minimalRequirements);
