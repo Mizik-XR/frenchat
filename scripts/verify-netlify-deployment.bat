@@ -12,7 +12,7 @@ echo.
 
 REM Exécution du script de vérification JavaScript
 echo [INFO] Vérification de la configuration Netlify...
-node scripts/ensure-netlify-build.js
+node scripts\ensure-netlify-build.js
 
 REM Vérification du build
 if not exist "dist\" (
