@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/chat/ConversationSidebar";
 import { useConversations } from "@/hooks/useConversations";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { WebUIConfig, Message } from "@/types/chat";
+import { toast } from "sonner";
 import "@/styles/message-styles.css";
 import "@/styles/layout.css";
 
@@ -22,7 +23,7 @@ const defaultWebUIConfig: WebUIConfig = {
 };
 
 export function MainLayout() {
-  const { conversations, createNewConversation, updateConversation, deleteConversation } = useConversations();
+  const { conversations, createNewConversation, updateConversation, deleteConversation, isLoading: conversationsLoading } = useConversations();
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showUploader, setShowUploader] = useState(false);
@@ -47,8 +48,10 @@ export function MainLayout() {
     try {
       const newConversation = await createNewConversation(defaultWebUIConfig);
       setCurrentConversationId(newConversation.id);
+      toast.success("Nouvelle conversation créée");
     } catch (error) {
       console.error("Erreur lors de la création d'une nouvelle conversation:", error);
+      toast.error("Erreur lors de la création d'une nouvelle conversation");
     }
   };
 
@@ -72,7 +75,20 @@ export function MainLayout() {
   // Adapter la signature de la fonction pour correspondre à celle attendue par ConversationSidebar
   const handleRenameConversation = (id: string, title: string) => {
     updateConversation({ id, title });
+    toast.success("Conversation renommée");
   };
+
+  // Gestion de chargement en cours
+  if (conversationsLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Chargement des conversations...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
@@ -82,7 +98,13 @@ export function MainLayout() {
         onSelectConversation={setCurrentConversationId}
         onCreateNewConversation={handleCreateNewConversation}
         onRenameConversation={handleRenameConversation}
-        onDeleteConversation={deleteConversation}
+        onDeleteConversation={(id) => {
+          deleteConversation(id);
+          if (currentConversationId === id) {
+            setCurrentConversationId(conversations?.length > 1 ? conversations[0].id : null);
+          }
+          toast.success("Conversation supprimée");
+        }}
       />
       <ChatContainer 
         messages={messages || []}

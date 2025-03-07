@@ -2,8 +2,15 @@
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle, ExternalLink } from "lucide-react";
-import { isOllamaAvailable, configureOllama, getAvailableOllamaModels } from "@/utils/environment/localAIDetection";
+import { Loader2, CheckCircle, ExternalLink, ServerIcon } from "lucide-react";
+import { 
+  isOllamaAvailable, 
+  configureOllama, 
+  getAvailableOllamaModels,
+  isPythonServerAvailable,
+  configurePythonServer
+} from "@/utils/environment/localAIDetection";
+import { toast } from "sonner";
 
 interface OllamaDetectorProps {
   onOllamaDetected: (detected: boolean) => void;
@@ -15,50 +22,88 @@ export function OllamaDetector({ onOllamaDetected, onConfigureOllama }: OllamaDe
   const [isAvailable, setIsAvailable] = useState(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [retryCount, setRetryCount] = useState(0);
+  const [isPythonAvailable, setIsPythonAvailable] = useState(false);
+  const [checkingPython, setCheckingPython] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    
     const detectOllama = async () => {
+      if (!mounted) return;
+      
       try {
         setIsDetecting(true);
         const available = await isOllamaAvailable();
+        
+        if (!mounted) return;
+        
         setIsAvailable(available);
         onOllamaDetected(available);
         
         if (available) {
           const models = await getAvailableOllamaModels();
-          setAvailableModels(models || []);
+          if (mounted) {
+            setAvailableModels(models || []);
+          }
+        } else if (retryCount < 3) {
+          // Si Ollama n'est pas détecté, vérifier le serveur Python
+          setCheckingPython(true);
+          const pythonAvailable = await isPythonServerAvailable();
+          if (mounted) {
+            setIsPythonAvailable(pythonAvailable);
+            setCheckingPython(false);
+          }
         }
       } catch (error) {
         console.error("Erreur de détection d'Ollama:", error);
-        setIsAvailable(false);
-        onOllamaDetected(false);
+        if (mounted) {
+          setIsAvailable(false);
+          onOllamaDetected(false);
+        }
       } finally {
-        setIsDetecting(false);
+        if (mounted) {
+          setIsDetecting(false);
+        }
       }
     };
     
     detectOllama();
 
-    // Auto-retry 3 times avec un délai croissant, utile si Ollama démarre lentement
+    // Auto-retry 3 fois avec un délai croissant, utile si Ollama démarre lentement
     if (retryCount < 3) {
       const timer = setTimeout(() => {
-        if (!isAvailable) {
+        if (mounted && !isAvailable) {
           setRetryCount(prev => prev + 1);
           detectOllama();
         }
       }, 2000 * (retryCount + 1));
       
-      return () => clearTimeout(timer);
+      return () => {
+        mounted = false;
+        clearTimeout(timer);
+      };
     }
+    
+    return () => {
+      mounted = false;
+    };
   }, [onOllamaDetected, retryCount, isAvailable]);
 
   const handleConfigureOllama = () => {
     configureOllama();
     onConfigureOllama();
+    toast.success("Configuration avec Ollama effectuée avec succès");
+  };
+  
+  const handleConfigurePython = () => {
+    configurePythonServer();
+    onConfigureOllama();
+    toast.success("Configuration avec le serveur Python effectuée avec succès");
   };
 
   const handleRetryDetection = async () => {
     setIsDetecting(true);
+    setRetryCount(0);
     try {
       const available = await isOllamaAvailable();
       setIsAvailable(available);
@@ -67,9 +112,23 @@ export function OllamaDetector({ onOllamaDetected, onConfigureOllama }: OllamaDe
       if (available) {
         const models = await getAvailableOllamaModels();
         setAvailableModels(models || []);
+        toast.success("Ollama détecté avec succès");
+      } else {
+        // Si Ollama n'est pas détecté, vérifier le serveur Python
+        setCheckingPython(true);
+        const pythonAvailable = await isPythonServerAvailable();
+        setIsPythonAvailable(pythonAvailable);
+        setCheckingPython(false);
+        
+        if (pythonAvailable) {
+          toast.success("Serveur Python local détecté");
+        } else {
+          toast.error("Aucun service d'IA local détecté");
+        }
       }
     } catch (error) {
       console.error("Erreur lors de la tentative de reconnexion à Ollama:", error);
+      toast.error("Erreur de connexion aux services locaux");
     } finally {
       setIsDetecting(false);
     }
@@ -81,9 +140,35 @@ export function OllamaDetector({ onOllamaDetected, onConfigureOllama }: OllamaDe
         <div className="flex items-start gap-3">
           <Loader2 className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0 animate-spin" />
           <AlertDescription className="text-blue-800">
-            <h3 className="font-medium mb-1">Détection d'Ollama en cours...</h3>
-            <p className="text-sm">Nous vérifions si Ollama est disponible sur votre système.</p>
+            <h3 className="font-medium mb-1">Détection des services d'IA locale en cours...</h3>
+            <p className="text-sm">Nous vérifions si Ollama ou un autre service d'IA est disponible sur votre système.</p>
           </AlertDescription>
+        </div>
+      </Alert>
+    );
+  }
+
+  if (!isAvailable && isPythonAvailable) {
+    return (
+      <Alert className="bg-blue-50 border-blue-200 shadow-sm">
+        <div className="flex items-start gap-3">
+          <ServerIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <h4 className="text-base font-medium text-blue-800 mb-1">
+              Serveur Python détecté sur votre système
+            </h4>
+            <p className="text-sm text-gray-600 mb-2">
+              Un serveur Python compatible est disponible pour l'IA locale.
+            </p>
+            <Button
+              variant="outline" 
+              size="sm"
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+              onClick={handleConfigurePython}
+            >
+              Configurer avec le serveur Python
+            </Button>
+          </div>
         </div>
       </Alert>
     );
@@ -95,7 +180,7 @@ export function OllamaDetector({ onOllamaDetected, onConfigureOllama }: OllamaDe
         <div className="flex items-start gap-3">
           <div className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0">ℹ️</div>
           <AlertDescription className="text-amber-800">
-            <h3 className="font-medium mb-1">Ollama n'est pas détecté</h3>
+            <h3 className="font-medium mb-1">Service d'IA locale non détecté</h3>
             <p className="text-sm mb-2">
               Ollama est recommandé pour utiliser l'IA locale sans configuration complexe.
             </p>
@@ -115,7 +200,14 @@ export function OllamaDetector({ onOllamaDetected, onConfigureOllama }: OllamaDe
                 className="mt-1 sm:mt-0 text-amber-700 border-amber-300 hover:bg-amber-50"
                 onClick={handleRetryDetection}
               >
-                Réessayer la détection
+                {checkingPython ? (
+                  <>
+                    <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                    Vérification en cours...
+                  </>
+                ) : (
+                  "Réessayer la détection"
+                )}
               </Button>
             </div>
           </AlertDescription>
