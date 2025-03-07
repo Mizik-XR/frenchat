@@ -1,46 +1,42 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { vi } from "vitest";
-import { Session } from "@supabase/supabase-js";
+import { Session, User } from "@supabase/supabase-js";
 
 // Mock Supabase client
 vi.mock("@/integrations/supabase/client", () => {
-  const mockSupabase = {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
-      onAuthStateChange: vi.fn().mockReturnValue({ 
-        data: { subscription: { unsubscribe: vi.fn() } } 
-      }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-    },
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: null, error: null }),
-    }),
-  };
-
-  const mockAppState = {
-    isOfflineMode: false,
-    setOfflineMode: vi.fn(),
-  };
-
   return {
-    supabase: mockSupabase,
-    APP_STATE: mockAppState,
+    supabase: {
+      auth: {
+        getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+        onAuthStateChange: vi.fn().mockReturnValue({
+          data: { subscription: { unsubscribe: vi.fn() } },
+        }),
+        signOut: vi.fn().mockResolvedValue({ error: null }),
+      },
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }),
+    },
+    APP_STATE: {
+      isOfflineMode: false,
+      setOfflineMode: vi.fn(),
+    },
   };
 });
 
-// Mock react-router-dom
+// Mock React Router
 vi.mock("react-router-dom", () => {
   return {
     useNavigate: vi.fn().mockReturnValue(vi.fn()),
     useLocation: vi.fn().mockReturnValue({
-      pathname: "/",
+      pathname: "/test",
       search: "",
-      state: null,
       hash: "",
-      key: "default"
+      state: null,
+      key: "default",
     }),
   };
 });
@@ -56,11 +52,13 @@ vi.mock("sonner", () => {
   };
 });
 
-// Create mock functions for ease of reuse
-export const getMockUser = (overrides = {}) => ({
+// Helper function to create a mock user
+export const getMockUser = (overrides = {}): User => ({
   id: "mock-user-id",
-  email: "test@example.com",
+  email: "user@example.com",
   role: "authenticated",
+  aud: "authenticated",
+  created_at: new Date().toISOString(),
   app_metadata: {},
   user_metadata: {},
   ...overrides,
@@ -76,7 +74,7 @@ export const getMockSession = (overrides = {}): Session => ({
   ...overrides,
 });
 
-// Helper to setup auth mocks with specific return values
+// Setup function to configure mocks with specific returns
 export const setupAuthMocks = ({
   getSessionReturn = { data: { session: null }, error: null },
   signOutReturn = { error: null },
@@ -119,7 +117,7 @@ export const setupAuthMocks = ({
   };
 };
 
-// Reset all mocks after each test
+// Reset all mocks
 export const resetAuthMocks = () => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
 };
