@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Conversation, WebUIConfig } from "@/types/chat";
@@ -109,9 +110,44 @@ export function useConversations() {
     }
   });
 
+  const deleteConversation = useMutation({
+    mutationFn: async (id: string) => {
+      // Supprimer d'abord les messages associés à cette conversation
+      const { error: messagesError } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('conversation_id', id);
+
+      if (messagesError) throw messagesError;
+
+      // Ensuite supprimer la conversation elle-même
+      const { error } = await supabase
+        .from('chat_conversations')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      toast({
+        title: "Conversation supprimée",
+        description: "La conversation a été supprimée avec succès"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la conversation",
+        variant: "destructive"
+      });
+    }
+  });
+
   return {
     conversations,
     createNewConversation,
-    updateConversation: updateConversation.mutate
+    updateConversation: updateConversation.mutate,
+    deleteConversation: deleteConversation.mutate
   };
 }
