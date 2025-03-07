@@ -53,10 +53,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Fonction pour récupérer et déchiffrer le token Google Drive
     async function getGoogleDriveToken(userId: string) {
       try {
-        // Appel à l'Edge Function google-oauth pour obtenir un token valide et déchiffré
         const { data, error } = await supabase.functions.invoke('google-oauth', {
           body: { 
             action: 'check_token_status', 
@@ -69,7 +67,6 @@ serve(async (req) => {
           throw new Error("Token invalide ou expiré");
         }
         
-        // Récupérer le token déchiffré
         const { data: tokenData, error: tokenError } = await supabase.functions.invoke('google-oauth', {
           body: { 
             action: 'get_token', 
@@ -89,10 +86,8 @@ serve(async (req) => {
       }
     }
 
-    // Récupérer le token OAuth
     const tokenData = await getGoogleDriveToken(userId);
 
-    // Créer ou mettre à jour l'enregistrement de progression
     const { data: progress, error: progressError } = await supabase
       .from('indexing_progress')
       .upsert({
@@ -113,7 +108,6 @@ serve(async (req) => {
       throw new Error('Erreur lors de l\'initialisation du suivi');
     }
 
-    // Fonction pour compter le nombre total de fichiers
     const countFiles = async (folderId: string, depth: number = 0): Promise<number> => {
       let total = 0;
       let pageToken: string | undefined = undefined;
@@ -137,7 +131,6 @@ serve(async (req) => {
         const files: GoogleDriveFile[] = data.files;
         pageToken = data.nextPageToken;
 
-        // Compter les fichiers
         for (const file of files) {
           if (file.mimeType === 'application/vnd.google-apps.folder') {
             if (recursive && depth < maxDepth) {
@@ -152,7 +145,6 @@ serve(async (req) => {
       return total;
     };
 
-    // Fonction récursive pour indexer les dossiers
     const indexFolderRecursively = async (options: IndexingOptions): Promise<void> => {
       console.log(`Indexation du dossier ${options.folderId} à la profondeur ${options.currentDepth}`);
 
@@ -176,12 +168,10 @@ serve(async (req) => {
         const files: GoogleDriveFile[] = data.files;
         pageToken = data.nextPageToken;
 
-        // Traiter les fichiers du lot actuel
         for (const file of files) {
           try {
             if (file.mimeType === 'application/vnd.google-apps.folder') {
               if (options.recursive && options.currentDepth < options.maxDepth) {
-                // Indexer récursivement le sous-dossier
                 await indexFolderRecursively({
                   ...options,
                   folderId: file.id,
@@ -190,7 +180,6 @@ serve(async (req) => {
                 });
               }
             } else {
-              // Indexer le fichier
               await supabase
                 .from('indexed_documents')
                 .insert({
@@ -205,7 +194,6 @@ serve(async (req) => {
                   status: 'pending'
                 });
 
-              // Mettre à jour la progression
               await supabase
                 .from('indexing_progress')
                 .update({
@@ -222,20 +210,16 @@ serve(async (req) => {
       } while (pageToken);
     };
 
-    // Démarrer le processus d'indexation en arrière-plan
     EdgeRuntime.waitUntil(
       (async () => {
         try {
-          // Compter le nombre total de fichiers
           const totalFiles = await countFiles(folderId);
           
-          // Mettre à jour le nombre total de fichiers
           await supabase
             .from('indexing_progress')
             .update({ total_files: totalFiles })
             .eq('id', progress.id);
 
-          // Démarrer l'indexation récursive
           await indexFolderRecursively({
             userId,
             folderId,
@@ -245,7 +229,6 @@ serve(async (req) => {
             currentDepth: 0
           });
 
-          // Marquer comme terminé
           await supabase
             .from('indexing_progress')
             .update({
@@ -257,7 +240,6 @@ serve(async (req) => {
         } catch (error) {
           console.error('Erreur lors de l\'indexation:', error);
           
-          // Mettre à jour le statut en cas d'erreur
           await supabase
             .from('indexing_progress')
             .update({
@@ -274,7 +256,6 @@ serve(async (req) => {
       })()
     );
 
-    // Répondre immédiatement avec l'ID de progression
     return new Response(
       JSON.stringify({
         success: true,
