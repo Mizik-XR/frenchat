@@ -19,9 +19,14 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading, signOut } = useAuthSession();
 
+  // Afficher le composant de chargement pendant la vérification de l'authentification
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <AuthContext.Provider value={{ user, isLoading, signOut }}>
-      {isLoading ? <LoadingScreen /> : children}
+      {children}
     </AuthContext.Provider>
   );
 };

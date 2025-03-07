@@ -1,6 +1,6 @@
 
 import React, { Suspense, lazy } from 'react';
-import { Route, Routes, Navigate } from 'react-router-dom';
+import { Route, Routes, Navigate, BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
 import { LoadingScreen } from './components/auth/LoadingScreen';
 import { Toaster } from './components/ui/toaster';
@@ -89,17 +89,19 @@ function App() {
 
   return (
     <ErrorBoundary>
-      {/* L'ordre des providers est important */}
+      {/* L'ordre des providers est crucial pour le bon fonctionnement */}
       <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
         <QueryClientProvider client={queryClient}>
-          {/* Wrap AuthProvider autour de SettingsProvider pour éviter les problèmes de contexte */}
-          <AuthProvider>
-            <SettingsProvider>
-              <ReactErrorMonitor />
-              <AppRouter />
-              <Toaster />
-            </SettingsProvider>
-          </AuthProvider>
+          {/* Ajout du BrowserRouter autour de AuthProvider et des autres composants */}
+          <BrowserRouter>
+            <AuthProvider>
+              <SettingsProvider>
+                <ReactErrorMonitor />
+                <AppRouter />
+                <Toaster />
+              </SettingsProvider>
+            </AuthProvider>
+          </BrowserRouter>
         </QueryClientProvider>
       </ThemeProvider>
     </ErrorBoundary>
