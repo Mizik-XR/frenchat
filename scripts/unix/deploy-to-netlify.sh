@@ -111,17 +111,21 @@ fi
 echo "[OK] Déploiement terminé avec succès."
 echo
 
-echo "==================================================="
-echo "     DÉPLOIEMENT TERMINÉ"
+echo "[SÉCURITÉ] IMPORTANT: Configuration des variables d'environnement"
 echo "==================================================="
 echo
 echo "N'oubliez pas de configurer les variables d'environnement"
-echo "dans l'interface Netlify pour les fonctionnalités avancées."
+echo "dans l'interface Netlify pour protéger vos clés API."
 echo
 echo "Variables à configurer:"
 echo "- VITE_SUPABASE_URL: URL de votre projet Supabase"
 echo "- VITE_SUPABASE_ANON_KEY: Clé anonyme de votre projet Supabase"
 echo "- VITE_CLOUD_API_URL: URL de l'API cloud (optionnel)"
+echo
+echo "Méthode sécurisée:"
+echo "1. Accédez à votre projet dans l'interface Netlify"
+echo "2. Allez dans 'Site settings' -> 'Environment variables'"
+echo "3. Ajoutez les variables ci-dessus sans les stocker dans le code"
 echo
 echo "==================================================="
 echo

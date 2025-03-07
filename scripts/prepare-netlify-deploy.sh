@@ -32,5 +32,11 @@ EOF
     echo "[OK] Fichier requirements.txt simplifié créé."
 fi
 
+echo "[SÉCURITÉ] IMPORTANT: Ne stockez pas les clés API sensibles dans les fichiers source."
+echo "[SÉCURITÉ] Utilisez les variables d'environnement dans l'interface Netlify pour:"
+echo "          - VITE_SUPABASE_URL"
+echo "          - VITE_SUPABASE_ANON_KEY"
+echo "          - Autres clés API sensibles"
+echo ""
 echo "[INFO] Préparation terminée. Variables d'environnement configurées pour Netlify."
 echo "==================================================="
