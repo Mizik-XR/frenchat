@@ -6,98 +6,98 @@ import { componentTagger } from "lovable-tagger";
 import fs from 'fs';
 import type { PluginOption } from 'vite';
 
-// Plugin to ensure scripts in index.html use relative paths
+// Plugin pour assurer que les scripts dans index.html utilisent des chemins relatifs
 const ensureRelativePaths = () => {
   return {
     name: 'ensure-relative-paths',
     writeBundle: {
       sequential: true,
-      order: "post" as const, // Use literal "post" with const assertion
+      order: "post" as const, // Utiliser "post" comme littéral avec assertion const
       handler() {
         const indexPath = path.resolve('./dist/index.html');
         if (fs.existsSync(indexPath)) {
           let content = fs.readFileSync(indexPath, 'utf-8');
-          // Convert absolute paths to relative paths
+          // Convertir les chemins absolus en chemins relatifs
           content = content.replace(/src="\//g, 'src="./');
           content = content.replace(/href="\//g, 'href="./');
-          // Update index.html with relative paths
+          // Mettre à jour index.html avec des chemins relatifs
           fs.writeFileSync(indexPath, content);
-          console.log('✅ Updated paths in index.html to be relative');
+          console.log('✅ Chemins mis à jour dans index.html pour être relatifs');
         } else {
-          console.log('❌ Could not find dist/index.html');
+          console.log('❌ Impossible de trouver dist/index.html');
         }
       }
     }
   };
 };
 
-// Plugin to ensure Lovable script is included
+// Plugin pour assurer que le script Lovable est inclus
 const ensureLovableScript = () => {
   return {
     name: 'ensure-lovable-script',
     writeBundle: {
       sequential: true,
-      order: "post" as const, // Use literal "post" with const assertion
+      order: "post" as const, // Utiliser "post" comme littéral avec assertion const
       handler() {
         const indexPath = path.resolve('./dist/index.html');
         if (fs.existsSync(indexPath)) {
           let content = fs.readFileSync(indexPath, 'utf-8');
-          // Check if the Lovable script is missing
+          // Vérifier si le script Lovable est manquant
           if (!content.includes('cdn.gpteng.co/gptengineer.js')) {
-            // Find the closing </body> tag and insert script before it
+            // Trouver la balise </body> de fermeture et insérer le script avant celle-ci
             content = content.replace(
               '</body>',
               '  <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>\n</body>'
             );
-            // Update index.html with the script
+            // Mettre à jour index.html avec le script
             fs.writeFileSync(indexPath, content);
-            console.log('✅ Added Lovable script to index.html');
+            console.log('✅ Script Lovable ajouté à index.html');
           } else {
-            console.log('✅ Lovable script already exists in index.html');
+            console.log('✅ Le script Lovable existe déjà dans index.html');
           }
         } else {
-          console.log('❌ Could not find dist/index.html');
+          console.log('❌ Impossible de trouver dist/index.html');
         }
       }
     }
   };
 };
 
-// Plugin for copying the files _redirects and _headers to the dist folder
+// Plugin pour copier les fichiers _redirects et _headers dans le dossier dist
 const copyRedirectsAndHeaders = () => {
   return {
     name: 'copy-redirects-headers',
     closeBundle() {
-      // File paths
+      // Chemins des fichiers
       const redirectsSrc = path.resolve('./_redirects');
       const redirectsDest = path.resolve('./dist/_redirects');
       const headersSrc = path.resolve('./_headers');
       const headersDest = path.resolve('./dist/_headers');
       
-      // Copy _redirects if it exists
+      // Copier _redirects s'il existe
       if (fs.existsSync(redirectsSrc)) {
         fs.copyFileSync(redirectsSrc, redirectsDest);
-        console.log('✅ _redirects copied to dist');
+        console.log('✅ _redirects copié dans dist');
       } else {
-        // Create a basic _redirects file
+        // Créer un fichier _redirects basique
         fs.writeFileSync(redirectsDest, '/* /index.html 200\n');
-        console.log('✅ _redirects created in dist');
+        console.log('✅ _redirects créé dans dist');
       }
       
-      // Copy _headers if it exists
+      // Copier _headers s'il existe
       if (fs.existsSync(headersSrc)) {
         fs.copyFileSync(headersSrc, headersDest);
-        console.log('✅ _headers copied to dist');
+        console.log('✅ _headers copié dans dist');
       } else if (fs.existsSync('scripts/_headers')) {
-        // Try to copy from scripts directory if not found in root
+        // Essayer de copier depuis le répertoire scripts si non trouvé à la racine
         fs.copyFileSync('scripts/_headers', headersDest);
-        console.log('✅ _headers copied from scripts directory to dist');
+        console.log('✅ _headers copié depuis le répertoire scripts vers dist');
       }
     }
   };
 };
 
-// Use defineConfig to properly type the configuration
+// Utiliser defineConfig pour typer correctement la configuration
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
@@ -105,7 +105,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
-      // Configure React to avoid potential conflicts
+      // Configurer React pour éviter les conflits potentiels
       jsxRuntime: 'automatic',
       babel: {
         plugins: []
@@ -121,49 +121,49 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Improved configuration for production
+  // Configuration améliorée pour la production
   build: {
-    // Use esbuild instead of terser for minification
+    // Utiliser esbuild au lieu de terser pour la minification
     minify: 'esbuild',
-    // esbuild configuration for minification
+    // Configuration esbuild pour la minification
     target: 'es2015',
-    // Ensure important static files are copied in the build
+    // S'assurer que les fichiers statiques importants sont copiés dans le build
     rollupOptions: {
       output: {
-        // Split code into chunks for better loading
+        // Diviser le code en chunks pour un meilleur chargement
         manualChunks: (id) => {
-          // Create a chunk for each important lib
+          // Créer un chunk pour chaque lib importante
           if (id.includes('node_modules')) {
             if (id.includes('@supabase')) return 'vendor-supabase';
             if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
             if (id.includes('@radix-ui')) return 'vendor-radix';
             if (id.includes('lucide')) return 'vendor-lucide';
-            return 'vendor'; // other libs
+            return 'vendor'; // autres libs
           }
         },
       },
       external: [
-        // Exclude the gptengineer.js script from the bundling process
+        // Exclure le script gptengineer.js du processus de bundling
         'https://cdn.gpteng.co/gptengineer.js'
       ]
     },
-    // Enable compression
+    // Activer la compression
     reportCompressedSize: true,
-    chunkSizeWarningLimit: 1000, // Increase warning limit
-    // Ensure _redirects and _headers files are copied to the build folder
+    chunkSizeWarningLimit: 1000, // Augmenter la limite d'avertissement
+    // S'assurer que les fichiers _redirects et _headers sont copiés dans le dossier de build
     copyPublicDir: true,
   },
-  // Configuration to improve cache behavior
+  // Configuration pour améliorer le comportement du cache
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
     exclude: ['gptengineer']
   },
-  // Asset management configuration
+  // Configuration de gestion des assets
   assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg'],
-  // Script configuration for development and production mode
+  // Configuration de script pour les modes développement et production
   define: {
     __LOVABLE_MODE__: JSON.stringify(mode),
   },
-  // Configuration to ensure relative paths
+  // Configuration pour assurer des chemins relatifs
   base: './',
 }));
