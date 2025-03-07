@@ -3,6 +3,7 @@
 [build]
   publish = "dist"
   command = "npm run build"
+  ignore_command = "git diff --quiet HEAD^ HEAD -- . ':(exclude)_redirects'"
 
 # Configuration des variables d'environnement par défaut
 [build.environment]
