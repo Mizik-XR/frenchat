@@ -1,5 +1,5 @@
 
-import { getFileContent, processGoogleDocument } from "./documentProcessing.ts";
+import { getFileContent, processGoogleDocument, processPdfDocument } from "./documentProcessing.ts";
 import { insertUploadedDocument } from "./documentService.ts";
 import { getIndexingProgress, updateIndexingProgress } from "./progressService.ts";
 
@@ -83,8 +83,7 @@ export async function indexFolder(
             content = await getFileContent(fileId, accessToken);
           } else if (mimeType === 'application/pdf') {
             fileType = 'pdf';
-            // L'extraction de texte PDF nécessite une librairie supplémentaire
-            content = null;
+            content = await processPdfDocument(fileId, accessToken);
           } else if (mimeType === 'application/vnd.google-apps.document') {
             fileType = 'google-document';
             content = await processGoogleDocument(fileId, accessToken);
