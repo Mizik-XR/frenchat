@@ -1,0 +1,27 @@
+# En-têtes globaux pour tous les fichiers 
+/* 
+  X-Frame-Options: DENY 
+  X-XSS-Protection: 1; mode=block 
+  X-Content-Type-Options: nosniff 
+ 
+# En-têtes pour les fichiers JavaScript 
+/*.js 
+  Content-Type: application/javascript; charset=utf-8 
+ 
+# En-têtes pour les fichiers CSS 
+/*.css 
+  Content-Type: text/css; charset=utf-8 
+ 
+# En-têtes pour les assets dans le dossier /assets/ 
+/assets/* 
+  Cache-Control: public, max-age=31536000, immutable 
+ 
+# En-têtes pour les polices 
+/*.woff 
+  Content-Type: font/woff 
+/*.woff2 
+  Content-Type: font/woff2 
+/*.ttf 
+  Content-Type: font/ttf 
+/*.eot 
+  Content-Type: application/vnd.ms-fontobject 
