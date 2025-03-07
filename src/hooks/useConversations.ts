@@ -7,7 +7,7 @@ import { toast } from "@/hooks/use-toast";
 export function useConversations() {
   const queryClient = useQueryClient();
 
-  const { data: conversations } = useQuery({
+  const { data: conversations, isLoading } = useQuery({
     queryKey: ['conversations'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -146,6 +146,7 @@ export function useConversations() {
 
   return {
     conversations,
+    isLoading,
     createNewConversation,
     updateConversation: updateConversation.mutate,
     deleteConversation: deleteConversation.mutate
