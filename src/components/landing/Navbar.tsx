@@ -31,11 +31,7 @@ export default function Navbar({ onJoinBeta }: NavbarProps) {
     >
       <Link to="/" className="flex items-center space-x-2">
         <MessageSquare className="w-8 h-8 text-blue-600" />
-        <span className="text-xl font-medium">
-          <span className="text-white">fren</span>
-          <span className="bg-blue-600 text-white px-1">ch</span>
-          <span className="text-red-500">at</span>
-        </span>
+        <span className="text-white font-medium text-xl">Frenchat</span>
       </Link>
 
       <div className="hidden md:flex items-center space-x-8">
@@ -53,7 +49,7 @@ export default function Navbar({ onJoinBeta }: NavbarProps) {
           className="bg-blue-600 hover:bg-blue-700 text-white" 
           onClick={onJoinBeta}
         >
-          Rejoindre la beta
+          Démarrer
         </Button>
       </div>
 
@@ -63,4 +59,3 @@ export default function Navbar({ onJoinBeta }: NavbarProps) {
     </motion.nav>
   );
 }
-
