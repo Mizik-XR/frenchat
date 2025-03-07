@@ -4,7 +4,7 @@ import { ChatContainer } from "@/components/chat/layout/ChatContainer";
 import { Sidebar } from "@/components/chat/ConversationSidebar";
 import { useConversations } from "@/hooks/useConversations";
 import { useChatMessages } from "@/hooks/useChatMessages";
-import { WebUIConfig } from "@/types/chat";
+import { WebUIConfig, Message } from "@/types/chat";
 
 // Configuration par défaut de l'UI
 const defaultWebUIConfig: WebUIConfig = {
@@ -22,6 +22,10 @@ const defaultWebUIConfig: WebUIConfig = {
 export function MainLayout() {
   const { conversations, createNewConversation, updateConversation, deleteConversation } = useConversations();
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showUploader, setShowUploader] = useState(false);
+  const [input, setInput] = useState("");
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   
   // Utilisez le premier ID de conversation disponible ou null
   useEffect(() => {
@@ -46,6 +50,20 @@ export function MainLayout() {
     }
   };
 
+  const handleClearReply = () => {
+    setReplyToMessage(null);
+  };
+
+  const handleReplyToMessage = (message: Message) => {
+    setReplyToMessage(message);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Message envoyé:", input);
+    setInput("");
+  };
+
   return (
     <div className="flex h-screen">
       <Sidebar 
@@ -57,10 +75,29 @@ export function MainLayout() {
         onDeleteConversation={deleteConversation}
       />
       <ChatContainer 
-        conversation={currentConversation}
         messages={messages || []}
         isLoading={messagesLoading}
-        onCreateNewConversation={handleCreateNewConversation}
+        llmStatus="configured"
+        webUIConfig={defaultWebUIConfig}
+        input={input}
+        selectedDocumentId={null}
+        showSettings={showSettings}
+        showUploader={showUploader}
+        replyToMessage={replyToMessage}
+        onClearReply={handleClearReply}
+        onModeChange={(mode) => console.log("Mode changed to:", mode)}
+        onWebUIConfigChange={(config) => console.log("Config changed:", config)}
+        onProviderChange={(provider) => console.log("Provider changed to:", provider)}
+        onReplyToMessage={handleReplyToMessage}
+        setInput={setInput}
+        setShowSettings={setShowSettings}
+        setShowUploader={setShowUploader}
+        onSubmit={handleSubmit}
+        onFilesSelected={async (files) => console.log("Files selected:", files)}
+        onResetConversation={() => console.log("Reset conversation")}
+        onAnalysisModeChange={(mode) => console.log("Analysis mode changed to:", mode)}
+        modelSource="local"
+        onModelSourceChange={(source) => console.log("Model source changed to:", source)}
       />
     </div>
   );
