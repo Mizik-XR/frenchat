@@ -11,12 +11,23 @@ export default function Index() {
   const [showLanding, setShowLanding] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   
+  // Logger pour le débogage
   useEffect(() => {
-    console.log("Index page loaded, user:", user ? "Authenticated" : "Not authenticated", "isLoading:", isLoading);
+    console.log("Index page initialized", {
+      isLoading,
+      user: user ? "Authenticated" : "Not authenticated"
+    });
     
     // Stocker la route pour la gestion de session
-    localStorage.setItem('last_route', '/');
-    
+    try {
+      localStorage.setItem('last_route', '/');
+    } catch (e) {
+      console.warn("Impossible de stocker la route dans localStorage:", e);
+    }
+  }, []);
+
+  // Séparation de la logique de redirection pour éviter les problèmes de séquence
+  useEffect(() => {
     if (!isLoading) {
       setAuthChecked(true);
       if (user) {
@@ -33,7 +44,7 @@ export default function Index() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (isLoading) {
-        console.log("Authentification toujours en cours après délai, affichage de la page d'accueil");
+        console.log("Auth still loading after timeout, showing landing page as fallback");
         setShowLanding(true);
       }
     }, 5000); // Délai de sécurité de 5 secondes
@@ -42,7 +53,7 @@ export default function Index() {
   }, [isLoading]);
   
   // Afficher un écran de chargement pendant la vérification de l'authentification
-  if (isLoading && !authChecked) {
+  if (isLoading && !authChecked && !showLanding) {
     return <LoadingScreen message="Chargement de l'application..." />;
   }
   

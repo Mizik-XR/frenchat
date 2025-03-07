@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import './styles/message-styles.css'
+import './styles/chat.css'
 
 // Fonction pour arrêter l'animation de chargement
 function stopLoadingAnimation() {
@@ -17,18 +18,34 @@ function stopLoadingAnimation() {
   }
 }
 
+// Créer une variable pour signaler que le rendu a commencé
+window.appRenderStarted = true;
+
 // Créer et rendre l'application React
 try {
-  ReactDOM.createRoot(document.getElementById('root')!).render(
+  const root = document.getElementById('root');
+  if (!root) {
+    throw new Error('Élément root non trouvé dans le DOM');
+  }
+  
+  // Créer le root React
+  const reactRoot = ReactDOM.createRoot(root);
+  
+  // Rendre l'application
+  reactRoot.render(
     <React.StrictMode>
       <App />
     </React.StrictMode>,
-  )
+  );
   
   // Après le rendu réussi, supprimer l'écran de chargement
   setTimeout(() => {
     stopLoadingAnimation();
   }, 500);
+  
+  // Signaler que l'application est chargée
+  window.appLoaded = true;
+  
 } catch (error) {
   console.error('Erreur lors du rendu de l\'application:', error);
   
@@ -43,5 +60,13 @@ try {
   
   if (retryButton instanceof HTMLElement) {
     retryButton.style.display = 'inline-block';
+  }
+}
+
+// Ajouter un fichier d'environnement global pour éviter des erreurs d'accès
+declare global {
+  interface Window {
+    appRenderStarted?: boolean;
+    appLoaded?: boolean;
   }
 }
