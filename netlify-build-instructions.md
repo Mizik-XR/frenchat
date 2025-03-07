@@ -34,3 +34,4 @@ NODE_OPTIONS=--max-old-space-size=4096
 
 ## Optimisation du déploiement
 Ces paramètres contournent les problèmes d'installation des dépendances Python qui nécessitent Rust.
+
