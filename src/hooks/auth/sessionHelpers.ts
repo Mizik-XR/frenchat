@@ -1,130 +1,147 @@
 
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase, APP_STATE } from "@/integrations/supabase/client";
-import { getFormattedUrlParams } from "@/utils/environment";
-import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-// Helper for navigation handling with persisted URL parameters
+/**
+ * Hook pour faciliter la navigation et la gestion des paramètres d'URL
+ */
 export const useNavigationHelpers = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  /**
+   * Récupère les paramètres d'URL actuels
+   */
   const getUrlParams = () => {
-    const searchParams = new URLSearchParams(location.search);
+    const params = new URLSearchParams(location.search);
     return {
-      mode: searchParams.get('mode'),
-      client: searchParams.get('client') === 'true',
-      forceCloud: searchParams.get('forceCloud') === 'true',
+      mode: params.get("mode") || "auto",
+      client: params.get("client") === "true",
+      forceCloud: params.get("forceCloud") === "true",
     };
   };
 
+  /**
+   * Génère un chemin de navigation en préservant les paramètres d'URL actuels
+   */
   const getNavigationPath = (path: string) => {
-    const persistedParams = getFormattedUrlParams();
-    return `${path}${persistedParams}`;
+    const params = new URLSearchParams(location.search);
+    return `${path}?${params.toString()}`;
   };
 
-  return { 
-    navigate, 
-    location, 
-    getUrlParams, 
-    getNavigationPath 
-  };
+  return { navigate, location, getUrlParams, getNavigationPath };
 };
 
-// Handle profile retrieval and creation
+/**
+ * Gère la récupération du profil utilisateur et de sa configuration
+ */
 export const handleProfileAndConfig = async (userId: string) => {
+  if (!userId) return { profile: null, configs: [], needsConfig: false, isFirstLogin: false };
+
   try {
-    // Vérifier si le profil existe et le créer si nécessaire
-    const { data: profile, error: profileError } = await supabase.handleProfileQuery(userId);
-      
+    // Récupérer le profil utilisateur
+    const { data: profile, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
     if (profileError) {
       console.error("Erreur lors de la récupération du profil:", profileError);
-      toast({
-        title: "Erreur de profil",
-        description: "Impossible de récupérer votre profil. Certaines fonctionnalités peuvent être limitées.",
-        variant: "destructive",
-      });
+      return { profile: null, profileError, configs: [], needsConfig: true, isFirstLogin: false };
     }
 
-    // Vérifier l'état des configurations des services
-    let configs = null;
-    let configError = null;
+    // Récupérer les configurations de l'utilisateur
+    const { data: configs, error: configError } = await supabase
+      .from("service_configurations")
+      .select("*")
+      .eq("user_id", userId);
+
+    if (configError) {
+      console.error("Erreur lors de la récupération des configurations:", configError);
+      return { profile, configs: [], needsConfig: true, isFirstLogin: profile?.is_first_login || false };
+    }
+
+    // Déterminer si une configuration est nécessaire
+    const hasConfigured = configs.some(config => config.status === "configured");
     
-    try {
-      const result = await supabase
-        .from('service_configurations')
-        .select('service_type, status')
-        .in('service_type', ['google_drive', 'microsoft_teams', 'llm']);
-      
-      configs = result.data;
-      configError = result.error;
-    } catch (err) {
-      console.error("Erreur lors de la récupération des configurations:", err);
-      configError = err instanceof Error ? err : new Error("Erreur inconnue");
-    }
-
     return {
       profile,
-      profileError,
       configs,
-      configError,
-      needsConfig: !configs || !configs.length || !configs.some(c => c.status === 'configured'),
-      isFirstLogin: profile?.is_first_login
+      needsConfig: !hasConfigured,
+      isFirstLogin: profile?.is_first_login || false
     };
   } catch (error) {
-    console.error("Erreur lors de la vérification du statut d'utilisateur:", error);
-    return { error };
+    console.error("Erreur inattendue:", error);
+    return { profile: null, configs: [], needsConfig: true, isFirstLogin: false, error };
   }
 };
 
-// Determine if user should be redirected based on login and config status
+/**
+ * Gère la redirection des utilisateurs en fonction de leur état
+ */
 export const handleUserRedirection = (
-  isAuthPage: boolean, 
-  isFirstLogin: boolean, 
+  isAuthPage: boolean,
   needsConfig: boolean,
-  navigationHelpers: ReturnType<typeof useNavigationHelpers>
+  isFirstLogin: boolean,
+  navigationHelpers: {
+    navigate: any;
+    location: any;
+    getUrlParams: () => { mode: string; client: boolean; forceCloud: boolean };
+    getNavigationPath: (path: string) => string;
+  }
+) => {
+  // Ne pas rediriger si l'utilisateur n'est pas sur une page d'authentification
+  if (!isAuthPage) return;
+
+  const { navigate, getNavigationPath } = navigationHelpers;
+
+  // Rediriger les utilisateurs qui ont besoin de configuration ou qui se connectent pour la première fois
+  if (needsConfig || isFirstLogin) {
+    navigate(getNavigationPath("/config"));
+    return;
+  }
+
+  // Rediriger les utilisateurs déjà configurés vers le chat
+  navigate(getNavigationPath("/chat"));
+};
+
+/**
+ * Vérifie la protection des routes et redirige si nécessaire
+ */
+export const checkRouteProtection = (
+  session: any,
+  isPublicPage: boolean,
+  isProtectedPage: boolean,
+  navigationHelpers: {
+    navigate: any;
+    location: any;
+    getUrlParams: () => { mode: string; client: boolean; forceCloud: boolean };
+    getNavigationPath: (path: string) => string;
+  }
 ) => {
   const { navigate, getNavigationPath } = navigationHelpers;
-  
-  if (isAuthPage) {
-    if (isFirstLogin || needsConfig) {
-      console.log("Redirection vers la configuration (nouveau compte ou configuration requise)");
-      navigate(getNavigationPath('/config'));
-    } else {
-      console.log("Redirection vers le chat (utilisateur déjà configuré)");
-      navigate(getNavigationPath('/chat'));
-    }
-  }
-};
 
-// Handle checking route protection and redirects
-export const checkRouteProtection = (
-  session: any, 
-  isPublicPage: boolean,
-  isProtectedRoute: boolean,
-  navigationHelpers: ReturnType<typeof useNavigationHelpers>
-) => {
-  const { navigate, location, getNavigationPath } = navigationHelpers;
-  
-  if (!session?.user && isProtectedRoute) {
-    console.log("Redirection vers auth depuis route protégée:", location.pathname);
-    navigate(getNavigationPath('/auth'), { state: { from: location.pathname } });
+  // Si l'utilisateur n'est pas authentifié et essaie d'accéder à une page protégée
+  if (!session?.user && isProtectedPage) {
+    navigate(getNavigationPath("/auth"), { replace: true });
     return true;
   }
-  
+
   return false;
 };
 
-// Check if current path is a public page
+/**
+ * Vérifie si un chemin correspond à une page publique
+ */
 export const isPublicPagePath = (pathname: string): boolean => {
-  return pathname === '/' || 
-    pathname === '/landing' || 
-    pathname.startsWith('/landing') ||
-    pathname === '/home' || 
-    pathname === '/index';
+  const publicPaths = ["/", "/landing", "/home", "/index"];
+  return publicPaths.some(path => pathname === path || pathname.startsWith(`${path}/`));
 };
 
-// Check if current path is an auth page
+/**
+ * Vérifie si un chemin correspond à une page d'authentification
+ */
 export const isAuthPagePath = (pathname: string): boolean => {
-  return pathname === '/auth' || pathname.startsWith('/auth/');
+  return pathname === "/auth" || pathname.startsWith("/auth/");
 };

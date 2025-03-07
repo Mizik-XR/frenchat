@@ -5,7 +5,7 @@ import { MainLayout } from "@/components/chat/layout/MainLayout";
 
 export default function Chat() {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <div className="flex-1">
         <Suspense fallback={
           <div className="flex items-center justify-center h-screen">
