@@ -1,8 +1,7 @@
-
 # Configuration de build Netlify pour FileChat 
 [build] 
   publish = "dist" 
-  command = "npm run build && cp _redirects dist/" 
+  command = "npm run build" 
  
 # Configuration des variables d'environnement par défaut 
 [build.environment] 
@@ -24,7 +23,7 @@
   to = "/index.html" 
   status = 200 
   force = true 
-
+Commande ECHO désactivée.
 # Rediriger les API vers les fonctions Netlify 
 [[redirects]] 
   from = "/api/*" 
