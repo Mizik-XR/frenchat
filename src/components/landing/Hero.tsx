@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Users, Sparkles } from "lucide-react";
+import { Users, Sparkles, Database, Search } from "lucide-react";
 import { FloatingPaper } from "@/components/landing/FloatingPaper";
 import { FrenchAnimation } from "@/components/landing/FrenchAnimation";
 
@@ -22,10 +22,10 @@ export default function Hero({ onJoinBeta, onSeeExamples }: HeroProps) {
         <div className="max-w-4xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6">
-              Révolutionnez vos données avec
+              Transformez vos drives en 
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-white to-red-600">
                 {" "}
-                Frenchat
+                bases de connaissances
               </span>
             </h1>
           </motion.div>
@@ -36,8 +36,7 @@ export default function Hero({ onJoinBeta, onSeeExamples }: HeroProps) {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-gray-400 text-xl mb-8 max-w-2xl mx-auto"
           >
-            La première plateforme qui indexe et interroge l'ensemble de vos bases de données (Google Drive, Microsoft
-            Teams, Dropbox) pour créer de nouveaux documents intelligents.
+            Indexez et interrogez l'ensemble de vos documents Google Drive, Microsoft Teams et Dropbox par lots pour créer une bibliothèque intelligente consultable par IA.
           </motion.p>
 
           <motion.div
@@ -47,8 +46,9 @@ export default function Hero({ onJoinBeta, onSeeExamples }: HeroProps) {
             className="text-gray-400 text-lg mb-8 max-w-3xl mx-auto"
           >
             <p>
-              Notre passerelle intelligente utilise l'IA open source en local ou en cloud selon vos besoins,
-              privilégiant la sécurité de vos données tout en offrant la flexibilité des API configurables.
+              Notre technologie d'indexation par lots analyse rapidement des milliers de documents, 
+              créant une base de connaissances interrogeable en langage naturel, le tout en préservant 
+              la sécurité de vos données grâce à notre passerelle IA locale/cloud.
             </p>
           </motion.div>
 
@@ -63,8 +63,8 @@ export default function Hero({ onJoinBeta, onSeeExamples }: HeroProps) {
               className="bg-blue-600 hover:bg-blue-700 text-white px-8"
               onClick={onJoinBeta}
             >
-              <Users className="mr-2 h-5 w-5" />
-              Rejoindre la Beta
+              <Database className="mr-2 h-5 w-5" />
+              Indexer mes documents
             </Button>
             <Button 
               size="lg" 
@@ -72,8 +72,8 @@ export default function Hero({ onJoinBeta, onSeeExamples }: HeroProps) {
               className="text-white border-red-500 hover:bg-red-500/20"
               onClick={onSeeExamples}
             >
-              <Sparkles className="mr-2 h-5 w-5" />
-              Voir les Exemples
+              <Search className="mr-2 h-5 w-5" />
+              Voir comment ça marche
             </Button>
           </motion.div>
         </div>

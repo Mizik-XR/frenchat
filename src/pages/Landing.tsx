@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
+import { BatchIndexingSection } from "@/components/landing/BatchIndexingSection";
 import { PricingSection } from "@/components/landing/PricingSection";
 import { SparklesCore } from "@/components/landing/SparklesCore";
 import { Button } from "@/components/ui/button";
@@ -64,12 +65,12 @@ export default function Landing() {
   };
 
   const handleSeeExamples = () => {
-    // Faire défiler vers la section des exemples ou naviguer vers une page spécifique
-    const featuresSection = document.getElementById('features');
-    if (featuresSection) {
-      featuresSection.scrollIntoView({ behavior: 'smooth' });
+    // Faire défiler vers la section d'indexation par lots
+    const batchSection = document.getElementById('batch-indexing');
+    if (batchSection) {
+      batchSection.scrollIntoView({ behavior: 'smooth' });
     } else {
-      navigate('/landing?section=features');
+      navigate('/landing?section=batch-indexing');
     }
   };
 
@@ -93,6 +94,9 @@ export default function Landing() {
         <Hero onJoinBeta={handleJoinBeta} onSeeExamples={handleSeeExamples} />
         <section id="features">
           <FeaturesSection />
+        </section>
+        <section id="batch-indexing">
+          <BatchIndexingSection />
         </section>
         <section id="pricing">
           <PricingSection />
