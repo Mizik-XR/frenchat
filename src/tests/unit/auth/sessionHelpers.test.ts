@@ -2,15 +2,22 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useNavigationHelpers, handleProfileAndConfig, handleUserRedirection, checkRouteProtection, isPublicPagePath, isAuthPagePath } from "@/hooks/auth/sessionHelpers";
 import { resetAuthMocks, setupAuthMocks } from "./__mocks__/authMocks";
+import { Location, NavigateFunction } from "react-router-dom";
+
+// Create a more complete mock location that satisfies the Location interface
+const createMockLocation = (pathname: string): Location => ({
+  pathname,
+  search: "?mode=cloud&client=true",
+  hash: "",
+  state: null,
+  key: "default",
+});
 
 describe("sessionHelpers", () => {
   beforeEach(() => {
     vi.mock("react-router-dom", () => ({
       useNavigate: vi.fn().mockReturnValue(vi.fn()),
-      useLocation: vi.fn().mockReturnValue({
-        pathname: "/test",
-        search: "?mode=cloud&client=true",
-      }),
+      useLocation: vi.fn().mockReturnValue(createMockLocation("/test")),
     }));
   });
 
@@ -113,8 +120,8 @@ describe("sessionHelpers", () => {
     it("should redirect first-time users to config page", () => {
       const navigate = vi.fn();
       const navigationHelpers = {
-        navigate,
-        location: { pathname: "/auth" },
+        navigate: navigate as NavigateFunction,
+        location: createMockLocation("/auth"),
         getUrlParams: vi.fn(),
         getNavigationPath: vi.fn().mockReturnValue("/config?mode=cloud")
       };
@@ -127,8 +134,8 @@ describe("sessionHelpers", () => {
     it("should redirect configured users to chat page", () => {
       const navigate = vi.fn();
       const navigationHelpers = {
-        navigate,
-        location: { pathname: "/auth" },
+        navigate: navigate as NavigateFunction,
+        location: createMockLocation("/auth"),
         getUrlParams: vi.fn(),
         getNavigationPath: vi.fn().mockReturnValue("/chat?mode=cloud")
       };
@@ -141,8 +148,8 @@ describe("sessionHelpers", () => {
     it("should not redirect users on non-auth pages", () => {
       const navigate = vi.fn();
       const navigationHelpers = {
-        navigate,
-        location: { pathname: "/chat" },
+        navigate: navigate as NavigateFunction,
+        location: createMockLocation("/chat"),
         getUrlParams: vi.fn(),
         getNavigationPath: vi.fn()
       };
@@ -157,8 +164,8 @@ describe("sessionHelpers", () => {
     it("should redirect unauthenticated users from protected routes", () => {
       const navigate = vi.fn();
       const navigationHelpers = {
-        navigate,
-        location: { pathname: "/chat" },
+        navigate: navigate as NavigateFunction,
+        location: createMockLocation("/chat"),
         getUrlParams: vi.fn(),
         getNavigationPath: vi.fn().mockReturnValue("/auth?mode=cloud")
       };
@@ -172,8 +179,8 @@ describe("sessionHelpers", () => {
     it("should not redirect authenticated users from protected routes", () => {
       const navigate = vi.fn();
       const navigationHelpers = {
-        navigate,
-        location: { pathname: "/chat" },
+        navigate: navigate as NavigateFunction,
+        location: createMockLocation("/chat"),
         getUrlParams: vi.fn(),
         getNavigationPath: vi.fn()
       };

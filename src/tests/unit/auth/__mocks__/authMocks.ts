@@ -41,6 +41,8 @@ vi.mock("react-router-dom", () => {
       pathname: "/",
       search: "",
       state: null,
+      hash: "",
+      key: "default"
     }),
   };
 });

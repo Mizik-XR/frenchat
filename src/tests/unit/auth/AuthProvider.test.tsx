@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { AuthProvider, useAuth } from "@/components/AuthProvider";
+import { useAuthSession } from "@/hooks/useAuthSession";
 import { resetAuthMocks } from "./__mocks__/authMocks";
 
 // Mock useAuthSession hook
