@@ -47,6 +47,28 @@ VITE_CLOUD_MODE=true
   console.log('[OK] Fichier .env.production créé.');
 }
 
+// Modifier le fichier requirements.txt pour contourner les dépendances Rust
+if (fs.existsSync('requirements.txt')) {
+  console.log('Création d\'un requirements.txt minimal pour Netlify...');
+  const minimalRequirements = `
+# Version simplifiée pour Netlify (sans compilation Rust)
+fastapi==0.110.0
+uvicorn==0.28.0
+pydantic>=2.0.0
+aiohttp>=3.8.0
+psutil==5.9.8
+# Les packages qui nécessitent Rust sont commentés
+# tokenizers
+# transformers
+# accelerate
+# datasets
+# bitsandbytes
+`.trim();
+
+  fs.writeFileSync('requirements.txt', minimalRequirements);
+  console.log('[OK] Fichier requirements.txt simplifié.');
+}
+
 console.log('');
 console.log('=================================================');
 console.log('    PRÉPARATION TERMINÉE');

@@ -2,7 +2,7 @@
 # Configuration de build Netlify pour FileChat
 [build]
   publish = "dist"
-  command = "SKIP_PYTHON_INSTALLATION=true NODE_ENV=production npm run build"
+  command = "node scripts/netlify-prebuild.js && npm run build"
 
 # Configuration des variables d'environnement par défaut
 [build.environment]
@@ -14,6 +14,7 @@
   TRANSFORMERS_OFFLINE = "1"
   CI = "true"
   SKIP_PYTHON_INSTALLATION = "true"
+  NETLIFY_SKIP_PYTHON_REQUIREMENTS = "true"
   VITE_CLOUD_MODE = "true"
   VITE_ALLOW_LOCAL_AI = "false"
 
