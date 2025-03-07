@@ -13,35 +13,26 @@ if [ -z "$NETLIFY" ]; then
   # Simuler les variables d'environnement Netlify pour les tests
   export NO_RUST_INSTALL=1
   export TRANSFORMERS_OFFLINE=1
+  export SKIP_PYTHON_INSTALLATION=true
+  export NODE_ENV=production
 fi
 
-# Vérification si transformers est installé
-if python -c "import transformers" 2>/dev/null; then
-  echo "[OK] Le package transformers est déjà installé"
-else
-  echo "[INFO] Installation du package transformers sans compilation..."
-  pip install transformers==4.36.2 --no-deps
-  pip install tokenizers --only-binary=:all:
-  
-  # Vérification de l'installation
-  if python -c "import transformers" 2>/dev/null; then
-    echo "[OK] Le package transformers a été installé avec succès"
-  else
-    echo "[ERREUR] L'installation de transformers a échoué"
-    echo "[INFO] Passage en mode minimal sans transformers"
-    
-    # Créer un fichier de contournement
-    mkdir -p site-packages/transformers
-    echo "# Package simulé" > site-packages/transformers/__init__.py
-    export PYTHONPATH="${PYTHONPATH}:$(pwd)/site-packages"
-  fi
-fi
-
+# Afficher les informations du système
+echo "[INFO] Informations système:"
+echo "Node version: $(node -v)"
+echo "NPM version: $(npm -v)"
 echo ""
+
+# Vérification des variables d'environnement
+echo "[INFO] Variables d'environnement de build:"
+echo "NODE_ENV: $NODE_ENV"
+echo "NO_RUST_INSTALL: $NO_RUST_INSTALL"
+echo "NODE_OPTIONS: $NODE_OPTIONS"
+echo ""
+
 echo "====================================================="
-echo "     VÉRIFICATION TERMINÉE"
+echo "     VERIFICATION TERMINÉE"
 echo "====================================================="
 echo ""
 
 exit 0
-

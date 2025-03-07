@@ -11,9 +11,8 @@ echo "d'être connecté à votre compte Netlify."
 echo
 echo "Étapes:"
 echo "1. Vérification de l'environnement"
-echo "2. Vérification de Rust/Cargo"
-echo "3. Préparation du build pour déploiement"
-echo "4. Déploiement vers Netlify"
+echo "2. Préparation du build pour déploiement"
+echo "3. Déploiement vers Netlify"
 echo
 echo "==================================================="
 echo
@@ -36,38 +35,31 @@ if ! command -v netlify &> /dev/null; then
     echo "[OK] CLI Netlify installée avec succès."
 fi
 
-# Vérifier si Rust/Cargo est installé
-echo "[ÉTAPE 1/4] Vérification de Rust/Cargo..."
-if command -v rustc >/dev/null 2>&1 && command -v cargo >/dev/null 2>&1; then
-    echo "[OK] Rust et Cargo sont déjà installés:"
-    rustc --version
-    cargo --version
-else
-    echo "[INFO] Rust/Cargo n'est pas installé. Installation en cours..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    
-    # Mettre à jour le PATH pour cette session
-    source "$HOME/.cargo/env"
-    
-    # Vérifier l'installation
-    if command -v rustc >/dev/null 2>&1 && command -v cargo >/dev/null 2>&1; then
-        echo "[OK] Rust et Cargo installés avec succès:"
-        rustc --version
-        cargo --version
-    else
-        echo "[ATTENTION] L'installation automatique de Rust a échoué."
-        echo "            Vous pouvez continuer en mode sans Rust."
-        echo "            Définissez NO_RUST_INSTALL=1 pour l'installation Python."
-        export NO_RUST_INSTALL=1
-    fi
+# Désactiver l'installation de Rust pour le déploiement
+export NO_RUST_INSTALL=1
+export NETLIFY_SKIP_PYTHON=true
+export TRANSFORMERS_OFFLINE=1
+export NODE_ENV=production
+
+# Nettoyer les fichiers inutiles
+echo "[INFO] Nettoyage des fichiers temporaires..."
+if [ -d "dist" ]; then
+    rm -rf dist
 fi
-echo
+if [ -d "node_modules" ]; then
+    rm -rf node_modules
+fi
+
+# Installation optimisée pour Netlify
+echo "[INFO] Installation des dépendances avec configuration pour Netlify..."
+npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
 
 # Préparer le build
-echo "[ÉTAPE 2/4] Préparation du build pour déploiement..."
-bash scripts/unix/prepare-deployment.sh
+echo "[ÉTAPE 2/3] Préparation du build pour déploiement..."
+export NODE_OPTIONS="--max-old-space-size=4096"
+npm run build
 if [ $? -ne 0 ]; then
-    echo "[ERREUR] La préparation du déploiement a échoué."
+    echo "[ERREUR] La construction du projet a échoué."
     echo
     read -p "Appuyez sur Entrée pour quitter..." -n1 -s
     exit 1
@@ -75,8 +67,8 @@ fi
 echo "[OK] Build prêt pour déploiement."
 echo
 
-# Vérifier la connexion à Netlify
-echo "[ÉTAPE 3/4] Vérification de la connexion à Netlify..."
+# Vérification de la connexion à Netlify
+echo "[ÉTAPE 3/3] Vérification de la connexion à Netlify..."
 netlify status > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "[INFO] Vous n'êtes pas connecté à Netlify."
@@ -93,7 +85,6 @@ echo "[OK] Connecté à Netlify."
 echo
 
 # Déployer vers Netlify
-echo "[ÉTAPE 4/4] Déploiement vers Netlify..."
 echo "[INFO] Voulez-vous:"
 echo "1. Déployer une prévisualisation (preview)"
 echo "2. Déployer en production"

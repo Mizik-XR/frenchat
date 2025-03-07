@@ -11,9 +11,8 @@ echo ===================================================
 echo.
 echo Cette procédure va préparer le projet pour déploiement:
 echo  1. Vérification des fichiers de configuration
-echo  2. Vérification de Rust/Cargo (pour les dépendances Python)
-echo  3. Optimisation du build
-echo  4. Tests de pré-déploiement
+echo  2. Optimisation du build
+echo  3. Tests de pré-déploiement
 echo.
 echo ===================================================
 echo.
@@ -21,7 +20,7 @@ echo Appuyez sur une touche pour continuer...
 pause >nul
 
 REM Nettoyer les fichiers inutiles
-echo [ÉTAPE 1/5] Nettoyage des fichiers temporaires...
+echo [ÉTAPE 1/4] Nettoyage des fichiers temporaires...
 if exist "dist\" (
     rmdir /s /q dist
     echo [OK] Dossier dist supprimé avec succès.
@@ -30,55 +29,14 @@ if exist "dist\" (
 )
 echo.
 
-REM Vérifier si Rust/Cargo est installé
-echo [ÉTAPE 2/5] Vérification de Rust/Cargo pour les dépendances Python...
-where rustc >nul 2>nul
-where cargo >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo [INFO] Rust/Cargo n'est pas installé ou n'est pas dans le PATH.
-    
-    echo [CHOIX] Souhaitez-vous:
-    echo 1. Installer Rust automatiquement (recommandé pour le développement local)
-    echo 2. Utiliser le mode léger sans Rust (recommandé pour Netlify)
-    choice /C 12 /N /M "Choisissez une option (1 ou 2): "
-    
-    if %ERRORLEVEL% EQU 1 (
-        echo [INFO] Installation de Rust en cours...
-        
-        REM Télécharger le programme d'installation de Rust
-        curl -O https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
-        
-        REM Exécuter l'installateur avec les options par défaut
-        rustup-init.exe -y
-        
-        REM Mettre à jour le PATH pour cette session
-        set PATH=%PATH%;%USERPROFILE%\.cargo\bin
-        
-        REM Vérifier l'installation
-        where rustc >nul 2>nul
-        where cargo >nul 2>nul
-        if %ERRORLEVEL% NEQ 0 (
-            echo [ATTENTION] L'installation automatique de Rust a échoué.
-            echo             Passage au mode sans Rust.
-            set NO_RUST_INSTALL=1
-        ) else (
-            echo [OK] Rust et Cargo installés avec succès:
-            rustc --version
-            cargo --version
-        )
-    ) else (
-        echo [INFO] Mode sans Rust sélectionné.
-        set NO_RUST_INSTALL=1
-    )
-) else (
-    echo [OK] Rust et Cargo sont déjà installés:
-    rustc --version
-    cargo --version
-)
-echo.
+REM Configuration pour le déploiement sans Rust
+set "NO_RUST_INSTALL=1"
+set "TRANSFORMERS_OFFLINE=1"
+set "NODE_ENV=production"
+set "SKIP_PYTHON_INSTALLATION=true"
 
 REM Vérifier et préparer les fichiers de configuration
-echo [ÉTAPE 3/5] Vérification des fichiers de configuration...
+echo [ÉTAPE 2/4] Vérification des fichiers de configuration...
 if not exist "netlify.toml" (
     echo [ERREUR] Le fichier netlify.toml est manquant.
     echo         Exécutez le script de génération de configuration.
@@ -89,8 +47,13 @@ if not exist "netlify.toml" (
 )
 
 REM Optimisation du build
-echo [ÉTAPE 4/5] Optimisation et build du projet...
-set NODE_OPTIONS=--max-old-space-size=4096
+echo [ÉTAPE 3/4] Optimisation et build du projet...
+set "NODE_OPTIONS=--max-old-space-size=4096"
+
+REM Installation optimisée pour le déploiement
+echo [INFO] Installation des dépendances avec configuration optimisée...
+call npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
+
 call npm run build
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] La construction du projet a échoué.
@@ -103,28 +66,13 @@ echo [OK] Projet construit avec succès.
 echo.
 
 REM Vérification post-build
-echo [ÉTAPE 5/5] Vérification des fichiers de déploiement...
+echo [ÉTAPE 4/4] Vérification des fichiers de déploiement...
 if not exist "dist\index.html" (
     echo [ERREUR] Le fichier dist\index.html est manquant.
     echo.
     echo Appuyez sur une touche pour quitter...
     pause >nul
     exit /b 1
-)
-
-REM Vérifier que le script Lovable est bien présent
-findstr /c:"gptengineer.js" "dist\index.html" >nul
-if %ERRORLEVEL% NEQ 0 (
-    echo [ATTENTION] Le script Lovable manque dans index.html.
-    call scripts\fix-blank-page.bat
-    if %ERRORLEVEL% NEQ 0 (
-        echo [ERREUR] Impossible de corriger le problème.
-        echo.
-        echo Appuyez sur une touche pour quitter...
-        pause >nul
-        exit /b 1
-    )
-    echo [OK] Correction appliquée avec succès.
 )
 
 echo.

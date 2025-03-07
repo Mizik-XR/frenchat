@@ -7,9 +7,8 @@ echo "==================================================="
 echo
 echo "Cette procédure va préparer le projet pour déploiement:"
 echo " 1. Vérification des fichiers de configuration"
-echo " 2. Vérification de Rust/Cargo (pour les dépendances Python)"
-echo " 3. Optimisation du build"
-echo " 4. Tests de pré-déploiement"
+echo " 2. Optimisation du build"
+echo " 3. Tests de pré-déploiement"
 echo
 echo "==================================================="
 echo
@@ -17,7 +16,7 @@ read -p "Appuyez sur Entrée pour continuer..." -n1 -s
 echo
 
 # Nettoyer les fichiers inutiles
-echo "[ÉTAPE 1/5] Nettoyage des fichiers temporaires..."
+echo "[ÉTAPE 1/4] Nettoyage des fichiers temporaires..."
 if [ -d "dist" ]; then
     rm -rf dist
     echo "[OK] Dossier dist supprimé avec succès."
@@ -26,37 +25,13 @@ else
 fi
 echo
 
-# Vérifier et installer Rust si nécessaire
-echo "[ÉTAPE 2/5] Vérification de Rust/Cargo pour les dépendances Python..."
-if command -v rustc >/dev/null 2>&1 && command -v cargo >/dev/null 2>&1; then
-    echo "[OK] Rust et Cargo sont déjà installés:"
-    rustc --version
-    cargo --version
-else
-    echo "[INFO] Rust/Cargo n'est pas installé. Installation en cours..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    
-    # Mettre à jour le PATH pour cette session
-    source "$HOME/.cargo/env"
-    
-    # Vérifier l'installation
-    if command -v rustc >/dev/null 2>&1 && command -v cargo >/dev/null 2>&1; then
-        echo "[OK] Rust et Cargo installés avec succès:"
-        rustc --version
-        cargo --version
-    else
-        echo "[ATTENTION] L'installation automatique de Rust a échoué."
-        echo "            Vous pouvez l'installer manuellement: https://rustup.rs/"
-        echo "            Puis redémarrer ce script."
-        echo
-        echo "            Si vous êtes sur Netlify, vous pouvez ignorer cette étape"
-        echo "            et utiliser le mode NO_RUST_INSTALL=1."
-    fi
-fi
-echo
+# Configuration pour le déploiement sans Rust
+export NO_RUST_INSTALL=1
+export TRANSFORMERS_OFFLINE=1
+export NODE_ENV=production
 
 # Vérifier et préparer les fichiers de configuration
-echo "[ÉTAPE 3/5] Vérification des fichiers de configuration..."
+echo "[ÉTAPE 2/4] Vérification des fichiers de configuration..."
 if [ ! -f "netlify.toml" ]; then
     echo "[ERREUR] Le fichier netlify.toml est manquant."
     echo "         Exécutez le script de génération de configuration."
@@ -66,13 +41,13 @@ if [ ! -f "netlify.toml" ]; then
 fi
 
 # Optimisation du build
-echo "[ÉTAPE 4/5] Optimisation et build du projet..."
+echo "[ÉTAPE 3/4] Optimisation et build du projet..."
 export NODE_OPTIONS="--max-old-space-size=4096"
-# Option pour installer les dépendances Python sans Rust si nécessaire
-if [ "$NO_RUST_INSTALL" = "1" ]; then
-    echo "[INFO] Mode sans Rust activé pour les dépendances Python."
-    export NO_RUST_INSTALL=1
-fi
+
+# Installation optimisée pour le déploiement
+echo "[INFO] Installation des dépendances avec configuration optimisée..."
+npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
+
 npm run build
 if [ $? -ne 0 ]; then
     echo "[ERREUR] La construction du projet a échoué."
@@ -84,25 +59,12 @@ echo "[OK] Projet construit avec succès."
 echo
 
 # Vérification post-build
-echo "[ÉTAPE 5/5] Vérification des fichiers de déploiement..."
+echo "[ÉTAPE 4/4] Vérification des fichiers de déploiement..."
 if [ ! -f "dist/index.html" ]; then
     echo "[ERREUR] Le fichier dist/index.html est manquant."
     echo
     read -p "Appuyez sur Entrée pour quitter..." -n1 -s
     exit 1
-fi
-
-# Vérifier que le script Lovable est bien présent
-if ! grep -q "gptengineer.js" "dist/index.html"; then
-    echo "[ATTENTION] Le script Lovable manque dans index.html."
-    bash scripts/unix/fix-blank-page.sh
-    if [ $? -ne 0 ]; then
-        echo "[ERREUR] Impossible de corriger le problème."
-        echo
-        read -p "Appuyez sur Entrée pour quitter..." -n1 -s
-        exit 1
-    fi
-    echo "[OK] Correction appliquée avec succès."
 fi
 
 # Vérification des chemins relatifs dans index.html
