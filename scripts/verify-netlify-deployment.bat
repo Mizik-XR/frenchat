@@ -13,6 +13,11 @@ echo.
 REM Exécution du script de vérification JavaScript
 echo [INFO] Vérification de la configuration Netlify...
 node scripts\ensure-netlify-build.js
+if errorlevel 1 (
+    echo [ERREUR] Problèmes détectés dans la configuration Netlify.
+    echo [INFO] Le script tentera d'appliquer des corrections automatiques.
+    echo.
+)
 
 REM Vérification du build
 if not exist "dist\" (
@@ -29,6 +34,9 @@ if not exist "dist\" (
     
     if errorlevel 1 (
         echo [ERREUR] Le build a échoué.
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        pause >nul
         exit /b 1
     ) else (
         echo [OK] Build réussi.
@@ -82,6 +90,9 @@ if exist "dist\index.html" (
     )
 ) else (
     echo [ERREUR] dist\index.html non trouvé!
+    echo.
+    echo Appuyez sur une touche pour quitter...
+    pause >nul
     exit /b 1
 )
 

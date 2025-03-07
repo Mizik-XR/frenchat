@@ -59,6 +59,13 @@ if exist "dist\" rmdir /s /q dist
 REM Installation optimisée pour Netlify
 echo [INFO] Installation des dépendances avec configuration pour Netlify...
 call npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERREUR] L'installation des dépendances a échoué.
+    echo.
+    echo Appuyez sur une touche pour quitter...
+    pause >nul
+    exit /b 1
+)
 
 REM Vérifier la configuration Netlify
 echo [ÉTAPE 1/3] Vérification de la configuration Netlify...
@@ -66,6 +73,9 @@ node scripts\ensure-netlify-build.js
 if %ERRORLEVEL% NEQ 0 (
     echo [ATTENTION] Des problèmes ont été détectés avec la configuration Netlify.
     echo [INFO] Continuons malgré tout, le script tentera d'appliquer des corrections.
+    echo.
+    echo Appuyez sur une touche pour continuer ou CTRL+C pour annuler...
+    pause >nul
 )
 
 REM Préparer le build
@@ -83,6 +93,13 @@ echo.
 
 REM Vérifier et corriger les chemins absolus
 call scripts\verify-netlify-deployment.bat
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERREUR] La vérification du déploiement a échoué.
+    echo.
+    echo Appuyez sur une touche pour quitter...
+    pause >nul
+    exit /b 1
+)
 echo [OK] Vérification et correction des chemins terminées.
 
 REM Vérifier la connexion à Netlify
