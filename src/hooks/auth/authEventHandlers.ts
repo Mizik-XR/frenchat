@@ -208,7 +208,9 @@ export const useInitialSessionCheck = () => {
 
       // Si l'utilisateur est connecté, vérifier que la route est accessible
       if (data.session) {
-        await checkRouteProtection(data.session, navigationHelpers);
+        const isPublicPage = isPublicPagePath(location.pathname);
+        const isProtectedPage = PROTECTED_ROUTES.some(route => location.pathname.startsWith(route));
+        await checkRouteProtection(data.session, isPublicPage, isProtectedPage, navigationHelpers);
       }
 
       return data.session;

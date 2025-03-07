@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { vi } from "vitest";
+import { Session } from "@supabase/supabase-js";
 
 // Mock Supabase client
 vi.mock("@/integrations/supabase/client", () => {
@@ -12,13 +13,10 @@ vi.mock("@/integrations/supabase/client", () => {
       }),
       signOut: vi.fn().mockResolvedValue({ error: null }),
     },
-    handleProfileQuery: vi.fn().mockResolvedValue({ data: null, error: null }),
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnThis(),
-      in: vi.fn().mockReturnValue({
-        data: null,
-        error: null
-      }),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: null, error: null }),
     }),
   };
 
@@ -48,9 +46,13 @@ vi.mock("react-router-dom", () => {
 });
 
 // Mock the toast
-vi.mock("@/hooks/use-toast", () => {
+vi.mock("sonner", () => {
   return {
-    toast: vi.fn(),
+    toast: {
+      error: vi.fn(),
+      success: vi.fn(),
+      info: vi.fn(),
+    },
   };
 });
 
@@ -64,10 +66,12 @@ export const getMockUser = (overrides = {}) => ({
   ...overrides,
 });
 
-export const getMockSession = (overrides = {}) => ({
+export const getMockSession = (overrides = {}): Session => ({
   access_token: "mock-access-token",
-  expires_at: Date.now() + 3600,
   refresh_token: "mock-refresh-token",
+  expires_at: Date.now() + 3600,
+  expires_in: 3600,
+  token_type: "bearer",
   user: getMockUser(),
   ...overrides,
 });
@@ -81,20 +85,37 @@ export const setupAuthMocks = ({
 } = {}) => {
   supabase.auth.getSession.mockResolvedValue(getSessionReturn);
   supabase.auth.signOut.mockResolvedValue(signOutReturn);
-  supabase.handleProfileQuery.mockResolvedValue(profileQueryReturn);
   
-  // Mock the from().select() chain for service configurations
+  // Mock the from().select() chain for profile query
   const selectMock = vi.fn().mockReturnThis();
-  const inMock = vi.fn().mockReturnValue(configQueryReturn);
-  supabase.from.mockReturnValue({
-    select: selectMock,
-    in: inMock,
+  const eqMock = vi.fn().mockReturnThis();
+  const singleMock = vi.fn().mockResolvedValue(profileQueryReturn);
+  
+  supabase.from.mockImplementation((table) => {
+    if (table === 'user_profiles') {
+      return {
+        select: selectMock,
+        eq: eqMock,
+        single: singleMock
+      };
+    } else if (table === 'service_configurations') {
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue(configQueryReturn)
+      };
+    }
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: null, error: null })
+    };
   });
 
   return {
     supabase,
     selectMock,
-    inMock,
+    eqMock,
+    singleMock
   };
 };
 
