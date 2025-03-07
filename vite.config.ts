@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => ({
     minify: 'esbuild',
     // Configuration d'esbuild pour la minification
     target: 'es2015',
+    // S'assurer que les fichiers statiques importants sont copiés dans le build
     rollupOptions: {
       output: {
         // Séparation du code en chunks pour un meilleur chargement
@@ -53,6 +54,8 @@ export default defineConfig(({ mode }) => ({
     // Activer la compression
     reportCompressedSize: true,
     chunkSizeWarningLimit: 1000, // Augmenter la limite d'avertissement
+    // S'assurer que les fichiers _redirects et _headers sont copiés dans le dossier de build
+    copyPublicDir: true,
   },
   // Configuration pour améliorer le comportement du cache
   optimizeDeps: {
@@ -64,5 +67,7 @@ export default defineConfig(({ mode }) => ({
   // Configuration script pour le mode développement et production
   define: {
     __LOVABLE_MODE__: JSON.stringify(mode),
-  }
+  },
+  // Configuration pour garantir les chemins relatifs
+  base: './',
 }));
