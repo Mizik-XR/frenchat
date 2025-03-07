@@ -36,12 +36,12 @@ try {
   const errorMessage = document.querySelector('.error-message');
   const retryButton = document.querySelector('.retry-btn');
   
-  if (errorMessage) {
-    errorMessage.textContent = 'Erreur lors du chargement de l\'application: ' + (error.message || 'Erreur inconnue');
+  if (errorMessage instanceof HTMLElement) {
+    errorMessage.textContent = 'Erreur lors du chargement de l\'application: ' + ((error as Error).message || 'Erreur inconnue');
     errorMessage.style.display = 'block';
   }
   
-  if (retryButton) {
+  if (retryButton instanceof HTMLElement) {
     retryButton.style.display = 'inline-block';
   }
 }
