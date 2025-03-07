@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Message, MessageMetadata } from "@/types/chat";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useChatMessages(conversationId: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -18,26 +19,33 @@ export function useChatMessages(conversationId: string | null) {
     try {
       console.log(`Fetching messages for conversation: ${convoId}`);
       
-      // Simulate API call to fetch messages
-      setTimeout(() => {
-        try {
-          // Simulation de messages pour le développement
-          const dummyMessages: Message[] = [
-            // Aucun message par défaut pour une nouvelle conversation
-          ];
-          setMessages(dummyMessages);
-        } catch (err) {
-          console.error("Error parsing messages:", err);
-          setError("Impossible de charger les messages. Format de données incorrect.");
-          toast.error("Erreur lors du chargement des messages");
-        } finally {
-          setIsLoading(false);
-        }
-      }, 500);
+      // Récupération des messages depuis Supabase
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('conversation_id', convoId)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      
+      const formattedMessages: Message[] = data.map((msg: any) => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        type: msg.type || 'text',
+        conversationId: msg.conversation_id,
+        timestamp: new Date(msg.created_at),
+        replyTo: msg.reply_to,
+        quotedMessageId: msg.quoted_message_id,
+        metadata: msg.metadata
+      }));
+      
+      setMessages(formattedMessages);
     } catch (error) {
       console.error("Error fetching messages:", error);
       setError("Impossible de récupérer les messages. Veuillez réessayer.");
       toast.error("Erreur de connexion");
+    } finally {
       setIsLoading(false);
     }
   }, []);
@@ -52,7 +60,7 @@ export function useChatMessages(conversationId: string | null) {
     }
   }, [conversationId, fetchMessages]);
 
-  const addUserMessage = (content: string): Message => {
+  const addUserMessage = (content: string, replyToId?: string): Message => {
     const newMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -60,6 +68,7 @@ export function useChatMessages(conversationId: string | null) {
       type: 'text',
       conversationId: conversationId || 'default',
       timestamp: new Date(),
+      quotedMessageId: replyToId
     };
     
     setMessages((prev) => [...prev, newMessage]);
@@ -105,14 +114,42 @@ export function useChatMessages(conversationId: string | null) {
     if (!content.trim() || !convoId) return;
 
     try {
-      const userMessage = addUserMessage(content);
+      const userMessage = addUserMessage(content, replyToId);
       setIsLoading(true);
       setError(null);
 
-      // Simulate API call
+      // Enregistrement du message utilisateur dans Supabase
+      const { error: userMsgError } = await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: convoId,
+          role: 'user',
+          content: content,
+          type: 'text',
+          quoted_message_id: replyToId
+        });
+
+      if (userMsgError) throw userMsgError;
+
+      // Simulation de réponse IA
       setTimeout(() => {
         try {
-          setAssistantResponse("Voici une réponse de l'assistant IA à votre message: " + content);
+          const responseText = "Voici une réponse de l'assistant IA à votre message: " + content;
+          
+          // Enregistrement de la réponse de l'assistant dans Supabase
+          supabase
+            .from('chat_messages')
+            .insert({
+              conversation_id: convoId,
+              role: 'assistant',
+              content: responseText,
+              type: 'text'
+            })
+            .then(({ error: assistantMsgError }) => {
+              if (assistantMsgError) throw assistantMsgError;
+            });
+          
+          setAssistantResponse(responseText);
           setIsLoading(false);
         } catch (err) {
           console.error("Error processing response:", err);

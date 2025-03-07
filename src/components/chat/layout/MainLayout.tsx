@@ -38,7 +38,7 @@ export function MainLayout() {
   const currentConversation = conversations?.find(c => c.id === currentConversationId) || null;
 
   // Récupérer les messages pour la conversation actuelle
-  const { messages, isLoading: messagesLoading } = useChatMessages(currentConversationId);
+  const { messages, isLoading: messagesLoading, sendMessage } = useChatMessages(currentConversationId);
 
   // Créer une nouvelle conversation
   const handleCreateNewConversation = async () => {
@@ -60,8 +60,11 @@ export function MainLayout() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Message envoyé:", input);
-    setInput("");
+    if (input.trim() !== "" && currentConversationId) {
+      sendMessage(input, currentConversationId, replyToMessage?.id);
+      setInput("");
+      setReplyToMessage(null);
+    }
   };
 
   return (
@@ -71,7 +74,7 @@ export function MainLayout() {
         currentConversation={currentConversation}
         onSelectConversation={setCurrentConversationId}
         onCreateNewConversation={handleCreateNewConversation}
-        onRenameConversation={(id, title) => updateConversation({ id, title })}
+        onRenameConversation={updateConversation}
         onDeleteConversation={deleteConversation}
       />
       <ChatContainer 
