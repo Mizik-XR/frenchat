@@ -67,8 +67,9 @@ export function MainLayout() {
     }
   };
 
-  const handleRenameConversation = (params: { id: string, title: string }) => {
-    updateConversation(params);
+  // Adapter la signature de la fonction pour correspondre à celle attendue par ConversationSidebar
+  const handleRenameConversation = (id: string, title: string) => {
+    updateConversation({ id, title });
   };
 
   return (
