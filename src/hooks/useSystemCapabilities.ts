@@ -41,6 +41,11 @@ export type SystemCapabilities = {
   recommendedModels: string[];
 };
 
+// Extend Navigator interface to include deviceMemory
+interface NavigatorWithMemory extends Navigator {
+  deviceMemory?: number;
+}
+
 export function useSystemCapabilities() {
   const [capabilities, setCapabilities] = useState<SystemCapabilities>({
     cuda: false,
@@ -73,7 +78,11 @@ export function useSystemCapabilities() {
         try {
           // Vérification sécurisée des capacités WebGPU
           const hasWebGPU = typeof window !== 'undefined' && 'gpu' in navigator;
-          const memoryEstimate = navigator?.deviceMemory || 16;
+          
+          // Vérification sécurisée de la mémoire du navigateur
+          const navigatorWithMemory = navigator as NavigatorWithMemory;
+          const memoryEstimate = navigatorWithMemory.deviceMemory || 16;
+          
           const cpuCores = navigator?.hardwareConcurrency || 4;
           
           // Mise à jour des capacités du système
