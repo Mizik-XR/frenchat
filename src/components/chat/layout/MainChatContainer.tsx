@@ -4,7 +4,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat/ChatMessage";
-import { Send, Home, ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
+import { 
+  Send, 
+  Home, 
+  ArrowLeft, 
+  ArrowRight, 
+  Plus, 
+  X, 
+  MessageSquarePlus,
+  RefreshCw
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThreeStateToggle } from "@/components/ui/ThreeStateToggle";
 import { SettingsDialog } from "@/components/chat/settings/SettingsDialog";
@@ -101,7 +110,6 @@ export function MainChatContainer({
 
   const handleAttachment = (type: string) => {
     if (type === "upload") {
-      // Simuler un clic sur l'input file
       const fileInput = document.createElement('input');
       fileInput.type = 'file';
       fileInput.multiple = true;
@@ -120,36 +128,35 @@ export function MainChatContainer({
     }
   };
 
-  if (!conversation) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full">
-        <div className="text-center p-8 max-w-md">
-          <h2 className="text-2xl font-bold mb-4">Bienvenue sur Frenchat</h2>
-          <p className="text-muted-foreground mb-6">
-            Posez vos questions ou téléchargez des documents pour commencer une conversation.
-          </p>
-          <Button 
-            className="bg-french-blue hover:bg-french-blue/90 flex items-center"
-            onClick={onCreateNewConversation}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Nouvelle conversation
-          </Button>
-        </div>
+  const renderEmptyState = () => (
+    <div className="flex flex-col items-center justify-center h-full">
+      <div className="text-center p-8 max-w-md bg-white rounded-lg shadow-sm border">
+        <h2 className="text-2xl font-bold mb-4 text-french-blue">Bienvenue sur Frenchat</h2>
+        <p className="text-muted-foreground mb-6">
+          Posez vos questions ou téléchargez des documents pour commencer une conversation.
+        </p>
+        <Button 
+          className="bg-french-blue hover:bg-french-blue/90 flex items-center gap-2"
+          onClick={onCreateNewConversation}
+        >
+          <MessageSquarePlus className="h-4 w-4" /> Nouvelle conversation
+        </Button>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between p-2 border-b">
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon">
+    <div className="flex flex-col h-full bg-gray-50">
+      <div className="flex items-center justify-between p-2 border-b bg-white relative">
+        <div className="absolute inset-x-0 top-0 h-1 french-flag-gradient"></div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="text-gray-600 hover:text-french-blue hover:bg-blue-50">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="text-gray-600 hover:text-french-blue hover:bg-blue-50">
             <ArrowRight className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="text-gray-600 hover:text-french-blue hover:bg-blue-50">
             <Home className="h-4 w-4" />
           </Button>
         </div>
@@ -165,101 +172,107 @@ export function MainChatContainer({
             onValueChange={onIAModeChange}
           />
 
-          <Button variant="outline">Réinitialiser</Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="gap-1 text-gray-700 hover:bg-gray-50 hover:text-french-blue"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Réinitialiser
+          </Button>
+          
           <SettingsDialog />
         </div>
       </div>
 
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          {messages.length === 0 ? (
-            <div className="text-center p-8">
-              <h2 className="text-2xl font-bold mb-4">Bienvenue sur Frenchat</h2>
-              <p className="text-muted-foreground mb-6">
-                Posez vos questions ou téléchargez des documents pour commencer une conversation.
-              </p>
+      {!conversation ? renderEmptyState() : (
+        <>
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-4 max-w-3xl mx-auto">
+              {messages.length === 0 ? (
+                <div className="text-center p-8 bg-white rounded-lg shadow-sm border my-8">
+                  <h2 className="text-2xl font-bold mb-4 text-french-blue">Nouvelle conversation</h2>
+                  <p className="text-muted-foreground mb-6">
+                    Posez vos questions ou téléchargez des documents pour commencer.
+                  </p>
+                </div>
+              ) : (
+                messages.map((message) => (
+                  <ChatMessage
+                    key={message.id}
+                    message={message}
+                    messages={messages}
+                    onReply={() => handleReplyToMessage(message)}
+                    onForward={() => handleForwardMessage(message)}
+                    onQuote={() => handleQuoteMessage(message)}
+                    isUser={message.role === 'user'}
+                  />
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+
+          <form onSubmit={handleSubmit} className="p-4 border-t bg-white">
+            {replyingTo && (
+              <div className="flex items-center justify-between bg-blue-50 p-2 rounded-md mb-2 border border-blue-100">
+                <div className="flex items-center">
+                  <div className="w-1 h-full bg-french-blue mr-2" />
+                  <div className="text-sm truncate">
+                    <span className="font-medium">Réponse à: </span>
+                    {replyingTo.content}
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={cancelReply} 
+                  className="h-6 w-6 p-0 hover:bg-blue-100"
+                  type="button"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            <div className="flex items-start gap-2">
+              <div className="flex-1 flex items-start gap-2 bg-white rounded-md border shadow-sm focus-within:ring-1 focus-within:ring-french-blue focus-within:border-french-blue">
+                <AttachmentMenu onAttach={handleAttachment} />
+                <Textarea
+                  ref={inputRef}
+                  placeholder="Tapez votre message..."
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="min-h-[60px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 py-3"
+                  rows={1}
+                  disabled={isLoading}
+                />
+              </div>
               <Button 
-                className="bg-french-blue hover:bg-french-blue/90 flex items-center"
-                onClick={onCreateNewConversation}
+                onClick={handleSendMessage} 
+                size="icon" 
+                className="bg-french-blue hover:bg-french-blue/90 shadow-sm"
+                disabled={isLoading || !inputValue.trim()}
+                type="submit"
               >
-                <Plus className="mr-2 h-4 w-4" /> Nouvelle conversation
+                <Send className="h-4 w-4" />
               </Button>
             </div>
-          ) : (
-            messages.map((message) => (
-              <ChatMessage
-                key={message.id}
-                message={message}
-                messages={messages}
-                onReply={() => handleReplyToMessage(message)}
-                onForward={() => handleForwardMessage(message)}
-                onQuote={() => handleQuoteMessage(message)}
-                isUser={message.role === 'user'}
-              />
-            ))
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
 
-      <form onSubmit={handleSubmit} className="p-4 border-t">
-        {replyingTo && (
-          <div className="flex items-center justify-between bg-muted p-2 rounded-md mb-2">
-            <div className="flex items-center">
-              <div className="w-1 h-full bg-french-blue mr-2" />
-              <div className="text-sm truncate">
-                <span className="font-medium">Réponse à: </span>
-                {replyingTo.content}
-              </div>
+            <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+              <div>Mode: {iaMode === "auto" ? "Automatique" : iaMode === "cloud" ? "IA Cloud" : "IA Local"}</div>
+              {iaMode !== "auto" && (
+                <ModelSelector 
+                  selectedModel={selectedModel} 
+                  onSelectModel={onModelChange}
+                  modelSource={iaMode === "cloud" ? "cloud" : "local"}
+                />
+              )}
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={cancelReply} 
-              className="h-6 w-6 p-0"
-              type="button"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-
-        <div className="flex items-start gap-2">
-          <div className="flex-1 flex items-start gap-2 bg-background rounded-md border">
-            <AttachmentMenu onAttach={handleAttachment} />
-            <Textarea
-              ref={inputRef}
-              placeholder="Tapez votre message..."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="min-h-[60px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-              rows={1}
-              disabled={isLoading}
-            />
-          </div>
-          <Button 
-            onClick={handleSendMessage} 
-            size="icon" 
-            className="bg-french-blue hover:bg-french-blue/90"
-            disabled={isLoading || !inputValue.trim()}
-            type="submit"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
-          <div>Mode: {iaMode === "auto" ? "Automatique" : iaMode === "cloud" ? "IA Cloud" : "IA Local"}</div>
-          {iaMode !== "auto" && (
-            <ModelSelector 
-              selectedModel={selectedModel} 
-              onSelectModel={onModelChange}
-              modelSource={iaMode === "cloud" ? "cloud" : "local"}
-            />
-          )}
-        </div>
-      </form>
+          </form>
+        </>
+      )}
     </div>
   );
 }
