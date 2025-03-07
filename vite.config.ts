@@ -12,19 +12,54 @@ const ensureRelativePaths = (): PluginOption => {
     name: 'ensure-relative-paths',
     writeBundle: {
       sequential: true,
-      order: "post" as const, // Utiliser "post" comme littéral avec assertion de type
+      order: "post" as const,
       handler() {
         const indexPath = path.resolve('./dist/index.html');
         if (fs.existsSync(indexPath)) {
           let content = fs.readFileSync(indexPath, 'utf-8');
-          // Convertir les chemins absolus en chemins relatifs
+          
+          // Convertir tous les chemins absolus en chemins relatifs
           content = content.replace(/src="\//g, 'src="./');
           content = content.replace(/href="\//g, 'href="./');
+          
+          // Traiter spécifiquement les imports de modules et les assets
+          content = content.replace(/from="\//g, 'from="./');
+          content = content.replace(/import="\//g, 'import="./');
           content = content.replace(/src="\/assets/g, 'src="./assets');
           content = content.replace(/href="\/assets/g, 'href="./assets');
+          
+          // S'assurer que les vendors sont aussi avec des chemins relatifs
+          content = content.replace(/src="\/vendor-/g, 'src="./vendor-');
+          content = content.replace(/from="\/vendor-/g, 'from="./vendor-');
+          
           // Mettre à jour index.html avec des chemins relatifs
           fs.writeFileSync(indexPath, content);
           console.log('✅ Chemins mis à jour dans index.html pour être relatifs');
+          
+          // Vérifier également les fichiers JS dans dist
+          const jsFiles = fs.readdirSync('./dist', { withFileTypes: true })
+            .filter(file => file.isFile() && file.name.endsWith('.js'))
+            .map(file => path.join('./dist', file.name));
+          
+          jsFiles.forEach(jsFile => {
+            try {
+              let jsContent = fs.readFileSync(jsFile, 'utf-8');
+              let originalContent = jsContent;
+              
+              // Corriger les imports relatifs dans les fichiers JS
+              jsContent = jsContent.replace(/from"\//g, 'from"./');
+              jsContent = jsContent.replace(/import"\//g, 'import"./');
+              jsContent = jsContent.replace(/import"\.\//g, 'import"./');
+              
+              // S'il y a eu des changements, sauvegarder le fichier
+              if (jsContent !== originalContent) {
+                fs.writeFileSync(jsFile, jsContent);
+                console.log(`✅ Chemins corrigés dans ${path.basename(jsFile)}`);
+              }
+            } catch (error) {
+              console.error(`❌ Erreur lors de la modification de ${jsFile}:`, error);
+            }
+          });
         } else {
           console.log('❌ Impossible de trouver dist/index.html');
         }
@@ -39,7 +74,7 @@ const ensureLovableScript = (): PluginOption => {
     name: 'ensure-lovable-script',
     writeBundle: {
       sequential: true,
-      order: "post" as const, // Utiliser "post" comme littéral avec assertion de type
+      order: "post" as const,
       handler() {
         const indexPath = path.resolve('./dist/index.html');
         if (fs.existsSync(indexPath)) {
@@ -138,6 +173,11 @@ export default defineConfig(({ mode }) => ({
     // S'assurer que les fichiers statiques importants sont copiés dans le build
     rollupOptions: {
       output: {
+        // Assurer que les assets utilisent des chemins relatifs
+        assetFileNames: 'assets/[name].[hash].[ext]',
+        chunkFileNames: 'assets/[name].[hash].js',
+        entryFileNames: 'assets/[name].[hash].js',
+        
         // Diviser le code en chunks pour un meilleur chargement
         manualChunks: (id) => {
           // Créer un chunk pour chaque lib importante

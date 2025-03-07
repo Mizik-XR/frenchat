@@ -21,6 +21,13 @@
 
 # Configuration des redirections pour le routage SPA
 [[redirects]]
+  from = "/assets/*"
+  to = "/assets/:splat"
+  status = 200
+  force = false
+  
+# Redirection principale pour le routage SPA (DOIT être placée après les assets)
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
@@ -57,9 +64,23 @@
     Content-Type = "application/javascript; charset=utf-8"
     Cache-Control = "public, max-age=31536000, immutable"
 
+# En-têtes spécifiques pour les assets JavaScript
+[[headers]]
+  for = "/assets/*.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
+    Cache-Control = "public, max-age=31536000, immutable"
+
 # En-têtes spécifiques pour les fichiers CSS
 [[headers]]
   for = "/*.css"
+  [headers.values]
+    Content-Type = "text/css; charset=utf-8"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# En-têtes spécifiques pour les assets CSS
+[[headers]]
+  for = "/assets/*.css"
   [headers.values]
     Content-Type = "text/css; charset=utf-8"
     Cache-Control = "public, max-age=31536000, immutable"
