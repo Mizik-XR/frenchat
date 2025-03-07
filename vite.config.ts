@@ -12,7 +12,7 @@ const ensureRelativePaths = (): PluginOption => {
     name: 'ensure-relative-paths',
     writeBundle: {
       sequential: true,
-      order: "post" as const, // Utiliser "post" comme littéral avec assertion const
+      order: "post" as const, // Utiliser "post" comme littéral avec assertion de type
       handler() {
         const indexPath = path.resolve('./dist/index.html');
         if (fs.existsSync(indexPath)) {
@@ -20,6 +20,8 @@ const ensureRelativePaths = (): PluginOption => {
           // Convertir les chemins absolus en chemins relatifs
           content = content.replace(/src="\//g, 'src="./');
           content = content.replace(/href="\//g, 'href="./');
+          content = content.replace(/src="\/assets/g, 'src="./assets');
+          content = content.replace(/href="\/assets/g, 'href="./assets');
           // Mettre à jour index.html avec des chemins relatifs
           fs.writeFileSync(indexPath, content);
           console.log('✅ Chemins mis à jour dans index.html pour être relatifs');
@@ -37,7 +39,7 @@ const ensureLovableScript = (): PluginOption => {
     name: 'ensure-lovable-script',
     writeBundle: {
       sequential: true,
-      order: "post" as const, // Utiliser "post" comme littéral avec assertion const
+      order: "post" as const, // Utiliser "post" comme littéral avec assertion de type
       handler() {
         const indexPath = path.resolve('./dist/index.html');
         if (fs.existsSync(indexPath)) {
@@ -102,6 +104,12 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    cors: true,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization, apikey, x-client-info",
+    },
   },
   plugins: [
     react({
@@ -114,7 +122,7 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' ? componentTagger() : undefined,
     copyRedirectsAndHeaders(), 
     ensureRelativePaths(), 
-    ensureLovableScript(), 
+    ensureLovableScript()
   ].filter(Boolean) as PluginOption[],
   resolve: {
     alias: {

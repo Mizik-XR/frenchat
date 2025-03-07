@@ -56,6 +56,22 @@ if (!fs.existsSync(headersPath)) {
   console.warn('⚠️ Fichier _headers non trouvé dans dist - il est optionnel mais recommandé');
 } else {
   console.log('✅ Le fichier _headers est présent dans dist');
+  
+  // Vérifier la présence des en-têtes CORS
+  const headersContent = fs.readFileSync(headersPath, 'utf-8');
+  if (!headersContent.includes('Access-Control-Allow-Origin')) {
+    console.warn('⚠️ Le fichier _headers ne contient pas d\'en-têtes CORS');
+  } else {
+    console.log('✅ Les en-têtes CORS sont correctement configurés');
+  }
+}
+
+// Vérifier netlify.toml
+const netlifyTomlPath = path.resolve('./netlify.toml');
+if (!fs.existsSync(netlifyTomlPath)) {
+  console.warn('⚠️ Fichier netlify.toml non trouvé à la racine - optionnel si vous utilisez _redirects et _headers');
+} else {
+  console.log('✅ Le fichier netlify.toml est présent à la racine');
 }
 
 console.log('\nVérification terminée. Si tous les contrôles sont passés, votre build devrait être compatible avec le déploiement Netlify.');

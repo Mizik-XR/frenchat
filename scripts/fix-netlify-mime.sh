@@ -21,6 +21,10 @@ cat > _headers << EOL
   X-Frame-Options: DENY
   X-XSS-Protection: 1; mode=block
   X-Content-Type-Options: nosniff
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH
+  Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, apikey, x-client-info, range
+  Access-Control-Max-Age: 86400
 
 # En-têtes pour les fichiers JavaScript
 /*.js
@@ -96,6 +100,10 @@ if [ -f "dist/index.html" ]; then
     
     # Modifier le type des scripts si nécessaire
     sed -i 's/type="module" src/type="module" crossorigin="anonymous" src/g' dist/index.html
+    
+    # Convertir les chemins absolus en chemins relatifs
+    sed -i 's|src="/|src="./|g' dist/index.html
+    sed -i 's|href="/|href="./|g' dist/index.html
     
     echo "[OK] Fichier index.html traité."
 else

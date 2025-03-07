@@ -1,2 +1,6 @@
 
-/* /index.html 200
+# Redirection SPA - toutes les routes non existantes vers index.html avec code 200
+/*    /index.html   200
+
+# Redirection API vers les fonctions Netlify (si vous utilisez des fonctions Netlify)
+/api/*  /.netlify/functions/:splat  200

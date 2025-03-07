@@ -26,6 +26,10 @@ echo /*
 echo   X-Frame-Options: DENY
 echo   X-XSS-Protection: 1; mode=block
 echo   X-Content-Type-Options: nosniff
+echo   Access-Control-Allow-Origin: *
+echo   Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH
+echo   Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, apikey, x-client-info, range
+echo   Access-Control-Max-Age: 86400
 echo.
 echo # En-têtes pour les fichiers JavaScript
 echo /*.js
@@ -105,9 +109,12 @@ if exist "dist\index.html" (
     
     REM Remplacer les balises script
     powershell -Command "(Get-Content 'dist\index.html.tmp') -replace 'type=""module"" src', 'type=""module"" crossorigin=""anonymous"" src' | Set-Content 'dist\index.html'"
+    powershell -Command "(Get-Content 'dist\index.html') -replace 'src=""/', 'src=""./') | Set-Content 'dist\index.html.new'"
+    powershell -Command "(Get-Content 'dist\index.html.new') -replace 'href=""/', 'href=""./') | Set-Content 'dist\index.html'"
     
-    REM Supprimer le fichier temporaire
+    REM Supprimer les fichiers temporaires
     del "dist\index.html.tmp"
+    del "dist\index.html.new"
     
     echo [OK] Fichier index.html traité.
 ) else (
