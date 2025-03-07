@@ -1,19 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-interface GoogleDriveFile {
-  id: string;
-  name: string;
-  mimeType: string;
-  parents?: string[];
-  size?: number;
-}
+import { corsHeaders } from './utils/corsHeaders.ts';
+import { getGoogleDriveToken } from './services/googleDriveAuth.ts';
+import { countFiles, indexFolderRecursively } from './services/indexingService.ts';
 
 interface IndexingOptions {
   userId: string;
@@ -54,39 +44,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    async function getGoogleDriveToken(userId: string) {
-      try {
-        const { data, error } = await supabase.functions.invoke('google-oauth', {
-          body: { 
-            action: 'check_token_status', 
-            userId: userId 
-          }
-        });
-        
-        if (error || !data.isValid) {
-          console.error("Erreur lors de la récupération du token:", error || data.error);
-          throw new Error("Token invalide ou expiré");
-        }
-        
-        const { data: tokenData, error: tokenError } = await supabase.functions.invoke('google-oauth', {
-          body: { 
-            action: 'get_token', 
-            userId: userId 
-          }
-        });
-        
-        if (tokenError || !tokenData.access_token) {
-          console.error("Erreur lors de la récupération du token déchiffré:", tokenError);
-          throw new Error("Impossible d'obtenir le token d'accès");
-        }
-        
-        return tokenData.access_token;
-      } catch (error) {
-        console.error("Erreur lors de la récupération du token Google Drive:", error);
-        throw error;
-      }
-    }
-
     const tokenData = await getGoogleDriveToken(userId);
 
     const { data: progress, error: progressError } = await supabase
@@ -109,112 +66,10 @@ serve(async (req) => {
       throw new Error('Erreur lors de l\'initialisation du suivi');
     }
 
-    const countFiles = async (folderId: string, depth: number = 0): Promise<number> => {
-      let total = 0;
-      let pageToken: string | undefined = undefined;
-
-      do {
-        const query = `'${folderId}' in parents and trashed = false`;
-        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=nextPageToken,files(id,mimeType)${pageToken ? `&pageToken=${pageToken}` : ''}`;
-
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${tokenData.access_token}`,
-            'Accept': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Erreur API Google Drive: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const files: GoogleDriveFile[] = data.files;
-        pageToken = data.nextPageToken;
-
-        for (const file of files) {
-          if (file.mimeType === 'application/vnd.google-apps.folder') {
-            if (recursive && depth < maxDepth) {
-              total += await countFiles(file.id, depth + 1);
-            }
-          } else {
-            total++;
-          }
-        }
-      } while (pageToken);
-
-      return total;
-    };
-
-    const indexFolderRecursively = async (options: IndexingOptions): Promise<void> => {
-      console.log(`Indexation du dossier ${options.folderId} à la profondeur ${options.currentDepth}`);
-
-      let pageToken: string | undefined = undefined;
-      do {
-        const query = `'${options.folderId}' in parents and trashed = false`;
-        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=nextPageToken,files(id,name,mimeType,size)&pageSize=${options.batchSize}${pageToken ? `&pageToken=${pageToken}` : ''}`;
-
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${tokenData.access_token}`,
-            'Accept': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Erreur API Google Drive: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const files: GoogleDriveFile[] = data.files;
-        pageToken = data.nextPageToken;
-
-        for (const file of files) {
-          try {
-            if (file.mimeType === 'application/vnd.google-apps.folder') {
-              if (options.recursive && options.currentDepth < options.maxDepth) {
-                await indexFolderRecursively({
-                  ...options,
-                  folderId: file.id,
-                  parentFolderId: options.folderId,
-                  currentDepth: options.currentDepth + 1
-                });
-              }
-            } else {
-              await supabase
-                .from('indexed_documents')
-                .insert({
-                  user_id: options.userId,
-                  provider_type: 'google_drive',
-                  external_id: file.id,
-                  title: file.name,
-                  mime_type: file.mimeType,
-                  file_size: file.size,
-                  parent_folder_id: options.folderId,
-                  file_path: file.name,
-                  status: 'pending'
-                });
-
-              await supabase
-                .from('indexing_progress')
-                .update({
-                  processed_files: progress.processed_files + 1,
-                  last_processed_file: file.name,
-                  updated_at: new Date().toISOString()
-                })
-                .eq('id', progress.id);
-            }
-          } catch (error) {
-            console.error(`Erreur lors du traitement du fichier ${file.name}:`, error);
-          }
-        }
-      } while (pageToken);
-    };
-
     EdgeRuntime.waitUntil(
       (async () => {
         try {
-          const totalFiles = await countFiles(folderId);
+          const totalFiles = await countFiles(folderId, tokenData, 0, maxDepth, recursive);
           
           await supabase
             .from('indexing_progress')
@@ -228,7 +83,7 @@ serve(async (req) => {
             maxDepth,
             batchSize,
             currentDepth: 0
-          });
+          }, tokenData, progress, supabase);
 
           await supabase
             .from('indexing_progress')
