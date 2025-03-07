@@ -12,7 +12,7 @@ echo.
 
 REM Exécuter le script de mise à jour du package.json
 echo [ÉTAPE 1/4] Mise à jour du package.json...
-node scripts/update-package-json.js
+node scripts\update-package-json.js
 if errorlevel 1 (
     echo [ERREUR] Échec de la mise à jour du package.json
     pause
