@@ -19,10 +19,12 @@ export function useChatMessages(conversationId: string | null) {
       console.log(`Fetching messages for conversation: ${convoId}`);
       
       // Simulate API call to fetch messages
-      // In a real app, this would be an API call
       setTimeout(() => {
         try {
-          const dummyMessages: Message[] = [];
+          // Simulation de messages pour le développement
+          const dummyMessages: Message[] = [
+            // Aucun message par défaut pour une nouvelle conversation
+          ];
           setMessages(dummyMessages);
         } catch (err) {
           console.error("Error parsing messages:", err);
@@ -99,8 +101,8 @@ export function useChatMessages(conversationId: string | null) {
   };
 
   // Fonction améliorée pour envoyer un message
-  const sendMessage = async (content: string, replyToId?: string) => {
-    if (!content.trim() || !conversationId) return;
+  const sendMessage = async (content: string, convoId: string, replyToId?: string) => {
+    if (!content.trim() || !convoId) return;
 
     try {
       const userMessage = addUserMessage(content);
@@ -110,7 +112,7 @@ export function useChatMessages(conversationId: string | null) {
       // Simulate API call
       setTimeout(() => {
         try {
-          setAssistantResponse("Voici une réponse de l'assistant IA");
+          setAssistantResponse("Voici une réponse de l'assistant IA à votre message: " + content);
           setIsLoading(false);
         } catch (err) {
           console.error("Error processing response:", err);

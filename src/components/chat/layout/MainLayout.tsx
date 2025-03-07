@@ -81,7 +81,8 @@ export function MainLayout() {
         onCreateNewConversation={handleCreateNewConversation}
       />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <div className="flex items-center justify-center h-14 border-b relative">
+        <div className="flex items-center justify-center h-14 border-b bg-white relative">
+          <div className="absolute inset-x-0 top-0 h-1 french-flag-gradient"></div>
           <FrenchTitle />
         </div>
         <MainChatContainer
@@ -94,6 +95,7 @@ export function MainLayout() {
           onModelChange={handleModelChange}
           onSendMessage={sendMessage}
           onFileUpload={handleFileUpload}
+          onCreateNewConversation={handleCreateNewConversation}
         />
       </div>
     </main>

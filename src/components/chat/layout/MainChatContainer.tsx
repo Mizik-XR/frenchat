@@ -22,6 +22,7 @@ interface MainChatContainerProps {
   onModelChange: (model: string) => void;
   onSendMessage: (text: string, conversationId: string, replyToId?: string) => void;
   onFileUpload: (files: File[]) => Promise<void>;
+  onCreateNewConversation: () => void;
 }
 
 export function MainChatContainer({
@@ -33,7 +34,8 @@ export function MainChatContainer({
   onIAModeChange,
   onModelChange,
   onSendMessage,
-  onFileUpload
+  onFileUpload,
+  onCreateNewConversation
 }: MainChatContainerProps) {
   const [inputValue, setInputValue] = useState("");
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
@@ -126,7 +128,10 @@ export function MainChatContainer({
           <p className="text-muted-foreground mb-6">
             Posez vos questions ou téléchargez des documents pour commencer une conversation.
           </p>
-          <Button className="bg-french-blue hover:bg-french-blue/90">
+          <Button 
+            className="bg-french-blue hover:bg-french-blue/90 flex items-center"
+            onClick={onCreateNewConversation}
+          >
             <Plus className="mr-2 h-4 w-4" /> Nouvelle conversation
           </Button>
         </div>
@@ -169,7 +174,16 @@ export function MainChatContainer({
         <div className="space-y-4">
           {messages.length === 0 ? (
             <div className="text-center p-8">
-              <p className="text-muted-foreground">Aucun message dans cette conversation. Commencez à discuter !</p>
+              <h2 className="text-2xl font-bold mb-4">Bienvenue sur Frenchat</h2>
+              <p className="text-muted-foreground mb-6">
+                Posez vos questions ou téléchargez des documents pour commencer une conversation.
+              </p>
+              <Button 
+                className="bg-french-blue hover:bg-french-blue/90 flex items-center"
+                onClick={onCreateNewConversation}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Nouvelle conversation
+              </Button>
             </div>
           ) : (
             messages.map((message) => (
