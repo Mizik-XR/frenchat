@@ -44,19 +44,41 @@ if [ ! -f "dist/_headers" ]; then
     cp _headers dist/ 2>/dev/null || cp scripts/_headers dist/ 2>/dev/null
 fi
 
+# Vérifier tous les fichiers JS pour des chemins absolus
+if [ -d "dist/assets" ]; then
+    echo "[INFO] Vérification des fichiers JS pour des chemins absolus..."
+    
+    JS_FILES_WITH_ABSOLUTE_PATHS=0
+    for file in dist/assets/*.js; do
+        if grep -q "from\"/" "$file" || grep -q "import\"/" "$file" || grep -q "fetch(\"/" "$file"; then
+            echo "  - Correction de chemins absolus dans: $(basename "$file")"
+            sed -i 's|from"/|from"./|g' "$file"
+            sed -i 's|import"/|import"./|g' "$file"
+            sed -i 's|fetch("/|fetch("./|g' "$file"
+            JS_FILES_WITH_ABSOLUTE_PATHS=$((JS_FILES_WITH_ABSOLUTE_PATHS + 1))
+        fi
+    done
+    
+    if [ $JS_FILES_WITH_ABSOLUTE_PATHS -gt 0 ]; then
+        echo "[INFO] Corrigé des chemins absolus dans $JS_FILES_WITH_ABSOLUTE_PATHS fichiers JS"
+    else
+        echo "[OK] Aucun chemin absolu détecté dans les fichiers JS"
+    fi
+fi
+
 # Vérifier index.html pour les chemins absolus
 if [ -f "dist/index.html" ]; then
     echo "[INFO] Vérification des chemins dans index.html..."
     
     # Recherche de chemins absolus
-    ABSOLUTE_PATHS=$(grep -o 'src="/[^"]*"' dist/index.html)
+    ABSOLUTE_PATHS=$(grep -o 'src="/[^"]*"' dist/index.html || true)
     if [ -n "$ABSOLUTE_PATHS" ]; then
         echo "[ATTENTION] Chemins absolus détectés dans index.html. Correction..."
         sed -i 's|src="/|src="./|g' dist/index.html
         sed -i 's|href="/|href="./|g' dist/index.html
         echo "[OK] Chemins corrigés."
     else
-        echo "[OK] Aucun chemin absolu détecté."
+        echo "[OK] Aucun chemin absolu détecté dans index.html."
     fi
     
     # Vérification du script Lovable

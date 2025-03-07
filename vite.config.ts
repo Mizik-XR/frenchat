@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -9,13 +10,16 @@ import type { PluginOption } from 'vite';
 const ensureRelativePaths = (): PluginOption => {
   return {
     name: 'ensure-relative-paths',
+    enforce: 'post', // S'assurer qu'il s'exécute après tous les autres plugins
     writeBundle: {
       sequential: true,
       order: "post" as const,
       handler() {
+        console.log('⚙️ Exécution du plugin ensure-relative-paths...');
         const indexPath = path.resolve('./dist/index.html');
         if (fs.existsSync(indexPath)) {
           let content = fs.readFileSync(indexPath, 'utf-8');
+          const originalContent = content;
           
           // Convertir tous les chemins absolus en chemins relatifs
           content = content.replace(/src="\//g, 'src="./');
@@ -32,33 +36,48 @@ const ensureRelativePaths = (): PluginOption => {
           content = content.replace(/from="\/vendor-/g, 'from="./vendor-');
           
           // Mettre à jour index.html avec des chemins relatifs
-          fs.writeFileSync(indexPath, content);
-          console.log('✅ Chemins mis à jour dans index.html pour être relatifs');
+          if (content !== originalContent) {
+            fs.writeFileSync(indexPath, content);
+            console.log('✅ Chemins mis à jour dans index.html pour être relatifs');
+          } else {
+            console.log('ℹ️ Aucun chemin absolu détecté dans index.html');
+          }
           
           // Vérifier également les fichiers JS dans dist
           const jsFiles = fs.readdirSync('./dist', { withFileTypes: true })
-            .filter(file => file.isFile() && file.name.endsWith('.js'))
+            .filter(file => file.isFile() && (file.name.endsWith('.js') || file.name.endsWith('.mjs')))
             .map(file => path.join('./dist', file.name));
+          
+          let jsFilesFixed = 0;
           
           jsFiles.forEach(jsFile => {
             try {
               let jsContent = fs.readFileSync(jsFile, 'utf-8');
-              let originalContent = jsContent;
+              let originalJsContent = jsContent;
               
               // Corriger les imports relatifs dans les fichiers JS
               jsContent = jsContent.replace(/from"\//g, 'from"./');
               jsContent = jsContent.replace(/import"\//g, 'import"./');
-              jsContent = jsContent.replace(/import"\.\//g, 'import"./');
+              jsContent = jsContent.replace(/fetch\("\/assets/g, 'fetch("./assets');
+              jsContent = jsContent.replace(/fetch\('\//g, 'fetch(\'./');
+              jsContent = jsContent.replace(/new URL\("\//g, 'new URL("./');
+              jsContent = jsContent.replace(/new URL\('\//g, 'new URL(\'./');
               
               // S'il y a eu des changements, sauvegarder le fichier
-              if (jsContent !== originalContent) {
+              if (jsContent !== originalJsContent) {
                 fs.writeFileSync(jsFile, jsContent);
-                console.log(`✅ Chemins corrigés dans ${path.basename(jsFile)}`);
+                jsFilesFixed++;
               }
             } catch (error) {
               console.error(`❌ Erreur lors de la modification de ${jsFile}:`, error);
             }
           });
+          
+          if (jsFilesFixed > 0) {
+            console.log(`✅ Chemins corrigés dans ${jsFilesFixed} fichiers JS`);
+          } else {
+            console.log('ℹ️ Aucun chemin absolu détecté dans les fichiers JS');
+          }
         } else {
           console.log('❌ Impossible de trouver dist/index.html');
         }
@@ -165,6 +184,9 @@ export default defineConfig(({ mode }) => ({
   build: {
     minify: 'esbuild',
     target: 'es2015',
+    outDir: 'dist',
+    assetsDir: 'assets',
+    emptyOutDir: true,
     rollupOptions: {
       output: {
         assetFileNames: 'assets/[name].[hash].[ext]',
@@ -197,5 +219,5 @@ export default defineConfig(({ mode }) => ({
   define: {
     __LOVABLE_MODE__: JSON.stringify(mode),
   },
-  base: './',
+  base: './', // Fondamental pour les chemins relatifs
 }));

@@ -56,8 +56,13 @@ if exist "dist\index.html" (
     findstr "src=\"/" dist\index.html >nul
     if not errorlevel 1 (
         echo [ATTENTION] Chemins absolus détectés dans index.html.
-        echo [INFO] La correction sera tentée lors du prochain build.
-        echo [INFO] Ajoutez base: './' dans vite.config.ts si ce n'est pas déjà fait.
+        echo [INFO] Correction des chemins absolus...
+        
+        REM Utiliser PowerShell pour la substitution des chemins
+        powershell -Command "(Get-Content dist\index.html) -replace 'src=\"/', 'src=\"./' | Set-Content dist\index.html"
+        powershell -Command "(Get-Content dist\index.html) -replace 'href=\"/', 'href=\"./' | Set-Content dist\index.html"
+        
+        echo [OK] Chemins corrigés.
     ) else (
         echo [OK] Aucun chemin absolu détecté.
     )
@@ -66,13 +71,54 @@ if exist "dist\index.html" (
     findstr "cdn.gpteng.co/gptengineer.js" dist\index.html >nul
     if errorlevel 1 (
         echo [ATTENTION] Script Lovable manquant dans index.html.
-        echo [INFO] Le script sera ajouté lors du prochain build.
+        echo [INFO] Ajout du script Lovable...
+        
+        REM Utiliser PowerShell pour ajouter le script
+        powershell -Command "(Get-Content dist\index.html) -replace '</body>', '<script src=\"https://cdn.gpteng.co/gptengineer.js\" type=\"module\"></script></body>' | Set-Content dist\index.html"
+        
+        echo [OK] Script Lovable ajouté.
     ) else (
         echo [OK] Script Lovable présent.
     )
 ) else (
     echo [ERREUR] dist\index.html non trouvé!
     exit /b 1
+)
+
+REM Vérifier les fichiers JS pour des chemins absolus
+if exist "dist\assets" (
+    echo [INFO] Vérification des fichiers JS pour des chemins absolus...
+    
+    set "JS_FILES_WITH_ABSOLUTE_PATHS=0"
+    
+    for %%F in (dist\assets\*.js) do (
+        findstr "from\"/" "%%F" >nul 2>&1
+        if not errorlevel 1 (
+            echo   - Correction de chemins absolus dans: %%~nxF
+            powershell -Command "(Get-Content '%%F') -replace 'from\"/', 'from\"./' | Set-Content '%%F'"
+            set /a "JS_FILES_WITH_ABSOLUTE_PATHS+=1"
+        )
+        
+        findstr "import\"/" "%%F" >nul 2>&1
+        if not errorlevel 1 (
+            echo   - Correction de chemins absolus dans: %%~nxF
+            powershell -Command "(Get-Content '%%F') -replace 'import\"/', 'import\"./' | Set-Content '%%F'"
+            set /a "JS_FILES_WITH_ABSOLUTE_PATHS+=1"
+        )
+        
+        findstr "fetch(\"/" "%%F" >nul 2>&1
+        if not errorlevel 1 (
+            echo   - Correction de chemins absolus dans: %%~nxF
+            powershell -Command "(Get-Content '%%F') -replace 'fetch\(\"/', 'fetch\(\"./' | Set-Content '%%F'"
+            set /a "JS_FILES_WITH_ABSOLUTE_PATHS+=1"
+        )
+    )
+    
+    if !JS_FILES_WITH_ABSOLUTE_PATHS! GTR 0 (
+        echo [INFO] Corrigé des chemins absolus dans !JS_FILES_WITH_ABSOLUTE_PATHS! fichiers JS
+    ) else (
+        echo [OK] Aucun chemin absolu détecté dans les fichiers JS
+    )
 )
 
 echo.
@@ -85,3 +131,4 @@ echo Assurez-vous de configurer les variables d'environnement
 echo nécessaires dans l'interface Netlify.
 echo.
 pause
+exit /b 0

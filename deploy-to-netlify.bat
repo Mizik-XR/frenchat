@@ -55,11 +55,18 @@ set "NODE_OPTIONS=--max-old-space-size=4096"
 REM Nettoyer les fichiers inutiles
 echo [INFO] Nettoyage des fichiers temporaires...
 if exist "dist\" rmdir /s /q dist
-if exist "node_modules\" rmdir /s /q node_modules
 
 REM Installation optimisée pour Netlify
 echo [INFO] Installation des dépendances avec configuration pour Netlify...
 call npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
+
+REM Vérifier la configuration Netlify
+echo [ÉTAPE 1/3] Vérification de la configuration Netlify...
+node scripts\ensure-netlify-build.js
+if %ERRORLEVEL% NEQ 0 (
+    echo [ATTENTION] Des problèmes ont été détectés avec la configuration Netlify.
+    echo [INFO] Continuons malgré tout, le script tentera d'appliquer des corrections.
+)
 
 REM Préparer le build
 echo [ÉTAPE 2/3] Préparation du build pour déploiement...
@@ -73,6 +80,10 @@ if %ERRORLEVEL% NEQ 0 (
 )
 echo [OK] Build prêt pour déploiement.
 echo.
+
+REM Vérifier et corriger les chemins absolus
+call scripts\verify-netlify-deployment.bat
+echo [OK] Vérification et correction des chemins terminées.
 
 REM Vérifier la connexion à Netlify
 echo [ÉTAPE 3/3] Vérification de la connexion à Netlify...

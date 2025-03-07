@@ -1,147 +1,131 @@
 
-/**
- * Script de vérification de la configuration Netlify
- * Ce script vérifie la présence des fichiers nécessaires et la configuration
- * pour assurer un déploiement correct sur Netlify.
- */
-
+// Script pour vérifier la configuration Netlify et corriger les problèmes courants
 const fs = require('fs');
 const path = require('path');
 
-// Couleurs pour la console
-const colors = {
-  reset: '\x1b[0m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m'
-};
+console.log('🔍 Vérification de la configuration Netlify...');
 
-function log(type, message) {
-  const typeColors = {
-    'INFO': colors.blue,
-    'OK': colors.green,
-    'ATTENTION': colors.yellow,
-    'ERREUR': colors.red
-  };
-  
-  const color = typeColors[type] || colors.reset;
-  console.log(`${color}[${type}]${colors.reset} ${message}`);
-}
-
-// Vérifie l'existence d'un fichier
-function checkFileExists(filePath, isRequired = true) {
+// Fonction pour vérifier si un fichier existe
+function checkFileExists(filePath, description, required = false) {
   const exists = fs.existsSync(filePath);
-  const fileName = path.basename(filePath);
-  
   if (exists) {
-    log('OK', `${fileName} est présent`);
-    return true;
-  } else if (isRequired) {
-    log('ATTENTION', `${fileName} est manquant!`);
+    console.log(`✅ ${description} trouvé: ${filePath}`);
+  } else if (required) {
+    console.error(`❌ ERREUR: ${description} MANQUANT: ${filePath}`);
     return false;
   } else {
-    log('INFO', `${fileName} est manquant (optionnel)`);
-    return false;
+    console.warn(`⚠️ ATTENTION: ${description} non trouvé: ${filePath}`);
+  }
+  return exists;
+}
+
+// Vérifier les fichiers essentiels
+const netlifyTomlExists = checkFileExists('netlify.toml', 'Fichier de configuration Netlify');
+const redirectsExists = checkFileExists('_redirects', 'Fichier de redirection Netlify');
+const headersExists = checkFileExists('_headers', 'Fichier d\'en-têtes Netlify') || 
+                      checkFileExists('scripts/_headers', 'Fichier d\'en-têtes Netlify (dans scripts)');
+
+// Vérifier la configuration base dans vite.config.ts
+let viteConfigOk = false;
+if (checkFileExists('vite.config.ts', 'Configuration Vite', true)) {
+  try {
+    const viteConfig = fs.readFileSync('vite.config.ts', 'utf8');
+    
+    // Vérifier si base: './' est configuré
+    if (viteConfig.includes("base: './'") || viteConfig.includes('base: "./')) {
+      console.log('✅ Configuration base: "./" trouvée dans vite.config.ts');
+      viteConfigOk = true;
+    } else {
+      console.error('❌ ERREUR: base: "./" manquant dans vite.config.ts');
+      console.error('   C\'est ESSENTIEL pour que Netlify fonctionne correctement.');
+      console.error('   Sans cela, les imports seront absolus et Netlify retournera index.html au lieu des fichiers JS.');
+    }
+    
+    // Vérifier si les plugins nécessaires sont configurés
+    if (viteConfig.includes('ensureRelativePaths')) {
+      console.log('✅ Plugin ensureRelativePaths trouvé dans vite.config.ts');
+    } else {
+      console.warn('⚠️ ATTENTION: Plugin ensureRelativePaths non trouvé dans vite.config.ts');
+    }
+    
+    if (viteConfig.includes('copyRedirectsAndHeaders')) {
+      console.log('✅ Plugin copyRedirectsAndHeaders trouvé dans vite.config.ts');
+    } else {
+      console.warn('⚠️ ATTENTION: Plugin copyRedirectsAndHeaders non trouvé dans vite.config.ts');
+    }
+  } catch (error) {
+    console.error('❌ ERREUR de lecture de vite.config.ts:', error.message);
   }
 }
 
-// Vérifie si la configuration de base dans vite.config.ts est correcte
-function checkViteConfig() {
-  const viteConfigPath = path.resolve('./vite.config.ts');
-  
-  if (!fs.existsSync(viteConfigPath)) {
-    log('ERREUR', 'vite.config.ts introuvable!');
-    return false;
-  }
-  
-  const content = fs.readFileSync(viteConfigPath, 'utf-8');
-  
-  // Vérifie si base: './' est défini
-  if (!content.includes("base: './'") && !content.includes('base: "./"')) {
-    log('ATTENTION', "La configuration de base n'est pas définie sur './' dans vite.config.ts");
-    log('INFO', "Ajoutez base: './' dans la configuration pour assurer des chemins relatifs");
-    return false;
-  }
-  
-  log('OK', "La configuration de base (base: './') est définie correctement dans vite.config.ts");
-  return true;
-}
-
-// Vérifie si index.html contient des chemins absolus
-function checkForAbsolutePaths() {
-  const indexPath = path.resolve('./dist/index.html');
-  
-  if (!fs.existsSync(indexPath)) {
-    // Si dist/index.html n'existe pas, ne pas continuer la vérification
-    return true;
-  }
-  
-  const content = fs.readFileSync(indexPath, 'utf-8');
-  
-  // Recherche des chemins absolus dans les attributs src et href
-  const absolutePathsRegex = /(?:src|href)=["']\/[^"']+["']/g;
-  const absolutePaths = content.match(absolutePathsRegex);
-  
-  if (absolutePaths && absolutePaths.length > 0) {
-    log('ATTENTION', `${absolutePaths.length} chemins absolus détectés dans index.html:`);
-    absolutePaths.forEach(path => {
-      log('INFO', `- ${path}`);
-    });
-    return false;
-  }
-  
-  log('OK', "Aucun chemin absolu détecté dans index.html");
-  return true;
-}
-
-// Vérifie la présence du script Lovable dans index.html
-function checkLovableScript() {
-  const indexPath = path.resolve('./dist/index.html');
-  
-  if (!fs.existsSync(indexPath)) {
-    return true;
-  }
-  
-  const content = fs.readFileSync(indexPath, 'utf-8');
-  
-  if (!content.includes('cdn.gpteng.co/gptengineer.js')) {
-    log('ATTENTION', "Le script Lovable (gptengineer.js) est manquant dans index.html");
-    return false;
-  }
-  
-  log('OK', "Le script Lovable est présent dans index.html");
-  return true;
-}
-
-// Fonction principale pour exécuter toutes les vérifications
-function runAllChecks() {
-  log('INFO', "Démarrage des vérifications pour le déploiement Netlify...");
-  
-  const checks = [
-    checkFileExists('netlify.toml'),
-    checkFileExists('_redirects', false),
-    checkFileExists('_headers', false),
-    checkViteConfig(),
-    checkForAbsolutePaths(),
-    checkLovableScript()
-  ];
-  
-  const success = checks.every(check => check === true);
-  
-  if (success) {
-    log('OK', "Toutes les vérifications sont passées avec succès!");
-    return 0;
-  } else {
-    log('ATTENTION', "Certaines vérifications ont échoué. Veuillez consulter les messages ci-dessus.");
-    return 1;
+// Vérifier l'index.html si existant (pour les chemins absolus et le script Lovable)
+if (fs.existsSync('dist/index.html')) {
+  try {
+    const indexContent = fs.readFileSync('dist/index.html', 'utf8');
+    
+    // Vérifier les chemins absolus
+    const absolutePathsCount = (indexContent.match(/src="\//g) || []).length + 
+                              (indexContent.match(/href="\//g) || []).length;
+    
+    if (absolutePathsCount > 0) {
+      console.warn(`⚠️ ATTENTION: ${absolutePathsCount} chemins absolus détectés dans dist/index.html`);
+      console.warn('   Cela causera probablement des erreurs MIME type dans Netlify.');
+    } else {
+      console.log('✅ Aucun chemin absolu trouvé dans dist/index.html');
+    }
+    
+    // Vérifier le script Lovable
+    if (indexContent.includes('cdn.gpteng.co/gptengineer.js')) {
+      console.log('✅ Script Lovable trouvé dans dist/index.html');
+    } else {
+      console.warn('⚠️ ATTENTION: Script Lovable manquant dans dist/index.html');
+    }
+  } catch (error) {
+    console.error('❌ ERREUR de lecture de dist/index.html:', error.message);
   }
 }
 
-// Exécuter les vérifications
-const exitCode = runAllChecks();
+// Vérifier si des fichiers JS dans dist contiennent des chemins absolus
+if (fs.existsSync('dist/assets')) {
+  try {
+    const jsFiles = fs.readdirSync('dist/assets')
+      .filter(file => file.endsWith('.js'));
+    
+    let jsFilesWithAbsolutePaths = 0;
+    
+    for (const file of jsFiles) {
+      try {
+        const content = fs.readFileSync(path.join('dist/assets', file), 'utf8');
+        const hasAbsolutePaths = content.includes('from"/') || 
+                                content.includes('import"/') || 
+                                content.includes('fetch("/');
+        
+        if (hasAbsolutePaths) {
+          jsFilesWithAbsolutePaths++;
+        }
+      } catch (error) {
+        console.error(`❌ ERREUR de lecture de dist/assets/${file}:`, error.message);
+      }
+    }
+    
+    if (jsFilesWithAbsolutePaths > 0) {
+      console.warn(`⚠️ ATTENTION: ${jsFilesWithAbsolutePaths} fichiers JS contiennent des chemins absolus`);
+    } else {
+      console.log('✅ Aucun fichier JS avec des chemins absolus détecté');
+    }
+  } catch (error) {
+    console.error('❌ ERREUR lors de la vérification des fichiers JS:', error.message);
+  }
+}
 
-// En cas d'erreur dans un environnement CI, sortir avec un code d'erreur
-if (process.env.CI && exitCode !== 0) {
-  process.exit(exitCode);
+// Résumé de la vérification
+console.log('\n📋 Résumé de la vérification:');
+if (!viteConfigOk || !netlifyTomlExists || !redirectsExists) {
+  console.error('❌ Des problèmes importants ont été détectés qui pourraient empêcher le déploiement Netlify.');
+  console.error('   Veuillez corriger ces problèmes avant de déployer.');
+  process.exit(1);
+} else {
+  console.log('✅ Configuration de base correcte pour Netlify.');
+  console.log('   Vous pouvez déployer avec confiance, mais surveillez les avertissements ci-dessus.');
+  process.exit(0);
 }
