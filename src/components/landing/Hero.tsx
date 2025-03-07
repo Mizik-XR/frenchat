@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Users, Sparkles, Database, Search } from "lucide-react";
@@ -64,7 +63,7 @@ export default function Hero({ onJoinBeta, onSeeExamples }: HeroProps) {
               onClick={onJoinBeta}
             >
               <Database className="mr-2 h-5 w-5" />
-              Indexer mes documents
+              Rejoindre la beta
             </Button>
             <Button 
               size="lg" 
