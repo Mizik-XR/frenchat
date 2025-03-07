@@ -7,7 +7,7 @@ import fs from 'fs';
 import type { PluginOption } from 'vite';
 
 // Plugin pour assurer que les scripts dans index.html utilisent des chemins relatifs
-const ensureRelativePaths = () => {
+const ensureRelativePaths = (): PluginOption => {
   return {
     name: 'ensure-relative-paths',
     writeBundle: {
@@ -32,7 +32,7 @@ const ensureRelativePaths = () => {
 };
 
 // Plugin pour assurer que le script Lovable est inclus
-const ensureLovableScript = () => {
+const ensureLovableScript = (): PluginOption => {
   return {
     name: 'ensure-lovable-script',
     writeBundle: {
@@ -64,7 +64,7 @@ const ensureLovableScript = () => {
 };
 
 // Plugin pour copier les fichiers _redirects et _headers dans le dossier dist
-const copyRedirectsAndHeaders = () => {
+const copyRedirectsAndHeaders = (): PluginOption => {
   return {
     name: 'copy-redirects-headers',
     closeBundle() {

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { isProduction, isNetlifyEnvironment } from "@/utils/environment/environmentDetection";
 import { getApiBaseUrl } from "@/utils/environment/cloudModeUtils";
@@ -7,9 +6,16 @@ import { getApiBaseUrl } from "@/utils/environment/cloudModeUtils";
 const API_URL = getApiBaseUrl();
 const ENVIRONMENT = import.meta.env.VITE_ENVIRONMENT || (isProduction() ? 'production' : 'development');
 
+// Configuration des délais et des tentatives
+const REQUEST_TIMEOUT = 30000; // 30 secondes
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_DELAY = 1000; // 1 seconde
+
 export const apiConfig = {
   baseURL: API_URL,
   isProduction: ENVIRONMENT === 'production',
+  timeout: REQUEST_TIMEOUT,
+  maxRetries: MAX_RETRY_ATTEMPTS,
   
   async getHeaders() {
     try {
@@ -17,11 +23,13 @@ export const apiConfig = {
       return {
         'Content-Type': 'application/json',
         'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '',
+        'X-Requested-With': 'XMLHttpRequest'
       };
     } catch (error) {
       console.error("Erreur lors de la récupération de la session:", error);
       return {
         'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
       };
     }
   },
@@ -68,11 +76,15 @@ export const sanitizeForLogs = (data: any): any => {
   return sanitized;
 };
 
-// Fonction pour envoyer des requêtes API sécurisées
+// Fonction pour attendre un délai spécifié
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Fonction pour envoyer des requêtes API sécurisées avec retry
 export const secureApiRequest = async <T>(
   endpoint: string, 
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-  data?: any
+  data?: any,
+  retryCount = 0
 ): Promise<T> => {
   try {
     const headers = await apiConfig.getHeaders();
@@ -81,6 +93,7 @@ export const secureApiRequest = async <T>(
     const options: RequestInit = {
       method,
       headers,
+      signal: AbortSignal.timeout(apiConfig.timeout), // Ajouter un timeout à la requête
       ...(method !== 'GET' && data ? { body: JSON.stringify(data) } : {})
     };
     
@@ -96,6 +109,15 @@ export const secureApiRequest = async <T>(
     const response = await fetch(url, options);
     
     if (!response.ok) {
+      // Gérer les erreurs CORS ou de réseau
+      if (response.status === 0 || response.status === 504) {
+        if (retryCount < apiConfig.maxRetries) {
+          console.warn(`Retry ${retryCount + 1}/${apiConfig.maxRetries} for ${endpoint} due to network error`);
+          await delay(RETRY_DELAY * (retryCount + 1)); // Attente exponentielle
+          return secureApiRequest(endpoint, method, data, retryCount + 1);
+        }
+      }
+      
       // Tenter de récupérer des informations d'erreur JSON
       try {
         const errorData = await response.json();
@@ -109,6 +131,16 @@ export const secureApiRequest = async <T>(
     
     return await response.json();
   } catch (error: any) {
+    // Gérer les erreurs de timeout
+    if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+      if (retryCount < apiConfig.maxRetries) {
+        console.warn(`Retry ${retryCount + 1}/${apiConfig.maxRetries} for ${endpoint} due to timeout`);
+        await delay(RETRY_DELAY * (retryCount + 1));
+        return secureApiRequest(endpoint, method, data, retryCount + 1);
+      }
+      throw new Error(`Request to ${endpoint} timed out after ${apiConfig.timeout/1000} seconds`);
+    }
+    
     console.error(`Error in API request to ${endpoint}:`, error.message);
     throw error;
   }
