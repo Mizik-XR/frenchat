@@ -67,6 +67,10 @@ export function MainLayout() {
     }
   };
 
+  const handleRenameConversation = (params: { id: string, title: string }) => {
+    updateConversation(params);
+  };
+
   return (
     <div className="flex h-screen">
       <Sidebar 
@@ -74,7 +78,7 @@ export function MainLayout() {
         currentConversation={currentConversation}
         onSelectConversation={setCurrentConversationId}
         onCreateNewConversation={handleCreateNewConversation}
-        onRenameConversation={updateConversation}
+        onRenameConversation={handleRenameConversation}
         onDeleteConversation={deleteConversation}
       />
       <ChatContainer 
