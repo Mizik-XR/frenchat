@@ -3,6 +3,10 @@ import { Session, User } from "@supabase/supabase-js";
 import { handleProfileAndConfig, handleUserRedirection, checkRouteProtection, isPublicPagePath, isAuthPagePath } from "./sessionHelpers";
 import { useNavigationHelpers } from "./sessionHelpers";
 import { toast } from "sonner";
+import { useCallback } from "react";
+import { supabase, APP_STATE } from "@/integrations/supabase/client";
+import { useNavigate, useLocation } from "react-router-dom";
+import { PROTECTED_ROUTES } from "./authConstants";
 
 /**
  * Gère la récupération du profil et des configurations de l'utilisateur lors de la connexion
@@ -118,4 +122,112 @@ export const handleAuthStateChange = async (
     default:
       break;
   }
+};
+
+/**
+ * Hook personnalisé pour gérer les changements d'état d'authentification
+ */
+export const useAuthStateChangeHandler = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const navigationHelpers = useNavigationHelpers();
+  const isAuthPage = isAuthPagePath(location.pathname);
+
+  return useCallback(async (event: string, session: Session | null) => {
+    if (APP_STATE.isOfflineMode) {
+      console.info("Auth state change ignored in offline mode");
+      return null;
+    }
+
+    let user = null;
+    try {
+      let needsConfig = false;
+      let isFirstLogin = false;
+
+      // Intercepter les événements de déconnexion pour gérer les redirection
+      if (event === 'SIGNED_OUT' && !isPublicPagePath(location.pathname)) {
+        navigate('/auth', { replace: true, state: { from: location.pathname } });
+      }
+
+      // Gérer les événements de connexion pour vérifier le profil et configurations
+      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+        // Vérifier le profil et configuration
+        const result = await handleProfileAndConfig(session.user.id);
+        needsConfig = result.needsConfig;
+        isFirstLogin = result.isFirstLogin;
+        user = session.user;
+
+        // Gérer la redirection si nécessaire
+        if (isAuthPage) {
+          handleUserRedirection(isAuthPage, needsConfig, isFirstLogin, navigationHelpers);
+        }
+      }
+
+      return { user, needsConfig, isFirstLogin };
+    } catch (error) {
+      console.error("Error handling auth state change:", error);
+      toast.error("Une erreur est survenue lors du traitement de votre authentification");
+      return null;
+    }
+  }, [navigate, location.pathname, navigationHelpers]);
+};
+
+/**
+ * Hook personnalisé pour vérifier la session initiale
+ */
+export const useInitialSessionCheck = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const navigationHelpers = useNavigationHelpers();
+
+  return useCallback(async () => {
+    // En mode hors ligne, ignorer la vérification
+    if (APP_STATE.isOfflineMode) {
+      console.info("Initial session check skipped in offline mode");
+      
+      // Rediriger depuis les routes protégées en mode hors ligne
+      if (PROTECTED_ROUTES.some(route => location.pathname.startsWith(route))) {
+        navigate('/', { replace: true });
+      }
+      
+      return null;
+    }
+
+    try {
+      if (!supabase) {
+        console.error("Supabase client not available");
+        throw new Error("Client Supabase non disponible");
+      }
+
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error("Error retrieving session:", error);
+        throw error;
+      }
+
+      // Si l'utilisateur est connecté, vérifier que la route est accessible
+      if (data.session) {
+        await checkRouteProtection(data.session, navigationHelpers);
+      }
+
+      return data.session;
+    } catch (error: any) {
+      console.error("Error during initial session check:", error);
+      
+      // Si c'est une erreur réseau, activer le mode hors ligne
+      if (error.message?.includes('Failed to fetch') || 
+          error.message?.includes('Network Error') ||
+          error.message?.includes('network') ||
+          error.message?.includes('timeout')) {
+        console.warn("Network error detected, enabling offline mode");
+        APP_STATE.setOfflineMode(true);
+        toast.error("Mode hors ligne activé en raison de problèmes de connexion");
+      } else {
+        toast.error("Erreur de vérification de session: " + error.message);
+      }
+      
+      return null;
+    }
+  }, [navigate, location.pathname, navigationHelpers]);
 };

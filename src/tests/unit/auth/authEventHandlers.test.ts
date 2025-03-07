@@ -11,6 +11,9 @@ describe("authEventHandlers", () => {
       useLocation: vi.fn().mockReturnValue({
         pathname: "/test",
         search: "?mode=cloud&client=true",
+        state: {},
+        hash: "",
+        key: "default"
       }),
     }));
   });
@@ -27,6 +30,9 @@ describe("authEventHandlers", () => {
         useLocation: vi.fn().mockReturnValue({
           pathname: "/auth",
           search: "",
+          state: {},
+          hash: "",
+          key: "default"
         }),
       }));
 
@@ -56,6 +62,9 @@ describe("authEventHandlers", () => {
         useLocation: vi.fn().mockReturnValue({
           pathname: "/chat", // Protected route
           search: "",
+          state: {},
+          hash: "",
+          key: "default"
         }),
       }));
 
@@ -131,6 +140,9 @@ describe("authEventHandlers", () => {
         useLocation: vi.fn().mockReturnValue({
           pathname: "/chat", // Protected route
           search: "",
+          state: {},
+          hash: "",
+          key: "default"
         }),
       }));
       
