@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { LLMProviderType } from "@/types/config";
@@ -13,6 +14,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { OllamaDetector } from "./components/OllamaDetector";
+import { isLocalAIEnvironmentCompatible } from "@/utils/environment/localAIDetection";
 
 interface LocalAIConfigProps {
   modelPath: string;
@@ -37,24 +40,11 @@ export const LocalAIConfig = ({
   const [showPathWizard, setShowPathWizard] = useState(false);
   const { capabilities } = useSystemCapabilities();
   const [isOllamaDetected, setIsOllamaDetected] = useState(false);
+  const [isLocalCompatible, setIsLocalCompatible] = useState(true);
   
   useEffect(() => {
-    const checkOllama = async () => {
-      try {
-        const response = await fetch('http://localhost:11434/api/version', { 
-          signal: AbortSignal.timeout(2000) 
-        });
-        setIsOllamaDetected(response.ok);
-        
-        if (response.ok && provider !== 'ollama') {
-          onProviderChange('ollama');
-        }
-      } catch (e) {
-        setIsOllamaDetected(false);
-      }
-    };
-    
-    checkOllama();
+    // Vérifier si l'environnement est compatible avec l'IA locale
+    setIsLocalCompatible(isLocalAIEnvironmentCompatible());
   }, []);
 
   useEffect(() => {
@@ -113,6 +103,18 @@ export const LocalAIConfig = ({
     setCloudSelectedModel(modelId);
   };
 
+  const handleOllamaDetected = (detected: boolean) => {
+    setIsOllamaDetected(detected);
+    if (detected && provider !== 'ollama') {
+      setLocalSelectedModel("ollama");
+    }
+  };
+
+  const handleConfigureOllama = () => {
+    onProviderChange('ollama');
+    alert("Configuration avec Ollama terminée! L'application utilisera maintenant Ollama pour l'IA locale.");
+  };
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <Alert className="bg-purple-50 border-purple-200 shadow-sm">
@@ -127,6 +129,21 @@ export const LocalAIConfig = ({
           </AlertDescription>
         </div>
       </Alert>
+
+      {!isLocalCompatible && (
+        <Alert className="bg-amber-50 border-amber-200">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-amber-700 mt-0.5 flex-shrink-0" />
+            <AlertDescription className="text-amber-800">
+              <h3 className="font-medium mb-1">Mode IA locale limité</h3>
+              <p className="text-sm">
+                Vous utilisez l'application en mode cloud. Pour utiliser l'IA locale, 
+                vous devez accéder à l'application depuis votre navigateur local et installer Ollama.
+              </p>
+            </AlertDescription>
+          </div>
+        </Alert>
+      )}
 
       <Card className="border-purple-200 shadow-sm overflow-visible">
         <CardHeader className="bg-purple-50 border-b border-purple-100 pb-3">
@@ -154,6 +171,7 @@ export const LocalAIConfig = ({
                 checked={mode === "local"} 
                 onCheckedChange={(checked) => handleModeChange(checked ? "local" : "cloud")}
                 className="data-[state=checked]:bg-green-600"
+                disabled={!isLocalCompatible}
               />
             </div>
 
@@ -177,37 +195,10 @@ export const LocalAIConfig = ({
         </CardContent>
       </Card>
 
-      {isOllamaDetected && (
-        <Card className="border-green-200 shadow-sm bg-green-50">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600 mt-1 flex-shrink-0" />
-              <div className="flex-1">
-                <h4 className="text-base font-medium text-green-800 mb-1">
-                  Ollama détecté sur votre système
-                </h4>
-                <p className="text-sm text-gray-600 mb-3">
-                  Ollama est installé et fonctionne sur votre machine. C'est la méthode recommandée pour utiliser l'IA locale.
-                </p>
-                <Button
-                  variant="outline" 
-                  size="sm"
-                  className="border-green-300 text-green-700 hover:bg-green-50"
-                  onClick={() => {
-                    localStorage.setItem('localProvider', 'ollama');
-                    localStorage.setItem('localAIUrl', 'http://localhost:11434');
-                    localStorage.setItem('aiServiceType', 'local');
-                    onProviderChange('ollama');
-                    alert("Configuration avec Ollama terminée! L'application utilisera maintenant Ollama pour l'IA locale.");
-                  }}
-                >
-                  Configurer automatiquement avec Ollama
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <OllamaDetector 
+        onOllamaDetected={handleOllamaDetected} 
+        onConfigureOllama={handleConfigureOllama}
+      />
 
       <TabsContent value={mode} forceMount className="mt-0">
         {mode === "local" ? (
@@ -241,13 +232,13 @@ export const LocalAIConfig = ({
                           Ollama gère automatiquement les modèles locaux. Vous n'avez pas besoin de spécifier un chemin.
                         </p>
                         <a 
-                          href="https://ollama.com/library" 
+                          href="https://ollama.ai/library" 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                          className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
                         >
                           Voir la bibliothèque de modèles Ollama
-                          <ExternalLink className="h-3 w-3" />
+                          <ExternalLink className="h-3 w-3 ml-1" />
                         </a>
                       </div>
                     </div>
