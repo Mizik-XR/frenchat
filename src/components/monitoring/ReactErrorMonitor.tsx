@@ -3,6 +3,14 @@ import { useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { APP_STATE } from '@/integrations/supabase/client';
 
+// Interface pour les détails de connexion pour TypeScript
+interface ConnectionInfo {
+  effectiveType?: string;
+  downlink?: number;
+  rtt?: number;
+  saveData?: boolean;
+}
+
 /**
  * Composant qui surveille et capture les erreurs React non gérées
  * et les affiche de manière non intrusive à l'utilisateur
@@ -41,8 +49,21 @@ export const ReactErrorMonitor = () => {
 
     // Log des informations du navigateur pour diagnostics
     const logBrowserInfo = () => {
-      const connection = typeof navigator !== 'undefined' && 'connection' in navigator ? 
-        (navigator as any).connection : null;
+      // Récupération sécurisée des informations de connexion
+      let connectionInfo: ConnectionInfo = {};
+      
+      // Vérifier si navigator.connection existe avant d'y accéder
+      if (typeof navigator !== 'undefined' && 'connection' in navigator) {
+        const connection = (navigator as any).connection;
+        if (connection) {
+          connectionInfo = {
+            effectiveType: connection.effectiveType,
+            downlink: connection.downlink,
+            rtt: connection.rtt,
+            saveData: connection.saveData
+          };
+        }
+      }
         
       const browserInfo = {
         userAgent: navigator.userAgent,
@@ -53,11 +74,7 @@ export const ReactErrorMonitor = () => {
           width: window.innerWidth,
           height: window.innerHeight
         },
-        connection: connection ? {
-          type: connection.effectiveType,
-          downlink: connection.downlink,
-          rtt: connection.rtt,
-        } : 'Non disponible'
+        connection: connectionInfo
       };
       
       logToNetlify("Informations du navigateur", browserInfo);

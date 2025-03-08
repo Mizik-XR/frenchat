@@ -1,4 +1,3 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -152,6 +151,39 @@ const copyRedirectsAndHeaders = (): PluginOption => {
   };
 };
 
+// Nouveau plugin pour le post-traitement des builds Netlify
+const postBuildProcessing = (): PluginOption => {
+  return {
+    name: 'post-build-processing',
+    closeBundle() {
+      console.log('⚙️ Exécution du post-traitement du build...');
+      
+      // Ajouter des variables d'environnement de build
+      const indexPath = path.resolve('./dist/index.html');
+      if (fs.existsSync(indexPath)) {
+        let content = fs.readFileSync(indexPath, 'utf-8');
+        
+        // Injecter des variables de build dans une balise script pour la détection côté client
+        const buildInfo = `
+        <script>
+          window.BUILD_INFO = {
+            buildTime: "${new Date().toISOString()}",
+            version: "${process.env.npm_package_version || '1.0.0'}",
+            environment: "${process.env.NODE_ENV || 'production'}",
+            netlify: true
+          };
+        </script>`;
+        
+        // Insérer avant la balise de fermeture </head>
+        content = content.replace('</head>', `${buildInfo}\n</head>`);
+        fs.writeFileSync(indexPath, content);
+        
+        console.log('✅ Informations de build injectées dans index.html');
+      }
+    }
+  };
+};
+
 // Utiliser defineConfig pour typer correctement la configuration
 export default defineConfig(({ mode }) => ({
   server: {
@@ -174,16 +206,17 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' ? componentTagger() : undefined,
     copyRedirectsAndHeaders(), 
     ensureRelativePaths(), 
-    ensureLovableScript()
+    ensureLovableScript(),
+    postBuildProcessing()
   ].filter(Boolean) as PluginOption[],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-    },
+    }
   },
   build: {
-    minify: 'esbuild',
-    target: 'es2015',
+    minify: 'terser',
+    sourcemap: true, // Activer les sourcemaps pour le débogage en production
     outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
@@ -218,6 +251,9 @@ export default defineConfig(({ mode }) => ({
   assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg'],
   define: {
     __LOVABLE_MODE__: JSON.stringify(mode),
+    'process.env.NODE_ENV': JSON.stringify(mode),
+    'import.meta.env.VITE_BUILD_TIME': JSON.stringify(new Date().toISOString()),
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(process.env.npm_package_version || '1.0.0')
   },
   base: './', // Fondamental pour les chemins relatifs
 }));

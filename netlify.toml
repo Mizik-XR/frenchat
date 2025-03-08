@@ -2,7 +2,7 @@
 # Configuration de build Netlify pour FileChat
 [build]
   publish = "dist"
-  command = "npm run build && node scripts/ensure-netlify-build.js"
+  command = "npm run build && node scripts/post-build.js"
   ignore_command = "git diff --quiet HEAD^ HEAD -- . ':(exclude)_redirects'"
 
 # Configuration des variables d'environnement par défaut
@@ -22,6 +22,9 @@
   DEBUG = "vite:*,netlify:*"
   NETLIFY_VERBOSE = "true"
   NETLIFY_DEBUG = "true"
+  # Informations de build
+  VITE_APP_VERSION = "${npm_package_version}"
+  VITE_BUILD_TIME = "${COMMIT_REF}"
 
 # Configuration des redirections pour le routage SPA
 [[redirects]]
