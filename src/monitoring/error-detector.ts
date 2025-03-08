@@ -1,135 +1,140 @@
 
+import { LogLevel, ErrorType, BrowserInfo, ConnectionInfo } from './types';
 import { ErrorLogger } from './logger';
-import { ErrorType, LogLevel, BrowserInfo } from './types';
-import { APP_STATE } from '@/integrations/supabase/client';
 
 /**
- * Service de détection des erreurs pour l'application
- * Analyse les erreurs et les catégorise pour un traitement approprié
+ * Service de détection et d'analyse des erreurs
+ * Identifie les types d'erreurs et suggère des actions correctives
  */
 export class ErrorDetector {
-  private static readonly ERROR_FILTER_ENABLED = import.meta.env.VITE_ENABLE_ERROR_FILTERING === 'true';
-
   /**
-   * Détecte si une erreur est liée au réseau
+   * Détecte le type d'erreur à partir de son message et sa stack trace
    */
-  static isNetworkError(error: any): boolean {
-    if (!error || !error.message) return false;
+  static detectErrorType(error: Error): ErrorType {
+    const message = error.message || '';
+    const stack = error.stack || '';
     
-    const message = typeof error.message === 'string' 
-      ? error.message.toLowerCase() 
-      : String(error).toLowerCase();
-    
-    return message.includes('network') || 
-           message.includes('fetch') ||
-           message.includes('connection') ||
-           message.includes('cors') ||
-           message.includes('failed to load') ||
-           message.includes('timeout') ||
-           message.includes('econnrefused') ||
-           message.includes('socket');
-  }
-
-  /**
-   * Détecte si une erreur est liée au chargement de modules
-   */
-  static isModuleLoadingError(error: any): boolean {
-    if (!error || !error.message) return false;
-    
-    const message = typeof error.message === 'string' 
-      ? error.message.toLowerCase() 
-      : String(error).toLowerCase();
-    
-    return message.includes('cannot access') ||
-           message.includes('before initialization') ||
-           message.includes('is not defined') ||
-           message.includes('failed to load module') ||
-           message.includes('unexpected token') ||
-           message.includes('cannot find module');
-  }
-
-  /**
-   * Détecte si une erreur est liée au rendu React
-   */
-  static isReactError(error: any): boolean {
-    if (!error || !error.message) return false;
-    
-    const message = typeof error.message === 'string' 
-      ? error.message.toLowerCase() 
-      : String(error).toLowerCase();
-    
-    return message.includes('react') ||
-           message.includes('useeffect') ||
-           message.includes('usestate') ||
-           message.includes('uselayouteffect') ||
-           message.includes('unstable_schedulecallback') ||
-           message.includes('createelement') ||
-           message.includes('invalid hook call') ||
-           message.includes('cannot update a component') ||
-           message.includes('maximum update depth exceeded');
-  }
-
-  /**
-   * Détecte si une erreur est liée au chargement de ressources
-   */
-  static isResourceLoadingError(event: Event): boolean {
-    if (!(event.target instanceof HTMLElement)) return false;
-    
-    const tagName = event.target.tagName.toLowerCase();
-    return ['img', 'script', 'link', 'audio', 'video'].includes(tagName);
-  }
-
-  /**
-   * Détecte le type d'erreur en fonction de ses caractéristiques
-   */
-  static detectErrorType(error: any): ErrorType {
     if (this.isNetworkError(error)) {
       return ErrorType.NETWORK;
     }
     
-    if (this.isModuleLoadingError(error)) {
+    if (message.includes('Loading chunk') || message.includes('Loading CSS chunk') || message.includes('script error')) {
+      return ErrorType.RESOURCE_LOADING;
+    }
+    
+    if (message.includes('Cannot access') || message.includes('before initialization') || stack.includes('webpack')) {
       return ErrorType.MODULE_LOADING;
     }
     
-    if (this.isReactError(error)) {
+    if (message.includes('React') || message.includes('useEffect') || message.includes('useState') || 
+        message.includes('hook') || stack.includes('react-dom')) {
       return ErrorType.REACT_RENDERING;
+    }
+    
+    if (message.includes('promise') || message.includes('then') || message.includes('async')) {
+      return ErrorType.PROMISE_REJECTION;
+    }
+    
+    if (message.includes('API') || message.includes('fetch') || message.includes('request') || 
+        message.includes('response') || message.includes('status code')) {
+      return ErrorType.API_ERROR;
     }
     
     return ErrorType.UNKNOWN;
   }
 
   /**
-   * Filtre les erreurs non critiques si le filtrage est activé
+   * Vérifie si une erreur est liée au réseau
    */
-  static shouldProcessError(error: any, errorType: ErrorType): boolean {
-    if (!this.ERROR_FILTER_ENABLED) return true;
+  static isNetworkError(error: Error | any): boolean {
+    const message = typeof error === 'string' ? error : error?.message || '';
     
-    // Ignorer certaines erreurs non critiques
-    if (errorType === ErrorType.NETWORK) {
-      const message = String(error.message || error).toLowerCase();
-      
-      // Ignorer les requêtes annulées
-      if (message.includes('aborted') || message.includes('canceled')) {
-        return false;
-      }
-      
-      // Ignorer les erreurs 404 pour les ressources non critiques
-      if (message.includes('404') && message.includes('.png')) {
-        return false;
-      }
-    }
-    
-    return true;
+    return message.includes('network') || 
+           message.includes('fetch') || 
+           message.includes('Network') || 
+           message.includes('ECONNREFUSED') || 
+           message.includes('Failed to fetch') || 
+           message.includes('ERR_CONNECTION') || 
+           message.includes('ERR_INTERNET_DISCONNECTED');
   }
 
   /**
-   * Récupère les informations du navigateur pour le diagnostic
+   * Vérifie si une erreur concerne le chargement d'une ressource externe
+   */
+  static isResourceLoadingError(event: Event): boolean {
+    const target = event.target as HTMLElement;
+    if (!target) return false;
+    
+    const tagName = target.tagName?.toLowerCase();
+    return tagName === 'link' || tagName === 'script' || tagName === 'img' || tagName === 'video' || tagName === 'audio';
+  }
+
+  /**
+   * Traite une erreur détectée et prend des mesures correctives si possible
+   */
+  static processError(error: Error): void {
+    const errorType = this.detectErrorType(error);
+    
+    // Journaliser l'erreur avec son type
+    ErrorLogger.log(LogLevel.ERROR, `Erreur détectée de type: ${errorType}`, { 
+      errorType, 
+      message: error.message, 
+      stack: error.stack 
+    });
+    
+    // Actions spécifiques selon le type d'erreur
+    switch (errorType) {
+      case ErrorType.NETWORK:
+        // Vérifier la connectivité et potentiellement activer le mode hors ligne
+        this.checkConnectivity();
+        break;
+        
+      case ErrorType.RESOURCE_LOADING:
+        // Tenter de recharger la ressource ou suggérer un rafraîchissement de la page
+        this.suggestPageRefresh();
+        break;
+        
+      case ErrorType.MODULE_LOADING:
+        // Erreur critique de chargement de module - suggérer un hard refresh
+        this.suggestCacheClearing();
+        break;
+        
+      default:
+        // Pas d'action spécifique pour les autres types d'erreurs
+        break;
+    }
+  }
+
+  /**
+   * Vérifie l'état de la connexion Internet
+   */
+  private static checkConnectivity(): boolean {
+    const isOnline = navigator.onLine;
+    ErrorLogger.log(LogLevel.INFO, `État de la connexion: ${isOnline ? 'en ligne' : 'hors ligne'}`);
+    return isOnline;
+  }
+
+  /**
+   * Suggère un rafraîchissement de la page
+   */
+  private static suggestPageRefresh(): void {
+    console.info('Rafraîchissement de la page recommandé pour résoudre le problème de chargement de ressource');
+  }
+
+  /**
+   * Suggère un nettoyage du cache
+   */
+  private static suggestCacheClearing(): void {
+    console.warn('Problème de chargement de module. Essayez de vider le cache et les cookies, puis rechargez la page');
+  }
+
+  /**
+   * Récupère les informations de l'environnement du navigateur
    */
   static getBrowserInfo(): BrowserInfo {
     // Récupération sécurisée des informations de connexion
     let connectionInfo: ConnectionInfo = {};
     
-    // Vérifier si navigator.connection existe avant d'y accéder
     if (typeof navigator !== 'undefined' && 'connection' in navigator) {
       const connection = (navigator as any).connection;
       if (connection) {
@@ -141,10 +146,10 @@ export class ErrorDetector {
         };
       }
     }
-      
+
     return {
       userAgent: navigator.userAgent,
-      platform: navigator.platform, 
+      platform: navigator.platform,
       language: navigator.language,
       cookiesEnabled: navigator.cookieEnabled,
       viewport: {
@@ -153,62 +158,5 @@ export class ErrorDetector {
       },
       connection: connectionInfo
     };
-  }
-
-  /**
-   * Traite une erreur globale et détermine la réponse appropriée
-   */
-  static processError(error: any): void {
-    // Détection du type d'erreur
-    const errorType = this.detectErrorType(error);
-    
-    // Vérifier si l'erreur doit être traitée
-    if (!this.shouldProcessError(error, errorType)) {
-      ErrorLogger.log(LogLevel.DEBUG, `Erreur filtrée de type ${errorType}`, error);
-      return;
-    }
-    
-    // Journalisation de l'erreur avec le niveau approprié
-    const logLevel = errorType === ErrorType.MODULE_LOADING || 
-                    errorType === ErrorType.REACT_RENDERING 
-                      ? LogLevel.CRITICAL 
-                      : LogLevel.ERROR;
-    
-    ErrorLogger.log(logLevel, `Erreur de type ${errorType} détectée`, error);
-    
-    // Actions spécifiques selon le type d'erreur
-    switch (errorType) {
-      case ErrorType.NETWORK:
-        // Activer le mode hors ligne en cas d'erreur réseau
-        console.warn('Problème de connexion détecté, activation du mode hors ligne...');
-        if (APP_STATE && typeof APP_STATE.setOfflineMode === 'function') {
-          APP_STATE.setOfflineMode(true);
-        }
-        break;
-      
-      case ErrorType.MODULE_LOADING:
-        // Journal critique pour les erreurs de chargement de modules
-        ErrorLogger.log(
-          LogLevel.CRITICAL, 
-          "ERREUR CRITIQUE: Problème de chargement de module détecté", 
-          {
-            message: error.message,
-            location: error.filename || error.fileName,
-            stackTrace: error.stack
-          }
-        );
-        break;
-      
-      case ErrorType.REACT_RENDERING:
-        // Activer le mode fallback pour les erreurs de rendu React
-        console.warn('Erreur React critique détectée, mise en mode fallback...');
-        ErrorLogger.log(
-          LogLevel.CRITICAL, 
-          "ERREUR CRITIQUE: Erreur de rendu React détectée", 
-          error
-        );
-        APP_STATE.isOfflineMode = true;
-        break;
-    }
   }
 }

@@ -116,9 +116,9 @@ export const ReactErrorMonitor = () => {
   // Fonction pour exposer les méthodes de journalisation à l'objet window
   useEffect(() => {
     // Exposer les fonctions de gestion des journaux
-    window.getFileCharErrorLogs = ErrorLogger.getLogs;
-    window.clearFileCharErrorLogs = ErrorLogger.clearLogs;
-    window.printFileCharErrorLogs = ErrorLogger.printLogs;
+    window.getFileCharErrorLogs = () => ErrorLogger.getLogs();
+    window.clearFileCharErrorLogs = () => ErrorLogger.clearLogs();
+    window.printFileCharErrorLogs = () => ErrorLogger.printLogs();
     
     return () => {
       // Nettoyer les fonctions exposées

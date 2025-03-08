@@ -7,8 +7,9 @@ export * from './ReactErrorMonitor';
 export * from './types';
 
 // Pour faciliter l'importation dans d'autres modules
-import { ErrorLogger, LogLevel } from './logger';
-import { ErrorDetector, ErrorType } from './types';
+import { ErrorLogger } from './logger';
+import { LogLevel, ErrorType } from './types';
+import { ErrorDetector } from './error-detector';
 import { NotificationManager } from './notification-manager';
 
 // Créer un objet pour l'API de monitoring
