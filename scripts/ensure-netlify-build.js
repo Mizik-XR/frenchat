@@ -1,139 +1,151 @@
 
 /**
- * Script de vérification de configuration pour Netlify
- * Ce script vérifie que la configuration est correcte pour un déploiement Netlify
+ * Script de vérification de la configuration Netlify
+ * Vérifie que tous les fichiers nécessaires sont présents
+ * et que la configuration est correcte pour le déploiement.
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// Configuration de base
-const requiredFiles = {
-  'vite.config.ts': 'Configuration de Vite',
-  'index.html': 'Page d\'accueil',
-  '_redirects': 'Règles de redirection Netlify',
-};
+// Liste des fichiers essentiels pour le déploiement
+const REQUIRED_FILES = [
+  { path: '_redirects', message: 'Fichier _redirects pour les règles de redirection Netlify' },
+  { path: 'netlify.toml', message: 'Configuration Netlify (netlify.toml)' },
+  { path: 'vite.config.ts', message: 'Configuration Vite' },
+];
 
-// Variables pour le suivi des erreurs
-let errors = 0;
-let warnings = 0;
-
-// Fonction d'aide pour le logging
-function log(message, type = 'info') {
-  const colors = {
-    info: '\x1b[36m', // Cyan
-    warning: '\x1b[33m', // Jaune
-    error: '\x1b[31m', // Rouge
-    success: '\x1b[32m', // Vert
-    reset: '\x1b[0m'  // Réinitialiser
-  };
-
-  const prefix = {
-    info: '[INFO]',
-    warning: '[AVERTISSEMENT]',
-    error: '[ERREUR]',
-    success: '[OK]'
-  };
-
-  console.log(`${colors[type]}${prefix[type]} ${message}${colors.reset}`);
-  
-  if (type === 'error') errors++;
-  if (type === 'warning') warnings++;
-}
-
-// Fonction principale de vérification
-async function checkNetlifyConfiguration() {
-  console.log('=== Vérification de la configuration Netlify ===');
-  
-  // 1. Vérification des fichiers requis
-  log('Vérification des fichiers requis...');
-  Object.entries(requiredFiles).forEach(([file, description]) => {
-    if (!fs.existsSync(file)) {
-      log(`Fichier manquant: ${file} (${description})`, 'error');
-    } else {
-      log(`Fichier trouvé: ${file} (${description})`, 'success');
-    }
-  });
-  
-  // 2. Vérification de vite.config.ts pour base: './'
-  if (fs.existsSync('vite.config.ts')) {
-    const viteConfig = fs.readFileSync('vite.config.ts', 'utf-8');
-    if (!viteConfig.includes("base: './'")) {
-      log("La configuration 'base: \"./\"' est manquante dans vite.config.ts. Ceci est nécessaire pour les chemins relatifs.", 'warning');
-    } else {
-      log("Configuration 'base' correcte dans vite.config.ts", 'success');
-    }
-  }
-  
-  // 3. Vérification du contenu de _redirects
-  if (fs.existsSync('_redirects')) {
-    const redirects = fs.readFileSync('_redirects', 'utf-8');
-    if (!redirects.includes('/* /index.html 200')) {
-      log("La règle '/* /index.html 200' est manquante dans _redirects", 'warning');
-    } else {
-      log("Règle de redirection SPA correctement configurée", 'success');
-    }
-  }
-  
-  // 4. Vérification de netlify.toml
-  if (fs.existsSync('netlify.toml')) {
-    log("netlify.toml présent, vérification des paramètres...");
-    const netlifyToml = fs.readFileSync('netlify.toml', 'utf-8');
-    
-    if (!netlifyToml.includes('[build]')) {
-      log("La section [build] est manquante dans netlify.toml", 'warning');
-    }
-    
-    if (!netlifyToml.includes('publish = "dist"')) {
-      log("'publish = \"dist\"' est manquant dans netlify.toml", 'warning');
-    }
-  } else {
-    log("Fichier netlify.toml non trouvé. Recommandé pour les configurations avancées.", 'info');
-  }
-  
-  // 5. Vérification de package.json
-  if (fs.existsSync('package.json')) {
-    try {
-      const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
-      
-      if (!packageJson.scripts || !packageJson.scripts.build) {
-        log("Script de build manquant dans package.json", 'error');
-      } else {
-        log("Script de build correctement configuré", 'success');
-      }
-      
-      // Vérification des dépendances critiques
-      const criticalDeps = ['vite', 'react', 'react-dom'];
-      criticalDeps.forEach(dep => {
-        if (
-          (!packageJson.dependencies || !packageJson.dependencies[dep]) && 
-          (!packageJson.devDependencies || !packageJson.devDependencies[dep])
-        ) {
-          log(`Dépendance critique manquante: ${dep}`, 'warning');
+// Configurations à vérifier dans vite.config.ts
+const VITE_CONFIG_CHECKS = [
+  {
+    regex: /base\s*:\s*['"]\.\//,
+    message: "La propriété 'base: \"./\"' qui est essentielle pour les chemins relatifs",
+    fix: (content) => {
+      if (content.includes('defineConfig(')) {
+        // Si la configuration utilise defineConfig
+        if (content.includes('base:')) {
+          // La propriété base existe, mais n'est pas correcte
+          return content.replace(/base\s*:\s*['"][^'"]*['"]/g, 'base: "./"');
+        } else {
+          // Ajouter la propriété base
+          return content.replace(/defineConfig\(\s*\{/g, 'defineConfig({\n  base: "./",');
         }
-      });
-      
-    } catch (err) {
-      log(`Erreur lors de l'analyse de package.json: ${err.message}`, 'error');
+      }
+      // Configuration non standard, ne pas modifier
+      return content;
+    }
+  },
+  {
+    regex: /copyPublicDir\s*:\s*true/,
+    message: "L'option 'copyPublicDir: true' pour copier les fichiers publics",
+    fix: (content) => {
+      if (content.includes('build:')) {
+        if (content.includes('copyPublicDir:')) {
+          return content.replace(/copyPublicDir\s*:\s*(false|[^,\n\r}]*)/g, 'copyPublicDir: true');
+        } else {
+          return content.replace(/build\s*:\s*\{/g, 'build: {\n    copyPublicDir: true,');
+        }
+      }
+      return content;
     }
   }
-  
-  // Résumé final
-  console.log('\n=== Résultat de la vérification ===');
-  if (errors > 0) {
-    log(`${errors} erreur(s) trouvée(s). Le déploiement pourrait échouer.`, 'error');
-  } else if (warnings > 0) {
-    log(`${warnings} avertissement(s) trouvé(s). Le déploiement devrait fonctionner, mais des améliorations sont possibles.`, 'warning');
-  } else {
-    log("Aucun problème détecté. La configuration semble correcte!", 'success');
+];
+
+// Vérification du fichier _redirects
+function checkRedirects() {
+  try {
+    if (!fs.existsSync('_redirects')) {
+      console.log('⚠️ Fichier _redirects manquant, création automatique...');
+      fs.writeFileSync('_redirects', '/* /index.html 200\n');
+      console.log('✅ Fichier _redirects créé avec succès.');
+    } else {
+      const content = fs.readFileSync('_redirects', 'utf8');
+      if (!content.includes('/* /index.html 200')) {
+        console.log('⚠️ Règle de redirection SPA manquante dans _redirects, ajout automatique...');
+        fs.appendFileSync('_redirects', '\n/* /index.html 200\n');
+        console.log('✅ Règle de redirection SPA ajoutée au fichier _redirects.');
+      }
+    }
+  } catch (error) {
+    console.error(`❌ Erreur lors de la vérification de _redirects: ${error.message}`);
   }
-  
-  // Retourner un code d'erreur si des erreurs ont été trouvées
-  process.exit(errors > 0 ? 1 : 0);
 }
 
-// Exécuter la vérification
-checkNetlifyConfiguration().catch(err => {
-  log(`Erreur lors de la vérification: ${err.message}`, 'error');
-  process.exit(1);
-});
+// Vérification de la configuration Vite
+function checkViteConfig() {
+  try {
+    if (!fs.existsSync('vite.config.ts') && !fs.existsSync('vite.config.js')) {
+      console.error('❌ Fichier de configuration Vite manquant (vite.config.ts ou vite.config.js).');
+      return false;
+    }
+
+    const configPath = fs.existsSync('vite.config.ts') ? 'vite.config.ts' : 'vite.config.js';
+    let content = fs.readFileSync(configPath, 'utf8');
+    let hasChanges = false;
+
+    // Vérifier chaque élément de configuration
+    for (const check of VITE_CONFIG_CHECKS) {
+      if (!check.regex.test(content)) {
+        console.log(`⚠️ Configuration Vite: ${check.message} est manquante ou incorrecte.`);
+        const newContent = check.fix(content);
+        if (newContent !== content) {
+          content = newContent;
+          hasChanges = true;
+        }
+      }
+    }
+
+    // Appliquer les modifications si nécessaire
+    if (hasChanges) {
+      console.log('📝 Application des corrections à la configuration Vite...');
+      fs.writeFileSync(configPath, content);
+      console.log('✅ Configuration Vite mise à jour avec succès.');
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`❌ Erreur lors de la vérification de la configuration Vite: ${error.message}`);
+    return false;
+  }
+}
+
+// Vérification des fichiers requis
+function checkRequiredFiles() {
+  let allFilesPresent = true;
+
+  for (const file of REQUIRED_FILES) {
+    if (!fs.existsSync(file.path)) {
+      console.log(`⚠️ ${file.message} est manquant (${file.path}).`);
+      allFilesPresent = false;
+    }
+  }
+
+  return allFilesPresent;
+}
+
+// Fonction principale
+function main() {
+  console.log('🔍 Vérification de la configuration pour le déploiement Netlify...');
+  
+  // Vérifier les fichiers requis
+  const filesPresent = checkRequiredFiles();
+  
+  // Vérifier le fichier _redirects
+  checkRedirects();
+  
+  // Vérifier la configuration Vite
+  const viteConfigOk = checkViteConfig();
+  
+  if (filesPresent && viteConfigOk) {
+    console.log('✅ La configuration pour Netlify semble correcte.');
+    return 0;
+  } else {
+    console.log('⚠️ Certains problèmes ont été détectés et corrigés lorsque possible.');
+    console.log('   Veuillez vérifier les messages ci-dessus pour plus de détails.');
+    return 1;
+  }
+}
+
+// Exécution du script
+const exitCode = main();
+process.exit(exitCode);

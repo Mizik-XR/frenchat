@@ -152,5 +152,5 @@ pause >nul
 echo.
 echo Fermeture de FileChat...
 taskkill /F /IM "node.exe" /FI "WINDOWTITLE eq Serveur Web FileChat" >nul 2>nul
-taskkill /F /IM "node.exe" /FI "WINDOWTITLE eq Serveur IA Python" >nul 2>nul
+taskkill /F /IM "python.exe" /FI "WINDOWTITLE eq Serveur IA Python" >nul 2>nul
 exit /b 0

@@ -141,5 +141,6 @@ echo Votre application est prête à être déployée sur Netlify.
 echo Assurez-vous de configurer les variables d'environnement
 echo nécessaires dans l'interface Netlify.
 echo.
-pause
+echo Appuyez sur une touche pour continuer...
+pause >nul
 exit /b 0
