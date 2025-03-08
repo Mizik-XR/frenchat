@@ -22,8 +22,8 @@
   from = "/*" 
   to = "/index.html" 
   status = 200 
-  force = true 
-Commande ECHO désactivée.
+  force = true
+ 
 # Rediriger les API vers les fonctions Netlify 
 [[redirects]] 
   from = "/api/*" 
@@ -66,4 +66,4 @@ Commande ECHO désactivée.
 [[headers]] 
   for = "/assets/*" 
   [headers.values] 
-    Cache-Control = "public, max-age=31536000, immutable" 
+    Cache-Control = "public, max-age=31536000, immutable"
