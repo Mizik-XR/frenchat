@@ -38,6 +38,12 @@ Solutions :
 2. Assurez-vous que tous les scripts externes ont les bonnes balises CORS
 3. Si le problème persiste, essayez de vider le cache du navigateur
 
+### Erreur : Problèmes liés aux plugins Netlify
+Si vous rencontrez des erreurs liées aux plugins Netlify :
+1. Commentez temporairement les sections de plugins dans `netlify.toml`
+2. Utilisez une commande de build simple sans plugins personnalisés
+3. Une fois le déploiement réussi, ajoutez progressivement les plugins si nécessaire
+
 ### Erreur : Problèmes de connexion API
 1. Vérifiez que les variables d'environnement Supabase sont correctement configurées
 2. Assurez-vous que les règles CORS dans `netlify.toml` sont correctes

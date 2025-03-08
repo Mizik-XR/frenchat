@@ -106,15 +106,15 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 # Configuration du plugin de diagnostic
-[[plugins]]
-  package = "@netlify/plugin-lighthouse"
+# [[plugins]]
+#   package = "@netlify/plugin-lighthouse"
 
-# Nouveau plugin pour la gestion des erreurs (fictif - à remplacer par un plugin réel si nécessaire)
-[[plugins]]
-  package = "@netlify/plugin-error-monitoring"
-  [plugins.inputs]
-    errorThreshold = "critical"
-    notifyOnBuild = true
+# Nouveau plugin pour la gestion des erreurs (commenté pour éviter les erreurs de build)
+# [[plugins]]
+#   package = "@netlify/plugin-error-monitoring"
+#   [plugins.inputs]
+#     errorThreshold = "critical"
+#     notifyOnBuild = true
 
 # Activer la journalisation détaillée pour le déploiement
 [dev]
