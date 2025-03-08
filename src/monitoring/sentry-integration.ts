@@ -1,5 +1,6 @@
 
 import * as Sentry from "@sentry/react";
+import { BrowserTracing } from "@sentry/tracing";
 import { ErrorType, LogLevel } from "./types";
 import { ErrorLogger } from "./logger";
 
@@ -8,7 +9,8 @@ import { ErrorLogger } from "./logger";
  */
 export class SentryMonitor {
   private static isInitialized = false;
-  private static DSN = "https://js-de.sentry-cdn.com/9e087d2c1630c52d5873558bbdf14d51.min.js";
+  // DSN provenant du script Sentry de votre compte
+  private static DSN = "https://9e087d2c1630c52d5873558bbdf14d51@o4506892579995648.ingest.sentry.io/4506892582484992";
   
   /**
    * Initialise Sentry avec la configuration adaptée à l'environnement
@@ -22,7 +24,7 @@ export class SentryMonitor {
       if (this.DSN) {
         Sentry.init({
           dsn: this.DSN,
-          integrations: [new Sentry.BrowserTracing()],
+          integrations: [new BrowserTracing()],
           tracesSampleRate: 0.1, // Capture 10% des transactions
           environment: import.meta.env.MODE || 'production',
           
