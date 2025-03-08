@@ -4,41 +4,18 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { ThemeProvider } from './components/ThemeProvider';
-import { ReactErrorMonitor } from '@/components/monitoring/ReactErrorMonitor';
+import { ReactErrorMonitor } from '@/monitoring';
+import { Monitoring, LogLevel } from '@/monitoring';
 import { Toaster } from '@/components/ui/toaster';
 import './index.css';
 
 // Configuration pour la journalisation
-const STARTUP_LOG = [];
 const isNetlify = window.location.hostname.includes('netlify.app');
 const isDevMode = process.env.NODE_ENV === 'development';
 const isCloudMode = import.meta.env.VITE_CLOUD_MODE === 'true';
 
-// Fonction de journalisation
-function logStartup(message, data = null) {
-  const timestamp = new Date().toISOString();
-  const logMessage = `[${timestamp}] [STARTUP] ${message}`;
-  console.log(logMessage);
-  
-  // Ajouter au journal de démarrage
-  STARTUP_LOG.push(logMessage);
-  
-  // Si des données sont fournies, les ajouter également
-  if (data) {
-    const dataString = typeof data === 'object' ? JSON.stringify(data) : String(data);
-    STARTUP_LOG.push(`[DATA] ${dataString}`);
-  }
-
-  // Stocker dans localStorage pour récupération ultérieure
-  try {
-    localStorage.setItem('filechat_startup_log', JSON.stringify(STARTUP_LOG.slice(-100)));
-  } catch (e) {
-    console.warn("Impossible de stocker les journaux dans localStorage", e);
-  }
-}
-
 // Journal des informations de l'environnement
-logStartup("Initialisation de l'application", {
+Monitoring.info("Initialisation de l'application", {
   environment: process.env.NODE_ENV,
   isNetlify,
   isCloudMode,
@@ -47,7 +24,7 @@ logStartup("Initialisation de l'application", {
 });
 
 // Journalisation des informations du navigateur
-logStartup("Informations du navigateur", {
+Monitoring.info("Informations du navigateur", {
   userAgent: navigator.userAgent,
   language: navigator.language,
   platform: navigator.platform,
@@ -64,7 +41,7 @@ window.addEventListener('error', (event) => {
     event.message.includes('is not defined') ||
     event.message.includes('Failed to load module')
   )) {
-    logStartup("ERREUR DE CHARGEMENT DE MODULE DÉTECTÉE", {
+    Monitoring.critical("ERREUR DE CHARGEMENT DE MODULE DÉTECTÉE", {
       message: event.message,
       source: event.filename,
       line: event.lineno,
@@ -89,69 +66,11 @@ window.addEventListener('error', (event) => {
   }
 }, true);
 
-// Fonction de journalisation personnalisée pour la console
-const originalConsoleLog = console.log;
-console.log = function(...args) {
-  // Appel à la fonction d'origine
-  originalConsoleLog.apply(console, args);
-  
-  // Convertir les arguments en chaîne
-  const message = args.map(arg => 
-    typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-  ).join(' ');
-  
-  // Ajouter au journal de démarrage si pertinent
-  if (message.includes('[STARTUP]') || message.includes('Initialisation') || 
-      message.includes('React') || message.includes('rendu')) {
-    STARTUP_LOG.push(message);
-    
-    // Mettre à jour localStorage
-    try {
-      localStorage.setItem('filechat_startup_log', JSON.stringify(STARTUP_LOG.slice(-100)));
-    } catch (e) {
-      // Ignorer les erreurs de stockage
-    }
-  }
-};
-
-// Fonction de journalisation d'erreur personnalisée
-const originalConsoleError = console.error;
-console.error = function(...args) {
-  // Appel à la fonction d'origine
-  originalConsoleError.apply(console, args);
-  
-  // Convertir les arguments en chaîne
-  const message = args.map(arg => 
-    typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-  ).join(' ');
-  
-  // Toujours enregistrer les erreurs
-  logStartup(`[ERROR] ${message}`, null);
-};
-
-// Fonction de journalisation d'avertissement personnalisée
-const originalConsoleWarn = console.warn;
-console.warn = function(...args) {
-  // Appel à la fonction d'origine
-  originalConsoleWarn.apply(console, args);
-  
-  // Convertir les arguments en chaîne
-  const message = args.map(arg => 
-    typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-  ).join(' ');
-  
-  // Enregistrer les avertissements importants
-  if (message.includes('React') || message.includes('rendu') || 
-      message.includes('module') || message.includes('network')) {
-    logStartup(`[WARN] ${message}`, null);
-  }
-};
-
 // Lancer le rendu de l'application avec récupération d'erreur
 try {
-  logStartup("Début du rendu de l'application", null);
+  Monitoring.info("Début du rendu de l'application");
   
-  ReactDOM.createRoot(document.getElementById('root')).render(
+  ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <BrowserRouter>
         <ThemeProvider defaultTheme="system" storageKey="ui-theme">
@@ -163,9 +82,9 @@ try {
     </React.StrictMode>
   );
   
-  logStartup("Rendu de l'application terminé avec succès", null);
+  Monitoring.info("Rendu de l'application terminé avec succès");
 } catch (error) {
-  logStartup("ERREUR CRITIQUE lors du rendu initial", {
+  Monitoring.critical("ERREUR CRITIQUE lors du rendu initial", {
     message: error.message,
     stack: error.stack
   });
@@ -203,7 +122,7 @@ try {
 // Exposer une fonction de diagnostic pour Netlify
 window.showNetlifyDiagnostic = function() {
   return {
-    logs: STARTUP_LOG,
+    logs: Monitoring.getLogs(),
     environment: {
       isNetlify,
       isDevMode,
