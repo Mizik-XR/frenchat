@@ -15,7 +15,7 @@ const isDevMode = process.env.NODE_ENV === 'development';
 const isCloudMode = import.meta.env.VITE_CLOUD_MODE === 'true';
 
 // Fonction de journalisation
-function logStartup(message, data) {
+function logStartup(message, data = null) {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] [STARTUP] ${message}`;
   console.log(logMessage);
@@ -126,7 +126,7 @@ console.error = function(...args) {
   ).join(' ');
   
   // Toujours enregistrer les erreurs
-  logStartup(`[ERROR] ${message}`);
+  logStartup(`[ERROR] ${message}`, null);
 };
 
 // Fonction de journalisation d'avertissement personnalisée
@@ -143,18 +143,18 @@ console.warn = function(...args) {
   // Enregistrer les avertissements importants
   if (message.includes('React') || message.includes('rendu') || 
       message.includes('module') || message.includes('network')) {
-    logStartup(`[WARN] ${message}`);
+    logStartup(`[WARN] ${message}`, null);
   }
 };
 
 // Lancer le rendu de l'application avec récupération d'erreur
 try {
-  logStartup("Début du rendu de l'application");
+  logStartup("Début du rendu de l'application", null);
   
   ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
       <BrowserRouter>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider defaultTheme="system" storageKey="ui-theme">
           <ReactErrorMonitor />
           <App />
           <Toaster />
@@ -163,7 +163,7 @@ try {
     </React.StrictMode>
   );
   
-  logStartup("Rendu de l'application terminé avec succès");
+  logStartup("Rendu de l'application terminé avec succès", null);
 } catch (error) {
   logStartup("ERREUR CRITIQUE lors du rendu initial", {
     message: error.message,
