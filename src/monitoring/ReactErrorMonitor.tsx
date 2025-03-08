@@ -116,7 +116,7 @@ export const ReactErrorMonitor = () => {
   // Fonction pour exposer les méthodes de journalisation à l'objet window
   useEffect(() => {
     // Exposer les fonctions de gestion des journaux
-    window.getFileCharErrorLogs = () => ErrorLogger.getLogs();
+    window.getFileCharErrorLogs = () => ErrorLogger.getLogs() as string[];
     window.clearFileCharErrorLogs = () => ErrorLogger.clearLogs();
     window.printFileCharErrorLogs = () => ErrorLogger.printLogs();
     
@@ -135,7 +135,7 @@ export const ReactErrorMonitor = () => {
 // Ajouter les méthodes à l'interface Window
 declare global {
   interface Window {
-    getFileCharErrorLogs?: () => any[];
+    getFileCharErrorLogs?: () => string[];
     clearFileCharErrorLogs?: () => boolean;
     printFileCharErrorLogs?: () => number;
   }
