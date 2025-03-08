@@ -5,21 +5,126 @@ import App from './App.tsx'
 import './index.css'
 import './styles/message-styles.css'
 import './styles/chat.css'
+import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor.tsx'
 
-// Fonction pour enregistrer les logs détaillés
-const logWithTimestamp = (type: string, message: string, ...args: any[]) => {
+// Configuration du système de logs
+const LOG_LEVEL = {
+  DEBUG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERROR: 3,
+  CRITICAL: 4
+};
+
+// Configuration globale des logs
+const LOG_CONFIG = {
+  minLevel: LOG_LEVEL.DEBUG,
+  persistLogs: true,
+  maxLogEntries: 1000,
+  logToConsole: true,
+  logPrefix: 'FILECHAT',
+  useTimestamps: true,
+  logNetlifyInfo: true
+};
+
+// Système de logs amélioré avec support Netlify
+const logWithTimestamp = (type, message, ...args) => {
   const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [${type}] ${message}`, ...args);
+  const logLevel = type.toUpperCase();
+  const logPrefix = LOG_CONFIG.logPrefix ? `[${LOG_CONFIG.logPrefix}]` : '';
+  const logMessage = `[${timestamp}] ${logPrefix} [${logLevel}] ${message}`;
+  
+  // Déterminer le niveau de log
+  let numericLevel = LOG_LEVEL.INFO;
+  switch (type.toLowerCase()) {
+    case 'debug': numericLevel = LOG_LEVEL.DEBUG; break;
+    case 'info': numericLevel = LOG_LEVEL.INFO; break;
+    case 'warn': numericLevel = LOG_LEVEL.WARN; break;
+    case 'error': numericLevel = LOG_LEVEL.ERROR; break;
+    case 'critical': numericLevel = LOG_LEVEL.CRITICAL; break;
+  }
+  
+  // Ne logguer que si le niveau est suffisant
+  if (numericLevel >= LOG_CONFIG.minLevel) {
+    if (LOG_CONFIG.logToConsole) {
+      if (numericLevel >= LOG_LEVEL.ERROR) {
+        console.error(logMessage, ...args);
+      } else if (numericLevel === LOG_LEVEL.WARN) {
+        console.warn(logMessage, ...args);
+      } else {
+        console.log(logMessage, ...args);
+      }
+    }
+  }
   
   // Stocker dans localStorage pour récupération ultérieure
-  try {
-    const existingLogs = JSON.parse(localStorage.getItem('filechat_startup_log') || '[]');
-    existingLogs.push(`[${timestamp}] [${type}] ${message}`);
-    // Limiter à 100 dernières entrées
-    localStorage.setItem('filechat_startup_log', JSON.stringify(existingLogs.slice(-100)));
-  } catch (e) {
-    console.warn("Impossible de stocker les journaux dans localStorage", e);
+  if (LOG_CONFIG.persistLogs) {
+    try {
+      const existingLogs = JSON.parse(localStorage.getItem('filechat_startup_log') || '[]');
+      existingLogs.push(`${logMessage} ${args.map(a => JSON.stringify(a)).join(' ')}`);
+      // Limiter au nombre configuré d'entrées
+      localStorage.setItem('filechat_startup_log', 
+        JSON.stringify(existingLogs.slice(-LOG_CONFIG.maxLogEntries)));
+    } catch (e) {
+      console.warn("Impossible de stocker les journaux dans localStorage", e);
+    }
   }
+  
+  // Pour les erreurs critiques, tenter de les envoyer à Netlify si possible
+  if (numericLevel >= LOG_LEVEL.ERROR && LOG_CONFIG.logNetlifyInfo) {
+    try {
+      // Stockage spécifique pour les erreurs Netlify
+      const netlifyLogs = JSON.parse(localStorage.getItem('netlify_error_logs') || '[]');
+      netlifyLogs.push({
+        timestamp,
+        level: logLevel,
+        message,
+        details: args.length > 0 ? args : null,
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      });
+      localStorage.setItem('netlify_error_logs', JSON.stringify(netlifyLogs.slice(-100)));
+    } catch (e) {
+      // Ne rien faire en cas d'erreur pour éviter des boucles d'erreurs
+    }
+  }
+};
+
+// Attacher au contexte global pour utilisation partout
+window.filechatLogger = {
+  debug: (message, ...args) => logWithTimestamp('debug', message, ...args),
+  info: (message, ...args) => logWithTimestamp('info', message, ...args),
+  warn: (message, ...args) => logWithTimestamp('warn', message, ...args),
+  error: (message, ...args) => logWithTimestamp('error', message, ...args),
+  critical: (message, ...args) => logWithTimestamp('critical', message, ...args),
+  getLogLevel: () => LOG_CONFIG.minLevel,
+  setLogLevel: (level) => { LOG_CONFIG.minLevel = level; }
+};
+
+// Définir des alias pour console.log pour capturer tous les logs
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+const originalConsoleInfo = console.info;
+
+console.log = function() {
+  window.filechatLogger.debug(...arguments);
+  originalConsoleLog.apply(console, arguments);
+};
+
+console.error = function() {
+  window.filechatLogger.error(...arguments);
+  originalConsoleError.apply(console, arguments);
+};
+
+console.warn = function() {
+  window.filechatLogger.warn(...arguments);
+  originalConsoleWarn.apply(console, arguments);
+};
+
+console.info = function() {
+  window.filechatLogger.info(...arguments);
+  originalConsoleInfo.apply(console, arguments);
 };
 
 // Exposer les logs à la console
@@ -27,11 +132,11 @@ window.showStartupLogs = () => {
   try {
     const logs = JSON.parse(localStorage.getItem('filechat_startup_log') || '[]');
     console.group("FileChat - Logs de démarrage");
-    logs.forEach((log: string) => console.log(log));
+    logs.forEach((log) => originalConsoleLog.call(console, log));
     console.groupEnd();
     return logs.length;
   } catch (e) {
-    console.error("Erreur lors de l'affichage des logs", e);
+    originalConsoleError.call(console, "Erreur lors de l'affichage des logs", e);
     return 0;
   }
 };
@@ -41,6 +146,22 @@ logWithTimestamp('ENV', `Démarrage de l'application`);
 logWithTimestamp('ENV', `User Agent: ${navigator.userAgent}`);
 logWithTimestamp('ENV', `URL: ${window.location.href}`);
 logWithTimestamp('ENV', `Paramètres d'URL: ${window.location.search}`);
+logWithTimestamp('ENV', `Environnement de déploiement: ${window.location.hostname}`);
+logWithTimestamp('ENV', `Mode cloud: ${import.meta.env.VITE_CLOUD_MODE || 'non défini'}`);
+
+// Détection de l'environnement Netlify pour ajustements spécifiques
+const isNetlifyEnvironment = () => {
+  return window.location.hostname.includes('netlify.app') || 
+         !!import.meta.env.VITE_IS_NETLIFY ||
+         document.querySelector('meta[name="netlify"]') !== null;
+};
+
+if (isNetlifyEnvironment()) {
+  logWithTimestamp('ENV', 'Environnement Netlify détecté, activation des optimisations spécifiques');
+  // Activer des configurations spécifiques à Netlify
+  window.NETLIFY_MODE = true;
+  window.CLOUD_MODE = true;
+}
 
 // Fonction pour arrêter l'animation de chargement
 function stopLoadingAnimation() {
@@ -62,7 +183,11 @@ logWithTimestamp('STARTUP', 'Début du processus de rendu React');
 
 // Ajouter un gestionnaire d'erreur spécifique pour les erreurs de modules
 window.addEventListener('error', function(event) {
-  if (event.message && event.message.includes('Cannot access') && event.message.includes('before initialization')) {
+  if (event.message && (
+    event.message.includes('Cannot access') && event.message.includes('before initialization') ||
+    event.message.includes('is not defined') ||
+    event.message.includes('Failed to load module')
+  )) {
     logWithTimestamp('CRITICAL', 'Erreur d\'initialisation de module détectée', {
       message: event.message,
       filename: event.filename,
@@ -92,6 +217,11 @@ window.addEventListener('error', function(event) {
               <p style="margin: 0; word-break: break-all;">Fichier: ${event.filename}</p>
               <p style="margin: 0;">Position: Ligne ${event.lineno}, Colonne ${event.colno}</p>
             </div>
+            <div style="margin-top: 1rem;">
+              <button onclick="window.showStartupLogs && window.showStartupLogs()" style="background-color: #6b7280; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; cursor: pointer;">
+                Afficher les logs
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -116,9 +246,10 @@ try {
   
   logWithTimestamp('STARTUP', 'Root React créé, rendu de l\'application');
   
-  // Rendre l'application
+  // Rendre l'application avec le moniteur d'erreurs
   reactRoot.render(
     <React.StrictMode>
+      <ReactErrorMonitor />
       <App />
     </React.StrictMode>,
   );
@@ -143,7 +274,7 @@ try {
   const retryButton = document.querySelector('.retry-btn');
   
   if (errorMessage instanceof HTMLElement) {
-    errorMessage.textContent = 'Erreur lors du chargement de l\'application: ' + ((error as Error).message || 'Erreur inconnue');
+    errorMessage.textContent = 'Erreur lors du chargement de l\'application: ' + ((error).message || 'Erreur inconnue');
     errorMessage.style.display = 'block';
   }
   
@@ -173,5 +304,16 @@ declare global {
     appRenderStarted?: boolean;
     appLoaded?: boolean;
     showStartupLogs?: () => number;
+    filechatLogger?: {
+      debug: (message: string, ...args: any[]) => void;
+      info: (message: string, ...args: any[]) => void;
+      warn: (message: string, ...args: any[]) => void;
+      error: (message: string, ...args: any[]) => void;
+      critical: (message: string, ...args: any[]) => void;
+      getLogLevel: () => number;
+      setLogLevel: (level: number) => void;
+    };
+    NETLIFY_MODE?: boolean;
+    CLOUD_MODE?: boolean;
   }
 }

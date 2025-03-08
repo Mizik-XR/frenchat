@@ -2,7 +2,7 @@
 # Configuration de build Netlify pour FileChat
 [build]
   publish = "dist"
-  command = "npm run build"
+  command = "npm run build && node scripts/ensure-netlify-build.js"
   ignore_command = "git diff --quiet HEAD^ HEAD -- . ':(exclude)_redirects'"
 
 # Configuration des variables d'environnement par défaut
@@ -19,8 +19,9 @@
   VITE_CLOUD_MODE = "true"
   VITE_ALLOW_LOCAL_AI = "false"
   # Active la journalisation détaillée
-  DEBUG = "vite:*"
+  DEBUG = "vite:*,netlify:*"
   NETLIFY_VERBOSE = "true"
+  NETLIFY_DEBUG = "true"
 
 # Configuration des redirections pour le routage SPA
 [[redirects]]
@@ -94,7 +95,7 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Configuration du plugin pour générer un journal de build détaillé
+# Configuration du plugin de diagnostic
 [[plugins]]
   package = "@netlify/plugin-lighthouse"
 
@@ -102,19 +103,15 @@
 [dev]
   debug = true
 
-# Configuration personnalisée pour le déploiement
+# Configuration pour les environnements spécifiques
 [context.production]
-  publish = "dist"
-  command = "npm run build && node scripts/ensure-netlify-build.js"
-  ignore_command = "git diff --quiet HEAD^ HEAD -- . ':(exclude)_redirects'"
-  
+  environment = { NODE_ENV = "production", VITE_CLOUD_MODE = "true" }
+
 [context.deploy-preview]
-  publish = "dist"
-  command = "npm run build && node scripts/ensure-netlify-build.js"
+  environment = { NODE_ENV = "production", VITE_CLOUD_MODE = "true" }
   
 [context.branch-deploy]
-  publish = "dist"
-  command = "npm run build && node scripts/ensure-netlify-build.js"
+  environment = { NODE_ENV = "production", VITE_CLOUD_MODE = "true" }
 
 # Post-processing pour assurer la compatibilité
 [build.processing]

@@ -41,6 +41,9 @@ export const ReactErrorMonitor = () => {
 
     // Log des informations du navigateur pour diagnostics
     const logBrowserInfo = () => {
+      const connection = typeof navigator !== 'undefined' && 'connection' in navigator ? 
+        (navigator as any).connection : null;
+        
       const browserInfo = {
         userAgent: navigator.userAgent,
         platform: navigator.platform, 
@@ -50,10 +53,10 @@ export const ReactErrorMonitor = () => {
           width: window.innerWidth,
           height: window.innerHeight
         },
-        connection: navigator.connection ? {
-          type: (navigator.connection as any).effectiveType,
-          downlink: (navigator.connection as any).downlink,
-          rtt: (navigator.connection as any).rtt,
+        connection: connection ? {
+          type: connection.effectiveType,
+          downlink: connection.downlink,
+          rtt: connection.rtt,
         } : 'Non disponible'
       };
       
@@ -199,7 +202,7 @@ export const ReactErrorMonitor = () => {
       
       if (isConnectionError) {
         console.warn('Problème de connexion détecté, activation du mode hors ligne...');
-        APP_STATE.setOfflineMode(true);
+        APP_STATE.setOfflineMode?.(true);
       }
       
       // Notification à l'utilisateur
