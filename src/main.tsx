@@ -4,8 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { ThemeProvider } from './components/ThemeProvider';
-import { ReactErrorMonitor } from '@/monitoring';
-import { Monitoring, LogLevel } from '@/monitoring';
+import { ReactErrorMonitor, Monitoring, LogLevel, SentryMonitor } from '@/monitoring';
 import { Toaster } from '@/components/ui/toaster';
 import './index.css';
 
@@ -13,6 +12,9 @@ import './index.css';
 const isNetlify = window.location.hostname.includes('netlify.app');
 const isDevMode = process.env.NODE_ENV === 'development';
 const isCloudMode = import.meta.env.VITE_CLOUD_MODE === 'true';
+
+// Initialiser Sentry avant tout le reste
+SentryMonitor.initialize();
 
 // Journal des informations de l'environnement
 Monitoring.info("Initialisation de l'application", {
@@ -47,6 +49,13 @@ window.addEventListener('error', (event) => {
       line: event.lineno,
       column: event.colno
     });
+    
+    // Envoi à Sentry
+    if (event.error) {
+      Monitoring.captureException(event.error);
+    } else {
+      Monitoring.captureMessage("ERREUR DE CHARGEMENT DE MODULE: " + event.message, "fatal");
+    }
     
     // Stocker l'erreur pour la diagnostiquer plus tard
     try {
@@ -88,6 +97,9 @@ try {
     message: error.message,
     stack: error.stack
   });
+  
+  // Envoi à Sentry
+  Monitoring.captureException(error);
   
   // Afficher une interface utilisateur de secours en cas d'erreur
   const rootElement = document.getElementById('root');

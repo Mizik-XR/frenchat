@@ -5,6 +5,7 @@ import { ErrorLogger } from './logger';
 import { ErrorDetector } from './error-detector';
 import { NotificationManager } from './notification-manager';
 import { ErrorType, LogLevel } from './types';
+import { SentryMonitor } from './sentry-integration';
 
 /**
  * Composant qui surveille et capture les erreurs React non gérées
@@ -12,6 +13,9 @@ import { ErrorType, LogLevel } from './types';
  */
 export const ReactErrorMonitor = () => {
   useEffect(() => {
+    // Initialisation de Sentry
+    SentryMonitor.initialize();
+    
     // Log des informations du navigateur pour diagnostics
     const browserInfo = ErrorDetector.getBrowserInfo();
     ErrorLogger.log(LogLevel.INFO, "Informations du navigateur", browserInfo);
@@ -28,6 +32,17 @@ export const ReactErrorMonitor = () => {
       };
       
       ErrorLogger.log(LogLevel.ERROR, "Erreur JavaScript globale détectée", errorDetails);
+      
+      // Envoi à Sentry
+      if (error) {
+        SentryMonitor.captureException(error, errorDetails);
+      } else {
+        SentryMonitor.captureMessage(
+          String(message), 
+          "error", 
+          errorDetails
+        );
+      }
       
       // Traitement spécifique selon le type d'erreur
       if (error) {
@@ -50,14 +65,23 @@ export const ReactErrorMonitor = () => {
         const resourceType = target.tagName.toLowerCase();
         const resourceUrl = (target as any).src || (target as any).href || 'inconnu';
         
-        ErrorLogger.log(LogLevel.WARN, `Erreur de chargement de ressource [${resourceType}]`, {
+        const errorInfo = {
           url: resourceUrl,
           element: resourceType
-        });
+        };
+        
+        ErrorLogger.log(LogLevel.WARN, `Erreur de chargement de ressource [${resourceType}]`, errorInfo);
         
         // Notification uniquement pour les ressources critiques
         if (resourceType === 'script' || resourceUrl.includes('main.js') || resourceUrl.includes('index.js')) {
           NotificationManager.showErrorNotification(event, ErrorType.RESOURCE_LOADING);
+          
+          // Envoi à Sentry des erreurs de ressources critiques
+          SentryMonitor.captureMessage(
+            `Erreur de chargement de ressource critique: ${resourceUrl}`,
+            "error",
+            errorInfo
+          );
         }
       }
     }, true);
@@ -72,6 +96,13 @@ export const ReactErrorMonitor = () => {
       const errorType = ErrorDetector.detectErrorType(event.error);
       ErrorDetector.processError(event.error);
       
+      // Envoi à Sentry
+      SentryMonitor.captureException(event.error, { 
+        errorType: SentryMonitor.translateErrorType(errorType),
+        source: event.filename,
+        line: event.lineno
+      });
+      
       // Notification à l'utilisateur pour les erreurs critiques
       if (errorType === ErrorType.REACT_RENDERING || errorType === ErrorType.MODULE_LOADING) {
         NotificationManager.showErrorNotification(event.error, errorType);
@@ -84,6 +115,16 @@ export const ReactErrorMonitor = () => {
         reason: event.reason?.message || String(event.reason),
         stack: event.reason?.stack
       });
+      
+      // Envoi à Sentry
+      if (event.reason instanceof Error) {
+        SentryMonitor.captureException(event.reason);
+      } else {
+        SentryMonitor.captureMessage(
+          `Promesse rejetée: ${event.reason?.message || String(event.reason)}`,
+          "error"
+        );
+      }
       
       // Vérifier si c'est une erreur réseau
       const isConnectionError = ErrorDetector.isNetworkError(event.reason);
@@ -120,11 +161,27 @@ export const ReactErrorMonitor = () => {
     window.clearFileCharErrorLogs = () => ErrorLogger.clearLogs();
     window.printFileCharErrorLogs = () => ErrorLogger.printLogs();
     
+    // Exposer une fonction pour générer une erreur de test pour Sentry
+    window.testSentryError = () => {
+      try {
+        // Générer une erreur intentionnelle pour tester Sentry
+        throw new Error("Test error for Sentry");
+      } catch (error) {
+        SentryMonitor.captureException(error as Error, { 
+          context: "Manual test",
+          location: "testSentryError"
+        });
+        ErrorLogger.log(LogLevel.ERROR, "Test error sent to Sentry", error);
+        return true;
+      }
+    };
+    
     return () => {
       // Nettoyer les fonctions exposées
       delete window.getFileCharErrorLogs;
       delete window.clearFileCharErrorLogs;
       delete window.printFileCharErrorLogs;
+      delete window.testSentryError;
     };
   }, []);
 
@@ -138,5 +195,6 @@ declare global {
     getFileCharErrorLogs?: () => string[];
     clearFileCharErrorLogs?: () => boolean;
     printFileCharErrorLogs?: () => number;
+    testSentryError?: () => boolean;
   }
 }
