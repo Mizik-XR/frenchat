@@ -29,6 +29,8 @@ if not exist "dist\" (
     set "NO_RUST_INSTALL=1"
     set "NETLIFY_SKIP_PYTHON_REQUIREMENTS=true"
     set "SKIP_PYTHON_INSTALLATION=true"
+    set "DEBUG=vite:*"
+    set "NETLIFY_VERBOSE=true"
     
     call npm run build
     
@@ -87,13 +89,96 @@ if exist "dist\index.html" (
         echo [OK] Script Lovable ajouté.
     ) else (
         echo [OK] Script Lovable présent.
-    )
-) else (
-    echo [ERREUR] dist\index.html non trouvé!
-    echo.
-    echo Appuyez sur une touche pour quitter...
-    pause >nul
-    exit /b 1
+    }
+
+    REM Ajouter un script de diagnostic pour Netlify
+    echo [INFO] Ajout du script de diagnostic pour Netlify...
+    
+    powershell -Command "(Get-Content dist\index.html) -replace '</head>', '<script>
+    // Script de diagnostic pour Netlify
+    (function() {
+      var netlifyLogs = [];
+      var originalConsoleLog = console.log;
+      var originalConsoleError = console.error;
+      var originalConsoleWarn = console.warn;
+      
+      function captureLog(type, args) {
+        try {
+          var timestamp = new Date().toISOString();
+          var message = Array.from(args).map(function(arg) {
+            return typeof arg === \"object\" ? JSON.stringify(arg) : String(arg);
+          }).join(\" \");
+          
+          netlifyLogs.push(\"[\" + timestamp + \"] [\" + type + \"] \" + message);
+          
+          // Garder seulement les 100 derniers messages
+          if (netlifyLogs.length > 100) {
+            netlifyLogs.shift();
+          }
+          
+          // Stocker dans localStorage
+          try {
+            localStorage.setItem(\"netlify_diagnostic_logs\", JSON.stringify(netlifyLogs));
+          } catch (e) {}
+        } catch (e) {}
+      }
+      
+      // Remplacer les fonctions de console
+      console.log = function() {
+        captureLog(\"LOG\", arguments);
+        originalConsoleLog.apply(console, arguments);
+      };
+      
+      console.error = function() {
+        captureLog(\"ERROR\", arguments);
+        originalConsoleError.apply(console, arguments);
+      };
+      
+      console.warn = function() {
+        captureLog(\"WARN\", arguments);
+        originalConsoleWarn.apply(console, arguments);
+      };
+      
+      // Exposer les fonctions de diagnostic
+      window.showNetlifyLogs = function() {
+        originalConsoleLog.call(console, \"=== Netlify Diagnostic Logs ===\");
+        netlifyLogs.forEach(function(log) {
+          originalConsoleLog.call(console, log);
+        });
+        return netlifyLogs.length;
+      };
+      
+      window.clearNetlifyLogs = function() {
+        netlifyLogs = [];
+        try {
+          localStorage.removeItem(\"netlify_diagnostic_logs\");
+        } catch (e) {}
+        return true;
+      };
+      
+      // Consigner les informations du navigateur
+      console.log(\"Netlify Diagnostic: Browser Info\", {
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        viewport: window.innerWidth + \"x\" + window.innerHeight,
+        url: window.location.href
+      });
+      
+      // Détecter les erreurs de modules
+      window.addEventListener(\"error\", function(event) {
+        if (event.message && event.message.includes(\"Cannot access\") && event.message.includes(\"before initialization\")) {
+          console.error(\"Netlify Diagnostic: Module initialization error\", {
+            message: event.message,
+            file: event.filename,
+            line: event.lineno,
+            col: event.colno
+          });
+        }
+      }, true);
+    })();
+    </script></head>' | Set-Content dist\index.html"
+    
+    echo [OK] Script de diagnostic ajouté.
 )
 
 REM Vérifier les fichiers JS pour des chemins absolus
@@ -131,6 +216,57 @@ if exist "dist\assets" (
         echo [OK] Aucun chemin absolu détecté dans les fichiers JS
     )
 )
+
+REM Créer un fichier de diagnostic pour Netlify
+echo [INFO] Création du fichier de diagnostic pour Netlify...
+echo "<!--
+Diagnostic Information For Netlify Support
+Deploy URL: %NETLIFY_DEPLOY_URL%
+Build ID: %NETLIFY_BUILD_ID%
+Timestamp: %DATE% %TIME%
+-->" > dist\netlify-diagnostic.html
+
+echo "<h1>Netlify Deployment Diagnostic</h1>" >> dist\netlify-diagnostic.html
+echo "<p>Cette page contient des informations de diagnostic pour le support Netlify.</p>" >> dist\netlify-diagnostic.html
+echo "<button onclick=\"showNetlifyLogs && showNetlifyLogs()\">Afficher les logs</button>" >> dist\netlify-diagnostic.html
+echo "<button onclick=\"clearNetlifyLogs && clearNetlifyLogs()\">Effacer les logs</button>" >> dist\netlify-diagnostic.html
+echo "<script>
+// Capture les informations du navigateur
+function captureEnvironment() {
+  return {
+    userAgent: navigator.userAgent,
+    language: navigator.language,
+    viewport: window.innerWidth + 'x' + window.innerHeight,
+    url: window.location.href,
+    timestamp: new Date().toISOString()
+  };
+}
+
+// Affiche les informations d'environnement
+document.write('<h2>Informations d'environnement</h2>');
+document.write('<pre>' + JSON.stringify(captureEnvironment(), null, 2) + '</pre>');
+
+// Affiche le contenu de localStorage
+try {
+  document.write('<h2>Contenu de localStorage</h2>');
+  var keys = Object.keys(localStorage);
+  if (keys.length === 0) {
+    document.write('<p>Aucune donnée dans localStorage</p>');
+  } else {
+    document.write('<ul>');
+    keys.forEach(function(key) {
+      document.write('<li><strong>' + key + '</strong>: ' + 
+        (key.includes('logs') ? '(logs, trop long pour afficher)' : localStorage.getItem(key)) + 
+        '</li>');
+    });
+    document.write('</ul>');
+  }
+} catch (e) {
+  document.write('<p>Erreur lors de la lecture de localStorage: ' + e.message + '</p>');
+}
+</script>" >> dist\netlify-diagnostic.html
+
+echo [OK] Fichier de diagnostic créé.
 
 echo.
 echo =====================================================

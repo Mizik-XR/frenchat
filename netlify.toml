@@ -18,6 +18,9 @@
   NETLIFY_SKIP_PYTHON_REQUIREMENTS = "true"
   VITE_CLOUD_MODE = "true"
   VITE_ALLOW_LOCAL_AI = "false"
+  # Active la journalisation détaillée
+  DEBUG = "vite:*"
+  NETLIFY_VERBOSE = "true"
 
 # Configuration des redirections pour le routage SPA
 [[redirects]]
@@ -55,7 +58,7 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* ws://localhost:* https://* wss://*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; worker-src 'self' blob:; font-src 'self' https: data:;"
+    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* ws://localhost:* https://* wss://*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; worker-src 'self' blob:; font-src 'self' https: data:;"
 
 # En-têtes spécifiques pour les fichiers JavaScript
 [[headers]]
@@ -90,3 +93,39 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Configuration du plugin pour générer un journal de build détaillé
+[[plugins]]
+  package = "@netlify/plugin-lighthouse"
+
+# Activer la journalisation détaillée pour le déploiement
+[dev]
+  debug = true
+
+# Configuration personnalisée pour le déploiement
+[context.production]
+  publish = "dist"
+  command = "npm run build && node scripts/ensure-netlify-build.js"
+  ignore_command = "git diff --quiet HEAD^ HEAD -- . ':(exclude)_redirects'"
+  
+[context.deploy-preview]
+  publish = "dist"
+  command = "npm run build && node scripts/ensure-netlify-build.js"
+  
+[context.branch-deploy]
+  publish = "dist"
+  command = "npm run build && node scripts/ensure-netlify-build.js"
+
+# Post-processing pour assurer la compatibilité
+[build.processing]
+  skip_processing = false
+[build.processing.css]
+  bundle = true
+  minify = true
+[build.processing.js]
+  bundle = true
+  minify = true
+[build.processing.html]
+  pretty_urls = true
+[build.processing.images]
+  compress = true
