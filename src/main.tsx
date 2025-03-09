@@ -10,10 +10,10 @@ import * as Sentry from "@sentry/react";
 Sentry.init({
   dsn: "https://7ec84a703e3dfd1a2fa5bed2ab4d00d4@o4508941853917184.ingest.de.sentry.io/4508949699035216",
   integrations: [
-    // Utilisation des intégrations génériques au lieu des classes spécifiques
-    new Sentry.Integrations.HttpContext(),
-    new Sentry.Integrations.BrowserProfiling(),
-    new Sentry.Integrations.BrowserTracing(),
+    // Utilisation des intégrations intégrées au SDK
+    new Sentry.BrowserTracing(),
+    new Sentry.BrowserProfilingIntegration(),
+    new Sentry.HttpClient(),
   ],
   // Performance Monitoring
   tracesSampleRate: 1.0, // Capturer 100% des transactions pour les tests

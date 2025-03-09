@@ -1,3 +1,4 @@
+
 import { ErrorType, LogLevel } from "./types";
 import * as Sentry from "@sentry/react";
 
@@ -135,22 +136,9 @@ export class SentryMonitor {
   }
 }
 
-// Mise à jour de la déclaration pour les types Sentry
+// Déclaration des types pour Sentry
 declare global {
   namespace Sentry {
     type SeverityLevel = "fatal" | "error" | "warning" | "info" | "debug";
-    
-    // Ajouter les types d'intégration pour éviter les erreurs
-    namespace Integrations {
-      class HttpContext {
-        constructor();
-      }
-      class BrowserProfiling {
-        constructor();
-      }
-      class BrowserTracing {
-        constructor();
-      }
-    }
   }
 }

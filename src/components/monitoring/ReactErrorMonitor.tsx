@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { APP_STATE } from '@/integrations/supabase/client';
+import * as Sentry from "@sentry/react";
 
 /**
  * Composant qui surveille et capture les erreurs React non gérées
@@ -92,6 +92,17 @@ export const ReactErrorMonitor = () => {
         stack: event.error?.stack
       });
       
+      // Envoi à Sentry
+      if (event.error && Sentry) {
+        Sentry.captureException(event.error, {
+          extra: {
+            source: "ReactErrorMonitor",
+            filename: event.filename,
+            automatic: true
+          }
+        });
+      }
+      
       // Notification à l'utilisateur
       toast({
         title: "Problème détecté",
@@ -113,6 +124,18 @@ export const ReactErrorMonitor = () => {
         reason: reason,
         stack: event.reason?.stack
       });
+      
+      // Envoi à Sentry
+      if (Sentry) {
+        Sentry.captureException(new Error(`Promise rejection: ${reason}`), {
+          extra: {
+            source: "ReactErrorMonitor", 
+            type: "unhandledRejection",
+            reason: reason,
+            stack: event.reason?.stack
+          }
+        });
+      }
       
       // Notification à l'utilisateur
       toast({
