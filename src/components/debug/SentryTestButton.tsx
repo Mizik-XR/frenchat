@@ -3,12 +3,14 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { BugPlay } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import * as Sentry from "@sentry/react";
+import { useSentrySession } from '@/components/monitoring/error-monitor/useSentrySession';
 
 /**
  * Component that provides a button to test Sentry error reporting
  */
 export const SentryTestButton = () => {
+  const { captureException } = useSentrySession();
+
   const handleTestSentry = () => {
     try {
       toast({
@@ -22,14 +24,12 @@ export const SentryTestButton = () => {
       if (error instanceof Error) {
         console.log("Erreur de test capturée, envoi à Sentry...");
         
-        // Send to Sentry with context data using the Sentry SDK directly
-        Sentry.captureException(error, {
-          extra: {
-            source: "SentryTestButton",
-            manual: true,
-            timestamp: Date.now(),
-            userAction: "Test Button Click"
-          }
+        // Send to Sentry with context data
+        captureException(error, {
+          source: "SentryTestButton",
+          manual: true,
+          timestamp: Date.now(),
+          userAction: "Test Button Click"
         });
         
         toast({

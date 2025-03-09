@@ -59,3 +59,23 @@ export interface ExternalMonitoringOptions {
   includeWarnings?: boolean;
   includeLogs?: boolean;
 }
+
+/**
+ * Type pour les gestionnaires d'erreurs et de rejets de promesses
+ */
+export type ErrorHandler = (event: ErrorEvent) => void;
+export type RejectionHandler = (event: PromiseRejectionEvent) => void;
+
+/**
+ * Interface pour les métadonnées de journal d'erreur
+ */
+export interface ErrorLogMetadata {
+  timestamp: string;
+  context?: string;
+  source?: string;
+  browser?: Partial<BrowserInfo>;
+  user?: {
+    id?: string;
+    isAuthenticated?: boolean;
+  };
+}

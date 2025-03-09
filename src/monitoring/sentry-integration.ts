@@ -43,8 +43,7 @@ export class SentryMonitor {
    */
   static captureException(error: Error, context?: Record<string, any>) {
     try {
-      // Vérifier si l'erreur est du type à ignorer
-      const errorMessage = error.message || '';
+      // Importer la configuration des erreurs ignorées
       const ignoredMessages = [
         'unstable_scheduleCallback',
         'ResizeObserver',
@@ -53,6 +52,9 @@ export class SentryMonitor {
         'Tt',
         'before initialization'
       ];
+      
+      // Vérifier si l'erreur est du type à ignorer
+      const errorMessage = error.message || '';
       
       if (ignoredMessages.some(msg => errorMessage.includes(msg))) {
         console.warn("Erreur ignorée localement:", errorMessage);

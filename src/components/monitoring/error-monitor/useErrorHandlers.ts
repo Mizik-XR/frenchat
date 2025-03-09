@@ -6,27 +6,13 @@
 import { useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import * as Sentry from "@sentry/react";
+import { shouldIgnoreError, errorNotificationConfig } from './config';
+import { useSentrySession } from './useSentrySession';
 
 export const useErrorHandlers = (logToConsole: (message: string, data?: any) => void) => {
+  const { captureException } = useSentrySession();
+
   useEffect(() => {
-    // Liste des erreurs à ignorer
-    const ignoredErrors = [
-      'Sentry',
-      'cdn',
-      'unstable_scheduleCallback',
-      'ResizeObserver',
-      'Mt',
-      'Tt',
-      'before initialization',
-      'aborted',
-      'Failed to fetch'
-    ];
-
-    // Fonction pour vérifier si une erreur doit être ignorée
-    const shouldIgnoreError = (message: string): boolean => {
-      return ignoredErrors.some(err => message.includes(err));
-    };
-
     // Fonction de gestion des erreurs non capturées
     const handleUncaughtError = (event: ErrorEvent) => {
       // Ignorer certaines erreurs connues
@@ -45,7 +31,7 @@ export const useErrorHandlers = (logToConsole: (message: string, data?: any) => 
       
       // Envoi à Sentry
       if (event.error && Sentry) {
-        Sentry.captureException(event.error, {
+        captureException(event.error, {
           extra: {
             source: "ReactErrorMonitor",
             filename: event.filename,
@@ -56,8 +42,8 @@ export const useErrorHandlers = (logToConsole: (message: string, data?: any) => 
       
       // Notification à l'utilisateur
       toast({
-        title: "Problème détecté",
-        description: "Une erreur s'est produite. L'application tente de récupérer automatiquement.",
+        title: errorNotificationConfig.uncaughtErrorTitle,
+        description: errorNotificationConfig.uncaughtErrorDescription,
         variant: "destructive"
       });
     };
@@ -78,7 +64,7 @@ export const useErrorHandlers = (logToConsole: (message: string, data?: any) => 
       
       // Envoi à Sentry
       if (Sentry) {
-        Sentry.captureException(new Error(`Promise rejection: ${reason}`), {
+        captureException(new Error(`Promise rejection: ${reason}`), {
           extra: {
             source: "ReactErrorMonitor", 
             type: "unhandledRejection",
@@ -90,8 +76,8 @@ export const useErrorHandlers = (logToConsole: (message: string, data?: any) => 
       
       // Notification à l'utilisateur
       toast({
-        title: "Opération échouée",
-        description: "Une requête a échoué. Veuillez réessayer.",
+        title: errorNotificationConfig.unhandledRejectionTitle,
+        description: errorNotificationConfig.unhandledRejectionDescription,
         variant: "destructive"
       });
     };
@@ -105,5 +91,5 @@ export const useErrorHandlers = (logToConsole: (message: string, data?: any) => 
       window.removeEventListener('error', handleUncaughtError);
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
-  }, [logToConsole]);
+  }, [logToConsole, captureException]);
 };
