@@ -76,26 +76,43 @@
       // Fonction d'initialisation retardée de Sentry
       window.initSentry = function() {
         try {
+          // Vérifier si nous sommes sur localhost
+          if (window.location.hostname === 'localhost') {
+            console.log("Sentry désactivé sur localhost");
+            return;
+          }
+          
           // Vérifier si le script Sentry est déjà chargé
-          if (window.Sentry) return;
+          if (window.Sentry) {
+            console.log("Sentry déjà chargé");
+            return;
+          }
           
           var script = document.createElement('script');
           script.src = "https://js.sentry-cdn.com/9e087d2c1630c52d5873558bbdf14d51.min.js";
           script.crossOrigin = "anonymous";
           script.defer = true;
-          script.onerror = function() {
-            console.warn("Impossible de charger Sentry, surveillance désactivée");
-          };
-          document.head.appendChild(script);
+          script.async = true;
           
-          console.log("Script Sentry chargé dynamiquement");
+          script.onload = function() {
+            console.log("Script Sentry chargé avec succès");
+          };
+          
+          script.onerror = function(e) {
+            console.warn("Impossible de charger Sentry, surveillance désactivée", e);
+          };
+          
+          document.head.appendChild(script);
+          console.log("Script Sentry en cours de chargement...");
         } catch (e) {
           console.warn("Erreur lors du chargement de Sentry:", e);
         }
       };
       
-      // Retarder le chargement de Sentry pour éviter les conflits
-      setTimeout(window.initSentry, 2000);
+      // Retarder le chargement de Sentry pour éviter les conflits avec React
+      setTimeout(function() {
+        window.initSentry();
+      }, 3000);
     </script>
     
     <!-- Script GPT Engineer -->
@@ -116,7 +133,10 @@
         if (event.message && (
           event.message.includes('Sentry') || 
           event.message.includes('cdn') ||
-          event.message.includes('unstable_scheduleCallback')
+          event.message.includes('unstable_scheduleCallback') ||
+          event.message.includes('Mt') ||
+          event.message.includes('Tt') ||
+          event.message.includes('before initialization')
         )) {
           console.warn('Erreur non critique ignorée:', event.message);
           event.preventDefault();
@@ -173,6 +193,7 @@
           <div class="error-message">Le chargement semble prendre plus de temps que prévu.</div>
           <button class="retry-btn" onclick="window.location.reload()">Rafraîchir la page</button>
           <button class="retry-btn" onclick="forceHomepageInCloudMode()" style="margin-left: 8px; background-color: #6366f1;">Mode cloud</button>
+          <button class="retry-btn" onclick="window.initSentry(); alert('Sentry réinitialisé');" style="margin-left: 8px; background-color: #10b981;">Réinitialiser Sentry</button>
         </div>
       </div>
     </div>

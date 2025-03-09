@@ -19,21 +19,17 @@ export class SentryMonitor {
     if (this.isInitialized) return;
     
     try {
-      // Initialiser Sentry uniquement si le DSN est défini et si nous ne sommes pas en mode développement
-      if (this.DSN && process.env.NODE_ENV !== 'development') {
+      // Initialiser Sentry uniquement si le DSN est défini et si nous ne sommes pas en mode développement local
+      if (this.DSN && process.env.NODE_ENV !== 'development' && window.location.hostname !== 'localhost') {
         console.log("Tentative d'initialisation de Sentry...");
         
-        // Retarder légèrement l'initialisation de Sentry pour éviter les conflits avec React
+        // Retarder l'initialisation de Sentry pour éviter les conflits avec React
         setTimeout(() => {
           try {
             // Configuration simplifiée mais robuste
             Sentry.init({
               dsn: this.DSN,
-              integrations: [
-                new BrowserTracing({
-                  tracePropagationTargets: ["localhost", /^https:\/\/.*frenchat\.netlify\.app/],
-                }),
-              ],
+              integrations: [new BrowserTracing()],
               // Réduire le nombre d'événements envoyés en production
               tracesSampleRate: 0.1,
               environment: process.env.NODE_ENV || 'production',
@@ -57,7 +53,9 @@ export class SentryMonitor {
                     'unstable_scheduleCallback',
                     'Cannot read properties of undefined',
                     'Network request failed',
-                    'Failed to fetch'
+                    'Failed to fetch',
+                    'Mt',
+                    'Tt'
                   ];
                   
                   // Vérifier si l'erreur doit être ignorée
@@ -76,7 +74,7 @@ export class SentryMonitor {
           } catch (innerError) {
             console.error("Erreur pendant l'initialisation de Sentry:", innerError);
           }
-        }, 2000); // Délai de 2 secondes pour éviter les conflits avec l'initialisation de React
+        }, 3000); // Délai de 3 secondes pour éviter les conflits avec l'initialisation de React
       } else {
         console.warn("Sentry DSN not provided or development mode, monitoring disabled");
       }
@@ -100,7 +98,10 @@ export class SentryMonitor {
       const ignoredMessages = [
         'unstable_scheduleCallback',
         'ResizeObserver',
-        'ChunkLoadError'
+        'ChunkLoadError',
+        'Mt',
+        'Tt',
+        'before initialization'
       ];
       
       if (ignoredMessages.some(msg => errorMessage.includes(msg))) {
@@ -178,5 +179,19 @@ export class SentryMonitor {
   static forceReinit(): void {
     this.isInitialized = false;
     this.initialize();
+  }
+  
+  /**
+   * Test Sentry avec une erreur contrôlée
+   */
+  static testSentry(): void {
+    try {
+      throw new Error("Test Sentry Error - " + new Date().toISOString());
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log("Test d'erreur Sentry envoyé");
+        this.captureException(error, { source: "testSentry", manual: true });
+      }
+    }
   }
 }

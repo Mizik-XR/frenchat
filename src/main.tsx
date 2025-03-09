@@ -34,10 +34,7 @@ const initializeApp = async () => {
     console.log("Chargement dynamique du module App...");
     const { default: App } = await import('./App');
     
-    // 2. Initialiser les moniteurs d'erreur de façon asynchrone
-    console.log("Chargement des moniteurs d'erreur...");
-    
-    // 3. Rendre l'application
+    // 2. Rendre l'application
     console.log("Début du rendu de l'application");
     const rootElement = document.getElementById('root');
     
@@ -54,19 +51,28 @@ const initializeApp = async () => {
     }
     
     // Chargement différé des outils de monitoring pour éviter les conflits
-    let ReactErrorMonitor = null;
-    
     if (!isDevMode) {
       try {
         // Importer dynamiquement après le rendu initial
         setTimeout(async () => {
           try {
+            // Initialiser Sentry via notre module
             const monitoring = await import('./monitoring/index');
+            monitoring.SentryMonitor.initialize();
             console.log("Monitoring modules loaded successfully");
+            
+            // Ajouter un test de Sentry après 10 secondes
+            setTimeout(() => {
+              try {
+                monitoring.SentryMonitor.testSentry();
+              } catch (testError) {
+                console.warn("Erreur lors du test Sentry:", testError);
+              }
+            }, 10000);
           } catch (monitoringError) {
             console.warn("Erreur lors du chargement différé des moniteurs:", monitoringError);
           }
-        }, 3000);
+        }, 5000);
       } catch (error) {
         console.warn("Erreur lors du chargement initial des moniteurs:", error);
       }
@@ -148,5 +154,6 @@ declare global {
   interface Window {
     lastRenderError?: Error;
     showNetlifyDiagnostic?: () => any;
+    initSentry?: () => void;
   }
 }

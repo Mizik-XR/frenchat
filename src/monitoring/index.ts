@@ -12,8 +12,8 @@ const initializeMonitoring = () => {
   try {
     // En production, initialiser Sentry avec un délai pour éviter les conflits
     if (process.env.NODE_ENV !== 'development') {
-      // Séquence d'initialisation progressive
-      setTimeout(() => SentryMonitor.initialize(), 1500);
+      console.log("Tentative d'initialisation du monitoring...");
+      // Ne pas initialiser Sentry immédiatement, laisser main.tsx s'en charger
     }
     
     // Journal local toujours initialisé

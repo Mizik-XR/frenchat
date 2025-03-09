@@ -3,14 +3,6 @@ import { useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { APP_STATE } from '@/integrations/supabase/client';
 
-// Interface pour les détails de connexion pour TypeScript
-interface ConnectionInfo {
-  effectiveType?: string;
-  downlink?: number;
-  rtt?: number;
-  saveData?: boolean;
-}
-
 /**
  * Composant qui surveille et capture les erreurs React non gérées
  * et les affiche de manière non intrusive à l'utilisateur
@@ -20,7 +12,7 @@ export const ReactErrorMonitor = () => {
     // Création d'un journal d'erreurs local
     const errorLog: string[] = [];
     
-    const logToNetlify = (message: string, data?: any) => {
+    const logToConsole = (message: string, data?: any) => {
       // Ajouter un horodatage aux messages
       const timestamp = new Date().toISOString();
       const logMessage = `[${timestamp}] ${message}`;
@@ -49,142 +41,56 @@ export const ReactErrorMonitor = () => {
 
     // Log des informations du navigateur pour diagnostics
     const logBrowserInfo = () => {
-      // Récupération sécurisée des informations de connexion
-      let connectionInfo: ConnectionInfo = {};
-      
-      // Vérifier si navigator.connection existe avant d'y accéder
-      if (typeof navigator !== 'undefined' && 'connection' in navigator) {
-        const connection = (navigator as any).connection;
-        if (connection) {
-          connectionInfo = {
-            effectiveType: connection.effectiveType,
-            downlink: connection.downlink,
-            rtt: connection.rtt,
-            saveData: connection.saveData
-          };
-        }
-      }
-        
       const browserInfo = {
         userAgent: navigator.userAgent,
         platform: navigator.platform, 
         language: navigator.language,
-        cookiesEnabled: navigator.cookieEnabled,
         viewport: {
           width: window.innerWidth,
           height: window.innerHeight
-        },
-        connection: connectionInfo
+        }
       };
       
-      logToNetlify("Informations du navigateur", browserInfo);
+      logToConsole("Informations du navigateur", browserInfo);
     };
     
     // Exécuter au démarrage
     logBrowserInfo();
-    logToNetlify("Moniteur d'erreurs React activé");
+    logToConsole("Moniteur d'erreurs React activé");
 
-    // Ajout d'un gestionnaire d'erreurs global étendu
-    window.onerror = function(message, source, lineno, colno, error) {
-      const errorDetails = {
-        message,
-        source,
-        location: `Ligne ${lineno}, Colonne ${colno}`,
-        stack: error?.stack,
-        timestamp: new Date().toISOString()
-      };
-      
-      logToNetlify("Erreur JavaScript globale détectée", errorDetails);
-      
-      // Détection spécifique des erreurs de chargement de modules
-      if (message && (
-        message.toString().includes("Cannot access") ||
-        message.toString().includes("before initialization") ||
-        message.toString().includes("is not defined") ||
-        message.toString().includes("Failed to load module")
-      )) {
-        logToNetlify("ERREUR CRITIQUE NETLIFY: Problème de chargement de module détecté", message);
-      }
-      
-      return false; // Permettre la propagation normale de l'erreur
+    // Liste des erreurs à ignorer
+    const ignoredErrors = [
+      'Sentry',
+      'cdn',
+      'unstable_scheduleCallback',
+      'ResizeObserver',
+      'Mt',
+      'Tt',
+      'before initialization',
+      'aborted',
+      'Failed to fetch'
+    ];
+
+    // Fonction pour vérifier si une erreur doit être ignorée
+    const shouldIgnoreError = (message: string): boolean => {
+      return ignoredErrors.some(err => message.includes(err));
     };
-
-    // Surveiller les erreurs de chargement de ressources
-    window.addEventListener('error', function(event) {
-      // Ignorer les erreurs déjà capturées par window.onerror
-      if (event.error) return;
-      
-      // Capture les erreurs de chargement de ressources (scripts, CSS, images, etc.)
-      if (event.target && (event.target as HTMLElement).tagName) {
-        const target = event.target as HTMLElement;
-        const resourceType = target.tagName.toLowerCase();
-        const resourceUrl = (target as any).src || (target as any).href || 'inconnu';
-        
-        logToNetlify(`Erreur de chargement de ressource [${resourceType}]`, {
-          url: resourceUrl,
-          element: resourceType
-        });
-      }
-    }, true);
 
     // Fonction de gestion des erreurs non capturées
     const handleUncaughtError = (event: ErrorEvent) => {
-      console.error('Erreur non gérée:', event.error);
-      
-      // Détails supplémentaires pour le diagnostic
-      const errorDetails = {
-        message: event.message,
-        filename: event.filename,
-        stack: event.error?.stack,
-        cause: event.error?.cause,
-        timestamp: new Date().toISOString()
-      };
-      
-      logToNetlify("Erreur React non capturée", errorDetails);
-      
-      // Éviter de notifier pour les erreurs de réseau qui sont déjà gérées
-      if (event.message && (
-        event.message.includes('loading chunk') || 
-        event.message.includes('network') ||
-        event.message.includes('Failed to fetch') ||
-        event.message.includes('NetworkError')
-      )) {
+      // Ignorer certaines erreurs connues
+      if (shouldIgnoreError(event.message)) {
+        console.warn('Erreur ignorée:', event.message);
         return;
       }
       
-      // Détection des problèmes liés à React
-      const isReactError = event.message && (
-        event.message.includes('React') ||
-        event.message.includes('useLayoutEffect') ||
-        event.message.includes('unstable_scheduleCallback') ||
-        event.message.includes('createElement')
-      );
+      console.error('Erreur non gérée:', event.error);
       
-      if (isReactError) {
-        console.warn('Erreur React potentielle détectée, mise en mode fallback...');
-        logToNetlify("ERREUR CRITIQUE: Erreur React détectée, activation du mode fallback", event.message);
-        APP_STATE.isOfflineMode = true;
-      }
-      
-      // Détection de problèmes de chargement de modules
-      if (event.message && event.message.includes('Cannot access') && event.message.includes('before initialization')) {
-        logToNetlify("ERREUR CRITIQUE NETLIFY: Problème d'initialisation de module détecté", {
-          message: event.message,
-          location: event.filename,
-          stackTrace: event.error?.stack
-        });
-        
-        // Tentative de récupération
-        try {
-          document.body.innerHTML += `
-            <div style="position: fixed; bottom: 10px; right: 10px; background: #f44336; color: white; padding: 10px; border-radius: 4px; z-index: 9999;">
-              Erreur de chargement détectée. <button onclick="window.location.reload()" style="background: white; color: #f44336; border: none; padding: 5px; border-radius: 4px; cursor: pointer;">Recharger</button>
-            </div>
-          `;
-        } catch (e) {
-          console.error("Impossible d'ajouter la notification d'erreur", e);
-        }
-      }
+      logToConsole("Erreur React non capturée", {
+        message: event.message,
+        filename: event.filename,
+        stack: event.error?.stack
+      });
       
       // Notification à l'utilisateur
       toast({
@@ -196,38 +102,22 @@ export const ReactErrorMonitor = () => {
 
     // Fonction pour gérer les rejets de promesses non capturés
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      logToNetlify('Promesse rejetée non gérée:', {
-        reason: event.reason?.message || String(event.reason),
-        stack: event.reason?.stack
-      });
-      
-      // Éviter de notifier pour certains types d'erreurs
-      if (event.reason && (
-        event.reason.message?.includes('aborted') ||
-        event.reason.message?.includes('canceled')
-      )) {
+      // Ignorer certaines erreurs connues
+      const reason = event.reason?.message || String(event.reason);
+      if (shouldIgnoreError(reason)) {
+        console.warn('Rejet de promesse ignoré:', reason);
         return;
       }
       
-      // Détecter les problèmes de connexion à l'API
-      const isConnectionError = event.reason && (
-        event.reason.message?.includes('fetch') ||
-        event.reason.message?.includes('network') ||
-        event.reason.message?.includes('ECONNREFUSED') ||
-        event.reason.message?.includes('localhost')
-      );
-      
-      if (isConnectionError) {
-        console.warn('Problème de connexion détecté, activation du mode hors ligne...');
-        APP_STATE.setOfflineMode?.(true);
-      }
+      logToConsole('Promesse rejetée non gérée:', {
+        reason: reason,
+        stack: event.reason?.stack
+      });
       
       // Notification à l'utilisateur
       toast({
         title: "Opération échouée",
-        description: isConnectionError 
-          ? "Problème de connexion détecté. Mode hors ligne activé." 
-          : "Une requête a échoué. Veuillez réessayer.",
+        description: "Une requête a échoué. Veuillez réessayer.",
         variant: "destructive"
       });
     };
