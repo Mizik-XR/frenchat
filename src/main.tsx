@@ -1,16 +1,18 @@
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
 import './index.css';
 import * as Sentry from "@sentry/react";
+import { browserTracingIntegration, replayIntegration } from "@sentry/react";
 
 // Initialisation de Sentry avec la configuration mise à jour
 Sentry.init({
   dsn: "https://7ec84a703e3dfd1a2fa5bed2ab4d00d4@o4508941853917184.ingest.de.sentry.io/4508949699035216",
   integrations: [
-    new Sentry.BrowserTracing(),
-    new Sentry.Replay(),
+    browserTracingIntegration(),
+    replayIntegration(),
   ],
   // Performance Monitoring
   tracesSampleRate: 1.0,
