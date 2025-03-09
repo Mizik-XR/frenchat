@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import * as Sentry from "@sentry/react";
 import { LogLevel, ErrorType, SentryTypes } from "@/monitoring/types";
+import { SentryMonitor } from "@/monitoring/sentry-integration";
 
 export const useSentrySession = () => {
   const isSentryReady = useCallback((): boolean => {
@@ -41,26 +42,13 @@ export const useSentrySession = () => {
   }, [isSentryReady]);
 
   const translateLogLevel = useCallback((level: LogLevel): SentryTypes.SeverityLevel => {
-    switch (level) {
-      case LogLevel.DEBUG: return "debug";
-      case LogLevel.INFO: return "info";
-      case LogLevel.WARN: return "warning";
-      case LogLevel.ERROR: return "error";
-      case LogLevel.CRITICAL: return "fatal";
-      default: return "info";
-    }
+    // Use SentryMonitor's translation method
+    return SentryMonitor.translateLogLevel(level) as SentryTypes.SeverityLevel;
   }, []);
 
   const translateErrorType = useCallback((type: ErrorType): string => {
-    switch (type) {
-      case ErrorType.NETWORK: return "network";
-      case ErrorType.MODULE_LOADING: return "module_loading";
-      case ErrorType.REACT_RENDERING: return "react_rendering";
-      case ErrorType.RESOURCE_LOADING: return "resource_loading";
-      case ErrorType.PROMISE_REJECTION: return "promise_rejection";
-      case ErrorType.API_ERROR: return "api_error";
-      default: return "unknown";
-    }
+    // Use SentryMonitor's translation method
+    return SentryMonitor.translateErrorType(type as string);
   }, []);
 
   const testSentry = useCallback((): void => {

@@ -1,4 +1,3 @@
-
 import * as Sentry from '@sentry/react';
 
 export class SentryMonitor {
@@ -151,6 +150,35 @@ export class SentryMonitor {
     } catch (e) {
       console.error('Échec du test de connexion Sentry:', e);
       return false;
+    }
+  }
+
+  /**
+   * Convertit les niveaux de log internes en niveaux Sentry
+   */
+  static translateLogLevel(level: string): Sentry.SeverityLevel {
+    switch (level) {
+      case 'DEBUG': return 'debug';
+      case 'INFO': return 'info';
+      case 'WARN': return 'warning';
+      case 'ERROR': return 'error';
+      case 'CRITICAL': return 'fatal';
+      default: return 'info';
+    }
+  }
+
+  /**
+   * Traduit les types d'erreur internes en types Sentry
+   */
+  static translateErrorType(type: string): string {
+    switch (type) {
+      case 'NETWORK': return 'network';
+      case 'MODULE_LOADING': return 'module_loading';
+      case 'REACT_RENDERING': return 'react_rendering';
+      case 'RESOURCE_LOADING': return 'resource_loading';
+      case 'PROMISE_REJECTION': return 'promise_rejection';
+      case 'API_ERROR': return 'api_error';
+      default: return 'unknown';
     }
   }
 }

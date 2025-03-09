@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BugOctagon, AlertCircle, Check } from 'lucide-react';
+import { Bug, Octagon, AlertCircle, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSentrySession } from '@/components/monitoring/error-monitor/useSentrySession';
 
@@ -96,7 +96,7 @@ export const SentryTestButton = () => {
       ) : isReady === false ? (
         <AlertCircle className="mr-2 h-4 w-4" />
       ) : (
-        <BugOctagon className="mr-2 h-4 w-4" />
+        <Bug className="mr-2 h-4 w-4" />
       )}
       Test Sentry
     </Button>
