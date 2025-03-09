@@ -106,12 +106,6 @@ echo [[headers]] >> "%NETLIFY_FILE%.clean"
 echo   for = "/assets/*" >> "%NETLIFY_FILE%.clean"
 echo   [headers.values] >> "%NETLIFY_FILE%.clean"
 echo     Cache-Control = "public, max-age=31536000, immutable" >> "%NETLIFY_FILE%.clean"
-echo. >> "%NETLIFY_FILE%.clean"
-echo # Redirection pour la page de debug >> "%NETLIFY_FILE%.clean"
-echo [[redirects]] >> "%NETLIFY_FILE%.clean"
-echo   from = "/debug" >> "%NETLIFY_FILE%.clean"
-echo   to = "/debug.html" >> "%NETLIFY_FILE%.clean"
-echo   status = 200 >> "%NETLIFY_FILE%.clean"
 
 echo [INFO] Remplacement du fichier netlify.toml par la version propre...
 move /Y "%NETLIFY_FILE%.clean" "%NETLIFY_FILE%" >nul
