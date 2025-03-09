@@ -26,7 +26,7 @@ export const useSentrySession = () => {
     
     try {
       Sentry.captureMessage(message, {
-        level: level as SentryTypes.SeverityLevel,
+        level: level as Sentry.SeverityLevel,
         extra: context
       });
     } catch (e) {
