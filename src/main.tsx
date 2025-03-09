@@ -13,7 +13,7 @@ Sentry.init({
     // Dans Sentry v9, la syntaxe d'intégration a changé
     Sentry.replayIntegration(),
     Sentry.browserTracingIntegration(),
-    Sentry.browserProfilerIntegration(),
+    Sentry.browserProfilingIntegration(),
     Sentry.httpClientIntegration(),
   ],
   // Performance Monitoring
