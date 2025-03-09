@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -8,7 +7,7 @@
     <title>Frenchat - Votre assistant d'intelligence documentaire</title>
     <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
     
-    <!-- Script Sentry - Nouvelle approche avec le script de chargement -->
+    <!-- Script Sentry avec le loader recommandé -->
     <script src="https://js-de.sentry-cdn.com/5a407d83878bf19db2a92e7d62b75fc1.min.js" crossorigin="anonymous"></script>
     
     <!-- Style de base pour l'écran de chargement initial -->
@@ -74,53 +73,6 @@
       }
     </style>
     
-    <!-- Script Sentry adapté pour éviter les conflits -->
-    <script>
-      // Fonction d'initialisation retardée de Sentry
-      window.initSentry = function() {
-        try {
-          // Vérifier si nous sommes sur localhost
-          if (window.location.hostname === 'localhost') {
-            console.log("Sentry désactivé sur localhost");
-            return;
-          }
-          
-          // Vérifier si le script Sentry est déjà chargé
-          if (window.Sentry) {
-            console.log("Sentry déjà chargé");
-            return;
-          }
-          
-          var script = document.createElement('script');
-          script.src = "https://js.sentry-cdn.com/9e087d2c1630c52d5873558bbdf14d51.min.js";
-          script.crossOrigin = "anonymous";
-          script.defer = true;
-          script.async = true;
-          
-          script.onload = function() {
-            console.log("Script Sentry chargé avec succès");
-          };
-          
-          script.onerror = function(e) {
-            console.warn("Impossible de charger Sentry, surveillance désactivée", e);
-          };
-          
-          document.head.appendChild(script);
-          console.log("Script Sentry en cours de chargement...");
-        } catch (e) {
-          console.warn("Erreur lors du chargement de Sentry:", e);
-        }
-      };
-      
-      // Retarder le chargement de Sentry pour éviter les conflits avec React
-      setTimeout(function() {
-        window.initSentry();
-      }, 3000);
-    </script>
-    
-    <!-- Script GPT Engineer -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
-    
     <!-- Script de gestion d'erreur et de récupération -->
     <script>
       // Fonction pour rediriger vers la page d'accueil avec des paramètres forcés de mode cloud
@@ -174,6 +126,9 @@
         }
       }, 8000);
     </script>
+    
+    <!-- Script GPT Engineer -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
   </head>
   <body>
     <!-- Message de secours si le JavaScript est désactivé -->

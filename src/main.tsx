@@ -53,31 +53,32 @@ const initializeApp = async () => {
     // Vérification de Sentry après le rendu initial
     if (!isDevMode) {
       try {
-        // Importer dynamiquement après le rendu initial
-        setTimeout(async () => {
-          try {
-            // Vérifier si Sentry est disponible
-            const monitoring = await import('./monitoring/index');
-            if (monitoring.SentryMonitor.isReady()) {
-              console.log("Sentry est disponible et correctement chargé");
-              
-              // Test de Sentry après 10 secondes
-              setTimeout(() => {
-                try {
-                  monitoring.SentryMonitor.testSentry();
-                } catch (testError) {
-                  console.warn("Erreur lors du test Sentry:", testError);
+        // Vérifier si Sentry est disponible via le script de chargement
+        if (window.Sentry) {
+          console.log("Sentry est disponible via le script de chargement");
+          
+          // Test de Sentry après 10 secondes en production
+          setTimeout(() => {
+            try {
+              console.log("Exécution du test Sentry automatique");
+              // Lancer un test Sentry après le chargement complet
+              const testError = new Error("Sentry Loader Test - " + new Date().toISOString());
+              window.Sentry.captureException(testError, {
+                extra: {
+                  source: "main.tsx",
+                  automatic: true,
+                  environment: process.env.NODE_ENV
                 }
-              }, 10000);
-            } else {
-              console.warn("Sentry n'est pas disponible ou n'est pas correctement chargé");
+              });
+            } catch (testError) {
+              console.warn("Erreur lors du test Sentry:", testError);
             }
-          } catch (monitoringError) {
-            console.warn("Erreur lors de la vérification de Sentry:", monitoringError);
-          }
-        }, 5000);
+          }, 10000);
+        } else {
+          console.warn("Sentry n'est pas disponible via le script de chargement");
+        }
       } catch (error) {
-        console.warn("Erreur lors du chargement initial des moniteurs:", error);
+        console.warn("Erreur lors de la vérification de Sentry:", error);
       }
     }
     
@@ -97,6 +98,16 @@ const initializeApp = async () => {
       message: error.message,
       stack: error.stack
     });
+    
+    // Envoyer l'erreur à Sentry si disponible
+    if (window.Sentry && error instanceof Error) {
+      window.Sentry.captureException(error, {
+        extra: { 
+          location: "main.tsx initialization",
+          critical: true
+        }
+      });
+    }
     
     // Afficher une interface utilisateur de secours en cas d'erreur
     const rootElement = document.getElementById('root');
