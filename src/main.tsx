@@ -1,4 +1,3 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -13,11 +12,11 @@ const isNetlify = window.location.hostname.includes('netlify.app');
 const isDevMode = process.env.NODE_ENV === 'development';
 const isCloudMode = import.meta.env.VITE_CLOUD_MODE === 'true';
 
-// Initialiser Sentry avant tout le reste
-SentryMonitor.initialize();
+// Désactiver temporairement Sentry pour déboguer
+// SentryMonitor.initialize();
 
 // Journal des informations de l'environnement
-Monitoring.info("Initialisation de l'application", {
+console.log("Initialisation de l'application", {
   environment: process.env.NODE_ENV,
   isNetlify,
   isCloudMode,
@@ -26,7 +25,7 @@ Monitoring.info("Initialisation de l'application", {
 });
 
 // Journalisation des informations du navigateur
-Monitoring.info("Informations du navigateur", {
+console.log("Informations du navigateur", {
   userAgent: navigator.userAgent,
   language: navigator.language,
   platform: navigator.platform,
@@ -43,19 +42,12 @@ window.addEventListener('error', (event) => {
     event.message.includes('is not defined') ||
     event.message.includes('Failed to load module')
   )) {
-    Monitoring.critical("ERREUR DE CHARGEMENT DE MODULE DÉTECTÉE", {
+    console.error("ERREUR DE CHARGEMENT DE MODULE DÉTECTÉE", {
       message: event.message,
       source: event.filename,
       line: event.lineno,
       column: event.colno
     });
-    
-    // Envoi à Sentry
-    if (event.error) {
-      Monitoring.captureException(event.error);
-    } else {
-      Monitoring.captureMessage("ERREUR DE CHARGEMENT DE MODULE: " + event.message, "fatal");
-    }
     
     // Stocker l'erreur pour la diagnostiquer plus tard
     try {
@@ -77,13 +69,14 @@ window.addEventListener('error', (event) => {
 
 // Lancer le rendu de l'application avec récupération d'erreur
 try {
-  Monitoring.info("Début du rendu de l'application");
+  console.log("Début du rendu de l'application");
   
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <BrowserRouter>
         <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-          <ReactErrorMonitor />
+          {/* Désactiver temporairement le moniteur d'erreurs */}
+          {/* <ReactErrorMonitor /> */}
           <App />
           <Toaster />
         </ThemeProvider>
@@ -91,15 +84,12 @@ try {
     </React.StrictMode>
   );
   
-  Monitoring.info("Rendu de l'application terminé avec succès");
+  console.log("Rendu de l'application terminé avec succès");
 } catch (error) {
-  Monitoring.critical("ERREUR CRITIQUE lors du rendu initial", {
+  console.error("ERREUR CRITIQUE lors du rendu initial", {
     message: error.message,
     stack: error.stack
   });
-  
-  // Envoi à Sentry
-  Monitoring.captureException(error);
   
   // Afficher une interface utilisateur de secours en cas d'erreur
   const rootElement = document.getElementById('root');
@@ -134,7 +124,6 @@ try {
 // Exposer une fonction de diagnostic pour Netlify
 window.showNetlifyDiagnostic = function() {
   return {
-    logs: Monitoring.getLogs(),
     environment: {
       isNetlify,
       isDevMode,
