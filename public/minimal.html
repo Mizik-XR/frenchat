@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Filechat - Version minimale</title>
+    
+    <!-- Style de base pour l'écran de chargement initial -->
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      #loading-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: linear-gradient(to bottom right, #f0f9ff, #e1e7ff);
+      }
+      .loading-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+      }
+      .loading-title {
+        color: #4f46e5;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      .loading-bar {
+        width: 100%;
+        height: 6px;
+        background-color: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 1.5rem 0;
+      }
+      .loading-bar-progress {
+        width: 30%;
+        height: 100%;
+        background-color: #4f46e5;
+        border-radius: 3px;
+        animation: progressAnimation 2s infinite ease-in-out;
+      }
+      @keyframes progressAnimation {
+        0% { width: 10%; }
+        50% { width: 70%; }
+        100% { width: 10%; }
+      }
+    </style>
+    
+    <!-- Script de base pour la journalisation -->
+    <script>
+      console.log("Chargement de la page minimale...");
+      
+      // Variable pour stocker les erreurs
+      window.appErrors = [];
+      
+      // Détection d'erreur
+      window.addEventListener('error', function(event) {
+        console.warn('Erreur détectée:', event.message);
+        
+        // Stocker l'erreur
+        window.appErrors.push({
+          message: event.message,
+          source: event.filename,
+          line: event.lineno,
+          time: new Date().toISOString()
+        });
+      });
+      
+      // Fonction pour afficher les erreurs
+      function showErrors() {
+        const errorsEl = document.getElementById('errors-container');
+        if (errorsEl && window.appErrors && window.appErrors.length > 0) {
+          errorsEl.style.display = 'block';
+          errorsEl.innerHTML = '<h3>Erreurs détectées:</h3><ul>' + 
+            window.appErrors.map(err => `<li>${err.message} (${err.source}, ligne ${err.line})</li>`).join('') +
+            '</ul>';
+        }
+      }
+    </script>
+    
+    <!-- Script GPT Engineer -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
+  </head>
+  <body>
+    <!-- Message si JavaScript est désactivé -->
+    <noscript>
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center;">
+        <h1 style="color: #4f46e5; margin-bottom: 20px;">JavaScript est requis</h1>
+        <p>Cette application nécessite que JavaScript soit activé pour fonctionner.</p>
+      </div>
+    </noscript>
+    
+    <!-- Écran de chargement initial -->
+    <div id="root">
+      <div id="loading-screen">
+        <div class="loading-container">
+          <h1 class="loading-title">Filechat (Minimal)</h1>
+          <p>Chargement de la version minimaliste...</p>
+          <div class="loading-bar"><div class="loading-bar-progress"></div></div>
+          <div id="errors-container" style="display: none; margin-top: 20px; color: #e11d48; text-align: left; background: #fee2e2; padding: 12px; border-radius: 6px;"></div>
+          <button onclick="window.location.reload()" style="margin-top: 16px; background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Recharger</button>
+          <button onclick="showErrors()" style="margin-top: 8px; background: none; border: 1px solid #6b7280; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Afficher les erreurs</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Script pour la version minimale -->
+    <script type="module" src="/src/main-minimal.tsx"></script>
+  </body>
+</html>
