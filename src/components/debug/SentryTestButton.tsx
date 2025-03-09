@@ -1,54 +1,104 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BugPlay } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { BugOctagon, AlertCircle, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { useSentrySession } from '@/components/monitoring/error-monitor/useSentrySession';
 
-/**
- * Component that provides a button to test Sentry error reporting
- */
 export const SentryTestButton = () => {
-  const { captureException } = useSentrySession();
-
-  const handleTestSentry = () => {
-    try {
-      toast({
-        title: "Test Sentry",
-        description: "Envoi d'une erreur test à Sentry...",
-      });
-      
-      // Generate a test error
-      throw new Error(`Test Sentry Error - ${new Date().toISOString()}`);
-    } catch (error) {
-      if (error instanceof Error) {
-        console.log("Erreur de test capturée, envoi à Sentry...");
-        
-        // Send to Sentry with context data
-        captureException(error, {
-          source: "SentryTestButton",
-          manual: true,
-          timestamp: Date.now(),
-          userAction: "Test Button Click"
-        });
-        
-        toast({
-          title: "Erreur envoyée à Sentry",
-          description: "Vérifiez le dashboard Sentry pour confirmer la réception.",
-          variant: "default" 
-        });
-      }
-    }
+  const { toast } = useToast();
+  const { testSentry, isSentryReady } = useSentrySession();
+  const [isReady, setIsReady] = useState<boolean | null>(null);
+  
+  // Vérifie si Sentry est correctement initialisé
+  const checkSentryStatus = () => {
+    const ready = isSentryReady();
+    setIsReady(ready);
+    
+    toast({
+      title: ready ? "Sentry est initialisé" : "Sentry n'est pas initialisé",
+      description: ready 
+        ? "Vous pouvez envoyer des erreurs test à Sentry." 
+        : "L'intégration Sentry n'est pas disponible actuellement.",
+      variant: ready ? "default" : "destructive",
+    });
+    
+    return ready;
   };
-
+  
+  // Test d'envoi d'erreur à Sentry
+  const handleTestSentry = () => {
+    const ready = checkSentryStatus();
+    
+    if (!ready) {
+      if (typeof window !== 'undefined' && window.initSentry) {
+        toast({
+          title: "Tentative de réinitialisation de Sentry",
+          description: "Réinitialisation de Sentry en cours...",
+        });
+        
+        window.initSentry();
+        
+        // Vérifie à nouveau après réinitialisation
+        setTimeout(() => {
+          const nowReady = isSentryReady();
+          setIsReady(nowReady);
+          
+          if (nowReady) {
+            testSentry();
+            toast({
+              title: "Sentry réinitialisé avec succès",
+              description: "Une erreur test a été envoyée à Sentry.",
+            });
+          } else {
+            toast({
+              title: "Échec de la réinitialisation",
+              description: "Impossible d'initialiser Sentry. Vérifiez la configuration.",
+              variant: "destructive",
+            });
+          }
+        }, 1000);
+        
+        return;
+      }
+      
+      toast({
+        title: "Impossible de tester Sentry",
+        description: "Sentry n'est pas correctement initialisé.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Envoi du test
+    testSentry();
+    
+    toast({
+      title: "Test Sentry envoyé",
+      description: "Un rapport d'erreur test a été envoyé à Sentry.",
+    });
+  };
+  
   return (
     <Button 
-      onClick={handleTestSentry} 
+      onClick={handleTestSentry}
       variant="outline"
-      className="bg-red-50 hover:bg-red-100 border-red-200 text-red-600 hover:text-red-700"
+      className={`${
+        isReady === true 
+          ? "bg-green-50 hover:bg-green-100 border-green-200 text-green-600" 
+          : isReady === false 
+            ? "bg-red-50 hover:bg-red-100 border-red-200 text-red-600"
+            : "bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-600"
+      }`}
     >
-      <BugPlay className="mr-2 h-4 w-4" />
-      Tester Sentry
+      {isReady === true ? (
+        <Check className="mr-2 h-4 w-4" />
+      ) : isReady === false ? (
+        <AlertCircle className="mr-2 h-4 w-4" />
+      ) : (
+        <BugOctagon className="mr-2 h-4 w-4" />
+      )}
+      Test Sentry
     </Button>
   );
 };

@@ -5,20 +5,31 @@ import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
 import './index.css';
 import * as Sentry from "@sentry/react";
-import { browserTracingIntegration, replayIntegration } from "@sentry/react";
 
-// Initialisation de Sentry avec la configuration mise à jour
+// Configuration simplifiée de Sentry pour éviter les erreurs d'initialisation
 Sentry.init({
   dsn: "https://7ec84a703e3dfd1a2fa5bed2ab4d00d4@o4508941853917184.ingest.de.sentry.io/4508949699035216",
-  integrations: [
-    browserTracingIntegration(),
-    replayIntegration(),
-  ],
-  // Performance Monitoring
+  
+  // Désactiver temporairement les intégrations qui causent des conflits
+  integrations: [],
+  
+  // Performance Monitoring (simplifié)
   tracesSampleRate: 1.0,
-  // Session Replay
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0,
+  
+  // Désactiver Session Replay temporairement
+  replaysSessionSampleRate: 0.0,
+  replaysOnErrorSampleRate: 0.0,
+  
+  // Mode debug pour voir les problèmes d'initialisation
+  debug: process.env.NODE_ENV !== 'production',
+  
+  // Ignorer les erreurs liées à l'initialisation
+  ignoreErrors: [
+    'unstable_scheduleCallback',
+    'Cannot read properties of undefined',
+    'Mt',
+    'Tt'
+  ]
 });
 
 // Configuration pour la journalisation
@@ -66,29 +77,37 @@ const initializeApp = async () => {
       loadingScreen.style.display = 'none';
     }
     
-    // Vérification de Sentry après le rendu initial
-    if (!isDevMode) {
-      try {
-        // Test de Sentry après 10 secondes en production
+    // Une fois que l'application est rendue, initialiser complètement Sentry
+    try {
+      // Réinitialiser Sentry avec toutes les intégrations après le rendu
+      if (!isDevMode) {
+        // Chargement différé des intégrations Sentry pour éviter les erreurs d'initialisation
         setTimeout(() => {
           try {
-            console.log("Exécution du test Sentry automatique");
-            // Lancer un test Sentry après le chargement complet
-            const testError = new Error("Sentry SDK Init Test - " + new Date().toISOString());
-            Sentry.captureException(testError, {
-              extra: {
-                source: "main.tsx",
-                automatic: true,
-                environment: process.env.NODE_ENV
-              }
+            import('@sentry/react').then(SentryModule => {
+              const { browserTracingIntegration, replayIntegration } = SentryModule;
+              
+              // Réinitialiser Sentry avec toutes les intégrations
+              Sentry.init({
+                dsn: "https://7ec84a703e3dfd1a2fa5bed2ab4d00d4@o4508941853917184.ingest.de.sentry.io/4508949699035216",
+                integrations: [
+                  browserTracingIntegration(),
+                  replayIntegration(),
+                ],
+                tracesSampleRate: 1.0,
+                replaysSessionSampleRate: 0.1,
+                replaysOnErrorSampleRate: 1.0,
+              });
+              
+              console.log("Sentry réinitialisé avec succès après le rendu de l'application");
             });
-          } catch (testError) {
-            console.warn("Erreur lors du test Sentry:", testError);
+          } catch (e) {
+            console.warn("Erreur lors de la réinitialisation de Sentry après le rendu:", e);
           }
-        }, 10000);
-      } catch (error) {
-        console.warn("Erreur lors de la vérification de Sentry:", error);
+        }, 2000);
       }
+    } catch (sentryError) {
+      console.warn("Erreur lors de la configuration de Sentry:", sentryError);
     }
     
     root.render(
@@ -173,11 +192,38 @@ window.showNetlifyDiagnostic = function() {
   };
 };
 
+// Exposer une fonction pour réinitialiser Sentry
+window.initSentry = function() {
+  try {
+    import('@sentry/react').then(SentryModule => {
+      const { browserTracingIntegration, replayIntegration } = SentryModule;
+      
+      Sentry.init({
+        dsn: "https://7ec84a703e3dfd1a2fa5bed2ab4d00d4@o4508941853917184.ingest.de.sentry.io/4508949699035216",
+        integrations: [
+          browserTracingIntegration(),
+          replayIntegration(),
+        ],
+        tracesSampleRate: 1.0,
+        replaysSessionSampleRate: 0.1,
+        replaysOnErrorSampleRate: 1.0,
+      });
+      
+      console.log("Sentry réinitialisé manuellement avec succès");
+      return true;
+    });
+  } catch (e) {
+    console.error("Échec de la réinitialisation manuelle de Sentry:", e);
+    return false;
+  }
+};
+
 // Déclarer le type global
 declare global {
   interface Window {
     lastRenderError?: Error;
     showNetlifyDiagnostic?: () => any;
     Sentry?: any;
+    initSentry?: () => boolean;
   }
 }

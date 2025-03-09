@@ -5,11 +5,14 @@ import { LogLevel, ErrorType, SentryTypes } from "@/monitoring/types";
 
 export const useSentrySession = () => {
   const isSentryReady = useCallback((): boolean => {
-    return Sentry && typeof Sentry.captureException === 'function';
+    return typeof Sentry !== 'undefined' && typeof Sentry.captureException === 'function';
   }, []);
 
   const captureException = useCallback((error: Error, context?: Record<string, any>) => {
-    if (!isSentryReady()) return;
+    if (!isSentryReady()) {
+      console.warn("Sentry n'est pas initialisé, impossible de capturer l'exception", error);
+      return;
+    }
     
     try {
       Sentry.captureException(error, {
@@ -22,7 +25,10 @@ export const useSentrySession = () => {
   }, [isSentryReady]);
 
   const captureMessage = useCallback((message: string, level: string = "info", context?: Record<string, any>) => {
-    if (!isSentryReady()) return;
+    if (!isSentryReady()) {
+      console.warn("Sentry n'est pas initialisé, impossible de capturer le message", message);
+      return;
+    }
     
     try {
       Sentry.captureMessage(message, {
@@ -58,7 +64,18 @@ export const useSentrySession = () => {
   }, []);
 
   const testSentry = useCallback((): void => {
-    if (!isSentryReady()) return;
+    if (!isSentryReady()) {
+      console.warn("Sentry n'est pas initialisé, impossible d'exécuter le test");
+      
+      // Tenter d'initialiser Sentry via la fonction globale si disponible
+      if (typeof window !== 'undefined' && window.initSentry) {
+        window.initSentry();
+        console.log("Tentative de réinitialisation de Sentry via window.initSentry");
+        return;
+      }
+      
+      return;
+    }
     
     try {
       throw new Error("Test Sentry Error - " + new Date().toISOString());
@@ -71,7 +88,10 @@ export const useSentrySession = () => {
   }, [isSentryReady, captureException]);
 
   const setUserContext = useCallback((userId: string, email?: string, username?: string) => {
-    if (!isSentryReady()) return;
+    if (!isSentryReady()) {
+      console.warn("Sentry n'est pas initialisé, impossible de définir le contexte utilisateur");
+      return;
+    }
     
     try {
       Sentry.setUser({
@@ -85,7 +105,10 @@ export const useSentrySession = () => {
   }, [isSentryReady]);
 
   const clearUserContext = useCallback(() => {
-    if (!isSentryReady()) return;
+    if (!isSentryReady()) {
+      console.warn("Sentry n'est pas initialisé, impossible d'effacer le contexte utilisateur");
+      return;
+    }
     
     try {
       Sentry.setUser(null);

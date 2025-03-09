@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -7,11 +8,13 @@
     <title>Frenchat - Votre assistant d'intelligence documentaire</title>
     <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
     
-    <!-- Script Sentry avec la nouvelle URL -->
+    <!-- Script Sentry avec la nouvelle URL - DÉSACTIVÉ TEMPORAIREMENT -->
+    <!-- 
     <script
       src="https://js.sentry-cdn.com/7ec84a703e3dfd1a2fa5bed2ab4d00d4.min.js"
       crossorigin="anonymous"
     ></script>
+    -->
     
     <!-- Style de base pour l'écran de chargement initial -->
     <style>
@@ -83,9 +86,22 @@
         window.location.href = '/?forceCloud=true&mode=cloud&client=true';
       }
       
+      // Variable pour stocker les erreurs
+      window.sentryErrors = [];
+      
       // Détection et récupération en cas d'erreur de chargement
       window.addEventListener('error', function(event) {
         console.warn('Erreur détectée:', event.message);
+        
+        // Stocker l'erreur pour diagnostic
+        if (window.sentryErrors) {
+          window.sentryErrors.push({
+            message: event.message,
+            source: event.filename,
+            line: event.lineno,
+            time: new Date().toISOString()
+          });
+        }
         
         // Filtrer les erreurs liées à Sentry ou aux ressources externes
         if (event.message && (
@@ -154,7 +170,7 @@
           <div class="error-message">Le chargement semble prendre plus de temps que prévu.</div>
           <button class="retry-btn" onclick="window.location.reload()">Rafraîchir la page</button>
           <button class="retry-btn" onclick="forceHomepageInCloudMode()" style="margin-left: 8px; background-color: #6366f1;">Mode cloud</button>
-          <button class="retry-btn" onclick="window.initSentry(); alert('Sentry réinitialisé');" style="margin-left: 8px; background-color: #10b981;">Réinitialiser Sentry</button>
+          <button class="retry-btn" onclick="window.initSentry && window.initSentry(); alert('Sentry réinitialisé');" style="margin-left: 8px; background-color: #10b981;">Réinitialiser Sentry</button>
         </div>
       </div>
     </div>
