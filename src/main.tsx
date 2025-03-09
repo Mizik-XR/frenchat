@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
 import { initializeAppWithErrorRecovery } from './utils/startup/loadingUtils';
-import { isNetlifyEnvironment } from './utils/environment/environmentDetection';
+import { isNetlifyEnvironment, getEnvironmentInfo } from './utils/environment/environmentDetection';
 import './index.css';
 
 // Remplacer l'initialisation Sentry par des logs de diagnostic
@@ -15,11 +15,23 @@ console.log('📊 Environnement:', process.env.NODE_ENV);
 if (isNetlifyEnvironment()) {
   console.log('🌐 Exécution sur Netlify:', window.location.hostname);
   console.log('🔄 URL complète:', window.location.href);
+  
+  // Logs détaillés pour le débogage sur Netlify
+  const envInfo = getEnvironmentInfo();
+  console.log('📋 Informations détaillées sur l\'environnement Netlify:', envInfo);
+  
+  // Stocker les informations dans localStorage pour le diagnostic
+  try {
+    localStorage.setItem('filechat_env_info', JSON.stringify(envInfo));
+    console.log('💾 Informations d\'environnement sauvegardées dans localStorage');
+  } catch (e) {
+    console.warn('⚠️ Impossible de sauvegarder les informations dans localStorage:', e);
+  }
 }
 
 // Fonction de diagnostic globale pour aider au débogage
 window.showDiagnostic = function() {
-  return {
+  const diagnosticInfo = {
     environment: process.env.NODE_ENV,
     isNetlify: isNetlifyEnvironment(),
     timestamp: new Date().toISOString(),
@@ -28,8 +40,22 @@ window.showDiagnostic = function() {
     viewport: `${window.innerWidth}x${window.innerHeight}`,
     hostname: window.location.hostname,
     pathname: window.location.pathname,
-    search: window.location.search
+    search: window.location.search,
+    // Ajouter des informations spécifiques à Netlify
+    netlifySpecific: isNetlifyEnvironment() ? {
+      deployUrl: window.location.origin,
+      // @ts-ignore - L'objet n'existe pas toujours
+      deployContext: window.netlifyDeployContext || 'unknown',
+      // Vérifier les chemins de base pour les assets
+      assetPaths: {
+        relativeRoot: new URL('./assets', window.location.href).href,
+        absoluteRoot: new URL('/assets', window.location.origin).href
+      }
+    } : null
   };
+  
+  console.log('📊 Diagnostic complet:', diagnosticInfo);
+  return diagnosticInfo;
 };
 
 // Version simplifiée de initSentry pour préserver l'API
