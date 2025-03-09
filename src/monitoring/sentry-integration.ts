@@ -1,4 +1,3 @@
-
 import { ErrorType, LogLevel } from "./types";
 
 /**
@@ -8,8 +7,8 @@ import { ErrorType, LogLevel } from "./types";
 export class SentryMonitor {
   private static isInitialized = false;
   
-  // La clé DSN est maintenant gérée par le script de chargement
-  static DSN = "https://5a407d83878bf19db2a92e7d62b75fc1@js-de.sentry-cdn.com/4506892584976384";
+  // Mise à jour de la clé DSN avec celle fournie par Sentry
+  static DSN = "https://7ec84a703e3dfd1a2fa5bed2ab4d00d4@o4508941853917184.ingest.de.sentry.io/4508949699035216";
   
   /**
    * Vérifie si Sentry est déjà chargé dans la page

@@ -16,6 +16,21 @@ interface MonitoringStatusProps {
 export const MonitoringStatusCard = ({ sentryStat }: MonitoringStatusProps) => {
   const { toast } = useToast();
 
+  // Fonction pour masquer partiellement la clé DSN pour la sécurité
+  const formatDSN = (dsn: string) => {
+    if (!dsn || dsn === 'Non détecté') return dsn;
+    
+    // Masquer une partie de la clé DSN pour la sécurité tout en montrant suffisamment pour la vérification
+    const parts = dsn.split('@');
+    if (parts.length === 2) {
+      const [key, domain] = parts;
+      // Masquer la majorité de la clé mais montrer les derniers caractères
+      const maskedKey = key.substring(0, 8) + '...' + key.substring(key.length - 4);
+      return `${maskedKey}@${domain.substring(0, 15)}...`;
+    }
+    return dsn.substring(0, 15) + '...';
+  };
+
   return (
     <Card className="mt-6">
       <CardHeader>
@@ -29,7 +44,7 @@ export const MonitoringStatusCard = ({ sentryStat }: MonitoringStatusProps) => {
               <p>État: <span className={`font-mono ${sentryStat.initialized ? 'text-green-600' : 'text-red-600'}`}>
                 {sentryStat.initialized ? 'Initialisé' : 'Non initialisé'}
               </span></p>
-              <p>DSN: <span className="font-mono">{sentryStat.dsn}</span></p>
+              <p>DSN: <span className="font-mono">{formatDSN(sentryStat.dsn)}</span></p>
               <p>Env: <span className="font-mono">{sentryStat.environment}</span></p>
             </div>
           </div>
