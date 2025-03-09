@@ -1,8 +1,10 @@
+
 import { ErrorType, LogLevel } from "./types";
+import * as Sentry from "@sentry/react";
 
 /**
  * Interface avec Sentry pour le monitoring d'erreurs
- * Utilise le script de chargement Sentry au lieu de l'initialisation manuelle
+ * Utilise l'intégration directe avec le SDK Sentry React
  */
 export class SentryMonitor {
   private static isInitialized = false;
@@ -11,24 +13,24 @@ export class SentryMonitor {
   static DSN = "https://7ec84a703e3dfd1a2fa5bed2ab4d00d4@o4508941853917184.ingest.de.sentry.io/4508949699035216";
   
   /**
-   * Vérifie si Sentry est déjà chargé dans la page
+   * Vérifie si Sentry est déjà initialisé
    */
   static initialize() {
     try {
-      // Vérifier si Sentry est déjà disponible via le script de chargement
-      if (window.Sentry) {
-        console.log("Sentry déjà chargé via le script de chargement");
-        this.isInitialized = true;
-        return true;
-      }
-      
       // Si nous sommes en développement ou sur localhost, ne pas initialiser Sentry
       if (process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost') {
         console.warn("Sentry désactivé en mode développement ou sur localhost");
         return false;
       }
       
-      console.warn("Sentry n'est pas chargé correctement");
+      // Vérifier si Sentry est déjà disponible
+      if (Sentry && typeof Sentry.captureException === 'function') {
+        console.log("SDK Sentry disponible et initialisé");
+        this.isInitialized = true;
+        return true;
+      }
+      
+      console.warn("SDK Sentry n'est pas initialisé correctement");
       return false;
     } catch (error) {
       console.error("Erreur lors de la vérification de Sentry:", error);
@@ -40,38 +42,32 @@ export class SentryMonitor {
    * Envoie une erreur à Sentry de manière sécurisée
    */
   static captureException(error: Error, context?: Record<string, any>) {
-    // Essayer d'utiliser Sentry s'il est disponible
-    if (window.Sentry) {
-      try {
-        // Vérifier si l'erreur est du type à ignorer
-        const errorMessage = error.message || '';
-        const ignoredMessages = [
-          'unstable_scheduleCallback',
-          'ResizeObserver',
-          'ChunkLoadError',
-          'Mt',
-          'Tt',
-          'before initialization'
-        ];
-        
-        if (ignoredMessages.some(msg => errorMessage.includes(msg))) {
-          console.warn("Erreur ignorée localement:", errorMessage);
-          return;
-        }
-        
-        // Utiliser Sentry.captureException à partir de l'objet global
-        window.Sentry.captureException(error, {
-          extra: context
-        });
-        
-        console.log("Erreur envoyée à Sentry:", error.message);
-      } catch (e) {
-        // Échouer silencieusement pour éviter les boucles d'erreur
-        console.error("Échec de l'envoi d'erreur à Sentry:", e);
+    try {
+      // Vérifier si l'erreur est du type à ignorer
+      const errorMessage = error.message || '';
+      const ignoredMessages = [
+        'unstable_scheduleCallback',
+        'ResizeObserver',
+        'ChunkLoadError',
+        'Mt',
+        'Tt',
+        'before initialization'
+      ];
+      
+      if (ignoredMessages.some(msg => errorMessage.includes(msg))) {
+        console.warn("Erreur ignorée localement:", errorMessage);
+        return;
       }
-    } else {
-      // Si Sentry n'est pas disponible, logguer localement
-      console.error("Sentry non disponible, erreur loguée localement:", error);
+      
+      // Utiliser le SDK Sentry pour capturer l'exception
+      Sentry.captureException(error, {
+        extra: context
+      });
+      
+      console.log("Erreur envoyée à Sentry:", error.message);
+    } catch (e) {
+      // Échouer silencieusement pour éviter les boucles d'erreur
+      console.error("Échec de l'envoi d'erreur à Sentry:", e);
     }
   }
   
@@ -79,24 +75,20 @@ export class SentryMonitor {
    * Envoie un message à Sentry
    */
   static captureMessage(message: string, level: string = "info", context?: Record<string, any>) {
-    if (window.Sentry) {
-      try {
-        window.Sentry.captureMessage(message, {
-          level,
-          extra: context
-        });
-      } catch (e) {
-        console.error("Échec de l'envoi de message à Sentry:", e);
-      }
-    } else {
-      console.log(`[${level}] ${message}`, context);
+    try {
+      Sentry.captureMessage(message, {
+        level: level as Sentry.SeverityLevel,
+        extra: context
+      });
+    } catch (e) {
+      console.error("Échec de l'envoi de message à Sentry:", e);
     }
   }
   
   /**
    * Traduit le niveau de log interne au niveau Sentry
    */
-  static translateLogLevel(level: LogLevel): string {
+  static translateLogLevel(level: LogLevel): Sentry.SeverityLevel {
     switch (level) {
       case LogLevel.DEBUG: return "debug";
       case LogLevel.INFO: return "info";
@@ -126,7 +118,7 @@ export class SentryMonitor {
    * Vérifie si Sentry est correctement initialisé
    */
   static isReady(): boolean {
-    return !!window.Sentry;
+    return Sentry && typeof Sentry.captureException === 'function';
   }
   
   /**
@@ -144,9 +136,9 @@ export class SentryMonitor {
   }
 }
 
-// Ajouter la déclaration pour window.Sentry
+// Ajouter la déclaration pour les types Sentry
 declare global {
-  interface Window {
-    Sentry?: any;
+  namespace Sentry {
+    type SeverityLevel = "fatal" | "error" | "warning" | "info" | "debug";
   }
 }

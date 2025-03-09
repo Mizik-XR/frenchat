@@ -4,6 +4,21 @@ import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
 import './index.css';
+import * as Sentry from "@sentry/react";
+
+// Initialisation de Sentry avec la nouvelle configuration
+Sentry.init({
+  dsn: "https://7ec84a703e3dfd1a2fa5bed2ab4d00d4@o4508941853917184.ingest.de.sentry.io/4508949699035216",
+  integrations: [
+    new Sentry.BrowserTracing(),
+    new Sentry.Replay(),
+  ],
+  // Performance Monitoring
+  tracesSampleRate: 1.0, // Capturer 100% des transactions pour les tests
+  // Session Replay
+  replaysSessionSampleRate: 0.1, // Échantillonner 10% des sessions
+  replaysOnErrorSampleRate: 1.0, // Capturer 100% des sessions avec erreurs
+});
 
 // Configuration pour la journalisation
 const isNetlify = window.location.hostname.includes('netlify.app');
@@ -53,30 +68,23 @@ const initializeApp = async () => {
     // Vérification de Sentry après le rendu initial
     if (!isDevMode) {
       try {
-        // Vérifier si Sentry est disponible via le script de chargement
-        if (window.Sentry) {
-          console.log("Sentry est disponible via le script de chargement");
-          
-          // Test de Sentry après 10 secondes en production
-          setTimeout(() => {
-            try {
-              console.log("Exécution du test Sentry automatique");
-              // Lancer un test Sentry après le chargement complet
-              const testError = new Error("Sentry Loader Test - " + new Date().toISOString());
-              window.Sentry.captureException(testError, {
-                extra: {
-                  source: "main.tsx",
-                  automatic: true,
-                  environment: process.env.NODE_ENV
-                }
-              });
-            } catch (testError) {
-              console.warn("Erreur lors du test Sentry:", testError);
-            }
-          }, 10000);
-        } else {
-          console.warn("Sentry n'est pas disponible via le script de chargement");
-        }
+        // Test de Sentry après 10 secondes en production
+        setTimeout(() => {
+          try {
+            console.log("Exécution du test Sentry automatique");
+            // Lancer un test Sentry après le chargement complet
+            const testError = new Error("Sentry SDK Init Test - " + new Date().toISOString());
+            Sentry.captureException(testError, {
+              extra: {
+                source: "main.tsx",
+                automatic: true,
+                environment: process.env.NODE_ENV
+              }
+            });
+          } catch (testError) {
+            console.warn("Erreur lors du test Sentry:", testError);
+          }
+        }, 10000);
       } catch (error) {
         console.warn("Erreur lors de la vérification de Sentry:", error);
       }
@@ -99,15 +107,13 @@ const initializeApp = async () => {
       stack: error.stack
     });
     
-    // Envoyer l'erreur à Sentry si disponible
-    if (window.Sentry && error instanceof Error) {
-      window.Sentry.captureException(error, {
-        extra: { 
-          location: "main.tsx initialization",
-          critical: true
-        }
-      });
-    }
+    // Envoyer l'erreur à Sentry
+    Sentry.captureException(error, {
+      extra: { 
+        location: "main.tsx initialization",
+        critical: true
+      }
+    });
     
     // Afficher une interface utilisateur de secours en cas d'erreur
     const rootElement = document.getElementById('root');
