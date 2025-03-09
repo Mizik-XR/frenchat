@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './components/ThemeProvider';
@@ -10,17 +9,14 @@ import * as Sentry from "@sentry/react";
 Sentry.init({
   dsn: "https://7ec84a703e3dfd1a2fa5bed2ab4d00d4@o4508941853917184.ingest.de.sentry.io/4508949699035216",
   integrations: [
-    // Dans Sentry v9, la syntaxe d'intégration a changé
-    Sentry.replayIntegration(),
-    Sentry.browserTracingIntegration(),
-    Sentry.browserProfilingIntegration(),
-    Sentry.httpClientIntegration(),
+    new Sentry.BrowserTracing(),
+    new Sentry.Replay(),
   ],
   // Performance Monitoring
-  tracesSampleRate: 1.0, // Capturer 100% des transactions pour les tests
-  // Session Replay (configurée pour la version 9.x)
-  replaysSessionSampleRate: 0.1, // Échantillonner 10% des sessions
-  replaysOnErrorSampleRate: 1.0, // Capturer 100% des sessions avec erreurs
+  tracesSampleRate: 1.0,
+  // Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
 });
 
 // Configuration pour la journalisation

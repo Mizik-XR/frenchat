@@ -1,54 +1,39 @@
 
-/**
- * Hook pour la gestion de session Sentry
- * Fournit des fonctions pour initialiser Sentry, capturer des erreurs et des messages
- */
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import * as Sentry from "@sentry/react";
 import { LogLevel, ErrorType, SentryTypes } from "@/monitoring/types";
 
 export const useSentrySession = () => {
-  /**
-   * Capture une exception et l'envoie à Sentry
-   */
+  const isSentryReady = useCallback((): boolean => {
+    return Sentry && typeof Sentry.captureException === 'function';
+  }, []);
+
   const captureException = useCallback((error: Error, context?: Record<string, any>) => {
+    if (!isSentryReady()) return;
+    
     try {
-      // Utiliser le SDK Sentry pour capturer l'exception
       Sentry.captureException(error, {
         extra: context
       });
-      
       console.log("Erreur envoyée à Sentry:", error.message);
     } catch (e) {
-      // Échouer silencieusement pour éviter les boucles d'erreur
       console.error("Échec de l'envoi d'erreur à Sentry:", e);
     }
-  }, []);
-  
-  /**
-   * Capture un message et l'envoie à Sentry
-   */
+  }, [isSentryReady]);
+
   const captureMessage = useCallback((message: string, level: string = "info", context?: Record<string, any>) => {
+    if (!isSentryReady()) return;
+    
     try {
       Sentry.captureMessage(message, {
-        level: level as Sentry.SeverityLevel,
+        level: level as SentryTypes.SeverityLevel,
         extra: context
       });
     } catch (e) {
       console.error("Échec de l'envoi de message à Sentry:", e);
     }
-  }, []);
-  
-  /**
-   * Vérifie si Sentry est correctement initialisé
-   */
-  const isSentryReady = useCallback((): boolean => {
-    return Sentry && typeof Sentry.captureException === 'function';
-  }, []);
-  
-  /**
-   * Traduit le niveau de log interne au niveau Sentry
-   */
+  }, [isSentryReady]);
+
   const translateLogLevel = useCallback((level: LogLevel): SentryTypes.SeverityLevel => {
     switch (level) {
       case LogLevel.DEBUG: return "debug";
@@ -59,10 +44,7 @@ export const useSentrySession = () => {
       default: return "info";
     }
   }, []);
-  
-  /**
-   * Traduit le type d'erreur au format Sentry
-   */
+
   const translateErrorType = useCallback((type: ErrorType): string => {
     switch (type) {
       case ErrorType.NETWORK: return "network";
@@ -74,11 +56,10 @@ export const useSentrySession = () => {
       default: return "unknown";
     }
   }, []);
-  
-  /**
-   * Teste Sentry avec une erreur contrôlée
-   */
+
   const testSentry = useCallback((): void => {
+    if (!isSentryReady()) return;
+    
     try {
       throw new Error("Test Sentry Error - " + new Date().toISOString());
     } catch (error) {
@@ -87,12 +68,11 @@ export const useSentrySession = () => {
         captureException(error, { source: "useSentrySession", manual: true });
       }
     }
-  }, [captureException]);
-  
-  /**
-   * Définit le contexte utilisateur pour la session Sentry
-   */
+  }, [isSentryReady, captureException]);
+
   const setUserContext = useCallback((userId: string, email?: string, username?: string) => {
+    if (!isSentryReady()) return;
+    
     try {
       Sentry.setUser({
         id: userId,
@@ -102,19 +82,18 @@ export const useSentrySession = () => {
     } catch (e) {
       console.error("Échec de la définition du contexte utilisateur Sentry:", e);
     }
-  }, []);
-  
-  /**
-   * Efface le contexte utilisateur de la session Sentry
-   */
+  }, [isSentryReady]);
+
   const clearUserContext = useCallback(() => {
+    if (!isSentryReady()) return;
+    
     try {
       Sentry.setUser(null);
     } catch (e) {
       console.error("Échec de l'effacement du contexte utilisateur Sentry:", e);
     }
-  }, []);
-  
+  }, [isSentryReady]);
+
   return {
     captureException,
     captureMessage,
