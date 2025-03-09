@@ -50,27 +50,30 @@ const initializeApp = async () => {
       loadingScreen.style.display = 'none';
     }
     
-    // Chargement différé des outils de monitoring pour éviter les conflits
+    // Vérification de Sentry après le rendu initial
     if (!isDevMode) {
       try {
         // Importer dynamiquement après le rendu initial
         setTimeout(async () => {
           try {
-            // Initialiser Sentry via notre module
+            // Vérifier si Sentry est disponible
             const monitoring = await import('./monitoring/index');
-            monitoring.SentryMonitor.initialize();
-            console.log("Monitoring modules loaded successfully");
-            
-            // Ajouter un test de Sentry après 10 secondes
-            setTimeout(() => {
-              try {
-                monitoring.SentryMonitor.testSentry();
-              } catch (testError) {
-                console.warn("Erreur lors du test Sentry:", testError);
-              }
-            }, 10000);
+            if (monitoring.SentryMonitor.isReady()) {
+              console.log("Sentry est disponible et correctement chargé");
+              
+              // Test de Sentry après 10 secondes
+              setTimeout(() => {
+                try {
+                  monitoring.SentryMonitor.testSentry();
+                } catch (testError) {
+                  console.warn("Erreur lors du test Sentry:", testError);
+                }
+              }, 10000);
+            } else {
+              console.warn("Sentry n'est pas disponible ou n'est pas correctement chargé");
+            }
           } catch (monitoringError) {
-            console.warn("Erreur lors du chargement différé des moniteurs:", monitoringError);
+            console.warn("Erreur lors de la vérification de Sentry:", monitoringError);
           }
         }, 5000);
       } catch (error) {
@@ -145,6 +148,9 @@ window.showNetlifyDiagnostic = function() {
       platform: navigator.platform,
       viewport: `${window.innerWidth}x${window.innerHeight}`,
       online: navigator.onLine
+    },
+    sentry: {
+      available: !!window.Sentry
     }
   };
 };
@@ -154,6 +160,6 @@ declare global {
   interface Window {
     lastRenderError?: Error;
     showNetlifyDiagnostic?: () => any;
-    initSentry?: () => void;
+    Sentry?: any;
   }
 }

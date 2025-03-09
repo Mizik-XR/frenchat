@@ -10,16 +10,21 @@ import * as ErrorTypes from './types';
 // Fonction d'initialisation sécurisée
 const initializeMonitoring = () => {
   try {
-    // En production, initialiser Sentry avec un délai pour éviter les conflits
+    // En production, vérifier si Sentry est déjà chargé via le script
     if (process.env.NODE_ENV !== 'development') {
-      console.log("Tentative d'initialisation du monitoring...");
-      // Ne pas initialiser Sentry immédiatement, laisser main.tsx s'en charger
+      console.log("Vérification de l'état de Sentry...");
+      // Vérifier si Sentry est disponible via le script de chargement
+      if (window.Sentry) {
+        console.log("Sentry détecté via le script de chargement");
+      } else {
+        console.warn("Sentry n'est pas disponible, surveillance limitée");
+      }
     }
     
     // Journal local toujours initialisé
-    console.log("Monitoring modules loaded successfully");
+    console.log("Modules de monitoring chargés avec succès");
   } catch (error) {
-    console.error("Error initializing monitoring:", error);
+    console.error("Erreur lors de l'initialisation du monitoring:", error);
   }
 };
 
