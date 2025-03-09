@@ -6,16 +6,18 @@ import { Toaster } from '@/components/ui/toaster';
 import './index.css';
 import * as Sentry from "@sentry/react";
 
-// Initialisation de Sentry avec la nouvelle configuration
+// Initialisation de Sentry avec la configuration mise à jour
 Sentry.init({
   dsn: "https://7ec84a703e3dfd1a2fa5bed2ab4d00d4@o4508941853917184.ingest.de.sentry.io/4508949699035216",
   integrations: [
-    new Sentry.BrowserTracing(),
-    new Sentry.Replay(),
+    // Utilisation des intégrations génériques au lieu des classes spécifiques
+    new Sentry.Integrations.HttpContext(),
+    new Sentry.Integrations.BrowserProfiling(),
+    new Sentry.Integrations.BrowserTracing(),
   ],
   // Performance Monitoring
   tracesSampleRate: 1.0, // Capturer 100% des transactions pour les tests
-  // Session Replay
+  // Session Replay (configurée différemment pour la nouvelle version)
   replaysSessionSampleRate: 0.1, // Échantillonner 10% des sessions
   replaysOnErrorSampleRate: 1.0, // Capturer 100% des sessions avec erreurs
 });
