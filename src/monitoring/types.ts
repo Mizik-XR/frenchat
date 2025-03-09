@@ -79,3 +79,11 @@ export interface ErrorLogMetadata {
     isAuthenticated?: boolean;
   };
 }
+
+/**
+ * Types pour l'intégration Sentry
+ * Déclaration unique pour éviter les duplications
+ */
+export declare namespace SentryTypes {
+  type SeverityLevel = "fatal" | "error" | "warning" | "info" | "debug";
+}

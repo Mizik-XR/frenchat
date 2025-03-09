@@ -5,7 +5,7 @@
  */
 import { useEffect, useCallback } from 'react';
 import * as Sentry from "@sentry/react";
-import { LogLevel, ErrorType } from "@/monitoring/types";
+import { LogLevel, ErrorType, SentryTypes } from "@/monitoring/types";
 
 export const useSentrySession = () => {
   /**
@@ -49,7 +49,7 @@ export const useSentrySession = () => {
   /**
    * Traduit le niveau de log interne au niveau Sentry
    */
-  const translateLogLevel = useCallback((level: LogLevel): Sentry.SeverityLevel => {
+  const translateLogLevel = useCallback((level: LogLevel): SentryTypes.SeverityLevel => {
     switch (level) {
       case LogLevel.DEBUG: return "debug";
       case LogLevel.INFO: return "info";
@@ -126,10 +126,3 @@ export const useSentrySession = () => {
     clearUserContext
   };
 };
-
-// Déclaration des types pour Sentry
-declare global {
-  namespace Sentry {
-    type SeverityLevel = "fatal" | "error" | "warning" | "info" | "debug";
-  }
-}

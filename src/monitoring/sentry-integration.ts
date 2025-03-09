@@ -1,5 +1,5 @@
 
-import { ErrorType, LogLevel } from "./types";
+import { ErrorType, LogLevel, SentryTypes } from "./types";
 import * as Sentry from "@sentry/react";
 
 /**
@@ -90,7 +90,7 @@ export class SentryMonitor {
   /**
    * Traduit le niveau de log interne au niveau Sentry
    */
-  static translateLogLevel(level: LogLevel): Sentry.SeverityLevel {
+  static translateLogLevel(level: LogLevel): SentryTypes.SeverityLevel {
     switch (level) {
       case LogLevel.DEBUG: return "debug";
       case LogLevel.INFO: return "info";
@@ -135,12 +135,5 @@ export class SentryMonitor {
         this.captureException(error, { source: "testSentry", manual: true });
       }
     }
-  }
-}
-
-// Déclaration des types pour Sentry
-declare global {
-  namespace Sentry {
-    type SeverityLevel = "fatal" | "error" | "warning" | "info" | "debug";
   }
 }
