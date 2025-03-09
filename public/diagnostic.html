@@ -1,0 +1,354 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnostic FileChat</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f9fafb;
+    }
+    h1 {
+      color: #2563eb;
+      margin-bottom: 20px;
+    }
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .error {
+      background-color: #fee2e2;
+      border-left: 4px solid #ef4444;
+      padding: 10px 15px;
+      margin: 15px 0;
+      border-radius: 4px;
+    }
+    .warning {
+      background-color: #fff7ed;
+      border-left: 4px solid #f97316;
+      padding: 10px 15px;
+      margin: 15px 0;
+      border-radius: 4px;
+    }
+    .info {
+      background-color: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 10px 15px;
+      margin: 15px 0;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #ecfdf5;
+      border-left: 4px solid #10b981;
+      padding: 10px 15px;
+      margin: 15px 0;
+      border-radius: 4px;
+    }
+    code {
+      background-color: #f1f5f9;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 90%;
+    }
+    .code-block {
+      background-color: #1e293b;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 14px;
+      margin: 15px 0;
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 8px;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    .btn-secondary {
+      background-color: #6b7280;
+    }
+    .btn-secondary:hover {
+      background-color: #4b5563;
+    }
+    .log-container {
+      height: 200px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 8px;
+      background-color: #f8fafc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Outil de diagnostic FileChat</h1>
+  
+  <div class="card">
+    <h2>Informations système</h2>
+    <div id="system-info"></div>
+  </div>
+  
+  <div class="card">
+    <h2>Tests de connectivité</h2>
+    <button id="run-connectivity">Exécuter les tests</button>
+    <div id="connectivity-results"></div>
+  </div>
+  
+  <div class="card">
+    <h2>Test de chargement des modules</h2>
+    <button id="test-modules">Tester les imports</button>
+    <div id="module-results"></div>
+  </div>
+  
+  <div class="card">
+    <h2>Logs de console</h2>
+    <div class="log-container" id="console-logs"></div>
+    <button id="check-errors">Vérifier les erreurs</button>
+    <button id="clear-logs" class="btn-secondary">Effacer</button>
+  </div>
+  
+  <div class="card">
+    <h2>Utilitaires</h2>
+    <button id="reset-cache">Effacer le cache</button>
+    <button id="clear-storage" class="btn-secondary">Effacer le stockage local</button>
+    <button id="reload-app">Recharger l'application</button>
+  </div>
+
+  <script>
+    // Afficher les informations système
+    function displaySystemInfo() {
+      const systemInfoDiv = document.getElementById('system-info');
+      const info = {
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        platform: navigator.platform,
+        cookiesEnabled: navigator.cookieEnabled,
+        online: navigator.onLine,
+        screenResolution: `${window.screen.width}x${window.screen.height}`,
+        viewport: `${window.innerWidth}x${window.innerHeight}`,
+        devicePixelRatio: window.devicePixelRatio,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        memoryUsage: performance?.memory?.usedJSHeapSize ? 
+          `${Math.round(performance.memory.usedJSHeapSize / (1024 * 1024))}MB / ${Math.round(performance.memory.jsHeapSizeLimit / (1024 * 1024))}MB` : 
+          'Non disponible'
+      };
+      
+      let html = '<ul>';
+      for (const [key, value] of Object.entries(info)) {
+        html += `<li><strong>${key}:</strong> ${value}</li>`;
+      }
+      html += '</ul>';
+      
+      systemInfoDiv.innerHTML = html;
+    }
+    
+    // Test de connectivité
+    async function runConnectivityTests() {
+      const resultsDiv = document.getElementById('connectivity-results');
+      resultsDiv.innerHTML = '<div class="info">Exécution des tests...</div>';
+      
+      const endpoints = [
+        { url: '/', name: 'Application principale' },
+        { url: '/api/status', name: 'API status' },
+        { url: 'https://api.sentry.io', name: 'Sentry API' },
+        { url: 'https://fonts.googleapis.com', name: 'Google Fonts' },
+        { url: 'https://cdn.gpteng.co', name: 'GPT Engineer CDN' }
+      ];
+      
+      let results = '';
+      
+      for (const endpoint of endpoints) {
+        try {
+          const startTime = performance.now();
+          const response = await fetch(endpoint.url, { 
+            method: 'HEAD',
+            cache: 'no-store',
+            mode: endpoint.url.startsWith('http') ? 'cors' : 'same-origin',
+            credentials: 'omit'
+          });
+          const endTime = performance.now();
+          const latency = Math.round(endTime - startTime);
+          
+          if (response.ok) {
+            results += `<div class="success">${endpoint.name}: Accessible (${latency}ms)</div>`;
+          } else {
+            results += `<div class="warning">${endpoint.name}: Statut ${response.status} (${latency}ms)</div>`;
+          }
+        } catch (error) {
+          results += `<div class="error">${endpoint.name}: Non accessible - ${error.message}</div>`;
+        }
+      }
+      
+      resultsDiv.innerHTML = results;
+    }
+    
+    // Test d'import de modules
+    async function testModuleImports() {
+      const resultsDiv = document.getElementById('module-results');
+      resultsDiv.innerHTML = '<div class="info">Test des imports...</div>';
+      
+      const modules = [
+        { name: 'React', path: 'https://esm.sh/react' },
+        { name: 'React DOM', path: 'https://esm.sh/react-dom' },
+        { name: 'React Router', path: 'https://esm.sh/react-router-dom' }
+      ];
+      
+      let results = '';
+      
+      for (const module of modules) {
+        try {
+          const startTime = performance.now();
+          await import(module.path);
+          const endTime = performance.now();
+          const loadTime = Math.round(endTime - startTime);
+          
+          results += `<div class="success">${module.name}: Chargé avec succès (${loadTime}ms)</div>`;
+        } catch (error) {
+          results += `<div class="error">${module.name}: Échec - ${error.message}</div>`;
+        }
+      }
+      
+      resultsDiv.innerHTML = results;
+    }
+    
+    // Afficher les logs de console
+    function initConsoleLogger() {
+      const logsDiv = document.getElementById('console-logs');
+      const originalConsole = {
+        log: console.log,
+        error: console.error,
+        warn: console.warn,
+        info: console.info
+      };
+      
+      // Capturer les logs de console
+      console.log = function() {
+        originalConsole.log.apply(console, arguments);
+        addLogEntry('log', arguments);
+      };
+      
+      console.error = function() {
+        originalConsole.error.apply(console, arguments);
+        addLogEntry('error', arguments);
+      };
+      
+      console.warn = function() {
+        originalConsole.warn.apply(console, arguments);
+        addLogEntry('warn', arguments);
+      };
+      
+      console.info = function() {
+        originalConsole.info.apply(console, arguments);
+        addLogEntry('info', arguments);
+      };
+      
+      function addLogEntry(type, args) {
+        const log = document.createElement('div');
+        log.className = type;
+        
+        const timestamp = new Date().toLocaleTimeString();
+        let message = `[${timestamp}] [${type.toUpperCase()}] `;
+        
+        for (let i = 0; i < args.length; i++) {
+          const arg = args[i];
+          if (typeof arg === 'object') {
+            try {
+              message += JSON.stringify(arg) + ' ';
+            } catch (error) {
+              message += '[Objet non sérialisable] ';
+            }
+          } else {
+            message += arg + ' ';
+          }
+        }
+        
+        log.textContent = message;
+        logsDiv.appendChild(log);
+        logsDiv.scrollTop = logsDiv.scrollHeight;
+      }
+    }
+    
+    // Vérifier les erreurs dans la console
+    function checkConsoleErrors() {
+      const errorLogs = document.querySelectorAll('#console-logs .error');
+      if (errorLogs.length > 0) {
+        alert(`${errorLogs.length} erreur(s) trouvée(s) dans la console. Consultez les logs pour plus de détails.`);
+      } else {
+        alert('Aucune erreur trouvée dans les logs de console.');
+      }
+    }
+    
+    // Effacer les logs de console
+    function clearConsoleLogs() {
+      document.getElementById('console-logs').innerHTML = '';
+    }
+    
+    // Effacer le cache
+    function resetBrowserCache() {
+      if (confirm('Voulez-vous effacer le cache du navigateur pour cette application?')) {
+        if (window.caches) {
+          caches.keys().then(cacheNames => {
+            cacheNames.forEach(cacheName => {
+              caches.delete(cacheName);
+            });
+          });
+        }
+        alert('Cache effacé. Rechargez la page pour appliquer les changements.');
+      }
+    }
+    
+    // Effacer le stockage local
+    function clearLocalStorage() {
+      if (confirm('Voulez-vous effacer toutes les données de stockage local? Cela déconnectera l\'utilisateur et réinitialisera les préférences.')) {
+        localStorage.clear();
+        sessionStorage.clear();
+        alert('Stockage local effacé. Rechargez la page pour appliquer les changements.');
+      }
+    }
+    
+    // Recharger l'application
+    function reloadApplication() {
+      window.location.href = '/?forceClear=true&t=' + Date.now();
+    }
+    
+    // Initialiser la page
+    window.addEventListener('DOMContentLoaded', () => {
+      displaySystemInfo();
+      initConsoleLogger();
+      
+      // Event listeners
+      document.getElementById('run-connectivity').addEventListener('click', runConnectivityTests);
+      document.getElementById('test-modules').addEventListener('click', testModuleImports);
+      document.getElementById('check-errors').addEventListener('click', checkConsoleErrors);
+      document.getElementById('clear-logs').addEventListener('click', clearConsoleLogs);
+      document.getElementById('reset-cache').addEventListener('click', resetBrowserCache);
+      document.getElementById('clear-storage').addEventListener('click', clearLocalStorage);
+      document.getElementById('reload-app').addEventListener('click', reloadApplication);
+      
+      // Log initial
+      console.info('Outil de diagnostic chargé');
+    });
+  </script>
+</body>
+</html>

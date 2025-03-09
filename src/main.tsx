@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
 import './index.css';
@@ -35,16 +34,26 @@ const initializeApp = async () => {
     console.log("Chargement dynamique du module App...");
     const { default: App } = await import('./App');
     
-    // 2. Initialiser les moniteurs d'erreur seulement si nécessaire
+    // 2. Initialiser les moniteurs d'erreur seulement si nécessaire et de façon asynchrone
     console.log("Chargement des moniteurs d'erreur...");
     let ReactErrorMonitor = null;
+    let SentryMonitor = null;
+    
     if (!isDevMode) {
-      const monitoring = await import('@/monitoring');
-      ReactErrorMonitor = monitoring.ReactErrorMonitor;
-      
-      // Initialiser Sentry uniquement en production et si disponible
-      if (monitoring.SentryMonitor && !isDevMode) {
-        monitoring.SentryMonitor.initialize();
+      try {
+        // Importer de façon dynamique pour éviter les problèmes d'initialisation
+        const monitoring = await import('./monitoring/index');
+        ReactErrorMonitor = monitoring.ReactErrorMonitor;
+        SentryMonitor = monitoring.SentryMonitor;
+        
+        // Initialiser Sentry uniquement en production et si disponible
+        if (SentryMonitor) {
+          console.log("Initialisation de Sentry...");
+          SentryMonitor.initialize();
+        }
+      } catch (monitoringError) {
+        console.warn("Erreur lors du chargement des moniteurs:", monitoringError);
+        // Continuer sans monitoring plutôt que de bloquer l'application
       }
     }
 
@@ -66,13 +75,11 @@ const initializeApp = async () => {
     
     root.render(
       <React.StrictMode>
-        <BrowserRouter>
-          <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-            {ReactErrorMonitor && <ReactErrorMonitor />}
-            <App />
-            <Toaster />
-          </ThemeProvider>
-        </BrowserRouter>
+        <ThemeProvider defaultTheme="system" storageKey="ui-theme">
+          {ReactErrorMonitor && <ReactErrorMonitor />}
+          <App />
+          <Toaster />
+        </ThemeProvider>
       </React.StrictMode>
     );
     

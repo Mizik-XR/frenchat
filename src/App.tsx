@@ -1,6 +1,6 @@
 
 import React, { Suspense, lazy } from 'react';
-import { Route, Routes, Navigate, BrowserRouter } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
 import { LoadingScreen } from './components/auth/LoadingScreen';
 import { Toaster } from './components/ui/toaster';
@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { BrowserRouter } from 'react-router-dom';
 
 // Importation différée des composants pour améliorer les performances de chargement initial
 const Home = lazy(() => import('./pages/Home'));
@@ -90,10 +91,9 @@ function App() {
   return (
     <ErrorBoundary>
       {/* L'ordre des providers est crucial pour le bon fonctionnement */}
-      <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
-        <QueryClientProvider client={queryClient}>
-          {/* Ajout du BrowserRouter autour de AuthProvider et des autres composants */}
-          <BrowserRouter>
+      <BrowserRouter>
+        <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
+          <QueryClientProvider client={queryClient}>
             <AuthProvider>
               <SettingsProvider>
                 <ReactErrorMonitor />
@@ -101,9 +101,9 @@ function App() {
                 <Toaster />
               </SettingsProvider>
             </AuthProvider>
-          </BrowserRouter>
-        </QueryClientProvider>
-      </ThemeProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }

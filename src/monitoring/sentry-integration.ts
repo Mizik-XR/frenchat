@@ -1,5 +1,5 @@
 
- import * as Sentry from "@sentry/react";
+import * as Sentry from "@sentry/react";
 import { BrowserTracing } from "@sentry/tracing";
 import { ErrorType, LogLevel } from "./types";
 import { ErrorLogger } from "./logger";
@@ -22,17 +22,35 @@ export class SentryMonitor {
     try {
       // Initialiser Sentry uniquement si le DSN est défini
       if (this.DSN) {
-        console.log("Initializing Sentry...");
+        console.log("Tentative d'initialisation de Sentry...");
         
-        // Initialiser avec une configuration simplifiée
+        // Initialiser avec une configuration simplifiée et sécurisée
         Sentry.init({
           dsn: this.DSN,
           integrations: [new BrowserTracing()],
           tracesSampleRate: 0.1,
-          environment: 'production',
+          environment: process.env.NODE_ENV || 'production',
           // Désactiver temporairement certaines fonctionnalités avancées
           autoSessionTracking: false,
-          release: '1.0.0',
+          release: import.meta.env.VITE_APP_VERSION || '1.0.0',
+          // Mode débogage pour plus d'informations dans la console
+          debug: process.env.NODE_ENV === 'development',
+          // Contrôle des événements envoyés à Sentry
+          beforeSend: (event) => {
+            // Journaliser l'événement pour le débogage
+            console.log("Événement Sentry prêt à être envoyé:", event.event_id);
+            // Filtrer certains types d'erreurs pour réduire le bruit
+            if (event.exception && event.exception.values) {
+              const errorMessage = event.exception.values[0]?.value || '';
+              if (errorMessage.includes('ChunkLoadError') || 
+                  errorMessage.includes('Loading CSS chunk') ||
+                  errorMessage.includes('ResizeObserver')) {
+                console.log("Événement Sentry filtré:", errorMessage);
+                return null;
+              }
+            }
+            return event;
+          }
         });
         
         this.isInitialized = true;
@@ -49,7 +67,10 @@ export class SentryMonitor {
    * Envoie une erreur à Sentry
    */
   static captureException(error: Error, context?: Record<string, any>) {
-    if (!this.isInitialized) return;
+    if (!this.isInitialized) {
+      console.error("Sentry not initialized, logging error locally:", error);
+      return;
+    }
     
     try {
       Sentry.captureException(error, {
@@ -65,7 +86,10 @@ export class SentryMonitor {
    * Envoie un message à Sentry
    */
   static captureMessage(message: string, level: Sentry.SeverityLevel = "info", context?: Record<string, any>) {
-    if (!this.isInitialized) return;
+    if (!this.isInitialized) {
+      console.log(`[${level}] ${message}`, context);
+      return;
+    }
     
     try {
       Sentry.captureMessage(message, {
