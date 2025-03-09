@@ -33,7 +33,7 @@ export const SentryTestButton = () => {
         toast({
           title: "Erreur envoyée à Sentry",
           description: "Vérifiez le dashboard Sentry pour confirmer la réception.",
-          variant: "success" 
+          variant: "default" 
         });
       }
     }
