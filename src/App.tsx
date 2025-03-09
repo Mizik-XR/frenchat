@@ -1,87 +1,76 @@
 
 import React, { Suspense, lazy } from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
+import { ThemeProvider } from './components/ThemeProvider';
+import { Toaster } from './components/ui/toaster';
+import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
 import { LoadingScreen } from './components/auth/LoadingScreen';
-import { Toaster } from './components/ui/toaster';
-import { ThemeProvider } from './components/ThemeProvider';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SettingsProvider } from './contexts/SettingsContext';
-import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { BrowserRouter } from 'react-router-dom';
 
-// Importation différée des composants pour améliorer les performances de chargement initial
+// Simplified: Lazy-load only essential components
 const Home = lazy(() => import('./pages/Home'));
 const Auth = lazy(() => import('./pages/Auth'));
-const Config = lazy(() => import('./pages/Config'));
-const AdvancedConfig = lazy(() => import('./pages/AdvancedConfig'));
 const Chat = lazy(() => import('./pages/Chat'));
-const DocumentView = lazy(() => import('./pages/DocumentView'));
-const GoogleDrive = lazy(() => import('./pages/GoogleDrive'));
-const Indexing = lazy(() => import('./pages/Indexing'));
-const DatabaseView = lazy(() => import('./pages/DatabaseView'));
-const Debug = lazy(() => import('./pages/Debug'));
-const OllamaSetup = lazy(() => import('./pages/OllamaSetup'));
 const Index = lazy(() => import('./pages/Index'));
 const Landing = lazy(() => import('./pages/Landing'));
 
-// Créer une nouvelle instance QueryClient avec configuration de retry
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      retryDelay: 1000,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-  },
-});
+// Component qui affiche un état de débogage simple
+const DebugStatus = () => {
+  const [messages, setMessages] = React.useState<string[]>([]);
+  
+  React.useEffect(() => {
+    // Journaliser quelques informations de base sur l'environnement
+    const addMessage = (msg: string) => setMessages(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
+    
+    addMessage(`Mode: ${process.env.NODE_ENV}`);
+    addMessage(`Navigateur: ${navigator.userAgent}`);
+    addMessage(`Fenêtre: ${window.innerWidth}×${window.innerHeight}`);
+    addMessage(`Online: ${navigator.onLine ? 'Oui' : 'Non'}`);
+    
+    // Tester que les hooks React fonctionnent
+    const interval = setInterval(() => {
+      addMessage(`Test hook (${Math.floor(Math.random() * 100)})`);
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <div className="fixed bottom-4 right-4 p-4 bg-black/80 text-white rounded-md max-w-md max-h-72 overflow-auto text-xs">
+      <div className="font-bold mb-2">Statut d'initialisation:</div>
+      <div className="space-y-1">
+        {messages.map((msg, i) => (
+          <div key={i}>{msg}</div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const AppRouter = () => {
   return (
-    <Suspense fallback={<LoadingScreen message="Chargement de la page..." />}>
+    <Suspense fallback={<LoadingScreen message="Chargement simplifié de la page..." />}>
       <Routes>
-        {/* Route racine - affiche Index qui décidera de rediriger ou d'afficher Landing */}
+        {/* Routes essentielles uniquement */}
         <Route path="/" element={<Index />} />
-        
-        {/* Landing est maintenant rendu via Index quand nécessaire, pas besoin d'une route séparée */}
-        
-        {/* Routes importantes */}
         <Route path="/home" element={<Home />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/config" element={<Config />} />
-        <Route path="/config/advanced" element={<AdvancedConfig />} />
-        <Route path="/advanced" element={<AdvancedConfig />} />
         <Route path="/chat" element={<Chat />} />
-        <Route path="/document/:id" element={<DocumentView />} />
-        <Route path="/google-drive" element={<GoogleDrive />} />
-        <Route path="/indexing" element={<Indexing />} />
-        <Route path="/database" element={<DatabaseView />} />
-        <Route path="/debug" element={<Debug />} />
-        <Route path="/ollama-setup" element={<OllamaSetup />} />
-        
-        {/* Routes pour la navigation marketing (redirigent vers les routes appropriées) */}
-        <Route path="/features" element={<Navigate to="/landing?section=features" replace />} />
-        <Route path="/how-it-works" element={<Navigate to="/landing?section=how-it-works" replace />} />
-        <Route path="/examples" element={<Navigate to="/landing?section=examples" replace />} />
-        <Route path="/pricing" element={<Navigate to="/landing?section=pricing" replace />} />
-        
-        {/* Nouvelle route explicite pour Landing quand accédée directement */}
         <Route path="/landing" element={<Landing />} />
         
-        {/* Nouvelle route pour /ai qui redirige vers la page de configuration IA */}
-        <Route path="/ai" element={<Navigate to="/config" replace />} />
-        
-        {/* Route de secours pour les chemins inconnus */}
+        {/* Route de secours */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <DebugStatus />
     </Suspense>
   );
 };
 
 function App() {
-  // Vérification que nous sommes dans un navigateur avant le rendu complet
+  // Vérification que nous sommes dans un navigateur avant le rendu
   const isClient = typeof window !== 'undefined';
+  
+  console.log('🖼️ Rendu du composant App (version simplifiée)');
   
   // Si nous ne sommes pas dans un navigateur, renvoyer un contenu minimal
   if (!isClient) {
@@ -89,22 +78,17 @@ function App() {
   }
 
   return (
-    <ErrorBoundary>
-      {/* L'ordre des providers est crucial pour le bon fonctionnement */}
+    <div className="app-container">
+      {/* Structure simplifiée avec un minimum de providers */}
       <BrowserRouter>
         <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <SettingsProvider>
-                <ReactErrorMonitor />
-                <AppRouter />
-                <Toaster />
-              </SettingsProvider>
-            </AuthProvider>
-          </QueryClientProvider>
+          <AuthProvider>
+            <AppRouter />
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </BrowserRouter>
-    </ErrorBoundary>
+    </div>
   );
 }
 

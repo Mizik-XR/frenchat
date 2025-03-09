@@ -1,3 +1,4 @@
+
 import * as Sentry from '@sentry/react';
 
 export class SentryMonitor {
@@ -7,150 +8,63 @@ export class SentryMonitor {
 
   /**
    * Vérifie si Sentry est correctement initialisé et prêt à l'emploi
+   * Dans cette version simplifiée, retourne toujours false
    */
   static isReady(): boolean {
-    if (process.env.NODE_ENV === 'development') {
-      return false; // Désactiver en développement par défaut
-    }
-    
-    try {
-      return typeof Sentry !== 'undefined' && 
-             typeof Sentry.captureException === 'function' &&
-             this.initialized;
-    } catch (e) {
-      console.warn("Erreur lors de la vérification de Sentry:", e);
-      return false;
-    }
+    console.log('🔍 Vérification de Sentry (version simplifiée - désactivé)');
+    return false; // Toujours désactivé dans cette version de débogage
   }
 
   /**
-   * Initialise Sentry avec la configuration de base
+   * Version simplifiée de l'initialisation qui ne fait rien
+   * sauf journaliser l'appel
    */
   static initialize(): void {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Sentry désactivé en environnement de développement');
-      return;
-    }
-
-    try {
-      if (this.isReady()) {
-        console.log('Sentry déjà initialisé');
-        return;
-      }
-
-      // Importation dynamique des intégrations
-      import('@sentry/react').then(SentryModule => {
-        const { browserTracingIntegration, replayIntegration } = SentryModule;
-        
-        Sentry.init({
-          dsn: this.DSN,
-          integrations: [
-            browserTracingIntegration(),
-            replayIntegration(),
-          ],
-          tracesSampleRate: 1.0,
-          replaysSessionSampleRate: 0.1,
-          replaysOnErrorSampleRate: 1.0,
-          environment: import.meta.env.MODE || 'production',
-        });
-        
-        this.initialized = true;
-        console.log('Sentry initialisé avec succès');
-      });
-    } catch (error) {
-      console.error('Erreur lors de l\'initialisation de Sentry:', error);
-    }
+    console.log('🔧 Tentative d\'initialisation de Sentry (désactivée pour le débogage)');
+    this.initialized = false; // Toujours désactivé
   }
 
   /**
-   * Capture une exception et l'envoie à Sentry
+   * Capture une exception et l'envoie à Sentry (simulé)
    */
   static captureException(error: Error, context?: Record<string, any>): void {
-    if (!this.isReady()) {
-      console.warn('Sentry n\'est pas initialisé, erreur non capturée:', error);
-      return;
-    }
-
-    try {
-      Sentry.captureException(error, {
-        extra: context
-      });
-    } catch (e) {
-      console.error('Erreur lors de la capture d\'exception:', e);
-    }
+    console.error('🐞 Erreur capturée (Sentry désactivé):', error.message, {
+      stack: error.stack,
+      context: context || {}
+    });
   }
 
   /**
-   * Capture un message et l'envoie à Sentry
+   * Capture un message et l'envoie à Sentry (simulé)
    */
   static captureMessage(message: string, level: Sentry.SeverityLevel = 'info', context?: Record<string, any>): void {
-    if (!this.isReady()) {
-      console.warn('Sentry n\'est pas initialisé, message non capturé:', message);
-      return;
-    }
-
-    try {
-      Sentry.captureMessage(message, {
-        level,
-        extra: context
-      });
-    } catch (e) {
-      console.error('Erreur lors de la capture de message:', e);
-    }
+    const prefix = level === 'error' ? '❌' : 
+                  level === 'warning' ? '⚠️' : 
+                  level === 'info' ? 'ℹ️' : '📝';
+    
+    console.log(`${prefix} Message capturé (Sentry désactivé) [${level}]:`, message, context || '');
   }
 
   /**
-   * Configure le contexte utilisateur pour Sentry
+   * Configure le contexte utilisateur pour Sentry (simulé)
    */
   static setUser(userId: string, email?: string, username?: string): void {
-    if (!this.isReady()) {
-      console.warn('Sentry n\'est pas initialisé, contexte utilisateur non défini');
-      return;
-    }
-
-    try {
-      Sentry.setUser({
-        id: userId,
-        email,
-        username
-      });
-    } catch (e) {
-      console.error('Erreur lors de la définition du contexte utilisateur:', e);
-    }
+    console.log('👤 Utilisateur défini (Sentry désactivé):', { userId, email, username });
   }
 
   /**
-   * Efface le contexte utilisateur
+   * Efface le contexte utilisateur (simulé)
    */
   static clearUser(): void {
-    if (!this.isReady()) {
-      return;
-    }
-
-    try {
-      Sentry.setUser(null);
-    } catch (e) {
-      console.error('Erreur lors de l\'effacement du contexte utilisateur:', e);
-    }
+    console.log('🧹 Contexte utilisateur effacé (Sentry désactivé)');
   }
 
   /**
-   * Test de connectivité Sentry
+   * Test de connectivité Sentry (simulé)
    */
   static testConnection(): boolean {
-    if (!this.isReady()) {
-      console.warn('Sentry n\'est pas initialisé, test impossible');
-      return false;
-    }
-
-    try {
-      const testError = new Error('Test Sentry Connection - ' + new Date().toISOString());
-      this.captureException(testError, { source: 'test', manual: true });
-      return true;
-    } catch (e) {
-      console.error('Échec du test de connexion Sentry:', e);
-      return false;
-    }
+    console.log('🧪 Test de connexion Sentry (simulé, désactivé)');
+    return false;
   }
 
   /**
@@ -183,11 +97,5 @@ export class SentryMonitor {
   }
 }
 
-// Initialiser Sentry uniquement en production
-if (process.env.NODE_ENV === 'production') {
-  try {
-    SentryMonitor.initialize();
-  } catch (e) {
-    console.error('Erreur lors de l\'initialisation automatique de Sentry:', e);
-  }
-}
+// Ne pas initialiser Sentry automatiquement dans cette version simplifiée
+console.log('⚠️ Sentry automatiquement désactivé pour le débogage');

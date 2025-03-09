@@ -32,144 +32,58 @@ L'application FileChat utilise une stratégie d'initialisation progressive conç
    - Redirection vers la page appropriée (Landing ou Chat)
    - Gestion des erreurs d'initialisation
 
-## Code commenté: Initialisation progressive
+## Guide de débogage des problèmes d'initialisation
 
-```javascript
-// 1. Configuration de l'environnement et journalisation
-const isNetlify = window.location.hostname.includes('netlify.app');
-const isDevMode = process.env.NODE_ENV === 'development';
+### 1. Version simplifiée pour le débogage
 
-// 2. Fonction d'initialisation asynchrone
-const initializeApp = async () => {
-  try {
-    // 2.1 Chargement dynamique pour éviter les importations circulaires
-    const { default: App } = await import('./App');
-    
-    // 2.2 Chargement conditionnel des services de monitoring
-    let ReactErrorMonitor = null;
-    if (!isDevMode) {
-      const monitoring = await import('@/monitoring');
-      ReactErrorMonitor = monitoring.ReactErrorMonitor;
-      monitoring.SentryMonitor.initialize();
-    }
-    
-    // 2.3 Rendu de l'application avec gestion des erreurs
-    const root = createRoot(document.getElementById('root'));
-    root.render(
-      <React.StrictMode>
-        <BrowserRouter>
-          <ThemeProvider>
-            {ReactErrorMonitor && <ReactErrorMonitor />}
-            <App />
-          </ThemeProvider>
-        </BrowserRouter>
-      </React.StrictMode>
-    );
-  } catch (error) {
-    // 2.4 Rendu de secours en cas d'erreur
-    displayFallbackUI(error);
-  }
-};
+Pour isoler les problèmes d'initialisation, nous avons créé une version simplifiée qui:
+- Désactive temporairement Sentry
+- Remplace les appels Sentry par des console.log
+- Réduit le nombre de providers React
+- Inclut un composant de diagnostic visible en bas à droite de l'écran
+
+Pour activer cette version simplifiée, utilisez:
+```
+npm run dev
 ```
 
-## Gestion des erreurs
+### 2. Problèmes d'initialisation courants
 
-FileChat utilise une approche multiniveau pour la gestion des erreurs:
-
-### 1. Capture précoce (index.html)
-```javascript
-window.addEventListener('error', (event) => {
-  // Détection des erreurs de chargement de module
-  if (event.message && event.message.includes('Cannot access')) {
-    console.error("ERREUR DE CHARGEMENT DE MODULE DÉTECTÉE");
-    // Stocker l'erreur pour diagnostic
-    window.lastRenderError = event.error || new Error(event.message);
-  }
-}, true);
-```
-
-### 2. Gestion React (ErrorBoundary)
-L'application utilise des composants `ErrorBoundary` pour capturer les erreurs React:
-```jsx
-<ErrorBoundary>
-  <AppRoutes />
-</ErrorBoundary>
-```
-
-### 3. Surveillance production (Sentry)
-En production, Sentry est utilisé pour capturer et analyser les erreurs:
-```javascript
-// Initialisation conditionnelle
-if (!isDevMode) {
-  SentryMonitor.initialize();
-}
-```
-
-## Optimisations de chargement
-
-### 1. Chargement paresseux des composants
-```jsx
-// Chargement différé des composants rarement utilisés
-const Settings = lazy(() => import('./pages/Settings'));
-```
-
-### 2. Chargement conditionnel des services
-```javascript
-// Chargement du service d'IA uniquement si nécessaire
-if (isAIEnabled) {
-  await import('./services/aiService').then(module => {
-    module.initialize(config);
-  });
-}
-```
-
-### 3. Préchargement stratégique
-```javascript
-// Préchargement du service de chat dès que possible
-const preloadChatModule = () => {
-  import('./services/chatService');
-};
-document.addEventListener('DOMContentLoaded', preloadChatModule);
-```
-
-## Dépannage
-
-### Erreur: Importations circulaires
+#### Erreur: Importations circulaires
 Les erreurs "Cannot access X before initialization" indiquent généralement des importations circulaires.
 
 **Solution**: Utiliser des importations dynamiques et restructurer l'architecture de modules.
 
-### Erreur: Échec de rendu initial
+#### Erreur: Échec de rendu initial
 Si l'application ne parvient pas à se rendre, vérifier:
 1. La présence des éléments DOM nécessaires
 2. Les erreurs de console
 3. Les problèmes de dépendances
 
-## Diagramme de séquence d'initialisation
+#### Erreur: Incompatibilité de versions Sentry
+Si vous voyez des erreurs liées à `unstable_scheduleCallback` ou similaires:
+1. Vérifiez que vous n'utilisez qu'une seule version de Sentry
+2. Assurez-vous que le script CDN est commenté dans index.html
+3. Laissez Sentry désactivé jusqu'à ce que l'application se charge correctement
 
-```
-┌────────────┐    ┌──────────┐    ┌─────────┐    ┌────────────┐
-│ index.html │    │ main.tsx │    │ App.tsx │    │ Index.tsx  │
-└─────┬──────┘    └────┬─────┘    └────┬────┘    └──────┬─────┘
-      │ Charge écran   │               │                │
-      │ de chargement  │               │                │
-      │◀─────────────▶│               │                │
-      │                │               │                │
-      │ addEventListener('error')      │                │
-      │◀─────────────▶│               │                │
-      │                │               │                │
-      │                │ import('./App')               │
-      │                │─────────────▶│                │
-      │                │               │                │
-      │                │ import('@/monitoring')        │
-      │                │◀──────────────────────────▶   │
-      │                │               │                │
-      │                │ ReactDOM.createRoot().render() │
-      │                │─────────────▶│                │
-      │                │               │                │
-      │                │               │ vérification auth
-      │                │               │───────────────▶│
-      │                │               │                │
-      │                │               │                │ redirection
-      │                │               │                │◀─────────▶
-```
+## Réactivation progressive des fonctionnalités
+
+Après avoir confirmé que l'application se charge correctement avec la version simplifiée, vous pouvez réactiver progressivement les fonctionnalités dans cet ordre:
+
+1. Réactiver les providers React un par un (QueryClient, SettingsProvider, etc.)
+2. Réactiver les imports de composants lazy
+3. Réactiver Sentry en dernier, en vérifiant qu'une seule méthode d'initialisation est utilisée
+
+## Méthodologie de test
+
+Pour confirmer que chaque étape fonctionne:
+1. Vérifiez les logs de console pour les erreurs
+2. Utilisez le composant de diagnostic en bas à droite pour confirmer que React fonctionne
+3. Testez les fonctionnalités de base (navigation, authentification) avant de passer à la suivante
+
+## Remarque sur Sentry
+
+L'intégration Sentry présente des défis particuliers:
+- Évitez d'avoir plusieurs versions de Sentry (@sentry/react 9.x et @sentry/react 7.x)
+- N'initialisez Sentry qu'à un seul endroit
+- Assurez-vous que l'initialisation se produit avant que React n'effectue des rendus
