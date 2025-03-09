@@ -10,14 +10,15 @@ import * as Sentry from "@sentry/react";
 Sentry.init({
   dsn: "https://7ec84a703e3dfd1a2fa5bed2ab4d00d4@o4508941853917184.ingest.de.sentry.io/4508949699035216",
   integrations: [
-    // Utilisation des intégrations intégrées au SDK
-    new Sentry.BrowserTracing(),
-    new Sentry.BrowserProfilingIntegration(),
-    new Sentry.HttpClient(),
+    // Dans Sentry v9, la syntaxe d'intégration a changé
+    Sentry.replayIntegration(),
+    Sentry.browserTracingIntegration(),
+    Sentry.browserProfilerIntegration(),
+    Sentry.httpClientIntegration(),
   ],
   // Performance Monitoring
   tracesSampleRate: 1.0, // Capturer 100% des transactions pour les tests
-  // Session Replay (configurée différemment pour la nouvelle version)
+  // Session Replay (configurée pour la version 9.x)
   replaysSessionSampleRate: 0.1, // Échantillonner 10% des sessions
   replaysOnErrorSampleRate: 1.0, // Capturer 100% des sessions avec erreurs
 });
