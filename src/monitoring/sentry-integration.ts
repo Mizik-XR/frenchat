@@ -1,5 +1,5 @@
 
-import * as Sentry from "@sentry/react";
+ import * as Sentry from "@sentry/react";
 import { BrowserTracing } from "@sentry/tracing";
 import { ErrorType, LogLevel } from "./types";
 import { ErrorLogger } from "./logger";
@@ -22,35 +22,25 @@ export class SentryMonitor {
     try {
       // Initialiser Sentry uniquement si le DSN est défini
       if (this.DSN) {
+        console.log("Initializing Sentry...");
+        
+        // Initialiser avec une configuration simplifiée
         Sentry.init({
           dsn: this.DSN,
           integrations: [new BrowserTracing()],
-          tracesSampleRate: 0.1, // Capture 10% des transactions
-          environment: import.meta.env.MODE || 'production',
-          
-          // Filtrer certaines erreurs avant envoi
-          beforeSend(event) {
-            // Ne pas envoyer certaines erreurs courantes en développement
-            if (import.meta.env.DEV) {
-              if (event.exception?.values?.some(ex => 
-                ex.value?.includes('ResizeObserver') ||
-                ex.value?.includes('Network Error')
-              )) {
-                return null;
-              }
-            }
-            
-            return event;
-          }
+          tracesSampleRate: 0.1,
+          environment: 'production',
+          // Désactiver temporairement certaines fonctionnalités avancées
+          autoSessionTracking: false,
+          release: '1.0.0',
         });
         
         this.isInitialized = true;
-        ErrorLogger.log(LogLevel.INFO, "Sentry monitoring initialized");
+        console.log("Sentry monitoring initialized");
       } else {
-        ErrorLogger.log(LogLevel.WARN, "Sentry DSN not provided, monitoring disabled");
+        console.warn("Sentry DSN not provided, monitoring disabled");
       }
     } catch (error) {
-      ErrorLogger.log(LogLevel.ERROR, "Failed to initialize Sentry", { error });
       console.error("Failed to initialize Sentry:", error);
     }
   }
