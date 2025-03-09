@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { isNetlifyEnvironment } from '@/utils/environment/environmentDetection';
 
 // Cache pour éviter des vérifications répétées
 const imageCache = {
@@ -70,7 +71,7 @@ export const showInitialLoadingMessage = () => {
 
 /**
  * Vérifie la disponibilité du GIF d'animation et retourne son URL
- * Version optimisée avec mise en cache
+ * Version optimisée avec mise en cache et réduction des logs
  */
 export const checkGifAvailability = (): string | null => {
   // Utiliser la valeur en cache si elle existe et a moins de 30 secondes
@@ -79,82 +80,142 @@ export const checkGifAvailability = (): string | null => {
     return imageCache.gifPath;
   }
   
-  // Chemins possibles pour le GIF (réduits pour éviter les duplications)
-  const possiblePaths = [
-    "/filechat-animation.gif",
-    `${window.location.origin}/filechat-animation.gif`
-  ];
+  // Chemins possibles pour le GIF, optimisés pour Netlify et déploiement local
+  const possiblePaths = [];
   
-  // En environnement de développement, ajouter le chemin complet basé sur l'origine
-  if (import.meta.env.DEV) {
-    possiblePaths.push(`${window.location.origin}/public/filechat-animation.gif`);
+  // Ajouter chemins relatifs et absolus selon l'environnement
+  if (isNetlifyEnvironment()) {
+    // Sur Netlify, privilégier les chemins relatifs
+    possiblePaths.push(
+      "./filechat-animation.gif",
+      "./assets/filechat-animation.gif",
+      "./public/filechat-animation.gif"
+    );
+  } else {
+    // En local ou autre environnement
+    possiblePaths.push(
+      "/filechat-animation.gif",
+      "/assets/filechat-animation.gif",
+      "./filechat-animation.gif"
+    );
+    
+    // En développement, ajouter des chemins spécifiques
+    if (import.meta.env.DEV) {
+      possiblePaths.push("/public/filechat-animation.gif");
+    }
   }
   
+  // Ajouter toujours le chemin d'origine complet
+  possiblePaths.push(`${window.location.origin}/filechat-animation.gif`);
+  
   try {
-    // Log une seule fois au début de la vérification
-    console.debug("Vérification du GIF d'animation...");
+    // Log uniquement au début de la vérification, une seule fois
+    if (import.meta.env.DEV) {
+      console.debug("Vérification optimisée du GIF d'animation...");
+    }
     
-    // Vérifier si l'image existe en créant une image test (pour le premier chemin)
+    // Essayer le premier chemin
     const testImg = new Image();
     testImg.src = possiblePaths[0];
     
-    // Mettre à jour le cache
+    // Mettre à jour le cache avec le premier chemin
     imageCache.gifPath = possiblePaths[0];
     imageCache.isChecked = true;
     imageCache.lastCheckedTime = now;
     
     return possiblePaths[0];
   } catch (error) {
-    console.warn("Erreur lors de la vérification du GIF:", error);
+    if (import.meta.env.DEV) {
+      console.warn("Erreur lors de la vérification du GIF:", error);
+    }
+    // En cas d'erreur, effacer le cache
+    imageCache.isChecked = false;
     return null;
   }
 };
 
 /**
- * Initialise l'application avec un mécanisme de récupération d'erreur
- * Version améliorée avec gestion des erreurs plus robuste
+ * Initialise l'application avec un mécanisme de récupération d'erreur amélioré
+ * Version optimisée avec retry progressif et détection d'environnement
  */
 export const initializeAppWithErrorRecovery = (renderCallback: () => void) => {
   // Afficher un message initial de chargement
   showInitialLoadingMessage();
   
-  // Variable pour suivre les tentatives
+  // Variables pour suivre les tentatives et les erreurs
   let attempts = 0;
   const maxAttempts = 3;
+  let lastError: Error | null = null;
+  
+  // Vérifier si nous sommes sur Netlify pour adapter la stratégie
+  const isNetlify = isNetlifyEnvironment();
   
   // Fonction d'initialisation avec mécanisme de réessai
   const attemptRender = () => {
     attempts++;
-    console.debug(`Tentative de rendu #${attempts}/${maxAttempts}`);
+    
+    if (import.meta.env.DEV) {
+      console.debug(`Tentative de rendu #${attempts}/${maxAttempts}${isNetlify ? ' (environnement Netlify)' : ''}`);
+    }
     
     try {
-      // Ajouter un gestionnaire d'erreur global
+      // Ajouter un gestionnaire d'erreur global adapté à l'environnement
       window.onerror = (message, source, lineno, colno, error) => {
-        console.error('Erreur globale interceptée:', message);
+        const errorMessage = message?.toString() || 'Erreur inconnue';
+        console.error(`Erreur globale interceptée${isNetlify ? ' (Netlify)' : ''}:`, errorMessage);
         
-        if (message && message.toString().includes('useLayoutEffect')) {
-          console.warn('Erreur useLayoutEffect détectée, tentative de récupération...');
-          // Afficher les boutons de récupération
+        // Traitement spécifique pour certaines erreurs connues
+        if (errorMessage.includes('useLayoutEffect') || 
+            errorMessage.includes('Cannot read properties of null') ||
+            errorMessage.includes('undefined is not an object')) {
+          
+          console.warn('Erreur non critique détectée, tentative de récupération...');
+          
+          // Afficher les boutons de récupération plus tôt
           const retryButton = document.getElementById('retry-button');
           const cloudButton = document.getElementById('cloud-button');
           if (retryButton) retryButton.style.display = 'inline-block';
           if (cloudButton) cloudButton.style.display = 'inline-block';
+          
+          // Stocker l'erreur pour diagnostics
+          lastError = error || new Error(errorMessage);
+          window.lastRenderError = lastError;
+          
           return true; // Empêcher la propagation de l'erreur
         }
+        
         return false;
       };
       
+      // Ajouter des détails d'environnement pour le débogage sur Netlify
+      if (isNetlify) {
+        console.info('Environnement de déploiement: Netlify');
+        console.info('URL: ' + window.location.href);
+        console.info('User Agent: ' + navigator.userAgent);
+      }
+      
       // Exécuter le callback de rendu avec un délai progressif en cas d'échec
       renderCallback();
-      console.debug('Rendu initial réussi');
-      attempts = maxAttempts; // Arrêter les tentatives si réussi
+      
+      if (import.meta.env.DEV) {
+        console.debug('Rendu initial réussi');
+      }
+      
+      // Arrêter les tentatives si réussi
+      attempts = maxAttempts;
+      
     } catch (error) {
-      console.error('Erreur lors du rendu initial:', error);
+      console.error(`Erreur lors du rendu initial (tentative ${attempts}/${maxAttempts}):`, error);
+      
+      // Stocker l'erreur pour diagnostics
+      lastError = error instanceof Error ? error : new Error(String(error));
+      window.lastRenderError = lastError;
       
       // Si nous n'avons pas atteint le nombre max de tentatives, réessayer
       if (attempts < maxAttempts) {
-        console.warn(`Nouvelle tentative dans ${attempts * 500}ms...`);
-        setTimeout(attemptRender, attempts * 500); // Délai progressif
+        const delayMs = attempts * (isNetlify ? 800 : 500); // Délai plus long sur Netlify
+        console.warn(`Nouvelle tentative dans ${delayMs}ms...`);
+        setTimeout(attemptRender, delayMs);
       } else {
         // Afficher les boutons de récupération en cas d'échec définitif
         const retryButton = document.getElementById('retry-button');
@@ -171,13 +232,24 @@ export const initializeAppWithErrorRecovery = (renderCallback: () => void) => {
           errorDiv.style.padding = '0.5rem';
           errorDiv.style.borderRadius = '0.25rem';
           errorDiv.style.backgroundColor = '#fee2e2';
-          errorDiv.textContent = error?.message || 'Erreur de chargement de l\'application';
+          errorDiv.textContent = lastError?.message || 'Erreur de chargement de l\'application';
           loadingContainer.appendChild(errorDiv);
+          
+          // Ajouter un lien vers la page de diagnostic sur Netlify
+          if (isNetlify) {
+            const diagLink = document.createElement('a');
+            diagLink.href = '/diagnostic.html';
+            diagLink.style.display = 'inline-block';
+            diagLink.style.marginTop = '0.5rem';
+            diagLink.style.color = '#3b82f6';
+            diagLink.textContent = 'Ouvrir la page de diagnostic';
+            loadingContainer.appendChild(diagLink);
+          }
         }
       }
     }
   };
   
-  // Démarrer la première tentative après un court délai
-  setTimeout(attemptRender, 100);
+  // Démarrer la première tentative après un court délai, plus long sur Netlify
+  setTimeout(attemptRender, isNetlify ? 300 : 100);
 };

@@ -4,20 +4,31 @@ import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
 import { initializeAppWithErrorRecovery } from './utils/startup/loadingUtils';
+import { isNetlifyEnvironment } from './utils/environment/environmentDetection';
 import './index.css';
 
 // Remplacer l'initialisation Sentry par des logs de diagnostic
 console.log('🔍 Initialisation de l\'application - Sentry désactivé temporairement');
 console.log('📊 Environnement:', process.env.NODE_ENV);
 
+// Ajouter des informations spécifiques pour Netlify
+if (isNetlifyEnvironment()) {
+  console.log('🌐 Exécution sur Netlify:', window.location.hostname);
+  console.log('🔄 URL complète:', window.location.href);
+}
+
 // Fonction de diagnostic globale pour aider au débogage
 window.showDiagnostic = function() {
   return {
     environment: process.env.NODE_ENV,
+    isNetlify: isNetlifyEnvironment(),
     timestamp: new Date().toISOString(),
     userAgent: navigator.userAgent,
     online: navigator.onLine,
-    viewport: `${window.innerWidth}x${window.innerHeight}`
+    viewport: `${window.innerWidth}x${window.innerHeight}`,
+    hostname: window.location.hostname,
+    pathname: window.location.pathname,
+    search: window.location.search
   };
 };
 
@@ -26,6 +37,25 @@ window.initSentry = function() {
   console.log('⚠️ Sentry initialisé en mode simulé (désactivé)');
   return true;
 };
+
+// Détection des paramètres d'URL pour le mode de fonctionnement
+const urlParams = new URLSearchParams(window.location.search);
+const forceCloud = urlParams.get('forceCloud') === 'true';
+const debugMode = urlParams.get('debug') === 'true';
+
+// Configuration globale de l'application
+window.APP_CONFIG = {
+  forceCloudMode: forceCloud,
+  debugMode: debugMode
+};
+
+if (forceCloud) {
+  console.log('☁️ Mode cloud forcé par paramètre d\'URL');
+}
+
+if (debugMode) {
+  console.log('🐞 Mode debug activé par paramètre d\'URL');
+}
 
 // Fonction d'initialisation de l'application principale
 const initializeApp = async () => {
@@ -91,6 +121,13 @@ const initializeApp = async () => {
               Mode cloud
             </button>
           </div>
+          ${isNetlifyEnvironment() ? `
+          <div style="margin-top: 1rem;">
+            <a href="/diagnostic.html" 
+               style="color: #3b82f6; text-decoration: underline;">
+              Ouvrir la page de diagnostic
+            </a>
+          </div>` : ''}
         </div>
       `;
     }
@@ -110,5 +147,9 @@ declare global {
     showDiagnostic?: () => any;
     Sentry?: any;
     initSentry?: () => boolean;
+    APP_CONFIG?: {
+      forceCloudMode?: boolean;
+      debugMode?: boolean;
+    };
   }
 }
