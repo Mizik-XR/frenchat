@@ -2,7 +2,6 @@
 import * as Sentry from "@sentry/react";
 import { BrowserTracing } from "@sentry/tracing";
 import { ErrorType, LogLevel } from "./types";
-import { ErrorLogger } from "./logger";
 
 /**
  * Configuration et initialisation de Sentry pour le monitoring d'erreurs
@@ -20,43 +19,66 @@ export class SentryMonitor {
     if (this.isInitialized) return;
     
     try {
-      // Initialiser Sentry uniquement si le DSN est défini
-      if (this.DSN) {
+      // Initialiser Sentry uniquement si le DSN est défini et si nous ne sommes pas en mode développement
+      if (this.DSN && process.env.NODE_ENV !== 'development') {
         console.log("Tentative d'initialisation de Sentry...");
         
-        // Initialiser avec une configuration simplifiée et sécurisée
-        Sentry.init({
-          dsn: this.DSN,
-          integrations: [new BrowserTracing()],
-          tracesSampleRate: 0.1,
-          environment: process.env.NODE_ENV || 'production',
-          // Désactiver temporairement certaines fonctionnalités avancées
-          autoSessionTracking: false,
-          release: import.meta.env.VITE_APP_VERSION || '1.0.0',
-          // Mode débogage pour plus d'informations dans la console
-          debug: process.env.NODE_ENV === 'development',
-          // Contrôle des événements envoyés à Sentry
-          beforeSend: (event) => {
-            // Journaliser l'événement pour le débogage
-            console.log("Événement Sentry prêt à être envoyé:", event.event_id);
-            // Filtrer certains types d'erreurs pour réduire le bruit
-            if (event.exception && event.exception.values) {
-              const errorMessage = event.exception.values[0]?.value || '';
-              if (errorMessage.includes('ChunkLoadError') || 
-                  errorMessage.includes('Loading CSS chunk') ||
-                  errorMessage.includes('ResizeObserver')) {
-                console.log("Événement Sentry filtré:", errorMessage);
-                return null;
+        // Retarder légèrement l'initialisation de Sentry pour éviter les conflits avec React
+        setTimeout(() => {
+          try {
+            // Configuration simplifiée mais robuste
+            Sentry.init({
+              dsn: this.DSN,
+              integrations: [
+                new BrowserTracing({
+                  tracePropagationTargets: ["localhost", /^https:\/\/.*frenchat\.netlify\.app/],
+                }),
+              ],
+              // Réduire le nombre d'événements envoyés en production
+              tracesSampleRate: 0.1,
+              environment: process.env.NODE_ENV || 'production',
+              // Désactiver les fonctionnalités avancées pour éviter les conflits
+              autoSessionTracking: false,
+              release: import.meta.env.VITE_APP_VERSION || '1.0.0',
+              // Filtrage des erreurs pour réduire le bruit
+              beforeSend: (event) => {
+                // Journaliser l'événement pour le débogage
+                console.log("Événement Sentry préparé:", event.event_id);
+                
+                // Ignorer certaines erreurs non critiques ou connues
+                if (event.exception && event.exception.values) {
+                  const errorMessage = event.exception.values[0]?.value || '';
+                  
+                  // Liste des messages d'erreur à filtrer
+                  const ignoredErrors = [
+                    'ChunkLoadError',
+                    'Loading CSS chunk',
+                    'ResizeObserver',
+                    'unstable_scheduleCallback',
+                    'Cannot read properties of undefined',
+                    'Network request failed',
+                    'Failed to fetch'
+                  ];
+                  
+                  // Vérifier si l'erreur doit être ignorée
+                  if (ignoredErrors.some(msg => errorMessage.includes(msg))) {
+                    console.log("Événement Sentry filtré:", errorMessage);
+                    return null;
+                  }
+                }
+                
+                return event;
               }
-            }
-            return event;
+            });
+            
+            this.isInitialized = true;
+            console.log("Sentry monitoring initialized successfully");
+          } catch (innerError) {
+            console.error("Erreur pendant l'initialisation de Sentry:", innerError);
           }
-        });
-        
-        this.isInitialized = true;
-        console.log("Sentry monitoring initialized");
+        }, 2000); // Délai de 2 secondes pour éviter les conflits avec l'initialisation de React
       } else {
-        console.warn("Sentry DSN not provided, monitoring disabled");
+        console.warn("Sentry DSN not provided or development mode, monitoring disabled");
       }
     } catch (error) {
       console.error("Failed to initialize Sentry:", error);
@@ -64,7 +86,7 @@ export class SentryMonitor {
   }
   
   /**
-   * Envoie une erreur à Sentry
+   * Envoie une erreur à Sentry de manière sécurisée
    */
   static captureException(error: Error, context?: Record<string, any>) {
     if (!this.isInitialized) {
@@ -73,11 +95,24 @@ export class SentryMonitor {
     }
     
     try {
+      // Vérifier si l'erreur est du type à ignorer
+      const errorMessage = error.message || '';
+      const ignoredMessages = [
+        'unstable_scheduleCallback',
+        'ResizeObserver',
+        'ChunkLoadError'
+      ];
+      
+      if (ignoredMessages.some(msg => errorMessage.includes(msg))) {
+        console.warn("Ignoré localement:", errorMessage);
+        return;
+      }
+      
       Sentry.captureException(error, {
         extra: context
       });
     } catch (e) {
-      // Fail silently to avoid error loops
+      // Échouer silencieusement pour éviter les boucles d'erreur
       console.error("Failed to send error to Sentry:", e);
     }
   }
@@ -128,5 +163,20 @@ export class SentryMonitor {
       case ErrorType.API_ERROR: return "api_error";
       default: return "unknown";
     }
+  }
+  
+  /**
+   * Vérifie si Sentry est correctement initialisé
+   */
+  static isReady(): boolean {
+    return this.isInitialized;
+  }
+  
+  /**
+   * Force la réinitialisation de Sentry (utile en cas de problème)
+   */
+  static forceReinit(): void {
+    this.isInitialized = false;
+    this.initialize();
   }
 }

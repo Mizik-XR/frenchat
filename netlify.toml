@@ -74,3 +74,9 @@
   from = "/debug"
   to = "/debug.html"
   status = 200
+
+# Redirection pour la page de diagnostic
+[[redirects]]
+  from = "/diagnostic"
+  to = "/diagnostic.html"
+  status = 200

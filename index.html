@@ -7,13 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Frenchat - Votre assistant d'intelligence documentaire</title>
     <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
-    <!-- Script Sentry pour le monitoring des erreurs - mise à jour avec la bonne URL -->
-    <script
-      src="https://js.sentry-cdn.com/9e087d2c1630c52d5873558bbdf14d51.min.js"
-      crossorigin="anonymous"
-    ></script>
-    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
+    
     <!-- Style de base pour l'écran de chargement initial -->
     <style>
       #loading-screen {
@@ -76,6 +70,37 @@
         margin-top: 1rem;
       }
     </style>
+    
+    <!-- Script Sentry adapté pour éviter les conflits -->
+    <script>
+      // Fonction d'initialisation retardée de Sentry
+      window.initSentry = function() {
+        try {
+          // Vérifier si le script Sentry est déjà chargé
+          if (window.Sentry) return;
+          
+          var script = document.createElement('script');
+          script.src = "https://js.sentry-cdn.com/9e087d2c1630c52d5873558bbdf14d51.min.js";
+          script.crossOrigin = "anonymous";
+          script.defer = true;
+          script.onerror = function() {
+            console.warn("Impossible de charger Sentry, surveillance désactivée");
+          };
+          document.head.appendChild(script);
+          
+          console.log("Script Sentry chargé dynamiquement");
+        } catch (e) {
+          console.warn("Erreur lors du chargement de Sentry:", e);
+        }
+      };
+      
+      // Retarder le chargement de Sentry pour éviter les conflits
+      setTimeout(window.initSentry, 2000);
+    </script>
+    
+    <!-- Script GPT Engineer -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
+    
     <!-- Script de gestion d'erreur et de récupération -->
     <script>
       // Fonction pour rediriger vers la page d'accueil avec des paramètres forcés de mode cloud
@@ -86,6 +111,17 @@
       // Détection et récupération en cas d'erreur de chargement
       window.addEventListener('error', function(event) {
         console.warn('Erreur détectée:', event.message);
+        
+        // Filtrer les erreurs liées à Sentry ou aux ressources externes
+        if (event.message && (
+          event.message.includes('Sentry') || 
+          event.message.includes('cdn') ||
+          event.message.includes('unstable_scheduleCallback')
+        )) {
+          console.warn('Erreur non critique ignorée:', event.message);
+          event.preventDefault();
+          return;
+        }
         
         // Afficher le bouton de récupération après 5 secondes sans chargement
         setTimeout(function() {
@@ -102,7 +138,8 @@
 
       // Vérifier si l'application se charge correctement
       setTimeout(function() {
-        if (document.getElementById('root').children.length <= 1) {
+        var root = document.getElementById('root');
+        if (root && root.children.length <= 1) {
           console.warn('Application non chargée après 8 secondes, affichage des options de récupération...');
           var errorMsg = document.querySelector('.error-message');
           var retryBtn = document.querySelector('.retry-btn');

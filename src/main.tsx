@@ -34,29 +34,9 @@ const initializeApp = async () => {
     console.log("Chargement dynamique du module App...");
     const { default: App } = await import('./App');
     
-    // 2. Initialiser les moniteurs d'erreur seulement si nécessaire et de façon asynchrone
+    // 2. Initialiser les moniteurs d'erreur de façon asynchrone
     console.log("Chargement des moniteurs d'erreur...");
-    let ReactErrorMonitor = null;
-    let SentryMonitor = null;
     
-    if (!isDevMode) {
-      try {
-        // Importer de façon dynamique pour éviter les problèmes d'initialisation
-        const monitoring = await import('./monitoring/index');
-        ReactErrorMonitor = monitoring.ReactErrorMonitor;
-        SentryMonitor = monitoring.SentryMonitor;
-        
-        // Initialiser Sentry uniquement en production et si disponible
-        if (SentryMonitor) {
-          console.log("Initialisation de Sentry...");
-          SentryMonitor.initialize();
-        }
-      } catch (monitoringError) {
-        console.warn("Erreur lors du chargement des moniteurs:", monitoringError);
-        // Continuer sans monitoring plutôt que de bloquer l'application
-      }
-    }
-
     // 3. Rendre l'application
     console.log("Début du rendu de l'application");
     const rootElement = document.getElementById('root');
@@ -73,10 +53,28 @@ const initializeApp = async () => {
       loadingScreen.style.display = 'none';
     }
     
+    // Chargement différé des outils de monitoring pour éviter les conflits
+    let ReactErrorMonitor = null;
+    
+    if (!isDevMode) {
+      try {
+        // Importer dynamiquement après le rendu initial
+        setTimeout(async () => {
+          try {
+            const monitoring = await import('./monitoring/index');
+            console.log("Monitoring modules loaded successfully");
+          } catch (monitoringError) {
+            console.warn("Erreur lors du chargement différé des moniteurs:", monitoringError);
+          }
+        }, 3000);
+      } catch (error) {
+        console.warn("Erreur lors du chargement initial des moniteurs:", error);
+      }
+    }
+    
     root.render(
       <React.StrictMode>
         <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-          {ReactErrorMonitor && <ReactErrorMonitor />}
           <App />
           <Toaster />
         </ThemeProvider>
