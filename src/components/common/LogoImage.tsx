@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { checkGifAvailability } from '@/utils/startup/loadingUtils';
 
 interface LogoImageProps {
@@ -11,35 +11,40 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   
   useEffect(() => {
-    // Utiliser l'utilitaire pour trouver le chemin de l'image
+    // Utiliser l'utilitaire pour trouver le chemin de l'image avec mise en cache
     const gifPath = checkGifAvailability();
+    
     if (gifPath) {
-      setImagePath(gifPath);
-      
       // Précharger l'image pour vérifier si elle se charge correctement
       const img = new Image();
+      
       img.onload = () => {
+        setImagePath(gifPath);
         setImageLoaded(true);
         console.log(`GIF chargé avec succès depuis: ${gifPath}`);
       };
+      
       img.onerror = () => {
-        console.error(`Échec du chargement du GIF depuis: ${gifPath}`);
+        console.warn(`Échec du chargement du GIF depuis: ${gifPath}`);
         setImageLoaded(false);
         
-        // Essayer avec un chemin absolu
+        // Essayer avec un chemin absolu comme plan B
         const absolutePath = `${window.location.origin}/filechat-animation.gif`;
-        const fallbackImg = new Image();
-        fallbackImg.onload = () => {
-          setImagePath(absolutePath);
-          setImageLoaded(true);
-          console.log(`GIF chargé avec succès depuis le chemin absolu: ${absolutePath}`);
-        };
-        fallbackImg.onerror = () => {
-          console.error(`Échec du chargement du GIF même avec le chemin absolu: ${absolutePath}`);
-          setImageLoaded(false);
-        };
-        fallbackImg.src = absolutePath;
+        if (absolutePath !== gifPath) {
+          const fallbackImg = new Image();
+          fallbackImg.onload = () => {
+            setImagePath(absolutePath);
+            setImageLoaded(true);
+            console.log(`GIF chargé avec succès depuis le chemin absolu: ${absolutePath}`);
+          };
+          fallbackImg.onerror = () => {
+            console.warn(`Échec du chargement du GIF depuis tous les chemins connus`);
+            setImageLoaded(false);
+          };
+          fallbackImg.src = absolutePath;
+        }
       };
+      
       img.src = gifPath;
     } else {
       console.warn("Aucun chemin de GIF valide trouvé");
@@ -62,7 +67,7 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
       alt="FileChat Logo"
       className={className}
       onError={() => {
-        console.error(`Erreur lors du chargement de l'image: ${imagePath}`);
+        console.warn(`Erreur lors du chargement de l'image: ${imagePath}`);
         setImageLoaded(false);
       }}
     />

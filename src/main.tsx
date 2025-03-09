@@ -3,6 +3,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
+import { initializeAppWithErrorRecovery } from './utils/startup/loadingUtils';
 import './index.css';
 
 // Remplacer l'initialisation Sentry par des logs de diagnostic
@@ -26,7 +27,7 @@ window.initSentry = function() {
   return true;
 };
 
-// Initialisation progressive de l'application sans Sentry
+// Fonction d'initialisation de l'application principale
 const initializeApp = async () => {
   try {
     console.log('🚀 Démarrage de l\'initialisation progressive');
@@ -99,8 +100,8 @@ const initializeApp = async () => {
   }
 };
 
-// Démarrer l'initialisation progressive
-initializeApp();
+// Utiliser notre fonction de récupération d'erreur améliorée pour initialiser l'application
+initializeAppWithErrorRecovery(initializeApp);
 
 // Déclarer le type global
 declare global {
