@@ -4,9 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import Landing from './Landing';
 import { useAuth } from "@/components/AuthProvider";
 import { LoadingScreen } from '@/components/auth/LoadingScreen';
+import { isNetlifyEnvironment } from '@/utils/environment/environmentDetection';
 
 // Composant de gestion des erreurs d'initialisation
 const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void }) => {
+  const isNetlify = isNetlifyEnvironment();
+  
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
       <div className="bg-card shadow-lg rounded-lg p-6 w-full max-w-md mx-auto text-center">
@@ -28,7 +31,21 @@ const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error, resetError
           >
             Mode cloud
           </button>
+          {isNetlify && (
+            <button 
+              onClick={() => window.location.href = '/diagnostic.html'}
+              className="bg-muted text-muted-foreground px-4 py-2 rounded hover:bg-muted/90"
+            >
+              Diagnostic
+            </button>
+          )}
         </div>
+        {isNetlify && (
+          <div className="mt-4 text-xs text-muted-foreground">
+            <p>Environnement Netlify détecté</p>
+            <p className="mt-1">URL: {window.location.href}</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -46,7 +63,8 @@ export default function Index() {
     try {
       console.log("Index page initialized", {
         isLoading,
-        user: user ? "Authenticated" : "Not authenticated"
+        user: user ? "Authenticated" : "Not authenticated",
+        isNetlify: isNetlifyEnvironment()
       });
       
       // Stocker la route pour la gestion de session
@@ -94,6 +112,23 @@ export default function Index() {
     return () => clearTimeout(timer);
   }, [isLoading]);
   
+  // Vérification supplémentaire pour Netlify
+  useEffect(() => {
+    if (isNetlifyEnvironment()) {
+      console.log("Environnement Netlify détecté dans Index.tsx");
+      
+      // Déclencher le diagnostic sur Netlify après un certain délai
+      const diagnosticTimer = setTimeout(() => {
+        if (window.showDiagnostic) {
+          console.log("Exécution du diagnostic automatique depuis Index.tsx");
+          window.showDiagnostic();
+        }
+      }, 3000);
+      
+      return () => clearTimeout(diagnosticTimer);
+    }
+  }, []);
+  
   // Si une erreur est survenue, afficher le composant de fallback
   if (error) {
     return <ErrorFallback error={error} resetErrorBoundary={() => {
@@ -120,5 +155,6 @@ export default function Index() {
 declare global {
   interface Window {
     lastRenderError?: Error;
+    showDiagnostic?: () => any;
   }
 }

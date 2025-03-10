@@ -15,6 +15,8 @@ console.log('📊 Environnement:', process.env.NODE_ENV);
 if (isNetlifyEnvironment()) {
   console.log('🌐 Exécution sur Netlify:', window.location.hostname);
   console.log('🔄 URL complète:', window.location.href);
+  console.log('🔧 API URL:', import.meta.env.VITE_API_URL);
+  console.log('🔧 SITE URL:', import.meta.env.VITE_SITE_URL);
   
   // Logs détaillés pour le débogage sur Netlify
   const envInfo = getEnvironmentInfo();
@@ -27,6 +29,14 @@ if (isNetlifyEnvironment()) {
   } catch (e) {
     console.warn('⚠️ Impossible de sauvegarder les informations dans localStorage:', e);
   }
+  
+  // Vérifier les chemins relatifs
+  console.log('🔍 Vérification des chemins relatifs:');
+  console.log('- Base URL:', document.baseURI);
+  const linkElements = document.querySelectorAll('link[href]');
+  console.log('- Nombre de liens dans le document:', linkElements.length);
+  const scriptElements = document.querySelectorAll('script[src]');
+  console.log('- Nombre de scripts dans le document:', scriptElements.length);
 }
 
 // Fonction de diagnostic globale pour aider au débogage
@@ -49,9 +59,27 @@ window.showDiagnostic = function() {
       // Vérifier les chemins de base pour les assets
       assetPaths: {
         relativeRoot: new URL('./assets', window.location.href).href,
-        absoluteRoot: new URL('/assets', window.location.origin).href
+        absoluteRoot: new URL('/assets', window.location.origin).href,
+        baseURI: document.baseURI
+      },
+      apiUrl: import.meta.env.VITE_API_URL,
+      envVars: {
+        VITE_ENVIRONMENT: import.meta.env.VITE_ENVIRONMENT,
+        VITE_SITE_URL: import.meta.env.VITE_SITE_URL,
+        VITE_CLOUD_MODE: import.meta.env.VITE_CLOUD_MODE,
+        VITE_NETLIFY_DEPLOYMENT: import.meta.env.VITE_NETLIFY_DEPLOYMENT
       }
-    } : null
+    } : null,
+    // Tests de connectivité
+    connectivity: {
+      navigatorOnline: navigator.onLine,
+      lastConnectivityCheck: new Date().toISOString()
+    },
+    // Test des ressources critiques
+    resourceTests: {
+      cssLoaded: document.styleSheets.length > 0,
+      mainDiv: document.getElementById('root') !== null
+    }
   };
   
   console.log('📊 Diagnostic complet:', diagnosticInfo);
@@ -61,22 +89,31 @@ window.showDiagnostic = function() {
 // Version simplifiée de initSentry pour préserver l'API
 window.initSentry = function() {
   console.log('⚠️ Sentry initialisé en mode simulé (désactivé)');
+  if (isNetlifyEnvironment()) {
+    console.log('📝 Mode Netlify détecté, Sentry sera configuré lors de la réintégration progressive');
+  }
   return true;
 };
 
 // Détection des paramètres d'URL pour le mode de fonctionnement
 const urlParams = new URLSearchParams(window.location.search);
-const forceCloud = urlParams.get('forceCloud') === 'true';
+const forceCloud = urlParams.get('forceCloud') === 'true' || import.meta.env.VITE_CLOUD_MODE === 'true';
 const debugMode = urlParams.get('debug') === 'true';
+const netlifyMode = isNetlifyEnvironment() || import.meta.env.VITE_NETLIFY_DEPLOYMENT === 'true';
 
 // Configuration globale de l'application
 window.APP_CONFIG = {
-  forceCloudMode: forceCloud,
-  debugMode: debugMode
+  forceCloudMode: forceCloud || netlifyMode,
+  debugMode: debugMode,
+  netlifyMode: netlifyMode
 };
 
 if (forceCloud) {
-  console.log('☁️ Mode cloud forcé par paramètre d\'URL');
+  console.log('☁️ Mode cloud forcé par paramètre d\'URL ou variable d\'environnement');
+}
+
+if (netlifyMode) {
+  console.log('🌐 Mode Netlify détecté');
 }
 
 if (debugMode) {
@@ -119,10 +156,19 @@ const initializeApp = async () => {
     
     console.log('✅ Rendu de l\'application terminé avec succès');
     
+    // Déclencher le diagnostic automatique sur Netlify
+    if (isNetlifyEnvironment()) {
+      console.log('🔍 Exécution du diagnostic automatique Netlify');
+      setTimeout(() => {
+        window.showDiagnostic();
+      }, 2000);
+    }
+    
   } catch (error) {
     console.error("❌ ERREUR CRITIQUE lors de l'initialisation", {
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
+      isNetlify: isNetlifyEnvironment()
     });
     
     // Afficher une interface utilisateur de secours en cas d'erreur
@@ -166,7 +212,7 @@ const initializeApp = async () => {
 // Utiliser notre fonction de récupération d'erreur améliorée pour initialiser l'application
 initializeAppWithErrorRecovery(initializeApp);
 
-// Déclarer le type global
+// Déclaration du type global APP_CONFIG
 declare global {
   interface Window {
     lastRenderError?: Error;
@@ -176,6 +222,7 @@ declare global {
     APP_CONFIG?: {
       forceCloudMode?: boolean;
       debugMode?: boolean;
+      netlifyMode?: boolean;
     };
   }
 }

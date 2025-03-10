@@ -1,4 +1,3 @@
-
 /**
  * Utilities for environment detection
  */
@@ -26,7 +25,7 @@ export const isDevelopment = (): boolean => {
 export const isNetlifyEnvironment = (): boolean => {
   // Vérifier les variables d'environnement de Netlify (côté serveur)
   if (typeof process !== 'undefined' && process.env) {
-    if (process.env.NETLIFY === 'true' || process.env.NETLIFY_IMAGES_CDN_DOMAIN) {
+    if (process.env.NETLIFY === 'true' || process.env.NETLIFY_IMAGES_CDN_DOMAIN || process.env.NETLIFY_DEV) {
       return true;
     }
   }
@@ -37,7 +36,8 @@ export const isNetlifyEnvironment = (): boolean => {
     if (
       hostname.endsWith('.netlify.app') || 
       hostname.includes('-netlify-') ||
-      window.location.href.includes('netlify')
+      window.location.href.includes('netlify') ||
+      hostname === 'filechat-app.netlify.app'
     ) {
       return true;
     }
@@ -57,6 +57,16 @@ export const isNetlifyEnvironment = (): boolean => {
       }
     } catch (e) {
       // Ignorer les erreurs d'accès au localStorage
+    }
+    
+    // Vérifier la présence d'en-têtes Netlify spécifiques
+    try {
+      const serverHeader = document.querySelector('meta[name="x-netlify-instance"]');
+      if (serverHeader) {
+        return true;
+      }
+    } catch (e) {
+      // Ignorer les erreurs d'accès au DOM
     }
   }
   
@@ -102,7 +112,15 @@ export const getEnvironmentInfo = (): Record<string, any> => {
     development: isDevelopment(),
     netlify: isNetlifyEnvironment(),
     lovable: isLovableEnvironment(),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    viteEnv: {
+      VITE_API_URL: import.meta.env.VITE_API_URL,
+      VITE_ENVIRONMENT: import.meta.env.VITE_ENVIRONMENT,
+      VITE_SITE_URL: import.meta.env.VITE_SITE_URL,
+      VITE_CLOUD_MODE: import.meta.env.VITE_CLOUD_MODE,
+      VITE_ALLOW_LOCAL_AI: import.meta.env.VITE_ALLOW_LOCAL_AI,
+      VITE_SKIP_PYTHON_INSTALLATION: import.meta.env.VITE_SKIP_PYTHON_INSTALLATION
+    }
   };
   
   // Ajouter des informations spécifiques au navigateur si disponible
@@ -113,6 +131,12 @@ export const getEnvironmentInfo = (): Record<string, any> => {
     envInfo.viewport = `${window.innerWidth}x${window.innerHeight}`;
     envInfo.devicePixelRatio = window.devicePixelRatio;
     envInfo.url = window.location.href;
+    envInfo.deployment = {
+      hostname: window.location.hostname,
+      pathname: window.location.pathname,
+      protocol: window.location.protocol,
+      origin: window.location.origin
+    };
     
     // Ajouter le contexte de déploiement Netlify si disponible
     // @ts-ignore - L'objet n'existe pas toujours

@@ -5,3 +5,6 @@
 # Redirection API vers les fonctions Netlify 
 /api/*  /.netlify/functions/:splat  200 
 
+# Redirection des fonctions Edge spécifiques
+/.netlify/functions/index-google-drive/*  /.netlify/functions/index-google-drive  200
+/.netlify/functions/unified-oauth-proxy/*  /.netlify/functions/unified-oauth-proxy  200
