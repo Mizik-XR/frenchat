@@ -19,13 +19,13 @@ window.unstable_cancelCallback = window.unstable_cancelCallback || function() {
 
 // Système de journalisation simplifié
 const logger = {
-  log: function(message, data) {
+  log: function(message: string, data?: any) {
     console.log(`[INFO] ${message}`, data || '');
   },
-  warn: function(message, data) {
+  warn: function(message: string, data?: any) {
     console.warn(`[WARN] ${message}`, data || '');
   },
-  error: function(message, data) {
+  error: function(message: string, data?: any) {
     console.error(`[ERROR] ${message}`, data || '');
   }
 };
@@ -62,7 +62,7 @@ const initializeApp = () => {
     }
     
     // Importation synchrone de App pour éviter les erreurs asynchrones
-    import('./AppMinimal').then((module) => {
+    import('./App').then((module) => {
       const App = module.default;
       const root = createRoot(rootElement);
       
@@ -76,9 +76,9 @@ const initializeApp = () => {
         </React.StrictMode>
       );
       
-      logger.log('Application minimale rendue avec succès');
+      logger.log('Application rendue avec succès');
     }).catch(error => {
-      logger.error('Erreur lors du chargement de AppMinimal', error);
+      logger.error('Erreur lors du chargement de App', error);
       showFallbackUI(rootElement, error);
     });
     
@@ -94,7 +94,7 @@ const initializeApp = () => {
 };
 
 // Fonction pour afficher l'UI de secours
-const showFallbackUI = (rootElement, error) => {
+const showFallbackUI = (rootElement: HTMLElement, error: unknown) => {
   rootElement.innerHTML = `
     <div style="font-family: system-ui, sans-serif; padding: 2rem; max-width: 500px; margin: 0 auto; text-align: center;">
       <h2 style="color: #e11d48;">Problème de chargement</h2>
@@ -114,12 +114,16 @@ const showFallbackUI = (rootElement, error) => {
            style="display: block; margin-top: 1rem; color: #3b82f6;">
           Diagnostic
         </a>
+        <a href="/minimal.html" 
+           style="display: block; margin-top: 0.5rem; color: #3b82f6;">
+          Version minimale
+        </a>
       </div>
     </div>
   `;
   
   // Stocker l'erreur pour diagnostic
-  window.lastRenderError = error;
+  window.lastRenderError = error as Error;
 };
 
 // Initialiser l'application après un court délai

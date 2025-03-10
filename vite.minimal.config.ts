@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
-// Configuration Vite simplifiée pour le mode minimal
+// Configuration Vite minimaliste pour le mode diagnostic
 export default defineConfig({
   server: {
     host: "::",
@@ -14,10 +14,9 @@ export default defineConfig({
     react({
       jsxRuntime: 'automatic',
       babel: {
-        // Désactiver les plugins Babel problématiques
         plugins: []
       }
-    }),
+    })
   ],
   resolve: {
     alias: {
@@ -27,18 +26,17 @@ export default defineConfig({
   build: {
     minify: false, // Désactiver la minification pour le débogage
     sourcemap: true,
-    // Éviter les chunks pour une version minimale
+    outDir: 'dist',
     rollupOptions: {
-      output: {
-        manualChunks: {},
-      },
-    },
+      external: [
+        'https://cdn.gpteng.co/gptengineer.js'
+      ]
+    }
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify('development'),
     'process.env.VITE_MINIMAL_MODE': JSON.stringify('true'),
     'process.env.VITE_DISABLE_SENTRY': JSON.stringify('true'),
   },
-  // Assurer des chemins relatifs
-  base: './',
+  base: './', // Utiliser des chemins relatifs
 });
