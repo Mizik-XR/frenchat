@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
-import { corsHeaders } from '../_shared/cors.ts';
+import { corsHeaders, handleCorsOptions, addCorsHeaders } from '../_shared/cors.ts';
 
 console.log("[DÉMARRAGE] Function 'batch-index-google-drive' démarrée");
 
@@ -26,9 +26,10 @@ interface IndexingOptions {
 serve(async (req) => {
   console.log(`[REQUÊTE] Nouvelle requête: ${req.method} ${new URL(req.url).pathname}`);
   
-  if (req.method === 'OPTIONS') {
-    console.log(`[CORS] Réponse aux options CORS`);
-    return new Response('ok', { headers: corsHeaders });
+  // Gestion des requêtes OPTIONS (CORS preflight)
+  const corsResponse = handleCorsOptions(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
@@ -317,27 +318,27 @@ serve(async (req) => {
     );
 
     console.log(`[RÉPONSE] Envoi de la réponse avec progressId=${progress.id}`);
-    return new Response(
+    return addCorsHeaders(new Response(
       JSON.stringify({
         success: true,
         progressId: progress.id
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         status: 200 
       }
-    );
+    ));
 
   } catch (error) {
     console.error(`[ERREUR FATALE] ${error.message}`, error);
-    return new Response(
+    return addCorsHeaders(new Response(
       JSON.stringify({
         error: error.message
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         status: 500
       }
-    );
+    ));
   }
 });
