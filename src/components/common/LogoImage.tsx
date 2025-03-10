@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { checkGifAvailability } from '@/utils/startup/loadingUtils';
 import { isNetlifyEnvironment } from '@/utils/environment/environmentDetection';
 
 interface LogoImageProps {
@@ -10,75 +9,49 @@ interface LogoImageProps {
 export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
   const [imagePath, setImagePath] = useState<string>("");
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
-  const [errorCount, setErrorCount] = useState<number>(0);
   
   useEffect(() => {
-    // Utiliser l'utilitaire pour trouver le chemin de l'image avec mise en cache
-    const gifPath = checkGifAvailability();
+    // Liste des chemins possibles pour l'image
     const isNetlify = isNetlifyEnvironment();
+    console.log('LogoImage: isNetlify =', isNetlify);
     
-    if (gifPath) {
-      // Précharger l'image pour vérifier si elle se charge correctement
+    // Sur Netlify, privilégier les chemins relatifs
+    const possiblePaths = isNetlify 
+      ? ['./filechat-animation.gif', './assets/filechat-animation.gif'] 
+      : ['/filechat-animation.gif', '/assets/filechat-animation.gif', './filechat-animation.gif'];
+    
+    // Fonction pour tester un chemin d'image
+    const testImagePath = (path: string) => {
+      console.log('LogoImage: testing path', path);
       const img = new Image();
-      
       img.onload = () => {
-        setImagePath(gifPath);
+        console.log('LogoImage: path loaded successfully', path);
+        setImagePath(path);
         setImageLoaded(true);
-        
-        if (import.meta.env.DEV) {
-          console.log(`GIF chargé avec succès depuis: ${gifPath}`);
-        }
       };
-      
       img.onerror = () => {
-        setErrorCount(prev => prev + 1);
-        
-        if (import.meta.env.DEV) {
-          console.warn(`Échec du chargement du GIF depuis: ${gifPath} (tentative ${errorCount+1})`);
-        }
-        
-        setImageLoaded(false);
-        
-        // Stratégie de repli adaptée selon l'environnement
-        if (errorCount < 2) {
-          // Essayer avec un chemin absolu en cas d'échec initial
-          const fallbackPath = isNetlify 
-            ? './filechat-animation.gif' // Sur Netlify, essayer un chemin relatif simple
-            : `${window.location.origin}/filechat-animation.gif`; // En local, essayer avec l'origine complète
-            
-          if (fallbackPath !== gifPath) {
-            const fallbackImg = new Image();
-            fallbackImg.onload = () => {
-              setImagePath(fallbackPath);
-              setImageLoaded(true);
-              
-              if (import.meta.env.DEV) {
-                console.log(`GIF chargé avec succès depuis le chemin alternatif: ${fallbackPath}`);
-              }
-            };
-            fallbackImg.onerror = () => {
-              if (import.meta.env.DEV) {
-                console.warn(`Échec du chargement du GIF depuis tous les chemins connus`);
-              }
-              setImageLoaded(false);
-            };
-            fallbackImg.src = fallbackPath;
-          }
-        } else {
-          if (import.meta.env.DEV) {
-            console.warn(`Abandon du chargement du GIF après ${errorCount} tentatives`);
-          }
-        }
+        console.warn('LogoImage: failed to load from path', path);
       };
-      
-      img.src = gifPath;
-    } else {
-      if (import.meta.env.DEV) {
-        console.warn("Aucun chemin de GIF valide trouvé");
+      img.src = path;
+    };
+    
+    // Tester chaque chemin séquentiellement
+    possiblePaths.forEach(path => {
+      if (!imageLoaded) {
+        testImagePath(path);
       }
-      setImageLoaded(false);
-    }
-  }, [errorCount]);
+    });
+    
+    // Si aucun chemin ne fonctionne après un délai, utiliser le fallback
+    const timer = setTimeout(() => {
+      if (!imageLoaded) {
+        console.warn('LogoImage: fallback to simple component after timeout');
+        setImageLoaded(false);
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timer);
+  }, [imageLoaded]);
 
   // Utiliser une icône de secours si l'image ne charge pas
   if (!imageLoaded) {
@@ -95,9 +68,7 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
       alt="FileChat Logo"
       className={className}
       onError={() => {
-        if (import.meta.env.DEV) {
-          console.warn(`Erreur lors du chargement de l'image: ${imagePath}`);
-        }
+        console.warn(`LogoImage: error loading image from ${imagePath}`);
         setImageLoaded(false);
       }}
     />

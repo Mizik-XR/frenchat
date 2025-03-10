@@ -3,40 +3,38 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
-import { initializeAppWithErrorRecovery } from './utils/startup/loadingUtils';
 import { isNetlifyEnvironment, getEnvironmentInfo } from './utils/environment/environmentDetection';
 import './index.css';
 
+// Fonction de journalisation qui stocke aussi dans localStorage pour diagnostic
+const logWithStorage = (message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] ${message}${data ? ': ' + JSON.stringify(data) : ''}`;
+  
+  console.log(logMessage);
+  
+  try {
+    // Stocker dans localStorage pour diagnostic
+    const logs = JSON.parse(localStorage.getItem('netlify_diagnostic_logs') || '[]');
+    logs.push(logMessage);
+    localStorage.setItem('netlify_diagnostic_logs', JSON.stringify(logs.slice(-100))); // Garder seulement les 100 derniers
+  } catch (e) {
+    console.warn('Impossible de stocker dans localStorage:', e);
+  }
+};
+
 // Remplacer l'initialisation Sentry par des logs de diagnostic
-console.log('🔍 Initialisation de l\'application - Sentry désactivé temporairement');
-console.log('📊 Environnement:', process.env.NODE_ENV);
+logWithStorage('Initialisation de l\'application - Sentry désactivé temporairement');
+logWithStorage('Environnement:', process.env.NODE_ENV);
 
 // Ajouter des informations spécifiques pour Netlify
 if (isNetlifyEnvironment()) {
-  console.log('🌐 Exécution sur Netlify:', window.location.hostname);
-  console.log('🔄 URL complète:', window.location.href);
-  console.log('🔧 API URL:', import.meta.env.VITE_API_URL);
-  console.log('🔧 SITE URL:', import.meta.env.VITE_SITE_URL);
+  logWithStorage('Exécution sur Netlify:', window.location.hostname);
+  logWithStorage('URL complète:', window.location.href);
   
   // Logs détaillés pour le débogage sur Netlify
   const envInfo = getEnvironmentInfo();
-  console.log('📋 Informations détaillées sur l\'environnement Netlify:', envInfo);
-  
-  // Stocker les informations dans localStorage pour le diagnostic
-  try {
-    localStorage.setItem('filechat_env_info', JSON.stringify(envInfo));
-    console.log('💾 Informations d\'environnement sauvegardées dans localStorage');
-  } catch (e) {
-    console.warn('⚠️ Impossible de sauvegarder les informations dans localStorage:', e);
-  }
-  
-  // Vérifier les chemins relatifs
-  console.log('🔍 Vérification des chemins relatifs:');
-  console.log('- Base URL:', document.baseURI);
-  const linkElements = document.querySelectorAll('link[href]');
-  console.log('- Nombre de liens dans le document:', linkElements.length);
-  const scriptElements = document.querySelectorAll('script[src]');
-  console.log('- Nombre de scripts dans le document:', scriptElements.length);
+  logWithStorage('Informations détaillées sur l\'environnement Netlify:', envInfo);
 }
 
 // Fonction de diagnostic globale pour aider au débogage
@@ -50,48 +48,15 @@ window.showDiagnostic = function() {
     viewport: `${window.innerWidth}x${window.innerHeight}`,
     hostname: window.location.hostname,
     pathname: window.location.pathname,
-    search: window.location.search,
-    // Ajouter des informations spécifiques à Netlify
-    netlifySpecific: isNetlifyEnvironment() ? {
-      deployUrl: window.location.origin,
-      // @ts-ignore - L'objet n'existe pas toujours
-      deployContext: window.netlifyDeployContext || 'unknown',
-      // Vérifier les chemins de base pour les assets
-      assetPaths: {
-        relativeRoot: new URL('./assets', window.location.href).href,
-        absoluteRoot: new URL('/assets', window.location.origin).href,
-        baseURI: document.baseURI
-      },
-      apiUrl: import.meta.env.VITE_API_URL,
-      envVars: {
-        VITE_ENVIRONMENT: import.meta.env.VITE_ENVIRONMENT,
-        VITE_SITE_URL: import.meta.env.VITE_SITE_URL,
-        VITE_CLOUD_MODE: import.meta.env.VITE_CLOUD_MODE,
-        VITE_NETLIFY_DEPLOYMENT: import.meta.env.VITE_NETLIFY_DEPLOYMENT
-      }
-    } : null,
-    // Tests de connectivité
-    connectivity: {
-      navigatorOnline: navigator.onLine,
-      lastConnectivityCheck: new Date().toISOString()
-    },
-    // Test des ressources critiques
-    resourceTests: {
-      cssLoaded: document.styleSheets.length > 0,
-      mainDiv: document.getElementById('root') !== null
-    }
   };
   
-  console.log('📊 Diagnostic complet:', diagnosticInfo);
+  logWithStorage('Diagnostic complet:', diagnosticInfo);
   return diagnosticInfo;
 };
 
 // Version simplifiée de initSentry pour préserver l'API
 window.initSentry = function() {
-  console.log('⚠️ Sentry initialisé en mode simulé (désactivé)');
-  if (isNetlifyEnvironment()) {
-    console.log('📝 Mode Netlify détecté, Sentry sera configuré lors de la réintégration progressive');
-  }
+  logWithStorage('Sentry initialisé en mode simulé (désactivé)');
   return true;
 };
 
@@ -108,28 +73,75 @@ window.APP_CONFIG = {
 };
 
 if (forceCloud) {
-  console.log('☁️ Mode cloud forcé par paramètre d\'URL ou variable d\'environnement');
+  logWithStorage('Mode cloud forcé par paramètre d\'URL ou variable d\'environnement');
 }
 
 if (isNetlify) {
-  console.log('🌐 Mode Netlify détecté');
+  logWithStorage('Mode Netlify détecté');
 }
 
 if (debugMode) {
-  console.log('🐞 Mode debug activé par paramètre d\'URL');
+  logWithStorage('Mode debug activé par paramètre d\'URL');
 }
+
+// Fonction pour afficher un message de chargement
+const showLoadingMessage = () => {
+  const rootElement = document.getElementById('root');
+  if (rootElement) {
+    rootElement.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; background: linear-gradient(to bottom right, #f0f9ff, #e1e7ff);">
+        <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 500px; width: 100%; text-align: center;">
+          <h1 style="color: #4f46e5; font-size: 1.5rem; margin-bottom: 1rem;">Chargement en cours</h1>
+          <p style="margin-bottom: 1.5rem; color: #4b5563;">
+            L'application est en cours de chargement. Veuillez patienter...
+          </p>
+          <div style="width: 100%; height: 6px; background-color: #e5e7eb; border-radius: 3px; overflow: hidden; margin-bottom: 1rem;">
+            <div style="width: 30%; height: 100%; background-color: #4f46e5; border-radius: 3px; animation: progressAnimation 2s infinite ease-in-out;" id="loading-bar"></div>
+          </div>
+          <p style="font-size: 0.8rem; color: #6b7280;">
+            Si le chargement prend trop de temps, essayez de rafraîchir la page.
+          </p>
+          <div style="margin-top: 1.5rem;">
+            <button onclick="window.location.reload()" style="background-color: #4f46e5; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; margin-right: 0.5rem;">
+              Rafraîchir
+            </button>
+            <button onclick="window.location.href='?forceCloud=true'" style="background-color: #6366f1; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer;">
+              Mode cloud
+            </button>
+            ${isNetlifyEnvironment() ? `
+            <div style="margin-top: 1rem;">
+              <a href="/diagnostic.html" style="color: #4f46e5; text-decoration: underline;">
+                Diagnostic
+              </a>
+            </div>` : ''}
+          </div>
+        </div>
+      </div>
+      <style>
+        @keyframes progressAnimation {
+          0% { width: 10%; }
+          50% { width: 70%; }
+          100% { width: 10%; }
+        }
+      </style>
+    `;
+  }
+};
 
 // Fonction d'initialisation de l'application principale
 const initializeApp = async () => {
   try {
-    console.log('🚀 Démarrage de l\'initialisation progressive');
+    logWithStorage('Début du chargement dynamique de App');
+    
+    // Afficher un message de chargement
+    showLoadingMessage();
     
     // 1. Charger le module App de façon dynamique
-    console.log('📦 Chargement dynamique du module App...');
     const { default: App } = await import('./App');
     
+    logWithStorage('Module App chargé avec succès');
+    
     // 2. Rendre l'application
-    console.log('🎨 Début du rendu de l\'application');
     const rootElement = document.getElementById('root');
     
     if (!rootElement) {
@@ -137,12 +149,6 @@ const initializeApp = async () => {
     }
     
     const root = createRoot(rootElement);
-    
-    // Masquer l'écran de chargement initial
-    const loadingScreen = document.getElementById('loading-screen');
-    if (loadingScreen) {
-      loadingScreen.style.display = 'none';
-    }
     
     root.render(
       <React.StrictMode>
@@ -153,21 +159,12 @@ const initializeApp = async () => {
       </React.StrictMode>
     );
     
-    console.log('✅ Rendu de l\'application terminé avec succès');
+    logWithStorage('Rendu React terminé');
     
-    // Déclencher le diagnostic automatique sur Netlify
-    if (isNetlifyEnvironment()) {
-      console.log('🔍 Exécution du diagnostic automatique Netlify');
-      setTimeout(() => {
-        window.showDiagnostic();
-      }, 2000);
-    }
-    
-  } catch (error) {
-    console.error("❌ ERREUR CRITIQUE lors de l'initialisation", {
+  } catch (error: any) {
+    logWithStorage('ERREUR CRITIQUE lors de l\'initialisation', {
       message: error.message,
       stack: error.stack,
-      isNetlify: isNetlifyEnvironment()
     });
     
     // Afficher une interface utilisateur de secours en cas d'erreur
@@ -208,8 +205,8 @@ const initializeApp = async () => {
   }
 };
 
-// Utiliser notre fonction de récupération d'erreur améliorée pour initialiser l'application
-initializeAppWithErrorRecovery(initializeApp);
+// Initialiser l'application après un court délai (pour permettre aux gestionnaires d'erreur de s'initialiser)
+setTimeout(initializeApp, 100);
 
 // Déclaration du type global APP_CONFIG
 declare global {

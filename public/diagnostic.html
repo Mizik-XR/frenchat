@@ -61,6 +61,8 @@
     <button onclick="testRelativePaths()">Tester les chemins relatifs</button>
     <button onclick="testAPIConnectivity()" class="secondary">Tester la connectivité API</button>
     <button onclick="clearLogs()" class="secondary">Effacer les logs</button>
+    <button onclick="testScriptLoading()" class="secondary">Tester le chargement de scripts</button>
+    <button onclick="window.location.href='/'">Retour à l'application</button>
   </div>
 
   <h2>Environnement</h2>
@@ -74,6 +76,12 @@
 
   <h2>État du LocalStorage</h2>
   <div id="localStorage">Chargement...</div>
+
+  <h2>Test de React</h2>
+  <div id="reactTest">
+    <button onclick="testReactLoading()">Tester le chargement de React</button>
+    <pre id="reactTestResults">Cliquez pour tester...</pre>
+  </div>
 
   <script>
     // Fonction de diagnostic principal
@@ -91,7 +99,24 @@
         dateTime: new Date().toISOString(),
         viewport: `${window.innerWidth}x${window.innerHeight}`,
         devicePixelRatio: window.devicePixelRatio,
-        cookies: navigator.cookieEnabled
+        cookies: navigator.cookieEnabled,
+        baseURI: document.baseURI,
+        // Détecter les scripts chargés
+        scripts: Array.from(document.scripts).map(s => ({
+          src: s.src,
+          type: s.type
+        })),
+        // Analyser les liens CSS
+        stylesheets: Array.from(document.styleSheets).map((sheet, index) => {
+          try {
+            return { 
+              href: sheet.href,
+              disabled: sheet.disabled
+            };
+          } catch (e) {
+            return { index, error: e.message };
+          }
+        })
       };
       
       document.getElementById('environment').textContent = JSON.stringify(env, null, 2);
@@ -176,47 +201,156 @@
       // Vérifier le chemin de base
       tests.push(`Base URL: ${document.baseURI}`);
       
-      // Tester le chargement d'un fichier CSS
-      const cssTest = document.createElement('link');
-      cssTest.rel = 'stylesheet';
-      cssTest.href = './assets/index.css';
-      cssTest.onload = () => tests.push('✅ CSS chargé avec succès (chemin relatif)');
-      cssTest.onerror = () => tests.push('❌ Erreur de chargement CSS (chemin relatif)');
-      document.head.appendChild(cssTest);
+      // Tester le chargement d'un fichier CSS avec différents chemins
+      const cssTestRelative = document.createElement('link');
+      cssTestRelative.rel = 'stylesheet';
+      cssTestRelative.href = './assets/index.css';
+      cssTestRelative.onload = () => tests.push('✅ CSS chargé avec succès (chemin relatif ./assets/index.css)');
+      cssTestRelative.onerror = () => tests.push('❌ Erreur de chargement CSS (chemin relatif ./assets/index.css)');
+      document.head.appendChild(cssTestRelative);
       
       // Tester le chargement d'une image
       const imgTest = new Image();
       imgTest.src = './assets/logo.png';
-      imgTest.onload = () => tests.push('✅ Image chargée avec succès (chemin relatif)');
-      imgTest.onerror = () => tests.push('❌ Erreur de chargement d\'image (chemin relatif)');
+      imgTest.onload = () => tests.push('✅ Image chargée avec succès (chemin relatif ./assets/logo.png)');
+      imgTest.onerror = () => {
+        tests.push('❌ Erreur de chargement d\'image (chemin relatif ./assets/logo.png)');
+        
+        // Essayer avec un autre chemin si échec
+        const imgTest2 = new Image();
+        imgTest2.src = './filechat-animation.gif';
+        imgTest2.onload = () => tests.push('✅ Image GIF chargée avec succès (chemin relatif ./filechat-animation.gif)');
+        imgTest2.onerror = () => tests.push('❌ Erreur de chargement d\'image GIF (chemin relatif ./filechat-animation.gif)');
+      };
       
       // Tester le chargement d'un script
       const scriptTest = document.createElement('script');
       scriptTest.src = './assets/index.js';
-      scriptTest.onload = () => tests.push('✅ Script chargé avec succès (chemin relatif)');
-      scriptTest.onerror = () => tests.push('❌ Erreur de chargement de script (chemin relatif)');
+      scriptTest.onload = () => tests.push('✅ Script chargé avec succès (chemin relatif ./assets/index.js)');
+      scriptTest.onerror = () => {
+        tests.push('❌ Erreur de chargement de script (chemin relatif ./assets/index.js)');
+        
+        // Essayer avec un autre chemin
+        const scriptTest2 = document.createElement('script');
+        scriptTest2.src = './index.js';
+        scriptTest2.onload = () => tests.push('✅ Script chargé avec succès (chemin relatif ./index.js)');
+        scriptTest2.onerror = () => tests.push('❌ Erreur de chargement de script (chemin relatif ./index.js)');
+        document.head.appendChild(scriptTest2);
+      };
       document.head.appendChild(scriptTest);
       
       // Afficher les résultats après un délai
       setTimeout(() => {
+        // Tester des chemins absolus
+        tests.push('Test des chemins absolus:');
+        
+        const cssTestAbsolute = document.createElement('link');
+        cssTestAbsolute.rel = 'stylesheet';
+        cssTestAbsolute.href = '/assets/index.css';
+        cssTestAbsolute.onload = () => {
+          tests.push('✅ CSS chargé avec succès (chemin absolu /assets/index.css)');
+          container.textContent = tests.join('\n');
+        };
+        cssTestAbsolute.onerror = () => {
+          tests.push('❌ Erreur de chargement CSS (chemin absolu /assets/index.css)');
+          container.textContent = tests.join('\n');
+        };
+        document.head.appendChild(cssTestAbsolute);
+        
         container.textContent = tests.join('\n');
       }, 1000);
     }
     
     // Tester la connectivité API
     function testAPIConnectivity() {
-      const apiUrl = '/.netlify/functions/status';
-      fetch(apiUrl)
-        .then(response => {
-          if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
-          return response.json();
-        })
-        .then(data => {
-          alert(`✅ API connectée avec succès: ${JSON.stringify(data)}`);
-        })
-        .catch(error => {
-          alert(`❌ Erreur de connexion API: ${error.message}`);
-        });
+      const testResults = document.createElement('pre');
+      testResults.textContent = 'Test de connectivité API en cours...';
+      document.body.appendChild(testResults);
+      
+      // Tester les points d'API de base
+      const endpoints = [
+        '/.netlify/functions/status',
+        '/api/status'
+      ];
+      
+      const results = [];
+      
+      Promise.all(endpoints.map(url => 
+        fetch(url)
+          .then(response => {
+            results.push(`✅ ${url}: ${response.status} ${response.statusText}`);
+            return response.text();
+          })
+          .catch(error => {
+            results.push(`❌ ${url}: ${error.message}`);
+          })
+      )).finally(() => {
+        testResults.textContent = results.join('\n') || 'Aucun résultat disponible';
+      });
+    }
+    
+    // Test de chargement de React
+    function testReactLoading() {
+      const results = document.getElementById('reactTestResults');
+      results.textContent = 'Test de chargement de React en cours...';
+      
+      try {
+        // Test simple pour vérifier si React est chargé
+        const script = document.createElement('script');
+        script.textContent = `
+          try {
+            if (window.React) {
+              document.getElementById('reactTestResults').textContent = '✅ React est chargé (version ' + React.version + ')';
+            } else {
+              document.getElementById('reactTestResults').textContent = '❌ React n\\'est pas chargé dans la fenêtre globale';
+              
+              // Essayer de charger React depuis un CDN et tester
+              const reactScript = document.createElement('script');
+              reactScript.src = 'https://unpkg.com/react@18/umd/react.production.min.js';
+              reactScript.onload = function() {
+                document.getElementById('reactTestResults').textContent += '\\n✅ React chargé depuis CDN (version ' + React.version + ')';
+              };
+              reactScript.onerror = function() {
+                document.getElementById('reactTestResults').textContent += '\\n❌ Impossible de charger React depuis le CDN';
+              };
+              document.head.appendChild(reactScript);
+            }
+          } catch (e) {
+            document.getElementById('reactTestResults').textContent = '❌ Erreur lors du test de React: ' + e.message;
+          }
+        `;
+        document.head.appendChild(script);
+      } catch (e) {
+        results.textContent = `❌ Erreur lors du test de React: ${e.message}`;
+      }
+    }
+    
+    // Tester le chargement de scripts
+    function testScriptLoading() {
+      const testResults = document.createElement('pre');
+      testResults.textContent = 'Test de chargement de scripts en cours...';
+      testResults.id = 'scriptTestResults';
+      document.body.appendChild(testResults);
+      
+      // Lister tous les scripts actuellement chargés
+      const loadedScripts = Array.from(document.scripts).map(s => s.src || '[inline script]');
+      testResults.textContent = 'Scripts chargés:\n' + loadedScripts.join('\n');
+      
+      // Tester le chargement de scripts externes
+      const testScript = document.createElement('script');
+      testScript.src = 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js';
+      testScript.onload = () => {
+        testResults.textContent += '\n\n✅ Chargement de script externe réussi (lodash)';
+        if (window._) {
+          testResults.textContent += '\n✅ Bibliothèque correctement exposée dans window';
+        } else {
+          testResults.textContent += '\n❌ Bibliothèque non exposée dans window';
+        }
+      };
+      testScript.onerror = () => {
+        testResults.textContent += '\n\n❌ Erreur de chargement de script externe (lodash)';
+      };
+      document.head.appendChild(testScript);
     }
     
     // Effacer les logs
