@@ -50,7 +50,7 @@ if %ERRORLEVEL% NEQ 0 (
             
             echo Voulez-vous continuer avec npx vercel ? (O/N)
             choice /C ON /N /M "Choix: "
-            if %ERRORLEVEL% NEQ 1 (
+            if !ERRORLEVEL! NEQ 1 (
                 echo Déploiement annulé.
                 exit /b 1
             )
@@ -86,7 +86,7 @@ REM Préparer le build
 echo [ÉTAPE 2/5] Préparation du build pour déploiement...
 set "NODE_OPTIONS=--max-old-space-size=4096"
 call npm run build
-if %ERRORLEVEL% NEQ 0 (
+if !ERRORLEVEL! NEQ 0 (
     echo [ERREUR] La construction du projet a échoué.
     echo.
     echo Appuyez sur une touche pour quitter...
@@ -99,18 +99,18 @@ echo.
 REM Configurer les headers Vercel pour les types MIME
 echo [ÉTAPE 3/5] Configuration des headers pour types MIME...
 node scripts/vercel-headers.js
-if %ERRORLEVEL% NEQ 0 (
+if !ERRORLEVEL! NEQ 0 (
     echo [ATTENTION] La configuration des headers a échoué, mais le déploiement continue.
 )
 
 REM Vérifier la connexion à Vercel
 echo [ÉTAPE 4/5] Vérification de la connexion à Vercel...
 %VERCEL_CMD% whoami >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
+if !ERRORLEVEL! NEQ 0 (
     echo [INFO] Vous n'êtes pas connecté à Vercel.
     echo [INFO] Connexion à Vercel...
     %VERCEL_CMD% login
-    if %ERRORLEVEL% NEQ 0 (
+    if !ERRORLEVEL! NEQ 0 (
         echo [ERREUR] Échec de la connexion à Vercel.
         echo.
         echo Appuyez sur une touche pour quitter...
@@ -127,7 +127,7 @@ echo 1. Déployer une prévisualisation
 echo 2. Déployer en production
 choice /C 12 /N /M "Choisissez une option (1 ou 2): "
 
-if %ERRORLEVEL% EQU 1 (
+if !ERRORLEVEL! EQU 1 (
     echo [INFO] Déploiement d'une prévisualisation...
     %VERCEL_CMD%
 ) else (
@@ -135,7 +135,7 @@ if %ERRORLEVEL% EQU 1 (
     %VERCEL_CMD% --prod
 )
 
-if %ERRORLEVEL% NEQ 0 (
+if !ERRORLEVEL! NEQ 0 (
     echo [ERREUR] Le déploiement a échoué.
     echo.
     echo Appuyez sur une touche pour quitter...
