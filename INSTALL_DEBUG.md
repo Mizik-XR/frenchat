@@ -1,7 +1,7 @@
 
 # Guide de dépannage de l'installation FileChat
 
-Si vous rencontrez des problèmes lors de l'installation de FileChat, voici quelques étapes pour résoudre les problèmes courants.
+Si vous rencontrez des problèmes lors de l'installation ou du déploiement de FileChat, voici quelques étapes pour résoudre les problèmes courants.
 
 ## Problème 1: Erreur de déploiement Netlify
 
@@ -11,13 +11,15 @@ Si vous rencontrez des problèmes lors de l'installation de FileChat, voici quel
 
 ### Solution
 1. Mettez à jour les paramètres de build dans l'interface Netlify:
-   - Commande de build: `npm run build`
+   - Commande de build: `node scripts/netlify-prebuild.js && npm run build`
    - Variables d'environnement à ajouter:
      ```
      NO_RUST_INSTALL=1
      TRANSFORMERS_OFFLINE=1
      NODE_OPTIONS=--max-old-space-size=4096
      SKIP_PYTHON_INSTALLATION=true
+     VITE_CLOUD_MODE=true
+     VITE_ALLOW_LOCAL_AI=false
      ```
 
 2. Utilisez le déploiement manuel:
@@ -62,7 +64,31 @@ Si vous rencontrez des problèmes lors de l'installation de FileChat, voici quel
    ```
    pour vous assurer que la base URL est correctement définie.
 
-## Problème 3: Utilisation de mode alternative (sans Python/Rust)
+## Problème 3: Erreurs JavaScript dans la console
+
+### Symptômes
+- Erreurs de type "undefined is not a function" 
+- Références à des fonctions "unstable_scheduleCallback" ou autres erreurs React
+
+### Solution
+1. Activez le mode cloud pour contourner les fonctionnalités locales problématiques:
+   - Définissez `VITE_ALLOW_LOCAL_AI=false` et `VITE_CLOUD_MODE=true`
+   - Utilisez cette commande pour tester localement:
+     ```
+     scripts\cloud-mode.bat
+     ```
+     ou sur Unix:
+     ```
+     ./scripts/unix/cloud-mode.sh
+     ```
+
+2. Vérifiez les erreurs de console et cherchez les imports manquants/conflits de versions:
+   - Lancez la commande de diagnostic pour obtenir plus d'informations:
+     ```
+     scripts\diagnostic.bat
+     ```
+
+## Problème 4: Utilisation de mode alternative (sans Python/Rust)
 
 Si vous continuez à rencontrer des difficultés avec le déploiement complet:
 

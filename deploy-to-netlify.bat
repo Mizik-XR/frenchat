@@ -46,15 +46,20 @@ set "NO_RUST_INSTALL=1"
 set "NETLIFY_SKIP_PYTHON=true"
 set "TRANSFORMERS_OFFLINE=1"
 set "NODE_ENV=production"
+set "VITE_CLOUD_MODE=true"
+set "VITE_ALLOW_LOCAL_AI=false"
 
 REM Nettoyer les fichiers inutiles
 echo [INFO] Nettoyage des fichiers temporaires...
 if exist "dist\" rmdir /s /q dist
-if exist "node_modules\" rmdir /s /q node_modules
 
 REM Installation optimisée pour Netlify
 echo [INFO] Installation des dépendances avec configuration pour Netlify...
 call npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
+
+REM Exécution du script de préparation
+echo [INFO] Exécution du script de préparation...
+node scripts/netlify-prebuild.js
 
 REM Préparer le build
 echo [ÉTAPE 2/3] Préparation du build pour déploiement...

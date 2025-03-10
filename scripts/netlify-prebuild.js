@@ -1,75 +1,71 @@
 
-#!/usr/bin/env node
-
 /**
- * Script de pré-build pour Netlify - contourne les problèmes d'installation de dépendances
+ * Script de préparation pour le déploiement Netlify
+ * Ce script exécute les étapes nécessaires avant le build sur Netlify
  */
 
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-console.log('=================================================');
-console.log('    PRÉPARATION NETLIFY - FILECHAT');
-console.log('=================================================');
-console.log('');
+console.log('=== PRÉPARATION DU DÉPLOIEMENT NETLIFY ===');
 
-// Vérifier si nous sommes sur Netlify
+// Vérifier l'environnement
 const isNetlify = process.env.NETLIFY === 'true';
-console.log(`Environnement Netlify: ${isNetlify ? 'Oui' : 'Non'}`);
+console.log(`[INFO] Environnement Netlify: ${isNetlify ? 'Oui' : 'Non'}`);
 
-// Définir les variables d'environnement
+// Configurer les variables d'environnement pour le build
 process.env.NO_RUST_INSTALL = '1';
 process.env.TRANSFORMERS_OFFLINE = '1';
 process.env.SKIP_PYTHON_INSTALLATION = 'true';
+process.env.NETLIFY_SKIP_PYTHON_REQUIREMENTS = 'true';
+process.env.NODE_ENV = 'production';
 process.env.VITE_CLOUD_MODE = 'true';
 process.env.VITE_ALLOW_LOCAL_AI = 'false';
 
-console.log('Variables d\'environnement définies:');
-console.log('NO_RUST_INSTALL:', process.env.NO_RUST_INSTALL);
-console.log('TRANSFORMERS_OFFLINE:', process.env.TRANSFORMERS_OFFLINE);
-console.log('SKIP_PYTHON_INSTALLATION:', process.env.SKIP_PYTHON_INSTALLATION);
-console.log('');
+console.log('[INFO] Variables d\'environnement configurées pour le déploiement');
 
-// Créer un fichier .env.production si nécessaire
-if (!fs.existsSync('.env.production') || isNetlify) {
-  console.log('Création du fichier .env.production pour le déploiement...');
-  const envContent = `
-VITE_API_URL=/.netlify/functions
-VITE_ENVIRONMENT=production
-VITE_SITE_URL=${process.env.URL || 'https://filechat-app.netlify.app'}
-VITE_ALLOW_LOCAL_AI=false
-VITE_SKIP_PYTHON_INSTALLATION=true
-VITE_CLOUD_MODE=true
-  `.trim();
-  
-  fs.writeFileSync('.env.production', envContent);
-  console.log('[OK] Fichier .env.production créé.');
-}
-
-// Modifier le fichier requirements.txt pour contourner les dépendances Rust
-if (fs.existsSync('requirements.txt')) {
-  console.log('Création d\'un requirements.txt minimal pour Netlify...');
-  const minimalRequirements = `
+// Vérifier si le fichier requirements.txt existe et le simplifier pour Netlify
+try {
+  if (fs.existsSync('requirements.txt')) {
+    console.log('[INFO] Simplification du fichier requirements.txt pour Netlify...');
+    
+    // Créer une version simplifiée sans les dépendances nécessitant Rust
+    const minimalRequirements = `
 # Version simplifiée pour Netlify (sans compilation Rust)
 fastapi==0.110.0
 uvicorn==0.28.0
 pydantic>=2.0.0
 aiohttp>=3.8.0
-psutil==5.9.8
 # Les packages qui nécessitent Rust sont commentés
 # tokenizers
 # transformers
-# accelerate
-# datasets
-# bitsandbytes
-`.trim();
-
-  fs.writeFileSync('requirements.txt', minimalRequirements);
-  console.log('[OK] Fichier requirements.txt simplifié.');
+    `.trim();
+    
+    fs.writeFileSync('requirements.txt', minimalRequirements);
+    console.log('[OK] Fichier requirements.txt simplifié créé');
+  }
+} catch (error) {
+  console.error('[ERREUR] Problème lors de la modification du fichier requirements.txt:', error.message);
 }
 
-console.log('');
-console.log('=================================================');
-console.log('    PRÉPARATION TERMINÉE');
-console.log('=================================================');
+// Vérifier et créer le fichier _redirects si nécessaire
+try {
+  const redirectsContent = `
+# Redirection pour toutes les routes vers index.html (SPA)
+/* /index.html 200
+
+# Assurer que / est accessible directement
+/ /index.html 200 
+
+# Redirection des API vers les fonctions Netlify
+/api/* /.netlify/functions/:splat 200
+  `.trim();
+  
+  fs.writeFileSync('_redirects', redirectsContent);
+  console.log('[OK] Fichier _redirects créé/mis à jour');
+} catch (error) {
+  console.error('[ERREUR] Problème lors de la création du fichier _redirects:', error.message);
+}
+
+console.log('[INFO] Préparation terminée, prêt pour le build');

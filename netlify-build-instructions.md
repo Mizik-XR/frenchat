@@ -29,3 +29,12 @@ VITE_SUPABASE_ANON_KEY=votre_clé_anon_supabase
 
 ## Optimisation du déploiement
 Ces paramètres contournent les problèmes d'installation des dépendances Python qui nécessitent Rust.
+
+## Résolution des problèmes courants
+Si vous rencontrez des problèmes lors du déploiement:
+
+1. **Erreur liée à l'installation de Python/Rust**: Vérifiez que les variables `SKIP_PYTHON_INSTALLATION` et `NO_RUST_INSTALL` sont bien définies.
+2. **Page blanche après déploiement**: Vérifiez le fichier `_redirects` et les règles de redirection dans `netlify.toml`.
+3. **Erreurs 404 sur les API**: Assurez-vous que les redirections vers `/.netlify/functions` sont correctement configurées.
+
+Pour plus d'informations sur le dépannage, consultez le fichier `INSTALL_DEBUG.md`.
