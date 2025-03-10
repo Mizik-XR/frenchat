@@ -6,38 +6,112 @@ import { Toaster } from '@/components/ui/toaster';
 import { isNetlifyEnvironment, getEnvironmentInfo } from './utils/environment/environmentDetection';
 import './index.css';
 
-// Fonction de journalisation qui stocke aussi dans localStorage pour diagnostic
-const logWithStorage = (message: string, data?: any) => {
-  const timestamp = new Date().toISOString();
-  const logMessage = `[${timestamp}] ${message}${data ? ': ' + JSON.stringify(data) : ''}`;
+// Système de journalisation amélioré avec stockage dans localStorage
+const diagnosticLogger = {
+  logs: [] as string[],
   
-  console.log(logMessage);
+  log: function(message: string, data?: any) {
+    const timestamp = new Date().toISOString();
+    const formattedMessage = `[${timestamp}] INFO: ${message}${data ? ': ' + JSON.stringify(data) : ''}`;
+    
+    console.log(formattedMessage);
+    this.addToStorage(formattedMessage);
+  },
   
-  try {
-    // Stocker dans localStorage pour diagnostic
-    const logs = JSON.parse(localStorage.getItem('netlify_diagnostic_logs') || '[]');
-    logs.push(logMessage);
-    localStorage.setItem('netlify_diagnostic_logs', JSON.stringify(logs.slice(-100))); // Garder seulement les 100 derniers
-  } catch (e) {
-    console.warn('Impossible de stocker dans localStorage:', e);
+  warn: function(message: string, data?: any) {
+    const timestamp = new Date().toISOString();
+    const formattedMessage = `[${timestamp}] WARN: ${message}${data ? ': ' + JSON.stringify(data) : ''}`;
+    
+    console.warn(formattedMessage);
+    this.addToStorage(formattedMessage);
+  },
+  
+  error: function(message: string, data?: any) {
+    const timestamp = new Date().toISOString();
+    const formattedMessage = `[${timestamp}] ERROR: ${message}${data ? ': ' + JSON.stringify(data) : ''}`;
+    
+    console.error(formattedMessage);
+    this.addToStorage(formattedMessage);
+  },
+  
+  addToStorage: function(logMessage: string) {
+    try {
+      this.logs.push(logMessage);
+      
+      // Limiter à 100 messages en mémoire
+      if (this.logs.length > 100) {
+        this.logs = this.logs.slice(-100);
+      }
+      
+      // Sauvegarder dans localStorage
+      localStorage.setItem('filechat_startup_log', JSON.stringify(this.logs));
+    } catch (e) {
+      // Si localStorage échoue, on continue sans erreur
+      console.warn('Échec de sauvegarde des logs dans localStorage:', e);
+    }
   }
 };
 
-// Remplacer l'initialisation Sentry par des logs de diagnostic
-logWithStorage('Initialisation de l\'application - Sentry désactivé temporairement');
-logWithStorage('Environnement:', process.env.NODE_ENV);
-
-// Ajouter des informations spécifiques pour Netlify
-if (isNetlifyEnvironment()) {
-  logWithStorage('Exécution sur Netlify:', window.location.hostname);
-  logWithStorage('URL complète:', window.location.href);
+// Fonction pour tester la disponibilité des ressources importantes
+const testResourceAvailability = async () => {
+  diagnosticLogger.log('Test de disponibilité des ressources');
   
-  // Logs détaillés pour le débogage sur Netlify
+  // Tester le chargement d'une image
+  try {
+    const imageUrl = './filechat-animation.gif';
+    diagnosticLogger.log(`Test de chargement d'image`, { url: imageUrl });
+    
+    const img = new Image();
+    const loadResult = await new Promise<boolean>((resolve) => {
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = imageUrl;
+    });
+    
+    diagnosticLogger.log(`Résultat du test d'image`, { success: loadResult, url: imageUrl });
+  } catch (e) {
+    diagnosticLogger.error(`Erreur lors du test d'image`, { error: e?.toString() });
+  }
+  
+  // Tester le chargement d'un script
+  try {
+    const scriptContent = 'console.log("Script test chargé avec succès")';
+    const blob = new Blob([scriptContent], { type: 'text/javascript' });
+    const scriptUrl = URL.createObjectURL(blob);
+    
+    const script = document.createElement('script');
+    const loadResult = await new Promise<boolean>((resolve) => {
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      script.src = scriptUrl;
+      document.head.appendChild(script);
+    });
+    
+    diagnosticLogger.log(`Résultat du test de script`, { success: loadResult });
+    URL.revokeObjectURL(scriptUrl);
+    document.head.removeChild(script);
+  } catch (e) {
+    diagnosticLogger.error(`Erreur lors du test de script`, { error: e?.toString() });
+  }
+};
+
+// Point d'entrée principal avec logs détaillés
+diagnosticLogger.log('Démarrage de l\'application');
+diagnosticLogger.log('Environnement:', { mode: process.env.NODE_ENV });
+
+// Informations supplémentaires pour Netlify
+if (isNetlifyEnvironment()) {
+  diagnosticLogger.log('Exécution sur Netlify', { hostname: window.location.hostname });
+  diagnosticLogger.log('URL complète', { href: window.location.href });
+  
   const envInfo = getEnvironmentInfo();
-  logWithStorage('Informations détaillées sur l\'environnement Netlify:', envInfo);
+  diagnosticLogger.log('Informations détaillées sur l\'environnement Netlify', envInfo);
 }
 
-// Fonction de diagnostic globale pour aider au débogage
+// Tester les ressources immédiatement au démarrage
+testResourceAvailability();
+
+// Fonction de diagnostic globale améliorée
 window.showDiagnostic = function() {
   const diagnosticInfo = {
     environment: process.env.NODE_ENV,
@@ -48,44 +122,20 @@ window.showDiagnostic = function() {
     viewport: `${window.innerWidth}x${window.innerHeight}`,
     hostname: window.location.hostname,
     pathname: window.location.pathname,
+    // Informations supplémentaires utiles
+    protocol: window.location.protocol,
+    base: window.location.origin,
+    logs: diagnosticLogger.logs,
+    localStorage: Object.keys(localStorage),
   };
   
-  logWithStorage('Diagnostic complet:', diagnosticInfo);
+  diagnosticLogger.log('Diagnostic complet', diagnosticInfo);
   return diagnosticInfo;
 };
 
-// Version simplifiée de initSentry pour préserver l'API
-window.initSentry = function() {
-  logWithStorage('Sentry initialisé en mode simulé (désactivé)');
-  return true;
-};
-
-// Détection des paramètres d'URL pour le mode de fonctionnement
-const urlParams = new URLSearchParams(window.location.search);
-const forceCloud = urlParams.get('forceCloud') === 'true' || import.meta.env.VITE_CLOUD_MODE === 'true';
-const debugMode = urlParams.get('debug') === 'true';
-const isNetlify = isNetlifyEnvironment() || import.meta.env.VITE_NETLIFY_DEPLOYMENT === 'true';
-
-// Configuration globale de l'application
-window.APP_CONFIG = {
-  forceCloudMode: forceCloud || isNetlify,
-  debugMode: debugMode
-};
-
-if (forceCloud) {
-  logWithStorage('Mode cloud forcé par paramètre d\'URL ou variable d\'environnement');
-}
-
-if (isNetlify) {
-  logWithStorage('Mode Netlify détecté');
-}
-
-if (debugMode) {
-  logWithStorage('Mode debug activé par paramètre d\'URL');
-}
-
 // Fonction pour afficher un message de chargement
 const showLoadingMessage = () => {
+  diagnosticLogger.log('Affichage du message de chargement initial');
   const rootElement = document.getElementById('root');
   if (rootElement) {
     rootElement.innerHTML = `
@@ -98,8 +148,8 @@ const showLoadingMessage = () => {
           <div style="width: 100%; height: 6px; background-color: #e5e7eb; border-radius: 3px; overflow: hidden; margin-bottom: 1rem;">
             <div style="width: 30%; height: 100%; background-color: #4f46e5; border-radius: 3px; animation: progressAnimation 2s infinite ease-in-out;" id="loading-bar"></div>
           </div>
-          <p style="font-size: 0.8rem; color: #6b7280;">
-            Si le chargement prend trop de temps, essayez de rafraîchir la page.
+          <p style="font-size: 0.8rem; color: #6b7280;" id="loading-status">
+            Initialisation...
           </p>
           <div style="margin-top: 1.5rem;">
             <button onclick="window.location.reload()" style="background-color: #4f46e5; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; margin-right: 0.5rem;">
@@ -108,12 +158,9 @@ const showLoadingMessage = () => {
             <button onclick="window.location.href='?forceCloud=true'" style="background-color: #6366f1; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer;">
               Mode cloud
             </button>
-            ${isNetlifyEnvironment() ? `
-            <div style="margin-top: 1rem;">
-              <a href="/diagnostic.html" style="color: #4f46e5; text-decoration: underline;">
-                Diagnostic
-              </a>
-            </div>` : ''}
+            <button onclick="window.location.href='/diagnostic.html'" style="background-color: #818cf8; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; margin-top: 0.5rem;">
+              Diagnostic
+            </button>
           </div>
         </div>
       </div>
@@ -128,26 +175,42 @@ const showLoadingMessage = () => {
   }
 };
 
-// Fonction d'initialisation de l'application principale
+// Fonction pour mettre à jour le statut de chargement
+const updateLoadingStatus = (message: string) => {
+  diagnosticLogger.log('Mise à jour du statut:', { message });
+  const statusElement = document.getElementById('loading-status');
+  if (statusElement) {
+    statusElement.textContent = message;
+  }
+};
+
+// Fonction d'initialisation de l'application avec gestion de récupération
 const initializeApp = async () => {
   try {
-    logWithStorage('Début du chargement dynamique de App');
+    diagnosticLogger.log('Début du chargement dynamique de App');
     
     // Afficher un message de chargement
     showLoadingMessage();
+    updateLoadingStatus('Chargement des ressources...');
     
-    // 1. Charger le module App de façon dynamique
+    // Tester à nouveau les ressources avant de charger App
+    await testResourceAvailability();
+    updateLoadingStatus('Chargement du module App...');
+    
+    // Charger le module App de façon dynamique
     const { default: App } = await import('./App');
     
-    logWithStorage('Module App chargé avec succès');
+    diagnosticLogger.log('Module App chargé avec succès');
+    updateLoadingStatus('Préparation du rendu...');
     
-    // 2. Rendre l'application
+    // Rendre l'application
     const rootElement = document.getElementById('root');
     
     if (!rootElement) {
       throw new Error("Élément root non trouvé dans le DOM");
     }
     
+    updateLoadingStatus('Démarrage du rendu React...');
     const root = createRoot(rootElement);
     
     root.render(
@@ -159,10 +222,10 @@ const initializeApp = async () => {
       </React.StrictMode>
     );
     
-    logWithStorage('Rendu React terminé');
+    diagnosticLogger.log('Rendu React terminé');
     
   } catch (error: any) {
-    logWithStorage('ERREUR CRITIQUE lors de l\'initialisation', {
+    diagnosticLogger.error('ERREUR CRITIQUE lors de l\'initialisation', {
       message: error.message,
       stack: error.stack,
     });
@@ -174,7 +237,7 @@ const initializeApp = async () => {
         <div style="font-family: system-ui, sans-serif; padding: 2rem; max-width: 500px; margin: 0 auto; text-align: center;">
           <h2 style="color: #e11d48;">Problème de chargement</h2>
           <p>Une erreur est survenue lors du chargement de l'application.</p>
-          <div style="background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; text-align: left; margin: 1rem 0;">
+          <div style="background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; text-align: left; margin: 1rem 0; overflow: auto; max-height: 200px;">
             ${error.message}
           </div>
           <div style="margin-top: 2rem;">
@@ -189,13 +252,12 @@ const initializeApp = async () => {
               Mode cloud
             </button>
           </div>
-          ${isNetlifyEnvironment() ? `
           <div style="margin-top: 1rem;">
             <a href="/diagnostic.html" 
                style="color: #3b82f6; text-decoration: underline;">
               Ouvrir la page de diagnostic
             </a>
-          </div>` : ''}
+          </div>
         </div>
       `;
     }
@@ -205,10 +267,24 @@ const initializeApp = async () => {
   }
 };
 
-// Initialiser l'application après un court délai (pour permettre aux gestionnaires d'erreur de s'initialiser)
-setTimeout(initializeApp, 100);
+// Ajouter gestionnaire d'erreurs global pour capturer les erreurs non gérées
+window.onerror = function(message, source, lineno, colno, error) {
+  diagnosticLogger.error('Erreur globale non gérée', {
+    message,
+    source,
+    lineno,
+    colno,
+    error: error?.stack
+  });
+  
+  return false; // Permettre à l'erreur de se propager pour le débogage
+};
 
-// Déclaration du type global APP_CONFIG
+// Initialiser l'application après un court délai
+diagnosticLogger.log('Planification de l\'initialisation de l\'application');
+setTimeout(initializeApp, 200);
+
+// Type global APP_CONFIG
 declare global {
   interface Window {
     lastRenderError?: Error;

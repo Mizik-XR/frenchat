@@ -6,11 +6,11 @@ import { componentTagger } from "lovable-tagger";
 import fs from 'fs';
 import type { PluginOption } from 'vite';
 
-// Plugin pour assurer que les scripts dans index.html utilisent des chemins relatifs
+// Plugin amélioré pour assurer que les chemins sont relatifs
 const ensureRelativePaths = (): PluginOption => {
   return {
     name: 'ensure-relative-paths',
-    enforce: 'post', // S'assurer qu'il s'exécute après tous les autres plugins
+    enforce: 'post',
     writeBundle: {
       sequential: true,
       order: "post" as const,
@@ -53,6 +53,7 @@ const ensureRelativePaths = (): PluginOption => {
                 // Corriger les imports relatifs dans les fichiers JS
                 jsContent = jsContent.replace(/from"\//g, 'from"./');
                 jsContent = jsContent.replace(/import"\//g, 'import"./');
+                jsContent = jsContent.replace(/asset:\//g, 'asset:./');
                 
                 // S'il y a eu des changements, sauvegarder le fichier
                 if (jsContent !== originalJsContent) {
@@ -66,8 +67,6 @@ const ensureRelativePaths = (): PluginOption => {
             
             if (jsFilesFixed > 0) {
               console.log(`✅ Chemins corrigés dans ${jsFilesFixed} fichiers JS`);
-            } else {
-              console.log('ℹ️ Aucun chemin absolu détecté dans les fichiers JS');
             }
           }
         } else {
@@ -78,43 +77,54 @@ const ensureRelativePaths = (): PluginOption => {
   };
 };
 
-// Plugin pour copier les fichiers _redirects et _headers dans le dossier dist
-const copyRedirectsAndHeaders = (): PluginOption => {
+// Plugin amélioré pour copier les fichiers importants avec plus de logs
+const copyImportantFiles = (): PluginOption => {
   return {
-    name: 'copy-redirects-headers',
+    name: 'copy-important-files',
     closeBundle() {
-      // Copier le fichier diagnostic.html vers dist
-      if (fs.existsSync('./public/diagnostic.html')) {
-        fs.copyFileSync('./public/diagnostic.html', './dist/diagnostic.html');
-        console.log('✅ diagnostic.html copié dans dist');
+      console.log('⚙️ Copie des fichiers importants vers le dossier dist...');
+      
+      // Créer le dossier assets s'il n'existe pas
+      if (!fs.existsSync('./dist/assets')) {
+        fs.mkdirSync('./dist/assets', { recursive: true });
+        console.log('✅ Dossier assets créé dans dist');
       }
       
-      // Copier le fichier _redirects vers dist
-      if (fs.existsSync('./_redirects')) {
-        fs.copyFileSync('./_redirects', './dist/_redirects');
-        console.log('✅ _redirects copié dans dist');
-      } else {
-        // Créer un fichier _redirects basique
-        fs.writeFileSync('./dist/_redirects', '/* /index.html 200\n');
-        console.log('✅ _redirects créé dans dist');
-      }
-
-      // Copier le fichier _headers vers dist
-      if (fs.existsSync('./_headers')) {
-        fs.copyFileSync('./_headers', './dist/_headers');
-        console.log('✅ _headers copié dans dist');
-      }
+      // Liste des fichiers à copier avec leurs sources et destinations
+      const filesToCopy = [
+        { src: './public/filechat-animation.gif', dest: './dist/filechat-animation.gif' },
+        { src: './public/filechat-animation.gif', dest: './dist/assets/filechat-animation.gif' },
+        { src: './public/diagnostic.html', dest: './dist/diagnostic.html' },
+        { src: './_redirects', dest: './dist/_redirects' },
+        { src: './_headers', dest: './dist/_headers' }
+      ];
       
-      // Copier le GIF d'animation dans dist
-      if (fs.existsSync('./public/filechat-animation.gif')) {
-        fs.copyFileSync('./public/filechat-animation.gif', './dist/filechat-animation.gif');
-        console.log('✅ filechat-animation.gif copié dans dist');
-      }
+      // Copier chaque fichier
+      filesToCopy.forEach(file => {
+        try {
+          if (fs.existsSync(file.src)) {
+            fs.copyFileSync(file.src, file.dest);
+            console.log(`✅ Fichier ${file.src} copié vers ${file.dest}`);
+          } else {
+            console.warn(`⚠️ Fichier source ${file.src} introuvable, création de la valeur par défaut`);
+            
+            // Créer un fichier par défaut si nécessaire
+            if (file.dest.includes('_redirects')) {
+              fs.writeFileSync(file.dest, '/* /index.html 200\n');
+              console.log(`✅ Fichier ${file.dest} créé avec valeur par défaut`);
+            }
+          }
+        } catch (error) {
+          console.error(`❌ Erreur lors de la copie de ${file.src} vers ${file.dest}:`, error);
+        }
+      });
+      
+      console.log('✅ Copie des fichiers terminée');
     }
   };
 };
 
-// Utiliser defineConfig pour typer correctement la configuration
+// Configuration Vite optimisée
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
@@ -134,7 +144,7 @@ export default defineConfig(({ mode }) => ({
       }
     }),
     mode === 'development' ? componentTagger() : undefined,
-    copyRedirectsAndHeaders(), 
+    copyImportantFiles(),
     ensureRelativePaths()
   ].filter(Boolean) as PluginOption[],
   resolve: {
@@ -144,10 +154,11 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     minify: 'terser',
-    sourcemap: true, // Activer les sourcemaps pour le débogage en production
+    sourcemap: true,
     outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
+    assetsInlineLimit: 0, // Désactiver l'inlining des petits fichiers pour garantir qu'ils sont toujours copiés
     rollupOptions: {
       output: {
         assetFileNames: 'assets/[name].[hash].[ext]',

@@ -11,47 +11,95 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   
   useEffect(() => {
-    // Liste des chemins possibles pour l'image
+    // Stocker des logs dans localStorage pour diagnostic
+    const logImageAttempt = (message: string, data?: any) => {
+      try {
+        const logs = JSON.parse(localStorage.getItem('filechat_image_logs') || '[]');
+        logs.push(`${new Date().toISOString()} - ${message}${data ? ': ' + JSON.stringify(data) : ''}`);
+        localStorage.setItem('filechat_image_logs', JSON.stringify(logs.slice(-50)));
+      } catch (e) {
+        console.warn('Impossible de stocker les logs d\'image:', e);
+      }
+    };
+
+    // Détection de l'environnement Netlify
     const isNetlify = isNetlifyEnvironment();
-    console.log('LogoImage: isNetlify =', isNetlify);
+    logImageAttempt(`LogoImage: environnement détecté`, { isNetlify, hostname: window.location.hostname });
     
-    // Sur Netlify, privilégier les chemins relatifs
-    const possiblePaths = isNetlify 
-      ? ['./filechat-animation.gif', './assets/filechat-animation.gif'] 
-      : ['/filechat-animation.gif', '/assets/filechat-animation.gif', './filechat-animation.gif'];
+    // Chemins possibles pour l'image, optimisés pour différents environnements
+    const possiblePaths = [];
     
-    // Fonction pour tester un chemin d'image
-    const testImagePath = (path: string) => {
-      console.log('LogoImage: testing path', path);
-      const img = new Image();
-      img.onload = () => {
-        console.log('LogoImage: path loaded successfully', path);
-        setImagePath(path);
-        setImageLoaded(true);
-      };
-      img.onerror = () => {
-        console.warn('LogoImage: failed to load from path', path);
-      };
-      img.src = path;
+    // Sur Netlify, essayer d'abord les chemins relatifs puis les chemins absolus
+    if (isNetlify) {
+      // Chemins relatifs pour Netlify (prioritaires)
+      possiblePaths.push(
+        './filechat-animation.gif',
+        './assets/filechat-animation.gif', 
+        '../filechat-animation.gif',
+        '../assets/filechat-animation.gif'
+      );
+      
+      // Chemins absolus basés sur l'origine pour Netlify (secours)
+      const origin = window.location.origin;
+      possiblePaths.push(
+        `${origin}/filechat-animation.gif`,
+        `${origin}/assets/filechat-animation.gif`
+      );
+    } else {
+      // En local ou autre environnement
+      possiblePaths.push(
+        '/filechat-animation.gif',
+        '/assets/filechat-animation.gif',
+        './filechat-animation.gif'
+      );
+    }
+    
+    logImageAttempt('Tentative de chargement d\'image avec chemins', possiblePaths);
+    
+    // Fonction pour tester séquentiellement les chemins d'image
+    const testImagePaths = async () => {
+      for (const path of possiblePaths) {
+        try {
+          const img = new Image();
+          
+          // Promesse pour attendre le chargement ou l'erreur
+          const result = await new Promise<boolean>((resolve) => {
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = path;
+          });
+          
+          if (result) {
+            logImageAttempt('Image chargée avec succès', { path });
+            setImagePath(path);
+            setImageLoaded(true);
+            return; // Sortir de la boucle si l'image est chargée
+          } else {
+            logImageAttempt('Échec du chargement', { path });
+          }
+        } catch (error) {
+          logImageAttempt('Erreur lors du test de chemin', { path, error: error?.toString() });
+        }
+      }
+      
+      // Si aucun chemin ne fonctionne
+      logImageAttempt('Tous les chemins ont échoué, utilisation du fallback');
+      setImageLoaded(false);
     };
     
-    // Tester chaque chemin séquentiellement
-    possiblePaths.forEach(path => {
-      if (!imageLoaded) {
-        testImagePath(path);
-      }
-    });
+    // Démarrer les tests de chemins
+    testImagePaths();
     
-    // Si aucun chemin ne fonctionne après un délai, utiliser le fallback
+    // Définir un délai maximum pour le chargement
     const timer = setTimeout(() => {
       if (!imageLoaded) {
-        console.warn('LogoImage: fallback to simple component after timeout');
+        logImageAttempt('Délai de chargement dépassé, utilisation du fallback');
         setImageLoaded(false);
       }
     }, 5000);
     
     return () => clearTimeout(timer);
-  }, [imageLoaded]);
+  }, []);
 
   // Utiliser une icône de secours si l'image ne charge pas
   if (!imageLoaded) {
@@ -68,7 +116,7 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
       alt="FileChat Logo"
       className={className}
       onError={() => {
-        console.warn(`LogoImage: error loading image from ${imagePath}`);
+        console.warn(`LogoImage: erreur de chargement depuis ${imagePath}`);
         setImageLoaded(false);
       }}
     />
