@@ -100,7 +100,7 @@ echo.
 echo Votre projet est prêt à être déployé !
 echo.
 echo Vous pouvez maintenant :
-echo  1. Déployer sur Vercel en connectant votre dépôt GitHub
+echo  1. Déployer automatiquement via : scripts\deploy-vercel.bat
 echo  2. Déployer via la CLI Vercel : vercel deploy
 echo  3. Utiliser le glisser-déposer du dossier 'dist' sur l'interface Vercel
 echo.

@@ -3,163 +3,149 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title FileChat - Deployment to Vercel
+title FileChat - Déploiement Vercel
 
 echo ===================================================
-echo     DEPLOYING FILECHAT TO VERCEL
+echo     DÉPLOIEMENT AUTOMATIQUE VERS VERCEL
 echo ===================================================
 echo.
-echo This script will deploy FileChat to Vercel.
-echo Make sure you have installed the Vercel CLI and
-echo are logged in to your Vercel account.
+echo Ce script va déployer FileChat sur Vercel sans
+echo nécessiter de pull manuel du code.
 echo.
-echo Steps:
-echo 1. Environment verification
-echo 2. Build preparation for deployment
-echo 3. MIME headers configuration
-echo 4. Vercel connection
-echo 5. Deployment to Vercel
+echo Étapes :
+echo 1. Vérification de l'environnement
+echo 2. Préparation du build pour déploiement
+echo 3. Configuration des MIME types
+echo 4. Connexion à Vercel
+echo 5. Déploiement sur Vercel
 echo.
 echo ===================================================
 echo.
-echo Press any key to continue...
+echo Appuyez sur une touche pour continuer...
 pause >nul
 
-REM Check if vercel CLI is installed
+REM Vérifier si Vercel CLI est installé
 where vercel >nul 2>&1
 if !ERRORLEVEL! NEQ 0 (
-    echo [INFO] Vercel CLI is not configured, installing...
+    echo [INFO] Vercel CLI n'est pas configuré, installation en cours...
     call npm install -g vercel
     
-    REM Check if installation succeeded
+    REM Vérifier si l'installation a réussi
     where vercel >nul 2>&1
     if !ERRORLEVEL! NEQ 0 (
-        echo [WARNING] Automatic installation failed, trying with --force...
+        echo [ATTENTION] L'installation automatique a échoué, tentative avec --force...
         call npm install -g vercel --force
         
-        REM Check again
+        REM Vérifier à nouveau
         where vercel >nul 2>&1
         if !ERRORLEVEL! NEQ 0 (
-            echo [ERROR] Failed to install Vercel CLI.
+            echo [ERREUR] L'installation de Vercel CLI a échoué.
             echo.
-            echo Try manually with:
+            echo Essayez manuellement avec :
             echo npm install -g vercel
-            echo or
+            echo ou
             echo yarn global add vercel
             echo.
             
-            echo Do you want to continue with npx vercel? (Y/N)
-            choice /C YN /N /M "Choice: "
+            echo Voulez-vous continuer avec npx vercel ? (O/N)
+            choice /C ON /N /M "Choix : "
             if !ERRORLEVEL! NEQ 1 (
-                echo Deployment cancelled.
+                echo Déploiement annulé.
                 exit /b 1
             )
             set "VERCEL_CMD=npx vercel"
         ) else (
-            echo [OK] Vercel CLI installed successfully (alternative method).
+            echo [OK] Vercel CLI installé avec succès (méthode alternative).
             set "VERCEL_CMD=vercel"
         )
     ) else (
-        echo [OK] Vercel CLI installed successfully.
+        echo [OK] Vercel CLI installé avec succès.
         set "VERCEL_CMD=vercel"
     )
 ) else (
-    echo [OK] Vercel CLI already installed.
+    echo [OK] Vercel CLI est déjà installé.
     set "VERCEL_CMD=vercel"
 )
 
-REM Configuration for deployment
-set "NODE_ENV=production"
-set "VITE_CLOUD_MODE=true"
-set "VITE_ALLOW_LOCAL_AI=false"
-set "SKIP_PYTHON_INSTALLATION=true"
-
-REM Clean up unneeded files
-echo [INFO] Cleaning up temporary files...
-if exist "dist\" rmdir /s /q dist
-
-REM Optimized installation for Vercel
-echo [INFO] Installing dependencies with Vercel configuration...
-call npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
-
-REM Prepare the build
-echo [STEP 2/5] Preparing build for deployment...
-set "NODE_OPTIONS=--max-old-space-size=4096"
-call npm run build
+REM Exécuter le script de préparation au déploiement
+echo [ÉTAPE 1/5] Préparation au déploiement...
+call scripts\prepare-deployment.bat
 if !ERRORLEVEL! NEQ 0 (
-    echo [ERROR] Build failed.
+    echo [ERREUR] La préparation au déploiement a échoué.
     echo.
-    echo Press any key to exit...
+    echo Appuyez sur une touche pour quitter...
     pause >nul
     exit /b 1
 )
-echo [OK] Build ready for deployment.
+echo [OK] Préparation au déploiement terminée.
 echo.
 
-REM Configure Vercel headers for MIME types
-echo [STEP 3/5] Configuring headers for MIME types...
-node scripts/vercel-headers.js
-if !ERRORLEVEL! NEQ 0 (
-    echo [WARNING] Header configuration failed, but deployment will continue.
-)
-
-REM Check Vercel connection
-echo [STEP 4/5] Checking Vercel connection...
+REM Vérifier la connexion à Vercel
+echo [ÉTAPE 3/5] Vérification de la connexion à Vercel...
 %VERCEL_CMD% whoami >nul 2>nul
 if !ERRORLEVEL! NEQ 0 (
-    echo [INFO] You are not logged in to Vercel.
-    echo [INFO] Logging in to Vercel...
+    echo [INFO] Vous n'êtes pas connecté à Vercel.
+    echo [INFO] Connexion à Vercel...
     %VERCEL_CMD% login
     if !ERRORLEVEL! NEQ 0 (
-        echo [ERROR] Failed to log in to Vercel.
+        echo [ERREUR] Échec de la connexion à Vercel.
         echo.
-        echo Press any key to exit...
+        echo Appuyez sur une touche pour quitter...
         pause >nul
         exit /b 1
     )
 )
-echo [OK] Connected to Vercel.
+echo [OK] Connecté à Vercel.
 echo.
 
-REM Deploy to Vercel
-echo [STEP 5/5] Would you like to:
-echo 1. Deploy a preview
-echo 2. Deploy to production
-choice /C 12 /N /M "Choose an option (1 or 2): "
+REM Configuration pour webhook (optionnel)
+echo [ÉTAPE 4/5] Voulez-vous configurer un webhook pour vérifier le déploiement ? (O/N)
+choice /C ON /N /M "Choix : "
+if !ERRORLEVEL! EQU 1 (
+    echo [INFO] Configuration du webhook de vérification...
+    node scripts\vercel-webhook.js
+    echo.
+)
+
+REM Déployer sur Vercel
+echo [ÉTAPE 5/5] Souhaitez-vous :
+echo 1. Déployer une prévisualisation
+echo 2. Déployer en production
+choice /C 12 /N /M "Choisissez une option (1 ou 2) : "
 
 if !ERRORLEVEL! EQU 1 (
-    echo [INFO] Deploying a preview...
+    echo [INFO] Déploiement d'une prévisualisation...
     %VERCEL_CMD%
 ) else (
-    echo [INFO] Deploying to production...
+    echo [INFO] Déploiement en production...
     %VERCEL_CMD% --prod
 )
 
 if !ERRORLEVEL! NEQ 0 (
-    echo [ERROR] Deployment failed.
+    echo [ERREUR] Le déploiement a échoué.
     echo.
-    echo Press any key to exit...
+    echo Appuyez sur une touche pour quitter...
     pause >nul
     exit /b 1
 )
-echo [OK] Deployment completed successfully.
+echo [OK] Déploiement terminé avec succès.
 echo.
 
 echo ===================================================
-echo     DEPLOYMENT COMPLETED
+echo     DÉPLOIEMENT TERMINÉ
 echo ===================================================
 echo.
-echo Remember to configure environment variables
-echo in the Vercel interface for advanced features.
+echo N'oubliez pas de configurer les variables d'environnement
+echo dans l'interface Vercel pour les fonctionnalités avancées.
 echo.
-echo Variables to configure:
-echo - VITE_SUPABASE_URL: Your Supabase project URL
-echo - VITE_SUPABASE_ANON_KEY: Your Supabase anonymous key
-echo - VITE_CLOUD_API_URL: Cloud API URL (optional)
+echo Variables à configurer :
+echo - VITE_SUPABASE_URL : URL de votre projet Supabase
+echo - VITE_SUPABASE_ANON_KEY : Clé anonyme Supabase
+echo - VITE_CLOUD_API_URL : URL de l'API cloud (optionnel)
 echo.
 echo ===================================================
 echo.
-echo You can now share the deployment link with your client.
+echo Vous pouvez maintenant partager le lien de déploiement avec votre client.
 echo.
 pause
 exit /b 0
