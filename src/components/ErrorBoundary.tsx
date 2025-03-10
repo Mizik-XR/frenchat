@@ -29,16 +29,10 @@ export class ErrorBoundary extends Component<Props, State> {
   static getDerivedStateFromError(error: Error): State {
     // Déterminer si l'erreur est critique (liée au rendu React)
     const errorMessage = error.message || '';
-    const stackTrace = error.stack || '';
-    
     const isCritical = 
-      errorMessage.includes('React') || 
-      errorMessage.includes('Cannot access') ||
-      errorMessage.includes('undefined') ||
-      errorMessage.includes('null') ||
-      stackTrace.includes('react-dom') ||
-      stackTrace.includes('react-router') ||
-      errorMessage.includes('before initialization');
+      errorMessage.includes('unstable_scheduleCallback') || 
+      errorMessage.includes('useLayoutEffect') ||
+      errorMessage.includes('React.createRoot');
     
     return { 
       hasError: true, 
@@ -54,26 +48,17 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ 
       errorInfo,
       isCritical: this.state.isCritical || 
-        error.message.includes('React') || 
-        error.message.includes('Cannot access') ||
-        error.message.includes('undefined') ||
-        error.message.includes('null') ||
-        error.stack?.includes('react-dom') ||
-        error.stack?.includes('react-router') ||
-        error.message.includes('before initialization')
+        error.message.includes('unstable_scheduleCallback') ||
+        error.message.includes('useLayoutEffect')
     });
     
     // Enregistrer l'erreur pour diagnostic
-    try {
-      localStorage.setItem('last_error', JSON.stringify({
-        message: error.message,
-        stack: error.stack,
-        time: new Date().toISOString(),
-        url: window.location.href
-      }));
-    } catch (e) {
-      console.warn("Impossible d'enregistrer l'erreur dans localStorage", e);
-    }
+    localStorage.setItem('last_error', JSON.stringify({
+      message: error.message,
+      stack: error.stack,
+      time: new Date().toISOString(),
+      url: window.location.href
+    }));
   }
 
   render() {
@@ -82,14 +67,10 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.state.isCritical) {
         return (
           <LoadingScreen
-            message="Une erreur critique est survenue"
+            message="Erreur critique de rendu React"
             showRetry={true}
             onRetry={() => {
-              try {
-                localStorage.setItem('app_loading_issue', 'true');
-              } catch (e) {
-                console.warn("Impossible de stocker dans localStorage", e);
-              }
+              localStorage.setItem('app_loading_issue', 'true');
               window.location.href = '/?forceCloud=true&mode=cloud&client=true';
             }}
           />
@@ -103,8 +84,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // Sinon, afficher un fallback par défaut avec le logo
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-white to-blue-50 dark:from-gray-900 dark:to-gray-800">
-          <div className="max-w-md w-full p-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg text-center">
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-white to-blue-50">
+          <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg text-center">
             <div className="flex justify-center mb-6">
               <LogoImage className="h-24 w-24" />
             </div>
@@ -113,14 +94,14 @@ export class ErrorBoundary extends Component<Props, State> {
               Oooops ! Une erreur est survenue
             </h2>
             
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
+            <p className="text-gray-700 mb-6">
               L'application a rencontré un problème. Nous vous prions de nous excuser pour ce désagrément.
             </p>
             
             <div className="space-y-3">
               <Button
                 onClick={() => window.location.reload()}
-                className="w-full bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                className="w-full bg-blue-500 hover:bg-blue-600"
               >
                 Recharger l'application
               </Button>
@@ -137,12 +118,8 @@ export class ErrorBoundary extends Component<Props, State> {
                 variant="ghost"
                 onClick={() => {
                   // Réinitialiser le stockage local pour éviter une boucle d'erreurs
-                  try {
-                    localStorage.removeItem('app_loading_issue');
-                    localStorage.removeItem('last_route');
-                  } catch (e) {
-                    console.warn("Impossible de supprimer des clés de localStorage", e);
-                  }
+                  localStorage.removeItem('app_loading_issue');
+                  localStorage.removeItem('last_route');
                   window.location.href = "/";
                 }}
                 className="w-full"
@@ -162,17 +139,17 @@ export class ErrorBoundary extends Component<Props, State> {
                         detailsElement.style.display === 'none' ? 'block' : 'none';
                     }
                   }}
-                  className="text-sm text-gray-500 dark:text-gray-400"
+                  className="text-sm text-gray-500"
                 >
                   Afficher/masquer les détails techniques
                 </Button>
                 
-                <Alert className="bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700" id="error-details" style={{ display: 'none' }}>
-                  <AlertTitle className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                <Alert className="bg-gray-50 border-gray-200" id="error-details" style={{ display: 'none' }}>
+                  <AlertTitle className="text-sm font-medium text-gray-800">
                     Détails de l'erreur
                   </AlertTitle>
                   <AlertDescription className="mt-2">
-                    <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-600 dark:text-gray-300 overflow-auto max-h-32 text-left">
+                    <div className="p-2 bg-gray-100 rounded text-xs text-gray-600 overflow-auto max-h-32 text-left">
                       <p className="font-semibold">Message:</p>
                       <pre>{this.state.error.message}</pre>
                       

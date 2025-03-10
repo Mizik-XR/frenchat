@@ -7,7 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Frenchat - Votre assistant d'intelligence documentaire</title>
     <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
-    
+    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
     <!-- Style de base pour l'écran de chargement initial -->
     <style>
       #loading-screen {
@@ -70,97 +71,31 @@
         margin-top: 1rem;
       }
     </style>
-    
-    <!-- Script de gestion d'erreur et de récupération amélioré -->
+    <!-- Script de gestion d'erreur et de récupération -->
     <script>
-      // Définir les fonctions Sentry minimales pour éviter les erreurs
-      window.Sentry = window.Sentry || {
-        init: function() { return false; },
-        captureException: function() { return false; },
-        captureMessage: function() { return false; }
-      };
-      
-      // Fonction pour éviter les erreurs de fonctions React manquantes
-      window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || {};
-      window.__REACT_DEVTOOLS_GLOBAL_HOOK__.scheduleHookupForNewNodes = function() {};
-      window.__REACT_DEVTOOLS_GLOBAL_HOOK__.scheduleRefresh = function() {};
-      window.__REACT_DEVTOOLS_GLOBAL_HOOK__.scheduleUpdate = function() {};
-      
-      // Shim pour unstable_scheduleCallback
-      window.unstable_scheduleCallback = window.unstable_scheduleCallback || function() { 
-        console.warn('Appel à unstable_scheduleCallback intercepté');
-        return null;
-      };
-      
-      // Fonction pour rediriger vers la page d'accueil en mode cloud
+      // Fonction pour rediriger vers la page d'accueil avec des paramètres forcés de mode cloud
       function forceHomepageInCloudMode() {
         window.location.href = '/?forceCloud=true&mode=cloud&client=true';
       }
       
-      // Variable pour stocker les erreurs
-      window.sentryErrors = [];
-      
-      // Gestionnaire d'erreur pour les erreurs React
-      window.handleReactError = function(error) {
-        console.warn('Erreur React détectée:', error);
-        showRecoveryOptions();
-        return false;
-      };
-      
       // Détection et récupération en cas d'erreur de chargement
       window.addEventListener('error', function(event) {
-        console.warn('Erreur détectée:', event.message);
-        
-        // Stocker l'erreur pour diagnostic
-        if (window.sentryErrors) {
-          window.sentryErrors.push({
-            message: event.message,
-            source: event.filename,
-            line: event.lineno,
-            time: new Date().toISOString()
-          });
-        }
-        
-        // Filtrer les erreurs liées à Sentry ou aux ressources externes
-        if (event.message && (
-          event.message.includes('Sentry') || 
-          event.message.includes('cdn') ||
-          event.message.includes('unstable_scheduleCallback') ||
-          event.message.includes('Mt') ||
-          event.message.includes('Tt') ||
-          event.message.includes('before initialization')
-        )) {
-          console.warn('Erreur non critique ignorée:', event.message);
-          event.preventDefault();
-          return;
-        }
-        
-        // Afficher les options de récupération
-        showRecoveryOptions();
-      }, true);
-      
-      // Afficher les options de récupération
-      function showRecoveryOptions() {
-        setTimeout(function() {
-          var loadingEl = document.getElementById('loading-screen');
-          var retryBtn = document.querySelector('.retry-btn');
-          var errorMsg = document.querySelector('.error-message');
+        if (event.message && event.message.includes('useLayoutEffect')) {
+          console.warn('Erreur useLayoutEffect détectée, tentative de récupération...');
           
-          if (loadingEl && errorMsg && retryBtn) {
-            errorMsg.style.display = 'block';
-            retryBtn.style.display = 'inline-block';
-          }
-        }, 500);
-      }
-
-      // Vérifier si l'application se charge correctement
-      setTimeout(function() {
-        var root = document.getElementById('root');
-        if (root && root.children.length <= 1) {
-          console.warn('Application non chargée après 8 secondes, affichage des options de récupération...');
-          showRecoveryOptions();
+          // Afficher le bouton de récupération après 5 secondes sans chargement
+          setTimeout(function() {
+            var loadingEl = document.getElementById('loading-screen');
+            var retryBtn = document.querySelector('.retry-btn');
+            var errorMsg = document.querySelector('.error-message');
+            
+            if (loadingEl && errorMsg && retryBtn) {
+              errorMsg.style.display = 'block';
+              retryBtn.style.display = 'inline-block';
+            }
+          }, 5000);
         }
-      }, 8000);
+      }, true);
     </script>
   </head>
   <body>
@@ -184,13 +119,9 @@
           <div class="error-message">Le chargement semble prendre plus de temps que prévu.</div>
           <button class="retry-btn" onclick="window.location.reload()">Rafraîchir la page</button>
           <button class="retry-btn" onclick="forceHomepageInCloudMode()" style="margin-left: 8px; background-color: #6366f1;">Mode cloud</button>
-          <button class="retry-btn" onclick="window.location.href='/diagnostic.html'" style="margin-left: 8px; background-color: #10b981;">Diagnostic</button>
         </div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
-    
-    <!-- Ajout du script Lovable après le chargement principal -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
   </body>
 </html>

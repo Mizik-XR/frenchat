@@ -4,7 +4,7 @@
 Pour configurer correctement le build Netlify, configurez les paramètres suivants dans l'interface Netlify:
 
 ## Build Settings
-- **Build command**: `npm run build`
+- **Build command**: `node scripts/netlify-prebuild.js && npm run build`
 - **Publish directory**: `dist`
 
 ## Environment Variables
@@ -17,16 +17,11 @@ NO_RUST_INSTALL=1
 TRANSFORMERS_OFFLINE=1
 VITE_CLOUD_MODE=true
 VITE_ALLOW_LOCAL_AI=false
-NODE_OPTIONS=--max-old-space-size=4096
+VITE_SUPABASE_URL=votre_url_supabase
+VITE_SUPABASE_ANON_KEY=votre_clé_anon_supabase
 ```
 
-## Sécurité des clés API
-⚠️ **IMPORTANT**: Pour des raisons de sécurité, configurez les clés API sensibles UNIQUEMENT via l'interface Netlify:
-- VITE_SUPABASE_URL
-- VITE_SUPABASE_ANON_KEY
-- Autres clés API (VITE_CLOUD_API_URL, etc.)
-
-### Comment configurer les variables d'environnement
+## Variables d'environnement (Environment Variables)
 1. Dans le menu latéral gauche, allez dans "Site settings" ou "Site configuration"
 2. Cherchez "Build & deploy" puis "Environment"
 3. Cliquez sur "Edit variables" et ajoutez les variables ci-dessus
@@ -34,4 +29,3 @@ NODE_OPTIONS=--max-old-space-size=4096
 
 ## Optimisation du déploiement
 Ces paramètres contournent les problèmes d'installation des dépendances Python qui nécessitent Rust.
-

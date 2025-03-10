@@ -1,86 +1,66 @@
 
-# Configuration de build Netlify pour FileChat 
-[build] 
-  publish = "dist" 
-  command = "npm run build" 
- 
-# Configuration des variables d'environnement par défaut 
-[build.environment] 
-  NODE_VERSION = "18" 
-  NPM_FLAGS = "--prefer-offline --no-audit" 
-  NO_RUST_INSTALL = "1" 
-  NETLIFY_USE_YARN = "false" 
-  TRANSFORMERS_OFFLINE = "1" 
-  CI = "true" 
-  SKIP_PYTHON_INSTALLATION = "true" 
-  NETLIFY_SKIP_PYTHON_REQUIREMENTS = "true" 
-  VITE_CLOUD_MODE = "true" 
-  VITE_ALLOW_LOCAL_AI = "false" 
-  NETLIFY_VERBOSE = "true"
- 
-# Configuration des redirections pour le routage SPA 
-[[redirects]] 
-  from = "/*" 
-  to = "/index.html" 
-  status = 200 
+# Configuration de build Netlify pour FileChat
+[build]
+  publish = "dist"
+  command = "node scripts/netlify-prebuild.js && npm run build"
+
+# Configuration des variables d'environnement par défaut
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_FLAGS = "--prefer-offline --no-audit --no-fund"
+  NODE_OPTIONS = "--max-old-space-size=4096"
+  NO_RUST_INSTALL = "1"
+  NETLIFY_USE_YARN = "false"
+  TRANSFORMERS_OFFLINE = "1"
+  CI = "true"
+  SKIP_PYTHON_INSTALLATION = "true"
+  NETLIFY_SKIP_PYTHON_REQUIREMENTS = "true"
+  VITE_CLOUD_MODE = "true"
+  VITE_ALLOW_LOCAL_AI = "false"
+
+# Configuration des redirections pour le routage SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
   force = true
-
-# Redirection explicite pour les pages de diagnostic
+  
+# Rediriger les API vers les fonctions Netlify
 [[redirects]]
-  from = "/diagnostic"
-  to = "/diagnostic.html"
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
   status = 200
 
-[[redirects]]
-  from = "/image-diagnostic"
-  to = "/image-diagnostic.html"
-  status = 200
+# Configuration des fonctions Netlify
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  included_files = ["**/*.model"]
+  external_node_modules = ["@supabase/supabase-js"]
 
-# Configuration des fonctions Netlify 
-[functions] 
-  directory = "netlify/functions" 
-  node_bundler = "esbuild" 
-  included_files = ["**/*.model"] 
-  external_node_modules = ["@supabase/supabase-js"] 
- 
-# En-têtes pour tous les fichiers - CSP plus permissive
-[[headers]] 
-  for = "/*" 
-  [headers.values] 
-    X-Frame-Options = "DENY" 
-    X-XSS-Protection = "1; mode=block" 
-    X-Content-Type-Options = "nosniff" 
-    Referrer-Policy = "strict-origin-when-cross-origin" 
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()" 
-    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* ws://localhost:* https://* wss://* https://*.sentry.io https://*.ingest.sentry.io; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdn.gpteng.co https://*.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; worker-src 'self' blob:; font-src 'self' https://fonts.gstatic.com https: data:;"
-
-# En-têtes spécifiques pour les pages de diagnostic - CSP très permissive
+# En-têtes pour améliorer la sécurité
 [[headers]]
-  for = "/diagnostic.html"
+  for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://* http://*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https: data:;"
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* ws://localhost:* https://* wss://* /.netlify/functions/*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*; worker-src 'self' blob:;"
+
+# Configuration de mise en cache
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "/image-diagnostic.html"
+  for = "/*.css"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://* http://*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https: data:;"
- 
-# En-têtes spécifiques pour les fichiers JavaScript 
-[[headers]] 
-  for = "/*.js" 
-  [headers.values] 
-    Content-Type = "application/javascript; charset=utf-8" 
-    Cache-Control = "public, max-age=31536000, immutable" 
- 
-# En-têtes spécifiques pour les fichiers CSS 
-[[headers]] 
-  for = "/*.css" 
-  [headers.values] 
-    Content-Type = "text/css; charset=utf-8" 
-    Cache-Control = "public, max-age=31536000, immutable" 
- 
-# En-têtes pour les assets 
-[[headers]] 
-  for = "/assets/*" 
-  [headers.values] 
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"

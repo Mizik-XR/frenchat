@@ -1,34 +1,17 @@
 
 import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemCapabilities } from '@/hooks/useSystemCapabilities';
-import { SentryMonitor } from '@/monitoring/sentry-integration';
-import { SystemCapabilitiesCard } from '@/components/debug/SystemCapabilitiesCard';
-import { SystemLogsCard } from '@/components/debug/SystemLogsCard';
-import { MonitoringStatusCard } from '@/components/debug/MonitoringStatusCard';
-import { SentryTestButton } from '@/components/debug/SentryTestButton';
-import { Button } from '@/components/ui/button';
-import { BugPlay } from 'lucide-react';
 
 export default function Debug() {
   const { capabilities, isAnalyzing, analyzeSystem } = useSystemCapabilities();
   const [logs, setLogs] = useState<string[]>([]);
   const { toast } = useToast();
-  const [sentryStat, setSentryStat] = useState({
-    initialized: false,
-    dsn: 'Non détecté',
-    environment: 'Non détecté'
-  });
 
   useEffect(() => {
-    // Check Sentry status
-    setSentryStat({
-      initialized: SentryMonitor.isReady(),
-      dsn: SentryMonitor.DSN?.substring(0, 15) + '...' || 'Non détecté',
-      environment: import.meta.env.MODE || 'Non détecté'
-    });
-
-    // Add some debug logs
+    // Ajouter quelques logs de débogage
     setLogs([
       '[INFO] Application initialisée',
       '[INFO] Vérification des capacités système...',
@@ -37,7 +20,6 @@ export default function Debug() {
       `[INFO] GPU disponible: ${capabilities.gpuAvailable ? 'Oui' : 'Non'}`,
       '[INFO] Vérification de la connexion Ollama...',
       '[INFO] Test de connexion à Supabase...',
-      `[INFO] Statut Sentry: ${SentryMonitor.isReady() ? 'Initialisé' : 'Non initialisé'}`
     ]);
   }, [capabilities]);
 
@@ -47,10 +29,10 @@ export default function Debug() {
       description: "Analyse du système en cours...",
     });
     
-    // Add a log
+    // Ajouter un log
     setLogs(prev => [...prev, '[INFO] Lancement du diagnostic système...']);
     
-    // Simulate a diagnostic
+    // Simuler un diagnostic
     setTimeout(() => {
       setLogs(prev => [
         ...prev, 
@@ -75,67 +57,76 @@ export default function Debug() {
     });
   };
 
-  // Handler pour tester Sentry directement sur cette page
-  const handleTestSentry = () => {
-    try {
-      toast({
-        title: "Test Sentry",
-        description: "Envoi d'une erreur test à Sentry depuis la page Debug...",
-      });
-      
-      // Generate a test error
-      throw new Error(`Debug Page Test Sentry Error - ${new Date().toISOString()}`);
-    } catch (error) {
-      if (error instanceof Error) {
-        console.log("Erreur de test capturée, envoi à Sentry...");
-        SentryMonitor.captureException(error, {
-          source: "Debug Page",
-          manual: true,
-          timestamp: Date.now(),
-          location: "Debug test direct"
-        });
-        
-        toast({
-          title: "Erreur envoyée à Sentry",
-          description: "Vérifiez le dashboard Sentry pour confirmer la réception.",
-          variant: "default" 
-        });
-      }
-    }
-  };
-
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-8">Débogage et Diagnostic</h1>
       
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <SentryTestButton />
-        
-        <Button 
-          onClick={handleTestSentry} 
-          variant="outline"
-          className="bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-600 hover:text-amber-700"
-        >
-          <BugPlay className="mr-2 h-4 w-4" />
-          Test Sentry (Page)
-        </Button>
-      </div>
-      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <SystemCapabilitiesCard 
-          capabilities={capabilities}
-          isAnalyzing={isAnalyzing}
-          analyzeSystem={analyzeSystem}
-        />
+        <Card>
+          <CardHeader>
+            <CardTitle>Capacités système</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium">Mémoire RAM:</p>
+                <p className="text-lg">{capabilities.memoryGB ? `${capabilities.memoryGB} GB` : 'Non détecté'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Processeur:</p>
+                <p className="text-lg">{capabilities.cpuCores ? `${capabilities.cpuCores} cœurs` : 'Non détecté'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">GPU:</p>
+                <p className="text-lg">{capabilities.gpuAvailable ? 'Disponible' : 'Non disponible'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Catégorie système:</p>
+                <p className="text-lg">
+                  {capabilities.isHighEndSystem ? 'Haute performance' : 
+                   capabilities.isMidEndSystem ? 'Performance moyenne' : 'Performance de base'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Modèles recommandés:</p>
+                <ul className="list-disc pl-5">
+                  {capabilities.recommendedModels.map((model, index) => (
+                    <li key={index}>{model}</li>
+                  ))}
+                </ul>
+              </div>
+              <Button onClick={analyzeSystem} disabled={isAnalyzing}>
+                {isAnalyzing ? 'Analyse en cours...' : 'Analyser à nouveau'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
         
-        <SystemLogsCard 
-          logs={logs}
-          onRunDiagnostic={handleRunDiagnostic}
-          onClearLogs={handleClearLogs}
-        />
+        <Card>
+          <CardHeader>
+            <CardTitle>Logs système</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-black text-green-400 p-4 rounded-lg font-mono text-sm h-[300px] overflow-y-auto mb-4">
+              {logs.length > 0 ? (
+                logs.map((log, index) => (
+                  <div key={index} className="mb-1">{log}</div>
+                ))
+              ) : (
+                <div className="text-gray-500">Aucun log disponible</div>
+              )}
+            </div>
+            <div className="flex space-x-4">
+              <Button onClick={handleRunDiagnostic}>
+                Lancer un diagnostic
+              </Button>
+              <Button variant="outline" onClick={handleClearLogs}>
+                Effacer les logs
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-
-      <MonitoringStatusCard sentryStat={sentryStat} />
     </div>
   );
 }
