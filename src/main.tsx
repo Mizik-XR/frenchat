@@ -4,7 +4,9 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import './styles/message-styles.css'
-import { testLovableFunction } from './utils/lovable/lovableTestFile.ts'
+const testLovableFunction = () => {
+  return "Fonction Lovable temporairement désactivée";
+}
 
 // Configuration améliorée pour le déploiement
 const renderApp = () => {
