@@ -41,6 +41,8 @@ if not exist "dist\_redirects" (
         copy "_redirects" "dist\"
     ) else (
         echo /* /index.html 200 > "dist\_redirects"
+        echo /diagnostic /diagnostic.html 200 >> "dist\_redirects"
+        echo /image-diagnostic /image-diagnostic.html 200 >> "dist\_redirects"
     )
 )
 
@@ -50,6 +52,13 @@ if not exist "dist\_headers" (
         copy "_headers" "dist\"
     ) else if exist "scripts\_headers" (
         copy "scripts\_headers" "dist\"
+    ) else (
+        echo [ATTENTION] Aucun fichier _headers trouvé, création d'un fichier _headers par défaut...
+        echo /* > "dist\_headers"
+        echo   X-Frame-Options: DENY >> "dist\_headers"
+        echo   X-XSS-Protection: 1; mode=block >> "dist\_headers"
+        echo   X-Content-Type-Options: nosniff >> "dist\_headers"
+        echo   Content-Security-Policy: default-src 'self'; connect-src 'self' https://* http://*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdn.gpteng.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https: data:; >> "dist\_headers"
     )
 )
 
@@ -68,6 +77,17 @@ if exist "public\image-diagnostic.html" (
 if exist "public\debug.html" (
     copy "public\debug.html" "dist\"
     echo [OK] debug.html copié.
+)
+
+if exist "public\netlify-diagnostic.html" (
+    copy "public\netlify-diagnostic.html" "dist\"
+    echo [OK] netlify-diagnostic.html copié.
+)
+
+:: Copier les fichiers d'animation et images
+if exist "public\filechat-animation.gif" (
+    copy "public\filechat-animation.gif" "dist\"
+    echo [OK] filechat-animation.gif copié.
 )
 
 :: Copier le SVG de placeholder personnalisé
@@ -99,16 +119,25 @@ if exist "dist\index.html" (
         copy "dist\index.html.tmp" "dist\index.html" >nul
     )
     
+    :: Ajouter du script React pour la page de diagnostic
+    findstr /c:"unpkg.com/react@18" "dist\diagnostic.html" >nul 2>nul
+    if !ERRORLEVEL! neq 0 (
+        if exist "dist\diagnostic.html" (
+            echo [INFO] Ajout des scripts React à diagnostic.html...
+            powershell -command "(Get-Content dist\diagnostic.html) -replace '<head>', '<head>\n  <script crossorigin src=\"https://unpkg.com/react@18/umd/react.production.min.js\"></script>\n  <script crossorigin src=\"https://unpkg.com/react-dom@18/umd/react-dom.production.min.js\"></script>' | Set-Content dist\diagnostic.html"
+        )
+    )
+    
     :: Supprimer le fichier temporaire
     if exist "dist\index.html.tmp" del "dist\index.html.tmp"
 )
 
-:: Copier les fichiers statiques essentiels
-echo [INFO] Vérification des fichiers statiques essentiels...
-if exist "public\filechat-animation.gif" (
-    if not exist "dist\filechat-animation.gif" (
-        copy "public\filechat-animation.gif" "dist\"
-        echo [OK] filechat-animation.gif copié.
+:: Vérifier et mettre à jour la politique CSP dans les fichiers HTML
+echo [INFO] Vérification et mise à jour des politiques CSP...
+for %%F in (dist\diagnostic.html dist\image-diagnostic.html) do (
+    if exist "%%F" (
+        echo [INFO] Mise à jour de la politique CSP dans %%F...
+        powershell -command "$content = Get-Content '%%F' -Raw; $pattern = '<meta http-equiv=\"Content-Security-Policy\"'; if ($content -notmatch $pattern) { $content = $content -replace '<head>', '<head>\n  <meta http-equiv=\"Content-Security-Policy\" content=\"default-src ''self''; connect-src ''self'' https://* http://*; script-src ''self'' ''unsafe-inline'' ''unsafe-eval'' https://unpkg.com https://cdn.jsdelivr.net; style-src ''self'' ''unsafe-inline''; img-src ''self'' data: blob: https:; font-src ''self'' https: data:;\">' }; $content | Set-Content '%%F'"
     )
 )
 

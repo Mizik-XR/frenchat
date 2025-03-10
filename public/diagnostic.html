@@ -73,12 +73,10 @@
         width: 100%;
       }
     }
-    /* Ajout d'un style pour les boutons désactivés */
     button:disabled {
       background: #cbd5e1;
       cursor: not-allowed;
     }
-    /* Ajout d'une animation pour le chargement */
     @keyframes pulse {
       0% { opacity: 0.6; }
       50% { opacity: 1; }
@@ -87,10 +85,83 @@
     .loading {
       animation: pulse 1.5s infinite;
     }
+    .csp-warning {
+      background-color: #fef9c3;
+      border: 1px solid #fde047;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      display: none;
+    }
+    .csp-fix {
+      background-color: #dcfce7;
+      border: 1px solid #86efac;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      display: none;
+    }
   </style>
-  <!-- Ajout des scripts React directement depuis CDN -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Script de secours pour détecter les problèmes CSP -->
+  <script>
+    // Fonction pour détecter les erreurs CSP
+    window.addEventListener('securitypolicyviolation', function(e) {
+      console.error('CSP violation detected:', e);
+      
+      // Afficher l'alerte CSP
+      setTimeout(function() {
+        var cspWarning = document.createElement('div');
+        cspWarning.className = 'csp-warning';
+        cspWarning.innerHTML = `<strong>Alerte de sécurité CSP:</strong> Le navigateur a bloqué le chargement de ressources en raison de la politique de sécurité.<br>
+        <strong>Directive:</strong> ${e.violatedDirective}<br>
+        <strong>Source bloquée:</strong> ${e.blockedURI}`;
+        
+        var heading = document.querySelector('h1');
+        if (heading && heading.parentNode) {
+          heading.parentNode.insertBefore(cspWarning, heading.nextSibling);
+        }
+        
+        // Afficher les solutions
+        var cspFix = document.createElement('div');
+        cspFix.className = 'csp-fix';
+        cspFix.innerHTML = `<strong>Solution:</strong> Ajoutez <code>${e.blockedURI}</code> à la directive <code>${e.violatedDirective}</code> dans vos en-têtes CSP.<br>
+        Vous pouvez également utiliser le <a href="#" onclick="applyCspFix(event)">correctif automatique temporaire</a> pour cette session.`;
+        
+        if (cspWarning.parentNode) {
+          cspWarning.parentNode.insertBefore(cspFix, cspWarning.nextSibling);
+        }
+        
+        cspWarning.style.display = 'block';
+        cspFix.style.display = 'block';
+      }, 500);
+    });
+    
+    // Fonction pour appliquer un correctif CSP temporaire (pour l'analyse uniquement)
+    window.applyCspFix = function(event) {
+      event.preventDefault();
+      
+      // Créer une balise meta pour remplacer la politique CSP pour cette session
+      var meta = document.createElement('meta');
+      meta.httpEquiv = 'Content-Security-Policy';
+      meta.content = "default-src 'self'; connect-src 'self' https://* http://*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https: data:;";
+      document.head.appendChild(meta);
+      
+      // Afficher un message de succès
+      var cspFix = document.querySelector('.csp-fix');
+      if (cspFix) {
+        cspFix.innerHTML = '<strong>Correctif appliqué!</strong> Rafraîchissez la page pour voir les changements.';
+      }
+      
+      // Recharger automatiquement après 3 secondes
+      setTimeout(function() {
+        window.location.reload();
+      }, 3000);
+    };
+  </script>
+  
+  <!-- Plusieurs CDN alternatifs pour React, pour augmenter les chances de succès -->
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
 </head>
 <body>
   <h1>FileChat - Page de diagnostic Netlify</h1>
@@ -148,6 +219,11 @@
   </div>
 
   <script>
+    // Vérifier React au démarrage
+    function checkReactAvailability() {
+      return typeof React !== 'undefined' && React !== null;
+    }
+    
     // Fonction de sécurité pour la navigation
     function navigateTo(url) {
       try {
@@ -196,6 +272,8 @@
           devicePixelRatio: window.devicePixelRatio,
           cookies: navigator.cookieEnabled,
           baseURI: document.baseURI,
+          // Détection de React
+          reactAvailable: checkReactAvailability(),
           // Détecter les scripts chargés
           scripts: Array.from(document.scripts).map(s => ({
             src: s.src || "[script inline]",
@@ -211,7 +289,9 @@
             } catch (e) {
               return { index, error: e.message };
             }
-          })
+          }),
+          // Vérifier les meta tags CSP
+          cspMeta: Array.from(document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]')).map(meta => meta.content)
         };
         
         document.getElementById('environment').textContent = JSON.stringify(env, null, 2);
@@ -229,7 +309,7 @@
       }
     }
     
-    // Test du chargement de React - amélioré
+    // Test du chargement de React - amélioré pour gérer les erreurs CSP
     function testReactLoading() {
       toggleButtonState("testReactBtn", true);
       toggleButtonState("testReactInlineBtn", true);
@@ -239,7 +319,7 @@
       
       try {
         // Test direct - vérifie si React est globalement disponible
-        if (window.React) {
+        if (checkReactAvailability()) {
           results.innerHTML = `<span class="success">✅ React est chargé (version ${React.version})</span>`;
           
           // Tester le rendu React basique
@@ -248,57 +328,143 @@
           document.body.appendChild(testDiv);
           
           try {
-            ReactDOM.render(
-              React.createElement('div', {}, 'Test de rendu React réussi!'),
-              testDiv
-            );
-            results.innerHTML += `<br><span class="success">✅ Test de rendu React réussi!</span>`;
+            if (typeof ReactDOM !== 'undefined' && ReactDOM !== null) {
+              // Créer un composant simple
+              const element = React.createElement('div', {style: {padding: '10px', background: '#e0f2fe', borderRadius: '4px'}}, 'Test de rendu React réussi!');
+              
+              // Rendre le composant
+              ReactDOM.render(element, testDiv);
+              results.innerHTML += `<br><span class="success">✅ Test de rendu React réussi!</span>`;
+            } else {
+              results.innerHTML += `<br><span class="warning">⚠️ React est disponible mais ReactDOM est manquant</span>`;
+              // Tenter de charger ReactDOM
+              loadReactDOMDynamically();
+            }
           } catch (renderError) {
             results.innerHTML += `<br><span class="error">❌ Erreur lors du rendu React: ${renderError.message}</span>`;
+            
+            // Vérifier si l'erreur est liée à CSP
+            if (renderError.message && (renderError.message.includes('Content Security Policy') || renderError.message.includes('Refused to execute'))) {
+              results.innerHTML += `<br><span class="error">❌ Erreur CSP détectée. Les restrictions de sécurité bloquent l'exécution de React.</span>`;
+              results.innerHTML += `<br><button onclick="applyCspFix(event)">Appliquer un correctif CSP temporaire</button>`;
+            }
           }
         } else {
           results.innerHTML = `<span class="error">❌ React n'est pas chargé dans la fenêtre globale</span>`;
           
-          // Essayer de charger React dynamiquement
+          // Essayer de charger React dynamiquement avec plusieurs CDN
           results.innerHTML += `<br>Tentative de chargement dynamique de React...`;
           
-          const reactScript = document.createElement('script');
-          reactScript.src = 'https://unpkg.com/react@18/umd/react.production.min.js';
-          reactScript.crossOrigin = "anonymous";
-          
-          reactScript.onload = function() {
-            const reactDomScript = document.createElement('script');
-            reactDomScript.src = 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js';
-            reactDomScript.crossOrigin = "anonymous";
-            
-            reactDomScript.onload = function() {
-              results.innerHTML += `<br><span class="success">✅ React chargé dynamiquement (version ${window.React.version})</span>`;
-              toggleButtonState("testReactBtn", false);
-              toggleButtonState("testReactInlineBtn", false);
-            };
-            
-            reactDomScript.onerror = function(error) {
-              results.innerHTML += `<br><span class="error">❌ Échec du chargement de ReactDOM: ${error}</span>`;
-              toggleButtonState("testReactBtn", false);
-              toggleButtonState("testReactInlineBtn", false);
-            };
-            
-            document.head.appendChild(reactDomScript);
-          };
-          
-          reactScript.onerror = function(error) {
-            results.innerHTML += `<br><span class="error">❌ Échec du chargement de React: ${error}</span>`;
-            toggleButtonState("testReactBtn", false);
-            toggleButtonState("testReactInlineBtn", false);
-          };
-          
-          document.head.appendChild(reactScript);
+          loadReactDynamically(results);
         }
       } catch (e) {
         results.textContent = `❌ Erreur lors du test de React: ${e.message}`;
+        
+        // Si erreur liée à CSP, proposer un correctif
+        if (e.message && (e.message.includes('Content Security Policy') || e.message.includes('Refused to execute'))) {
+          results.innerHTML += `<br><span class="error">❌ Erreur CSP détectée. Les restrictions de sécurité bloquent l'exécution de scripts.</span>`;
+          results.innerHTML += `<br><button onclick="applyCspFix(event)">Appliquer un correctif CSP temporaire</button>`;
+        }
+      } finally {
         toggleButtonState("testReactBtn", false);
         toggleButtonState("testReactInlineBtn", false);
       }
+    }
+    
+    // Chargement dynamique de React avec plusieurs CDN alternatifs
+    function loadReactDynamically(resultsElement) {
+      const cdns = [
+        'https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js',
+        'https://unpkg.com/react@18/umd/react.production.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js'
+      ];
+      
+      let loadedCdn = '';
+      let attemptCount = 0;
+      
+      function tryNextCdn() {
+        if (attemptCount >= cdns.length) {
+          resultsElement.innerHTML += `<br><span class="error">❌ Impossible de charger React depuis aucun CDN</span>`;
+          return;
+        }
+        
+        const reactScript = document.createElement('script');
+        reactScript.src = cdns[attemptCount];
+        reactScript.crossOrigin = "anonymous";
+        loadedCdn = cdns[attemptCount];
+        
+        reactScript.onload = function() {
+          resultsElement.innerHTML += `<br><span class="success">✅ React chargé depuis ${loadedCdn}</span>`;
+          loadReactDOMDynamically();
+        };
+        
+        reactScript.onerror = function(error) {
+          resultsElement.innerHTML += `<br><span class="warning">⚠️ Échec du chargement depuis ${loadedCdn}</span>`;
+          attemptCount++;
+          tryNextCdn();
+        };
+        
+        document.head.appendChild(reactScript);
+      }
+      
+      tryNextCdn();
+    }
+    
+    // Chargement dynamique de ReactDOM
+    function loadReactDOMDynamically() {
+      const cdns = [
+        'https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js',
+        'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js'
+      ];
+      
+      let loadedCdn = '';
+      let attemptCount = 0;
+      const resultsElement = document.getElementById('reactTestResults');
+      
+      function tryNextCdn() {
+        if (attemptCount >= cdns.length) {
+          resultsElement.innerHTML += `<br><span class="error">❌ Impossible de charger ReactDOM depuis aucun CDN</span>`;
+          return;
+        }
+        
+        const reactDomScript = document.createElement('script');
+        reactDomScript.src = cdns[attemptCount];
+        reactDomScript.crossOrigin = "anonymous";
+        loadedCdn = cdns[attemptCount];
+        
+        reactDomScript.onload = function() {
+          resultsElement.innerHTML += `<br><span class="success">✅ ReactDOM chargé depuis ${loadedCdn}</span>`;
+          
+          // Tester le rendu React après chargement de ReactDOM
+          setTimeout(function() {
+            if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+              try {
+                const testDiv = document.getElementById('react-test-container') || document.createElement('div');
+                testDiv.id = 'react-test-container';
+                document.body.appendChild(testDiv);
+                
+                const element = React.createElement('div', {style: {padding: '10px', background: '#e0f2fe', borderRadius: '4px'}}, 'Test de rendu React réussi!');
+                ReactDOM.render(element, testDiv);
+                
+                resultsElement.innerHTML += `<br><span class="success">✅ Test de rendu React réussi avec les scripts chargés dynamiquement!</span>`;
+              } catch (e) {
+                resultsElement.innerHTML += `<br><span class="error">❌ Erreur lors du test de rendu après chargement: ${e.message}</span>`;
+              }
+            }
+          }, 500);
+        };
+        
+        reactDomScript.onerror = function(error) {
+          resultsElement.innerHTML += `<br><span class="warning">⚠️ Échec du chargement de ReactDOM depuis ${loadedCdn}</span>`;
+          attemptCount++;
+          tryNextCdn();
+        };
+        
+        document.head.appendChild(reactDomScript);
+      }
+      
+      tryNextCdn();
     }
     
     // Afficher les logs stockés dans localStorage - avec gestion d'erreurs
@@ -417,7 +583,7 @@
         // Essayer avec un autre chemin si échec
         const imgTest2 = new Image();
         imgTest2.onload = () => {
-          tests.push('✅ Image PNG chargée avec succès (chemin absolu /assets/custom-placeholder.svg)');
+          tests.push('✅ Image SVG chargée avec succès (chemin absolu /assets/custom-placeholder.svg)');
           container.textContent = tests.join('\n');
           toggleButtonState("testPathsBtn", false);
         };
@@ -515,6 +681,7 @@
       // Tester le chargement de scripts externes
       const testScript = document.createElement('script');
       testScript.src = 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js';
+      testScript.crossOrigin = "anonymous";
       testScript.onload = () => {
         testResults.textContent += '\n\n✅ Chargement de script externe réussi (lodash)';
         if (window._) {
@@ -524,8 +691,15 @@
         }
         toggleButtonState("testScriptsBtn", false);
       };
-      testScript.onerror = () => {
+      testScript.onerror = (e) => {
         testResults.textContent += '\n\n❌ Erreur de chargement de script externe (lodash)';
+        
+        // Vérifier si l'erreur est due à CSP
+        if (e.target && e.target.src) {
+          testResults.textContent += `\nURL bloquée: ${e.target.src}`;
+          testResults.textContent += '\nCela peut être dû à des restrictions CSP (Content Security Policy).';
+        }
+        
         toggleButtonState("testScriptsBtn", false);
       };
       document.head.appendChild(testScript);
@@ -555,6 +729,13 @@
     // Initialisation au chargement, avec gestion des erreurs
     document.addEventListener('DOMContentLoaded', function() {
       try {
+        // Vérifier si React est disponible
+        if (checkReactAvailability()) {
+          console.log("React est disponible au chargement initial:", React.version);
+        } else {
+          console.warn("React n'est pas disponible au chargement initial");
+        }
+        
         runDiagnostics();
       } catch (e) {
         console.error("Erreur lors de l'initialisation:", e);

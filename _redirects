@@ -11,8 +11,15 @@
 # Redirection pour la page de diagnostic d'images
 /image-diagnostic    /image-diagnostic.html   200
 
+# Redirection pour la page de diagnostic Netlify
+/netlify-diagnostic    /netlify-diagnostic.html   200
+
 # Pages statiques explicites
 /diagnostic.html     /diagnostic.html   200
 /image-diagnostic.html    /image-diagnostic.html   200
 /debug.html     /debug.html   200
+/netlify-diagnostic.html    /netlify-diagnostic.html   200
+
+# API vers fonctions Netlify
+/api/*  /.netlify/functions/:splat  200
 
