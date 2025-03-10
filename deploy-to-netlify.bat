@@ -102,6 +102,26 @@ if %ERRORLEVEL% NEQ 0 (
 )
 echo [OK] Vérification et correction des chemins terminées.
 
+REM Vérifier manuellement les fichiers critiques
+echo [INFO] Vérification manuelle des fichiers critiques...
+if not exist "dist\diagnostic.html" (
+    echo [ATTENTION] diagnostic.html manquant, copie manuelle...
+    copy "public\diagnostic.html" "dist\"
+)
+if not exist "dist\image-diagnostic.html" (
+    echo [ATTENTION] image-diagnostic.html manquant, copie manuelle...
+    copy "public\image-diagnostic.html" "dist\"
+)
+if not exist "dist\assets\custom-placeholder.svg" (
+    echo [ATTENTION] custom-placeholder.svg manquant, copie manuelle...
+    if not exist "dist\assets" mkdir "dist\assets"
+    copy "src\assets\custom-placeholder.svg" "dist\assets\"
+)
+if not exist "dist\filechat-animation.gif" (
+    echo [ATTENTION] filechat-animation.gif manquant, copie manuelle...
+    copy "public\filechat-animation.gif" "dist\"
+)
+
 REM Vérifier la connexion à Netlify
 echo [ÉTAPE 3/3] Vérification de la connexion à Netlify...
 netlify status >nul 2>nul

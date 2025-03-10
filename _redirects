@@ -11,3 +11,8 @@
 # Redirection pour la page de diagnostic d'images
 /image-diagnostic    /image-diagnostic.html   200
 
+# Pages statiques explicites
+/diagnostic.html     /diagnostic.html   200
+/image-diagnostic.html    /image-diagnostic.html   200
+/debug.html     /debug.html   200
+

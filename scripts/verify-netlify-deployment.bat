@@ -53,6 +53,30 @@ if not exist "dist\_headers" (
     )
 )
 
+:: Copier les pages de diagnostic
+echo [INFO] Copie des fichiers de diagnostic...
+if exist "public\diagnostic.html" (
+    copy "public\diagnostic.html" "dist\"
+    echo [OK] diagnostic.html copié.
+)
+
+if exist "public\image-diagnostic.html" (
+    copy "public\image-diagnostic.html" "dist\"
+    echo [OK] image-diagnostic.html copié.
+)
+
+if exist "public\debug.html" (
+    copy "public\debug.html" "dist\"
+    echo [OK] debug.html copié.
+)
+
+:: Copier le SVG de placeholder personnalisé
+if not exist "dist\assets" mkdir "dist\assets"
+if exist "src\assets\custom-placeholder.svg" (
+    copy "src\assets\custom-placeholder.svg" "dist\assets\"
+    echo [OK] custom-placeholder.svg copié.
+)
+
 :: Vérifier index.html pour les chemins absolus
 if exist "dist\index.html" (
     echo [INFO] Vérification de dist\index.html...
@@ -77,6 +101,15 @@ if exist "dist\index.html" (
     
     :: Supprimer le fichier temporaire
     if exist "dist\index.html.tmp" del "dist\index.html.tmp"
+)
+
+:: Copier les fichiers statiques essentiels
+echo [INFO] Vérification des fichiers statiques essentiels...
+if exist "public\filechat-animation.gif" (
+    if not exist "dist\filechat-animation.gif" (
+        copy "public\filechat-animation.gif" "dist\"
+        echo [OK] filechat-animation.gif copié.
+    )
 )
 
 echo.

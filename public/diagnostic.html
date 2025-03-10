@@ -73,7 +73,24 @@
         width: 100%;
       }
     }
+    /* Ajout d'un style pour les boutons désactivés */
+    button:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
+    /* Ajout d'une animation pour le chargement */
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+    .loading {
+      animation: pulse 1.5s infinite;
+    }
   </style>
+  <!-- Ajout des scripts React directement depuis CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 </head>
 <body>
   <h1>FileChat - Page de diagnostic Netlify</h1>
@@ -83,33 +100,33 @@
     <div class="tool-card">
       <h3>Diagnostic général</h3>
       <p>Exécutez le diagnostic complet pour vérifier la configuration de l'application.</p>
-      <button onclick="runDiagnostics()">Exécuter le diagnostic complet</button>
+      <button onclick="runDiagnostics()" id="runDiagnosticsBtn">Exécuter le diagnostic complet</button>
     </div>
     
     <div class="tool-card">
       <h3>Diagnostic d'images</h3>
       <p>Testez le chargement des images et identifiez les problèmes potentiels.</p>
-      <button onclick="window.location.href='./image-diagnostic.html'">Ouvrir le diagnostic d'images</button>
+      <button onclick="navigateTo('./image-diagnostic.html')">Ouvrir le diagnostic d'images</button>
     </div>
     
     <div class="tool-card">
       <h3>Tests réseau</h3>
       <p>Vérifiez la connectivité et les problèmes de réseau potentiels.</p>
-      <button onclick="testRelativePaths()">Tester les chemins relatifs</button>
-      <button onclick="testAPIConnectivity()" class="secondary">Tester la connectivité API</button>
+      <button onclick="testRelativePaths()" id="testPathsBtn">Tester les chemins relatifs</button>
+      <button onclick="testAPIConnectivity()" class="secondary" id="testAPIBtn">Tester la connectivité API</button>
     </div>
     
     <div class="tool-card">
       <h3>Tests système</h3>
       <p>Vérifiez le chargement des scripts et l'environnement.</p>
-      <button onclick="testScriptLoading()" class="secondary">Tester le chargement de scripts</button>
-      <button onclick="testReactLoading()" class="secondary">Tester React</button>
+      <button onclick="testScriptLoading()" class="secondary" id="testScriptsBtn">Tester le chargement de scripts</button>
+      <button onclick="testReactLoading()" class="secondary" id="testReactBtn">Tester React</button>
     </div>
   </div>
   
   <div>
-    <button onclick="clearLogs()" class="secondary">Effacer les logs</button>
-    <button onclick="window.location.href='/'">Retour à l'application</button>
+    <button onclick="clearLogs()" class="secondary" id="clearLogsBtn">Effacer les logs</button>
+    <button onclick="navigateTo('/')" id="backBtn">Retour à l'application</button>
   </div>
 
   <h2>Environnement</h2>
@@ -126,57 +143,170 @@
 
   <h2>Test de React</h2>
   <div id="reactTest">
-    <button onclick="testReactLoading()">Tester le chargement de React</button>
+    <button onclick="testReactLoading()" id="testReactInlineBtn">Tester le chargement de React</button>
     <pre id="reactTestResults">Cliquez pour tester...</pre>
   </div>
 
   <script>
-    // Fonction de diagnostic principal
-    function runDiagnostics() {
-      document.getElementById('environment').textContent = 'Chargement des informations...';
-      
-      const env = {
-        userAgent: navigator.userAgent,
-        language: navigator.language,
-        url: window.location.href,
-        hostname: window.location.hostname,
-        protocol: window.location.protocol,
-        pathname: window.location.pathname,
-        online: navigator.onLine,
-        dateTime: new Date().toISOString(),
-        viewport: `${window.innerWidth}x${window.innerHeight}`,
-        devicePixelRatio: window.devicePixelRatio,
-        cookies: navigator.cookieEnabled,
-        baseURI: document.baseURI,
-        // Détecter les scripts chargés
-        scripts: Array.from(document.scripts).map(s => ({
-          src: s.src,
-          type: s.type
-        })),
-        // Analyser les liens CSS
-        stylesheets: Array.from(document.styleSheets).map((sheet, index) => {
-          try {
-            return { 
-              href: sheet.href,
-              disabled: sheet.disabled
-            };
-          } catch (e) {
-            return { index, error: e.message };
-          }
-        })
-      };
-      
-      document.getElementById('environment').textContent = JSON.stringify(env, null, 2);
-      loadApplicationLogs();
-      displayLocalStorageState();
+    // Fonction de sécurité pour la navigation
+    function navigateTo(url) {
+      try {
+        window.location.href = url;
+      } catch (e) {
+        console.error("Erreur de navigation:", e);
+        alert("Erreur de navigation: " + e.message);
+      }
     }
     
-    // Afficher les logs stockés dans localStorage
+    // Fonction pour désactiver/activer un bouton pendant l'exécution
+    function toggleButtonState(buttonId, isLoading) {
+      const button = document.getElementById(buttonId);
+      if (!button) return;
+      
+      button.disabled = isLoading;
+      if (isLoading) {
+        button.dataset.originalText = button.textContent;
+        button.textContent = "Chargement...";
+        button.classList.add("loading");
+      } else {
+        if (button.dataset.originalText) {
+          button.textContent = button.dataset.originalText;
+        }
+        button.classList.remove("loading");
+      }
+    }
+    
+    // Fonction de diagnostic principal - améliorée avec gestion des erreurs
+    function runDiagnostics() {
+      toggleButtonState("runDiagnosticsBtn", true);
+      
+      try {
+        document.getElementById('environment').textContent = 'Chargement des informations...';
+        
+        const env = {
+          userAgent: navigator.userAgent,
+          language: navigator.language,
+          url: window.location.href,
+          hostname: window.location.hostname,
+          protocol: window.location.protocol,
+          pathname: window.location.pathname,
+          online: navigator.onLine,
+          dateTime: new Date().toISOString(),
+          viewport: `${window.innerWidth}x${window.innerHeight}`,
+          devicePixelRatio: window.devicePixelRatio,
+          cookies: navigator.cookieEnabled,
+          baseURI: document.baseURI,
+          // Détecter les scripts chargés
+          scripts: Array.from(document.scripts).map(s => ({
+            src: s.src || "[script inline]",
+            type: s.type || "text/javascript"
+          })),
+          // Analyser les liens CSS
+          stylesheets: Array.from(document.styleSheets).map((sheet, index) => {
+            try {
+              return { 
+                href: sheet.href,
+                disabled: sheet.disabled
+              };
+            } catch (e) {
+              return { index, error: e.message };
+            }
+          })
+        };
+        
+        document.getElementById('environment').textContent = JSON.stringify(env, null, 2);
+        loadApplicationLogs();
+        displayLocalStorageState();
+        
+        // Test React automatiquement
+        testReactLoading();
+        
+      } catch (e) {
+        console.error("Erreur lors du diagnostic:", e);
+        document.getElementById('environment').textContent = "Erreur lors du diagnostic: " + e.message;
+      } finally {
+        toggleButtonState("runDiagnosticsBtn", false);
+      }
+    }
+    
+    // Test du chargement de React - amélioré
+    function testReactLoading() {
+      toggleButtonState("testReactBtn", true);
+      toggleButtonState("testReactInlineBtn", true);
+      
+      const results = document.getElementById('reactTestResults');
+      results.textContent = 'Test de chargement de React en cours...';
+      
+      try {
+        // Test direct - vérifie si React est globalement disponible
+        if (window.React) {
+          results.innerHTML = `<span class="success">✅ React est chargé (version ${React.version})</span>`;
+          
+          // Tester le rendu React basique
+          const testDiv = document.createElement('div');
+          testDiv.id = 'react-test-container';
+          document.body.appendChild(testDiv);
+          
+          try {
+            ReactDOM.render(
+              React.createElement('div', {}, 'Test de rendu React réussi!'),
+              testDiv
+            );
+            results.innerHTML += `<br><span class="success">✅ Test de rendu React réussi!</span>`;
+          } catch (renderError) {
+            results.innerHTML += `<br><span class="error">❌ Erreur lors du rendu React: ${renderError.message}</span>`;
+          }
+        } else {
+          results.innerHTML = `<span class="error">❌ React n'est pas chargé dans la fenêtre globale</span>`;
+          
+          // Essayer de charger React dynamiquement
+          results.innerHTML += `<br>Tentative de chargement dynamique de React...`;
+          
+          const reactScript = document.createElement('script');
+          reactScript.src = 'https://unpkg.com/react@18/umd/react.production.min.js';
+          reactScript.crossOrigin = "anonymous";
+          
+          reactScript.onload = function() {
+            const reactDomScript = document.createElement('script');
+            reactDomScript.src = 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js';
+            reactDomScript.crossOrigin = "anonymous";
+            
+            reactDomScript.onload = function() {
+              results.innerHTML += `<br><span class="success">✅ React chargé dynamiquement (version ${window.React.version})</span>`;
+              toggleButtonState("testReactBtn", false);
+              toggleButtonState("testReactInlineBtn", false);
+            };
+            
+            reactDomScript.onerror = function(error) {
+              results.innerHTML += `<br><span class="error">❌ Échec du chargement de ReactDOM: ${error}</span>`;
+              toggleButtonState("testReactBtn", false);
+              toggleButtonState("testReactInlineBtn", false);
+            };
+            
+            document.head.appendChild(reactDomScript);
+          };
+          
+          reactScript.onerror = function(error) {
+            results.innerHTML += `<br><span class="error">❌ Échec du chargement de React: ${error}</span>`;
+            toggleButtonState("testReactBtn", false);
+            toggleButtonState("testReactInlineBtn", false);
+          };
+          
+          document.head.appendChild(reactScript);
+        }
+      } catch (e) {
+        results.textContent = `❌ Erreur lors du test de React: ${e.message}`;
+        toggleButtonState("testReactBtn", false);
+        toggleButtonState("testReactInlineBtn", false);
+      }
+    }
+    
+    // Afficher les logs stockés dans localStorage - avec gestion d'erreurs
     function loadApplicationLogs() {
       const logContainer = document.getElementById('appLogs');
       try {
         const logs = JSON.parse(localStorage.getItem('netlify_diagnostic_logs') || '[]');
-        if (logs.length === 0) {
+        if (!logs || logs.length === 0) {
           logContainer.textContent = 'Aucun log disponible. Lancez l\'application principale puis revenez à cette page.';
         } else {
           logContainer.textContent = logs.join('\n');
@@ -186,9 +316,15 @@
       }
     }
     
-    // Afficher le contenu du localStorage
+    // Afficher le contenu du localStorage - avec gestion d'erreurs améliorée
     function displayLocalStorageState() {
       const container = document.getElementById('localStorage');
+      
+      if (!container) {
+        console.error("Élément #localStorage non trouvé");
+        return;
+      }
+      
       const table = document.createElement('table');
       const thead = document.createElement('thead');
       thead.innerHTML = '<tr><th>Clé</th><th>Valeur</th></tr>';
@@ -198,6 +334,10 @@
       let isEmpty = true;
       
       try {
+        if (!localStorage) {
+          throw new Error("localStorage n'est pas disponible");
+        }
+        
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (!key) continue;
@@ -238,8 +378,10 @@
       container.appendChild(table);
     }
     
-    // Tester les chemins relatifs
+    // Tester les chemins relatifs - avec gestion d'erreurs améliorée
     function testRelativePaths() {
+      toggleButtonState("testPathsBtn", true);
+      
       const container = document.getElementById('pathTests');
       container.textContent = 'Test des chemins relatifs en cours...';
       
@@ -252,77 +394,81 @@
       const cssTestRelative = document.createElement('link');
       cssTestRelative.rel = 'stylesheet';
       cssTestRelative.href = './assets/index.css';
-      cssTestRelative.onload = () => tests.push('✅ CSS chargé avec succès (chemin relatif ./assets/index.css)');
-      cssTestRelative.onerror = () => tests.push('❌ Erreur de chargement CSS (chemin relatif ./assets/index.css)');
+      cssTestRelative.onload = () => {
+        tests.push('✅ CSS chargé avec succès (chemin relatif ./assets/index.css)');
+        container.textContent = tests.join('\n');
+      };
+      cssTestRelative.onerror = () => {
+        tests.push('❌ Erreur de chargement CSS (chemin relatif ./assets/index.css)');
+        container.textContent = tests.join('\n');
+      };
       document.head.appendChild(cssTestRelative);
       
       // Tester le chargement d'une image
       const imgTest = new Image();
-      imgTest.src = './assets/logo.png';
-      imgTest.onload = () => tests.push('✅ Image chargée avec succès (chemin relatif ./assets/logo.png)');
+      imgTest.onload = () => {
+        tests.push('✅ Image chargée avec succès (chemin relatif ./filechat-animation.gif)');
+        container.textContent = tests.join('\n');
+        toggleButtonState("testPathsBtn", false);
+      };
       imgTest.onerror = () => {
-        tests.push('❌ Erreur de chargement d\'image (chemin relatif ./assets/logo.png)');
+        tests.push('❌ Erreur de chargement d\'image (chemin relatif ./filechat-animation.gif)');
         
         // Essayer avec un autre chemin si échec
         const imgTest2 = new Image();
-        imgTest2.src = './filechat-animation.gif';
-        imgTest2.onload = () => tests.push('✅ Image GIF chargée avec succès (chemin relatif ./filechat-animation.gif)');
-        imgTest2.onerror = () => tests.push('❌ Erreur de chargement d\'image GIF (chemin relatif ./filechat-animation.gif)');
+        imgTest2.onload = () => {
+          tests.push('✅ Image PNG chargée avec succès (chemin absolu /assets/custom-placeholder.svg)');
+          container.textContent = tests.join('\n');
+          toggleButtonState("testPathsBtn", false);
+        };
+        imgTest2.onerror = () => {
+          tests.push('❌ Erreur de chargement d\'image SVG (chemin absolu /assets/custom-placeholder.svg)');
+          container.textContent = tests.join('\n');
+          toggleButtonState("testPathsBtn", false);
+        };
+        imgTest2.src = '/assets/custom-placeholder.svg';
       };
+      imgTest.src = './filechat-animation.gif';
       
-      // Tester le chargement d'un script
-      const scriptTest = document.createElement('script');
-      scriptTest.src = './assets/index.js';
-      scriptTest.onload = () => tests.push('✅ Script chargé avec succès (chemin relatif ./assets/index.js)');
-      scriptTest.onerror = () => {
-        tests.push('❌ Erreur de chargement de script (chemin relatif ./assets/index.js)');
-        
-        // Essayer avec un autre chemin
-        const scriptTest2 = document.createElement('script');
-        scriptTest2.src = './index.js';
-        scriptTest2.onload = () => tests.push('✅ Script chargé avec succès (chemin relatif ./index.js)');
-        scriptTest2.onerror = () => tests.push('❌ Erreur de chargement de script (chemin relatif ./index.js)');
-        document.head.appendChild(scriptTest2);
-      };
-      document.head.appendChild(scriptTest);
-      
-      // Afficher les résultats après un délai
+      // Afficher les résultats initiaux
       setTimeout(() => {
-        // Tester des chemins absolus
-        tests.push('Test des chemins absolus:');
-        
-        const cssTestAbsolute = document.createElement('link');
-        cssTestAbsolute.rel = 'stylesheet';
-        cssTestAbsolute.href = '/assets/index.css';
-        cssTestAbsolute.onload = () => {
-          tests.push('✅ CSS chargé avec succès (chemin absolu /assets/index.css)');
-          container.textContent = tests.join('\n');
-        };
-        cssTestAbsolute.onerror = () => {
-          tests.push('❌ Erreur de chargement CSS (chemin absolu /assets/index.css)');
-          container.textContent = tests.join('\n');
-        };
-        document.head.appendChild(cssTestAbsolute);
-        
         container.textContent = tests.join('\n');
-      }, 1000);
+        if (tests.length <= 1) {
+          tests.push('❓ Aucun résultat retourné pour les tests de chemins, vérifiez la console pour plus de détails');
+          container.textContent = tests.join('\n');
+          toggleButtonState("testPathsBtn", false);
+        }
+      }, 3000);
     }
     
-    // Tester la connectivité API
+    // Tester la connectivité API - avec gestion d'erreurs améliorée
     function testAPIConnectivity() {
-      const testResults = document.createElement('pre');
+      toggleButtonState("testAPIBtn", true);
+      
+      const testResultsId = 'apiTestResults';
+      let testResults = document.getElementById(testResultsId);
+      
+      if (!testResults) {
+        testResults = document.createElement('pre');
+        testResults.id = testResultsId;
+        document.body.appendChild(testResults);
+      }
+      
       testResults.textContent = 'Test de connectivité API en cours...';
-      document.body.appendChild(testResults);
       
       // Tester les points d'API de base
       const endpoints = [
         '/.netlify/functions/status',
-        '/api/status'
+        '/api/status',
+        '/'
       ];
       
       const results = [];
+      let completedTests = 0;
       
-      Promise.all(endpoints.map(url => 
+      endpoints.forEach(url => {
+        results.push(`Test de ${url}...`);
+        
         fetch(url)
           .then(response => {
             results.push(`✅ ${url}: ${response.status} ${response.statusText}`);
@@ -331,53 +477,36 @@
           .catch(error => {
             results.push(`❌ ${url}: ${error.message}`);
           })
-      )).finally(() => {
-        testResults.textContent = results.join('\n') || 'Aucun résultat disponible';
-      });
-    }
-    
-    // Test de chargement de React
-    function testReactLoading() {
-      const results = document.getElementById('reactTestResults');
-      results.textContent = 'Test de chargement de React en cours...';
-      
-      try {
-        // Test simple pour vérifier si React est chargé
-        const script = document.createElement('script');
-        script.textContent = `
-          try {
-            if (window.React) {
-              document.getElementById('reactTestResults').textContent = '✅ React est chargé (version ' + React.version + ')';
-            } else {
-              document.getElementById('reactTestResults').textContent = '❌ React n\\'est pas chargé dans la fenêtre globale';
-              
-              // Essayer de charger React depuis un CDN et tester
-              const reactScript = document.createElement('script');
-              reactScript.src = 'https://unpkg.com/react@18/umd/react.production.min.js';
-              reactScript.onload = function() {
-                document.getElementById('reactTestResults').textContent += '\\n✅ React chargé depuis CDN (version ' + React.version + ')';
-              };
-              reactScript.onerror = function() {
-                document.getElementById('reactTestResults').textContent += '\\n❌ Impossible de charger React depuis le CDN';
-              };
-              document.head.appendChild(reactScript);
+          .finally(() => {
+            completedTests++;
+            testResults.textContent = results.join('\n');
+            
+            if (completedTests === endpoints.length) {
+              toggleButtonState("testAPIBtn", false);
             }
-          } catch (e) {
-            document.getElementById('reactTestResults').textContent = '❌ Erreur lors du test de React: ' + e.message;
-          }
-        `;
-        document.head.appendChild(script);
-      } catch (e) {
-        results.textContent = `❌ Erreur lors du test de React: ${e.message}`;
-      }
+          });
+      });
+      
+      // Garantir que le bouton sera réactivé après un délai raisonnable
+      setTimeout(() => {
+        toggleButtonState("testAPIBtn", false);
+      }, 5000);
     }
     
-    // Tester le chargement de scripts
+    // Tester le chargement de scripts - avec gestion d'erreurs améliorée
     function testScriptLoading() {
-      const testResults = document.createElement('pre');
+      toggleButtonState("testScriptsBtn", true);
+      
+      const testResultsId = 'scriptTestResults';
+      let testResults = document.getElementById(testResultsId);
+      
+      if (!testResults) {
+        testResults = document.createElement('pre');
+        testResults.id = testResultsId;
+        document.body.appendChild(testResults);
+      }
+      
       testResults.textContent = 'Test de chargement de scripts en cours...';
-      testResults.id = 'scriptTestResults';
-      document.body.appendChild(testResults);
       
       // Lister tous les scripts actuellement chargés
       const loadedScripts = Array.from(document.scripts).map(s => s.src || '[inline script]');
@@ -393,26 +522,45 @@
         } else {
           testResults.textContent += '\n❌ Bibliothèque non exposée dans window';
         }
+        toggleButtonState("testScriptsBtn", false);
       };
       testScript.onerror = () => {
         testResults.textContent += '\n\n❌ Erreur de chargement de script externe (lodash)';
+        toggleButtonState("testScriptsBtn", false);
       };
       document.head.appendChild(testScript);
+      
+      // Garantir que le bouton sera réactivé après un délai raisonnable
+      setTimeout(() => {
+        toggleButtonState("testScriptsBtn", false);
+      }, 5000);
     }
     
-    // Effacer les logs
+    // Effacer les logs - avec confirmation
     function clearLogs() {
       try {
-        localStorage.removeItem('netlify_diagnostic_logs');
-        document.getElementById('appLogs').textContent = 'Logs effacés';
-        alert('Logs effacés avec succès');
+        if (confirm("Êtes-vous sûr de vouloir effacer tous les logs?")) {
+          localStorage.removeItem('netlify_diagnostic_logs');
+          localStorage.removeItem('filechat_startup_log');
+          localStorage.removeItem('filechat_image_logs');
+          document.getElementById('appLogs').textContent = 'Logs effacés';
+          displayLocalStorageState(); // Rafraîchir l'affichage
+          alert('Logs effacés avec succès');
+        }
       } catch (e) {
         alert(`Erreur lors de l'effacement des logs: ${e.message}`);
       }
     }
     
-    // Exécuter le diagnostic au chargement
-    document.addEventListener('DOMContentLoaded', runDiagnostics);
+    // Initialisation au chargement, avec gestion des erreurs
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        runDiagnostics();
+      } catch (e) {
+        console.error("Erreur lors de l'initialisation:", e);
+        document.getElementById('environment').textContent = "Erreur lors de l'initialisation: " + e.message;
+      }
+    });
   </script>
 </body>
 </html>
