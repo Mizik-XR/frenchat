@@ -8,14 +8,6 @@
     <title>Frenchat - Votre assistant d'intelligence documentaire</title>
     <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
     
-    <!-- Script Sentry avec la nouvelle URL - DÉSACTIVÉ TEMPORAIREMENT -->
-    <!-- 
-    <script
-      src="https://js.sentry-cdn.com/7ec84a703e3dfd1a2fa5bed2ab4d00d4.min.js"
-      crossorigin="anonymous"
-    ></script>
-    -->
-    
     <!-- Style de base pour l'écran de chargement initial -->
     <style>
       #loading-screen {
@@ -79,15 +71,41 @@
       }
     </style>
     
-    <!-- Script de gestion d'erreur et de récupération -->
+    <!-- Script de gestion d'erreur et de récupération amélioré -->
     <script>
-      // Fonction pour rediriger vers la page d'accueil avec des paramètres forcés de mode cloud
+      // Définir les fonctions Sentry minimales pour éviter les erreurs
+      window.Sentry = window.Sentry || {
+        init: function() { return false; },
+        captureException: function() { return false; },
+        captureMessage: function() { return false; }
+      };
+      
+      // Fonction pour éviter les erreurs de fonctions React manquantes
+      window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || {};
+      window.__REACT_DEVTOOLS_GLOBAL_HOOK__.scheduleHookupForNewNodes = function() {};
+      window.__REACT_DEVTOOLS_GLOBAL_HOOK__.scheduleRefresh = function() {};
+      window.__REACT_DEVTOOLS_GLOBAL_HOOK__.scheduleUpdate = function() {};
+      
+      // Shim pour unstable_scheduleCallback
+      window.unstable_scheduleCallback = window.unstable_scheduleCallback || function() { 
+        console.warn('Appel à unstable_scheduleCallback intercepté');
+        return null;
+      };
+      
+      // Fonction pour rediriger vers la page d'accueil en mode cloud
       function forceHomepageInCloudMode() {
         window.location.href = '/?forceCloud=true&mode=cloud&client=true';
       }
       
       // Variable pour stocker les erreurs
       window.sentryErrors = [];
+      
+      // Gestionnaire d'erreur pour les erreurs React
+      window.handleReactError = function(error) {
+        console.warn('Erreur React détectée:', error);
+        showRecoveryOptions();
+        return false;
+      };
       
       // Détection et récupération en cas d'erreur de chargement
       window.addEventListener('error', function(event) {
@@ -117,7 +135,12 @@
           return;
         }
         
-        // Afficher le bouton de récupération après 5 secondes sans chargement
+        // Afficher les options de récupération
+        showRecoveryOptions();
+      }, true);
+      
+      // Afficher les options de récupération
+      function showRecoveryOptions() {
         setTimeout(function() {
           var loadingEl = document.getElementById('loading-screen');
           var retryBtn = document.querySelector('.retry-btn');
@@ -127,27 +150,18 @@
             errorMsg.style.display = 'block';
             retryBtn.style.display = 'inline-block';
           }
-        }, 5000);
-      }, true);
+        }, 500);
+      }
 
       // Vérifier si l'application se charge correctement
       setTimeout(function() {
         var root = document.getElementById('root');
         if (root && root.children.length <= 1) {
           console.warn('Application non chargée après 8 secondes, affichage des options de récupération...');
-          var errorMsg = document.querySelector('.error-message');
-          var retryBtn = document.querySelector('.retry-btn');
-          
-          if (errorMsg && retryBtn) {
-            errorMsg.style.display = 'block';
-            retryBtn.style.display = 'inline-block';
-          }
+          showRecoveryOptions();
         }
       }, 8000);
     </script>
-    
-    <!-- Script GPT Engineer -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
   </head>
   <body>
     <!-- Message de secours si le JavaScript est désactivé -->
@@ -170,10 +184,13 @@
           <div class="error-message">Le chargement semble prendre plus de temps que prévu.</div>
           <button class="retry-btn" onclick="window.location.reload()">Rafraîchir la page</button>
           <button class="retry-btn" onclick="forceHomepageInCloudMode()" style="margin-left: 8px; background-color: #6366f1;">Mode cloud</button>
-          <button class="retry-btn" onclick="window.initSentry && window.initSentry(); alert('Sentry réinitialisé');" style="margin-left: 8px; background-color: #10b981;">Réinitialiser Sentry</button>
+          <button class="retry-btn" onclick="window.location.href='/diagnostic.html'" style="margin-left: 8px; background-color: #10b981;">Diagnostic</button>
         </div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Ajout du script Lovable après le chargement principal -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
   </body>
 </html>

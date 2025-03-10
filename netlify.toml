@@ -43,7 +43,7 @@
   included_files = ["**/*.model"] 
   external_node_modules = ["@supabase/supabase-js"] 
  
-# En-têtes pour tous les fichiers 
+# En-têtes pour tous les fichiers - CSP plus permissive
 [[headers]] 
   for = "/*" 
   [headers.values] 
@@ -52,10 +52,9 @@
     X-Content-Type-Options = "nosniff" 
     Referrer-Policy = "strict-origin-when-cross-origin" 
     Permissions-Policy = "camera=(), microphone=(), geolocation=()" 
-    # CSP plus permissive pour le débogage initial
-    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* ws://localhost:* https://* wss://* https://*.sentry.io https://*.ingest.sentry.io; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co https://*.sentry-cdn.com https://*.sentry.io https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: * 'unsafe-inline'; worker-src 'self' blob:; font-src 'self' https://fonts.gstatic.com https: data:;" 
+    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.supabase.co http://localhost:* ws://localhost:* https://* wss://* https://*.sentry.io https://*.ingest.sentry.io; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdn.gpteng.co https://*.sentry-cdn.com https://*.sentry.io; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; worker-src 'self' blob:; font-src 'self' https://fonts.gstatic.com https: data:;"
 
-# En-têtes spécifiques pour les pages de diagnostic
+# En-têtes spécifiques pour les pages de diagnostic - CSP très permissive
 [[headers]]
   for = "/diagnostic.html"
   [headers.values]
