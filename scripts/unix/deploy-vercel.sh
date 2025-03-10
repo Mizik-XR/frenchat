@@ -10,12 +10,39 @@ echo
 if ! command -v vercel &> /dev/null; then
     echo "[INFO] Vercel CLI n'est pas installé, installation en cours..."
     npm install -g vercel
-    if [ $? -ne 0 ]; then
-        echo "[ERREUR] L'installation de Vercel CLI a échoué."
-        echo "Pour l'installer manuellement, exécutez: npm install -g vercel"
-        exit 1
+    
+    # Vérifier si l'installation a réussi
+    if ! command -v vercel &> /dev/null; then
+        echo "[ERREUR] L'installation automatique a échoué, tentative avec une autre méthode..."
+        # Essayer avec l'option --force
+        npm install -g vercel --force
+        
+        # Vérifier à nouveau
+        if ! command -v vercel &> /dev/null; then
+            echo "[ERREUR] Installation de Vercel CLI impossible."
+            echo "Essayez manuellement avec: 'npm install -g vercel' ou 'yarn global add vercel'"
+            echo "Ou utilisez npx: utilisez 'npx vercel' à la place de 'vercel' dans les commandes"
+            
+            # Demander à l'utilisateur s'il veut continuer avec npx
+            read -p "Voulez-vous continuer avec npx vercel? (o/n): " use_npx
+            if [ "$use_npx" != "o" ] && [ "$use_npx" != "O" ]; then
+                echo "Déploiement annulé."
+                exit 1
+            fi
+            
+            # Si l'utilisateur veut continuer, utiliser npx
+            VERCEL_CMD="npx vercel"
+        else
+            echo "[OK] Vercel CLI installé avec succès (méthode alternative)."
+            VERCEL_CMD="vercel"
+        fi
+    else
+        echo "[OK] Vercel CLI installé avec succès."
+        VERCEL_CMD="vercel"
     fi
-    echo "[OK] Vercel CLI installé avec succès."
+else
+    echo "[OK] Vercel CLI déjà installé."
+    VERCEL_CMD="vercel"
 fi
 
 # Configuration pour le déploiement
@@ -51,10 +78,10 @@ fi
 
 # Vérification de la connexion à Vercel
 echo "[ÉTAPE 4/5] Vérification de la connexion à Vercel..."
-vercel whoami &> /dev/null
+$VERCEL_CMD whoami &> /dev/null
 if [ $? -ne 0 ]; then
     echo "[INFO] Vous n'êtes pas connecté à Vercel. Connexion en cours..."
-    vercel login
+    $VERCEL_CMD login
     if [ $? -ne 0 ]; then
         echo "[ERREUR] La connexion à Vercel a échoué."
         exit 1
@@ -70,10 +97,10 @@ read -p "Votre choix (1/2): " choice
 
 if [ "$choice" = "1" ]; then
     echo "[INFO] Déploiement d'une prévisualisation..."
-    vercel
+    $VERCEL_CMD
 else
     echo "[INFO] Déploiement en production..."
-    vercel --prod
+    $VERCEL_CMD --prod
 fi
 
 if [ $? -ne 0 ]; then

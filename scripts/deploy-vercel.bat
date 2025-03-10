@@ -30,17 +30,42 @@ where vercel >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo [INFO] Vercel CLI n'est pas configuré, installation en cours...
     call npm install -g vercel
+    
+    REM Vérifier si l'installation a réussi
+    where vercel >nul 2>&1
     if %ERRORLEVEL% NEQ 0 (
-        echo [ERREUR] L'installation de la CLI Vercel a échoué.
-        echo.
-        echo Pour l'installer manuellement, exécutez:
-        echo npm install -g vercel
-        echo.
-        echo Appuyez sur une touche pour quitter...
-        pause >nul
-        exit /b 1
+        echo [ATTENTION] L'installation automatique a échoué, tentative avec --force...
+        call npm install -g vercel --force
+        
+        REM Vérifier à nouveau
+        where vercel >nul 2>&1
+        if %ERRORLEVEL% NEQ 0 (
+            echo [ERREUR] Installation de Vercel CLI impossible.
+            echo.
+            echo Vous pouvez essayer manuellement avec:
+            echo npm install -g vercel
+            echo ou
+            echo yarn global add vercel
+            echo.
+            
+            echo Voulez-vous continuer avec npx vercel ? (O/N)
+            choice /C ON /N /M "Choix: "
+            if %ERRORLEVEL% NEQ 1 (
+                echo Déploiement annulé.
+                exit /b 1
+            )
+            set "VERCEL_CMD=npx vercel"
+        ) else (
+            echo [OK] Vercel CLI installé avec succès (méthode alternative).
+            set "VERCEL_CMD=vercel"
+        )
+    ) else (
+        echo [OK] CLI Vercel installée avec succès.
+        set "VERCEL_CMD=vercel"
     )
-    echo [OK] CLI Vercel installée avec succès.
+) else (
+    echo [OK] CLI Vercel déjà installée.
+    set "VERCEL_CMD=vercel"
 )
 
 REM Configuration pour le déploiement
@@ -80,11 +105,11 @@ if %ERRORLEVEL% NEQ 0 (
 
 REM Vérifier la connexion à Vercel
 echo [ÉTAPE 4/5] Vérification de la connexion à Vercel...
-vercel whoami >nul 2>nul
+%VERCEL_CMD% whoami >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo [INFO] Vous n'êtes pas connecté à Vercel.
     echo [INFO] Connexion à Vercel...
-    vercel login
+    %VERCEL_CMD% login
     if %ERRORLEVEL% NEQ 0 (
         echo [ERREUR] Échec de la connexion à Vercel.
         echo.
@@ -104,10 +129,10 @@ choice /C 12 /N /M "Choisissez une option (1 ou 2): "
 
 if %ERRORLEVEL% EQU 1 (
     echo [INFO] Déploiement d'une prévisualisation...
-    vercel
+    %VERCEL_CMD%
 ) else (
     echo [INFO] Déploiement en production...
-    vercel --prod
+    %VERCEL_CMD% --prod
 )
 
 if %ERRORLEVEL% NEQ 0 (
