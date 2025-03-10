@@ -55,6 +55,33 @@ VITE_ALLOW_LOCAL_AI=false
 VITE_SKIP_PYTHON_INSTALLATION=true
 ```
 
+### Optimisation des performances
+
+#### Configuration du CPU et de la mémoire
+
+Dans l'interface Vercel, sous "Settings" > "Functions":
+
+1. **Function CPU**: Sélectionnez le niveau de CPU approprié
+   - **Standard** (1 vCPU, 1.7 GB Memory): Recommandé pour la plupart des cas d'utilisation
+   - **Performance** (1.7 vCPUs, 3 GB Memory): Pour les applications nécessitant plus de puissance
+
+2. **Function Regions**: Sélectionnez les régions proches de vos utilisateurs
+
+3. **Function Concurrency**: Ajustez selon les besoins de votre application
+
+Ces paramètres peuvent également être configurés via le fichier `vercel.json`:
+
+```json
+{
+  "functions": {
+    "api/**/*": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
+}
+```
+
 ### Configuration optionnelle
 
 - **Domaine personnalisé**: Configurez un domaine personnalisé dans les paramètres du projet Vercel

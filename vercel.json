@@ -7,10 +7,17 @@
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
+  "functions": {
+    "api/**/*": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
   "env": {
     "VITE_ENVIRONMENT": "production",
     "VITE_CLOUD_MODE": "true",
     "VITE_ALLOW_LOCAL_AI": "false",
-    "VITE_SKIP_PYTHON_INSTALLATION": "true"
+    "VITE_SKIP_PYTHON_INSTALLATION": "true",
+    "VITE_SITE_URL": "${VERCEL_URL}"
   }
 }
