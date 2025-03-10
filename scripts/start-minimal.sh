@@ -11,4 +11,3 @@ export VITE_DISABLE_SENTRY=true
 
 echo "Démarrage du serveur de développement..."
 npm run dev -- --config vite.minimal.config.ts
-

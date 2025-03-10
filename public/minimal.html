@@ -7,6 +7,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Filechat - Version minimale</title>
     
+    <!-- Polyfills essentiels chargés en premier -->
+    <script>
+      // Polyfill pour les fonctions React
+      window.unstable_scheduleCallback = window.unstable_scheduleCallback || function() {
+        console.log('Polyfill: unstable_scheduleCallback appelé');
+        return null;
+      };
+      window.unstable_cancelCallback = window.unstable_cancelCallback || function() {
+        console.log('Polyfill: unstable_cancelCallback appelé');
+        return null;
+      };
+      
+      // Éviter les erreurs avec Sentry
+      window.Sentry = window.Sentry || {
+        init: function() { return false; },
+        captureException: function() { return false; }
+      };
+      
+      console.log('Polyfills React chargés depuis minimal.html');
+    </script>
+    
     <!-- Style de base pour l'écran de chargement initial -->
     <style>
       body {

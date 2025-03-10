@@ -77,7 +77,7 @@ if exist "dist\_headers" (
     echo /diagnostic.html
     echo   Content-Security-Policy: default-src 'self'; connect-src 'self' https://* http://*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https: data:;
     echo.
-    echo /image-diagnostic.html
+    echo /minimal.html
     echo   Content-Security-Policy: default-src 'self'; connect-src 'self' https://* http://*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https: data:;
     ) > dist\_headers
     
@@ -108,8 +108,8 @@ if exist "dist\_redirects" (
     echo # Redirection vers la page de diagnostic
     echo /diagnostic    /diagnostic.html   200
     echo.
-    echo # Redirection pour la page de diagnostic d'images
-    echo /image-diagnostic    /image-diagnostic.html   200
+    echo # Redirection vers la page minimale
+    echo /minimal    /minimal.html   200
     ) > dist\_redirects
     
     echo [OK] Fichier _redirects mis à jour.
@@ -123,8 +123,8 @@ if exist "dist\_redirects" (
     echo # Redirection vers la page de diagnostic
     echo /diagnostic    /diagnostic.html   200
     echo.
-    echo # Redirection pour la page de diagnostic d'images
-    echo /image-diagnostic    /image-diagnostic.html   200
+    echo # Redirection vers la page minimale
+    echo /minimal    /minimal.html   200
     ) > dist\_redirects
     
     echo [OK] Fichier _redirects créé.
@@ -138,7 +138,7 @@ echo.
 echo Actions à effectuer :
 echo 1. Redéployez le contenu du dossier dist sur Netlify
 echo 2. Accédez à votre site Netlify
-echo 3. Si la page blanche persiste, allez sur /diagnostic.html
+echo 3. Si la page blanche persiste, allez sur /minimal.html ou /diagnostic.html
 echo.
 echo Pour déployer à nouveau sur Netlify, utilisez la commande :
 echo npx netlify deploy --prod --dir=dist

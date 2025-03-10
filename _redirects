@@ -5,6 +5,9 @@
 # Redirection vers la page de diagnostic
 /diagnostic    /diagnostic.html   200
 
+# Redirection pour la page minimale
+/minimal    /minimal.html   200
+
 # Redirection pour la page de debug
 /debug    /debug.html   200
 
@@ -16,10 +19,10 @@
 
 # Pages statiques explicites
 /diagnostic.html     /diagnostic.html   200
+/minimal.html        /minimal.html      200
 /image-diagnostic.html    /image-diagnostic.html   200
 /debug.html     /debug.html   200
 /netlify-diagnostic.html    /netlify-diagnostic.html   200
 
 # API vers fonctions Netlify
 /api/*  /.netlify/functions/:splat  200
-

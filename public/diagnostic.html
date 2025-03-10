@@ -1,10 +1,35 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FileChat - Diagnostic Netlify</title>
+  <title>Diagnostic Filechat</title>
+  
+  <!-- Polyfills essentiels chargés en premier -->
+  <script>
+    // Polyfill pour les fonctions React
+    window.unstable_scheduleCallback = window.unstable_scheduleCallback || function() {
+      console.log('Polyfill: unstable_scheduleCallback appelé');
+      return null;
+    };
+    window.unstable_cancelCallback = window.unstable_cancelCallback || function() {
+      console.log('Polyfill: unstable_cancelCallback appelé');
+      return null;
+    };
+    
+    // Éviter les erreurs avec Sentry
+    window.Sentry = window.Sentry || {
+      init: function() { return false; },
+      captureException: function() { return false; }
+    };
+    
+    console.log('Polyfills React chargés depuis diagnostic.html');
+  </script>
+  
+  <!-- Charger React depuis CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -102,69 +127,9 @@
       display: none;
     }
   </style>
-  <!-- Script de secours pour détecter les problèmes CSP -->
-  <script>
-    // Fonction pour détecter les erreurs CSP
-    window.addEventListener('securitypolicyviolation', function(e) {
-      console.error('CSP violation detected:', e);
-      
-      // Afficher l'alerte CSP
-      setTimeout(function() {
-        var cspWarning = document.createElement('div');
-        cspWarning.className = 'csp-warning';
-        cspWarning.innerHTML = `<strong>Alerte de sécurité CSP:</strong> Le navigateur a bloqué le chargement de ressources en raison de la politique de sécurité.<br>
-        <strong>Directive:</strong> ${e.violatedDirective}<br>
-        <strong>Source bloquée:</strong> ${e.blockedURI}`;
-        
-        var heading = document.querySelector('h1');
-        if (heading && heading.parentNode) {
-          heading.parentNode.insertBefore(cspWarning, heading.nextSibling);
-        }
-        
-        // Afficher les solutions
-        var cspFix = document.createElement('div');
-        cspFix.className = 'csp-fix';
-        cspFix.innerHTML = `<strong>Solution:</strong> Ajoutez <code>${e.blockedURI}</code> à la directive <code>${e.violatedDirective}</code> dans vos en-têtes CSP.<br>
-        Vous pouvez également utiliser le <a href="#" onclick="applyCspFix(event)">correctif automatique temporaire</a> pour cette session.`;
-        
-        if (cspWarning.parentNode) {
-          cspWarning.parentNode.insertBefore(cspFix, cspWarning.nextSibling);
-        }
-        
-        cspWarning.style.display = 'block';
-        cspFix.style.display = 'block';
-      }, 500);
-    });
-    
-    // Fonction pour appliquer un correctif CSP temporaire (pour l'analyse uniquement)
-    window.applyCspFix = function(event) {
-      event.preventDefault();
-      
-      // Créer une balise meta pour remplacer la politique CSP pour cette session
-      var meta = document.createElement('meta');
-      meta.httpEquiv = 'Content-Security-Policy';
-      meta.content = "default-src 'self'; connect-src 'self' https://* http://*; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https: data:;";
-      document.head.appendChild(meta);
-      
-      // Afficher un message de succès
-      var cspFix = document.querySelector('.csp-fix');
-      if (cspFix) {
-        cspFix.innerHTML = '<strong>Correctif appliqué!</strong> Rafraîchissez la page pour voir les changements.';
-      }
-      
-      // Recharger automatiquement après 3 secondes
-      setTimeout(function() {
-        window.location.reload();
-      }, 3000);
-    };
-  </script>
-  
-  <!-- Plusieurs CDN alternatifs pour React, pour augmenter les chances de succès -->
-  <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
 </head>
 <body>
-  <h1>FileChat - Page de diagnostic Netlify</h1>
+  <h1>Diagnostic Filechat</h1>
   <p>Cette page recueille des informations sur le déploiement de l'application pour faciliter le débogage.</p>
   
   <div class="diagnostic-tools">
