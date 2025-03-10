@@ -32,4 +32,5 @@ const renderApp = () => {
   }
 };
 
+// Initialisation de l'application
 renderApp();
