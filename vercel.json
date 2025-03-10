@@ -4,6 +4,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "routes": [
+    { "src": "/assets/.*\\.(js|css|svg|png|jpg|jpeg|gif|ico)$", "headers": { "content-type": "application/javascript", "cache-control": "public, max-age=31536000, immutable" }, "continue": true },
+    { "src": "/(.*\\.(js|css|svg|png|jpg|jpeg|gif|ico))$", "headers": { "cache-control": "public, max-age=31536000, immutable" }, "dest": "/$1" },
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
@@ -19,5 +21,25 @@
     "VITE_ALLOW_LOCAL_AI": "false",
     "VITE_SKIP_PYTHON_INSTALLATION": "true",
     "VITE_SITE_URL": "${VERCEL_URL}"
-  }
+  },
+  "headers": [
+    {
+      "source": "/(.*)\\.js$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.css$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/css; charset=utf-8"
+        }
+      ]
+    }
+  ]
 }

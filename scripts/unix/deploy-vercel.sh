@@ -33,7 +33,7 @@ echo "[INFO] Installation des dépendances..."
 npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
 
 # Construction du projet
-echo "[ÉTAPE 2/3] Construction du projet..."
+echo "[ÉTAPE 2/5] Construction du projet..."
 export NODE_OPTIONS="--max-old-space-size=4096"
 npm run build
 if [ $? -ne 0 ]; then
@@ -42,8 +42,15 @@ if [ $? -ne 0 ]; then
 fi
 echo "[OK] Build terminé avec succès."
 
+# Configurer les headers Vercel pour les types MIME
+echo "[ÉTAPE 3/5] Configuration des headers pour types MIME..."
+node scripts/vercel-headers.js
+if [ $? -ne 0 ]; then
+    echo "[ATTENTION] La configuration des headers a échoué, mais le déploiement continue."
+fi
+
 # Vérification de la connexion à Vercel
-echo "[ÉTAPE 3/3] Vérification de la connexion à Vercel..."
+echo "[ÉTAPE 4/5] Vérification de la connexion à Vercel..."
 vercel whoami &> /dev/null
 if [ $? -ne 0 ]; then
     echo "[INFO] Vous n'êtes pas connecté à Vercel. Connexion en cours..."
@@ -56,7 +63,7 @@ fi
 echo "[OK] Connecté à Vercel."
 
 # Choix du type de déploiement
-echo "[INFO] Choisissez le type de déploiement:"
+echo "[ÉTAPE 5/5] Choisissez le type de déploiement:"
 echo "1. Déploiement de prévisualisation"
 echo "2. Déploiement en production"
 read -p "Votre choix (1/2): " choice

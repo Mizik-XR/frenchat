@@ -16,7 +16,9 @@ echo.
 echo Étapes:
 echo 1. Vérification de l'environnement
 echo 2. Préparation du build pour déploiement
-echo 3. Déploiement vers Vercel
+echo 3. Configuration des headers MIME
+echo 4. Connexion à Vercel
+echo 5. Déploiement vers Vercel
 echo.
 echo ===================================================
 echo.
@@ -56,7 +58,7 @@ echo [INFO] Installation des dépendances avec configuration pour Vercel...
 call npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
 
 REM Préparer le build
-echo [ÉTAPE 2/3] Préparation du build pour déploiement...
+echo [ÉTAPE 2/5] Préparation du build pour déploiement...
 set "NODE_OPTIONS=--max-old-space-size=4096"
 call npm run build
 if %ERRORLEVEL% NEQ 0 (
@@ -69,8 +71,15 @@ if %ERRORLEVEL% NEQ 0 (
 echo [OK] Build prêt pour déploiement.
 echo.
 
+REM Configurer les headers Vercel pour les types MIME
+echo [ÉTAPE 3/5] Configuration des headers pour types MIME...
+node scripts/vercel-headers.js
+if %ERRORLEVEL% NEQ 0 (
+    echo [ATTENTION] La configuration des headers a échoué, mais le déploiement continue.
+)
+
 REM Vérifier la connexion à Vercel
-echo [ÉTAPE 3/3] Vérification de la connexion à Vercel...
+echo [ÉTAPE 4/5] Vérification de la connexion à Vercel...
 vercel whoami >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo [INFO] Vous n'êtes pas connecté à Vercel.
@@ -88,7 +97,7 @@ echo [OK] Connecté à Vercel.
 echo.
 
 REM Déployer vers Vercel
-echo [INFO] Voulez-vous:
+echo [ÉTAPE 5/5] Voulez-vous:
 echo 1. Déployer une prévisualisation
 echo 2. Déployer en production
 choice /C 12 /N /M "Choisissez une option (1 ou 2): "
