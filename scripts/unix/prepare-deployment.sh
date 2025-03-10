@@ -2,91 +2,102 @@
 #!/bin/bash
 
 echo "==================================================="
-echo "    FILECHAT DEPLOYMENT PREPARATION"
+echo "    FILECHAT PRÉPARATION AU DÉPLOIEMENT"
 echo "==================================================="
 echo
-echo "This procedure will prepare the project for deployment:"
-echo " 1. Configuration files verification"
-echo " 2. Build optimization"
-echo " 3. Pre-deployment tests"
+echo "Cette procédure va préparer le projet pour le déploiement:"
+echo " 1. Vérification des fichiers de configuration"
+echo " 2. Optimisation du build"
+echo " 3. Tests pré-déploiement"
+echo " 4. Correction des problèmes de MIME types connus"
 echo
 echo "==================================================="
 echo
-read -p "Press Enter to continue..." -n1 -s
+read -p "Appuyez sur Entrée pour continuer..." -n1 -s
 echo
 
-# Clean unnecessary files
-echo "[STEP 1/4] Cleaning temporary files..."
+# Nettoyage des fichiers temporaires
+echo "[ÉTAPE 1/5] Nettoyage des fichiers temporaires..."
 if [ -d "dist" ]; then
     rm -rf dist
-    echo "[OK] Dist folder successfully deleted."
+    echo "[OK] Dossier dist supprimé avec succès."
 else
-    echo "[INFO] Dist folder does not exist, step skipped."
+    echo "[INFO] Le dossier dist n'existe pas, étape ignorée."
 fi
 echo
 
-# Configuration for deployment
+# Configuration pour le déploiement
 export NODE_ENV=production
 
-# Verify and prepare configuration files
-echo "[STEP 2/4] Checking configuration files..."
+# Vérification et préparation des fichiers de configuration
+echo "[ÉTAPE 2/5] Vérification des fichiers de configuration..."
 if [ ! -f "vercel.json" ]; then
-    echo "[ERROR] vercel.json file is missing."
-    echo "         Run the configuration generation script."
+    echo "[ERREUR] Le fichier vercel.json est manquant."
+    echo "         Exécutez le script de génération de configuration."
     echo
-    read -p "Press Enter to exit..." -n1 -s
+    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
     exit 1
 fi
 
-# Build optimization
-echo "[STEP 3/4] Optimizing and building the project..."
+# Optimisation et build
+echo "[ÉTAPE 3/5] Optimisation et build du projet..."
 export NODE_OPTIONS="--max-old-space-size=4096"
 
-# Optimized installation for deployment
-echo "[INFO] Installing dependencies with optimized configuration..."
+# Installation optimisée pour le déploiement
+echo "[INFO] Installation des dépendances avec configuration optimisée..."
 npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
 
 npm run build
 if [ $? -ne 0 ]; then
-    echo "[ERROR] Project build failed."
+    echo "[ERREUR] Échec du build du projet."
     echo
-    read -p "Press Enter to exit..." -n1 -s
+    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
     exit 1
 fi
-echo "[OK] Project built successfully."
+echo "[OK] Projet compilé avec succès."
 echo
 
-# Post-build verification
-echo "[STEP 4/4] Checking deployment files..."
+# Vérification post-build
+echo "[ÉTAPE 4/5] Vérification des fichiers de déploiement..."
 if [ ! -f "dist/index.html" ]; then
-    echo "[ERROR] dist/index.html file is missing."
+    echo "[ERREUR] Le fichier dist/index.html est manquant."
     echo
-    read -p "Press Enter to exit..." -n1 -s
+    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
     exit 1
 fi
 
-# Check for absolute paths in index.html
+# Vérification et correction des chemins absolus dans index.html
 if grep -q "href=\"/assets" "dist/index.html" || grep -q "src=\"/assets" "dist/index.html"; then
-    echo "[WARNING] Absolute paths detected in index.html, converting to relative paths..."
+    echo "[ATTENTION] Chemins absolus détectés dans index.html, conversion en chemins relatifs..."
     sed -i.bak 's|href="/assets|href="./assets|g' dist/index.html
     sed -i.bak 's|src="/assets|src="./assets|g' dist/index.html
     rm -f dist/index.html.bak
-    echo "[OK] Paths converted successfully."
+    echo "[OK] Chemins convertis avec succès."
+fi
+
+# Correction des problèmes de MIME types
+echo "[ÉTAPE 5/5] Correction des problèmes de MIME types pour Vercel..."
+node scripts/fix-vercel-mime-types.js
+if [ $? -ne 0 ]; then
+    echo "[ATTENTION] Des problèmes ont été rencontrés lors de la correction des MIME types."
+    echo "            Le déploiement peut continuer, mais des erreurs pourraient survenir."
+else
+    echo "[OK] Corrections des MIME types appliquées avec succès."
 fi
 
 echo
 echo "==================================================="
-echo "    DEPLOYMENT PREPARATION COMPLETED"
+echo "    PRÉPARATION AU DÉPLOIEMENT TERMINÉE"
 echo "==================================================="
 echo
-echo "Your project is ready to be deployed!"
+echo "Votre projet est prêt à être déployé !"
 echo
-echo "You can now:"
-echo " 1. Deploy to Vercel by connecting your GitHub repository"
-echo " 2. Deploy via Vercel CLI: vercel deploy"
-echo " 3. Use drag-and-drop of the 'dist' folder on the Vercel interface"
+echo "Vous pouvez maintenant :"
+echo " 1. Déployer sur Vercel en connectant votre dépôt GitHub"
+echo " 2. Déployer via la CLI Vercel : vercel deploy"
+echo " 3. Utiliser le glisser-déposer du dossier 'dist' sur l'interface Vercel"
 echo
-echo "Make sure to configure environment variables in the Vercel interface."
+echo "N'oubliez pas de configurer les variables d'environnement dans l'interface Vercel."
 echo
-read -p "Press Enter to continue..." -n1 -s
+read -p "Appuyez sur Entrée pour continuer..." -n1 -s
 exit 0

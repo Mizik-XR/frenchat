@@ -70,6 +70,25 @@ echo
 echo "[5] Vérification de la build..."
 if [ -f "dist/index.html" ]; then
     echo "[OK] Build existante détectée."
+    
+    # Vérification des types MIME
+    echo "[5.1] Analyse des risques de problèmes MIME sur Vercel..."
+    if grep -q "type=\"module\"" "dist/index.html"; then
+        echo "  [OK] Les attributs type=\"module\" sont présents dans les balises script."
+    else
+        echo "  [ATTENTION] Balises script sans attribut type=\"module\" détectées."
+        echo "              Utilisez le script de correction avant le déploiement."
+    fi
+    
+    if [ -f "vercel.json" ]; then
+        if grep -q "application/javascript" "vercel.json"; then
+            echo "  [OK] Configuration MIME pour JavaScript présente dans vercel.json."
+        else
+            echo "  [ATTENTION] Configuration MIME possiblement incomplète dans vercel.json."
+        fi
+    else
+        echo "  [ATTENTION] Fichier vercel.json manquant. Nécessaire pour un déploiement correct."
+    fi
 else
     echo "[INFO] Aucune build détectée."
     echo "       Exécutez 'npm run build' pour créer une build."
@@ -110,15 +129,13 @@ else
 fi
 echo
 
-echo "Recommandation:"
-if [ "$OLLAMA_RUNNING" -eq 1 ]; then
-    echo "- Utilisez './start-universal.sh' pour démarrer avec Ollama (mode hybride)"
-else
-    echo "- Utilisez './start-app-simplified.sh' pour le mode cloud uniquement"
-fi
+echo "Recommandation pour le déploiement:"
+echo "- Avant de déployer sur Vercel, exécutez: ./scripts/unix/prepare-deployment.sh"
+echo "- Cela corrigera automatiquement les problèmes de MIME types connus"
 echo
 
 echo "================================"
 echo
 echo "Appuyez sur Entrée pour quitter..."
 read
+

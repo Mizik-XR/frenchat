@@ -5,7 +5,7 @@
   "outputDirectory": "dist",
   "routes": [
     { 
-      "src": "/assets/(.*)\\.js$", 
+      "src": "/assets/(.*)\\.js", 
       "headers": { 
         "Content-Type": "application/javascript; charset=utf-8",
         "Cache-Control": "public, max-age=31536000, immutable" 
@@ -13,7 +13,7 @@
       "continue": true 
     },
     { 
-      "src": "/assets/(.*)\\.css$", 
+      "src": "/assets/(.*)\\.css", 
       "headers": { 
         "Content-Type": "text/css; charset=utf-8",
         "Cache-Control": "public, max-age=31536000, immutable" 
@@ -21,7 +21,23 @@
       "continue": true 
     },
     { 
-      "src": "/(.*)\\.(js|css|svg|png|jpg|jpeg|gif|ico)$", 
+      "src": "/(.*)\\.js", 
+      "headers": { 
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Cache-Control": "public, max-age=31536000, immutable" 
+      }, 
+      "dest": "/$1.js" 
+    },
+    { 
+      "src": "/(.*)\\.css", 
+      "headers": { 
+        "Content-Type": "text/css; charset=utf-8",
+        "Cache-Control": "public, max-age=31536000, immutable" 
+      }, 
+      "dest": "/$1.css" 
+    },
+    { 
+      "src": "/(.*)\\.(svg|png|jpg|jpeg|gif|ico)$", 
       "headers": { 
         "Cache-Control": "public, max-age=31536000, immutable" 
       }, 
@@ -36,14 +52,16 @@
       "maxDuration": 10
     }
   },
-  "env": {
-    "VITE_ENVIRONMENT": "production",
-    "VITE_CLOUD_MODE": "true",
-    "VITE_ALLOW_LOCAL_AI": "false",
-    "VITE_SKIP_PYTHON_INSTALLATION": "true",
-    "VITE_SITE_URL": "${VERCEL_URL}"
-  },
   "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
     {
       "source": "/(.*)\\.js$",
       "headers": [
@@ -71,5 +89,12 @@
         }
       ]
     }
-  ]
+  ],
+  "env": {
+    "VITE_ENVIRONMENT": "production",
+    "VITE_CLOUD_MODE": "true",
+    "VITE_ALLOW_LOCAL_AI": "false",
+    "VITE_SKIP_PYTHON_INSTALLATION": "true",
+    "VITE_SITE_URL": "${VERCEL_URL}"
+  }
 }
