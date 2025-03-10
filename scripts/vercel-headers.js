@@ -139,7 +139,6 @@ try {
     config.routes.unshift({ 
       "src": "/assets/.*\\.(js|css|svg|png|jpg|jpeg|gif|ico)$", 
       "headers": { 
-        "content-type": "application/javascript", 
         "cache-control": "public, max-age=31536000, immutable" 
       }, 
       "continue": true 
