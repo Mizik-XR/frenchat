@@ -32,9 +32,9 @@ REM Demander l'URL à vérifier si non fournie
 set "SITE_URL=%1"
 if "%SITE_URL%"=="" (
     echo Entrez l'URL du site à vérifier 
-    echo [Appuyez sur ENTRÉE pour utiliser la valeur par défaut : https://filechat-app.vercel.app]
+    echo [Appuyez sur ENTRÉE pour utiliser la valeur par défaut : https://frenchat.vercel.app]
     set /p "SITE_URL="
-    if "!SITE_URL!"=="" set "SITE_URL=https://filechat-app.vercel.app"
+    if "!SITE_URL!"=="" set "SITE_URL=https://frenchat.vercel.app"
 )
 
 REM Exécuter la vérification

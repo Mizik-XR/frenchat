@@ -1,7 +1,7 @@
 
 # Déploiement sur Vercel
 
-Ce document explique comment déployer l'application FileChat sur la plateforme Vercel.
+Ce document explique comment déployer l'application FrenChat sur la plateforme Vercel.
 
 ## Prérequis
 
