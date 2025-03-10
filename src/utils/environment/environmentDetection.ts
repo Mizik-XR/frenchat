@@ -47,6 +47,26 @@ export const isLovableEnvironment = (): boolean => {
   return isLovableDomain || (isInIframe && hasLovableParam) || isLovableScriptLoaded;
 };
 
+/**
+ * Detects if the application is running on Netlify
+ * @returns true if the application is on Netlify
+ */
+export const isNetlifyEnvironment = (): boolean => {
+  // Check for Netlify environment variables
+  if (typeof process !== 'undefined' && process.env) {
+    if (process.env.NETLIFY === 'true' || process.env.NETLIFY_SITE_ID) {
+      return true;
+    }
+  }
+  
+  // Check for Netlify domain
+  if (typeof window !== 'undefined') {
+    return window.location.hostname.includes('netlify.app');
+  }
+  
+  return false;
+};
+
 // Type declaration to add the gptengineer property to the Window object
 declare global {
   interface Window {
