@@ -5,11 +5,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Frenchat - Votre assistant d'intelligence documentaire</title>
-    <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
-    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>FileChat - Your Document Intelligence Assistant</title>
+    <meta name="description" content="FileChat automatically indexes all your documents from Google Drive and Microsoft Teams, allowing you to interact with your entire document knowledge base." />
+    <!-- Script required for Lovable functioning as "Pick and Edit" -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
-    <!-- Style de base pour l'écran de chargement initial -->
+    <!-- Base style for initial loading screen -->
     <style>
       #loading-screen {
         display: flex;
@@ -71,19 +73,19 @@
         margin-top: 1rem;
       }
     </style>
-    <!-- Script de gestion d'erreur et de récupération -->
+    <!-- Error handling and recovery script -->
     <script>
-      // Fonction pour rediriger vers la page d'accueil avec des paramètres forcés de mode cloud
+      // Function to redirect to homepage with forced cloud mode parameters
       function forceHomepageInCloudMode() {
         window.location.href = '/?forceCloud=true&mode=cloud&client=true';
       }
       
-      // Détection et récupération en cas d'erreur de chargement
+      // Error detection and recovery
       window.addEventListener('error', function(event) {
-        if (event.message && event.message.includes('useLayoutEffect')) {
-          console.warn('Erreur useLayoutEffect détectée, tentative de récupération...');
+        if (event.message && (event.message.includes('useLayoutEffect') || event.message.includes('MIME type'))) {
+          console.warn('Error detected, attempting recovery...');
           
-          // Afficher le bouton de récupération après 5 secondes sans chargement
+          // Show recovery button after 5 seconds if loading fails
           setTimeout(function() {
             var loadingEl = document.getElementById('loading-screen');
             var retryBtn = document.querySelector('.retry-btn');
@@ -99,26 +101,26 @@
     </script>
   </head>
   <body>
-    <!-- Message de secours si le JavaScript est désactivé -->
+    <!-- Fallback message if JavaScript is disabled -->
     <noscript>
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center;">
-        <h1 style="color: #4f46e5; margin-bottom: 20px;">JavaScript est requis</h1>
-        <p>Cette application nécessite que JavaScript soit activé pour fonctionner.</p>
-        <p>Veuillez l'activer dans les paramètres de votre navigateur.</p>
+        <h1 style="color: #4f46e5; margin-bottom: 20px;">JavaScript is required</h1>
+        <p>This application requires JavaScript to be enabled.</p>
+        <p>Please enable it in your browser settings.</p>
       </div>
     </noscript>
     
-    <!-- Écran de chargement visible immédiatement -->
+    <!-- Loading screen visible immediately -->
     <div id="root">
       <div id="loading-screen">
         <div class="loading-container">
-          <h1 class="loading-title">Frenchat</h1>
-          <p>Chargement de votre assistant d'intelligence documentaire...</p>
+          <h1 class="loading-title">FileChat</h1>
+          <p>Loading your document intelligence assistant...</p>
           <div class="loading-bar"><div class="loading-bar-progress"></div></div>
-          <p style="font-size: 0.8rem; color: #6b7280;">Si le chargement échoue, essayez de rafraîchir la page.</p>
-          <div class="error-message">Le chargement semble prendre plus de temps que prévu.</div>
-          <button class="retry-btn" onclick="window.location.reload()">Rafraîchir la page</button>
-          <button class="retry-btn" onclick="forceHomepageInCloudMode()" style="margin-left: 8px; background-color: #6366f1;">Mode cloud</button>
+          <p style="font-size: 0.8rem; color: #6b7280;">If loading fails, try refreshing the page.</p>
+          <div class="error-message">Loading is taking longer than expected.</div>
+          <button class="retry-btn" onclick="window.location.reload()">Refresh page</button>
+          <button class="retry-btn" onclick="forceHomepageInCloudMode()" style="margin-left: 8px; background-color: #6366f1;">Cloud mode</button>
         </div>
       </div>
     </div>

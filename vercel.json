@@ -4,8 +4,29 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "routes": [
-    { "src": "/assets/.*\\.(js|css|svg|png|jpg|jpeg|gif|ico)$", "headers": { "content-type": "application/javascript", "cache-control": "public, max-age=31536000, immutable" }, "continue": true },
-    { "src": "/(.*\\.(js|css|svg|png|jpg|jpeg|gif|ico))$", "headers": { "cache-control": "public, max-age=31536000, immutable" }, "dest": "/$1" },
+    { 
+      "src": "/assets/(.*)\\.js$", 
+      "headers": { 
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Cache-Control": "public, max-age=31536000, immutable" 
+      }, 
+      "continue": true 
+    },
+    { 
+      "src": "/assets/(.*)\\.css$", 
+      "headers": { 
+        "Content-Type": "text/css; charset=utf-8",
+        "Cache-Control": "public, max-age=31536000, immutable" 
+      }, 
+      "continue": true 
+    },
+    { 
+      "src": "/(.*)\\.(js|css|svg|png|jpg|jpeg|gif|ico)$", 
+      "headers": { 
+        "Cache-Control": "public, max-age=31536000, immutable" 
+      }, 
+      "dest": "/$1.$2" 
+    },
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],

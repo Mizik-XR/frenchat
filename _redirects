@@ -1,15 +1,15 @@
 
-# Redirection pour toutes les routes vers index.html (SPA)
+# SPA Redirects - All routes to index.html 
 /* /index.html 200
 
-# Assurer que / est accessible directement
+# Ensure root is directly accessible
 / /index.html 200 
 
-# Assurer l'accès à la landing page avec priorité élevée
+# Ensure landing page access with high priority
 /landing /index.html 200
 /landing?section=* /index.html 200
 
-# Assurer que les autres routes sont accessibles
+# Ensure other routes are accessible
 /chat /index.html 200
 /chat/* /index.html 200
 /auth /index.html 200
@@ -17,21 +17,29 @@
 /config /index.html 200
 /config/* /index.html 200
 
-# Redirections avec paramètres d'URL importants
+# Explicit handling for JavaScript files to maintain correct MIME types
+/*.js /:splat 200
+/assets/*.js /assets/:splat 200
+
+# Explicit handling for CSS files to maintain correct MIME types
+/*.css /:splat 200
+/assets/*.css /assets/:splat 200
+
+# Redirections with important URL parameters
 /?mode=cloud /index.html?mode=cloud 200
 /?forceCloud=true /index.html?forceCloud=true 200
 /?client=true /index.html?client=true 200
 /?hideDebug=true /index.html?hideDebug=true 200
 
-# Combinaisons fréquentes de paramètres
+# Common parameter combinations
 /?client=true&hideDebug=true /index.html?client=true&hideDebug=true 200
 /?client=true&forceCloud=true /index.html?client=true&forceCloud=true 200
 /?mode=cloud&client=true /index.html?mode=cloud&client=true 200
 /?client=true&hideDebug=true&forceCloud=true /index.html?client=true&hideDebug=true&forceCloud=true 200
 /?client=true&hideDebug=true&forceCloud=true&mode=cloud /index.html?client=true&hideDebug=true&forceCloud=true&mode=cloud 200
 
-# Préservation des paramètres pour l'authentification
+# Preserve parameters for authentication
 /auth/* /index.html 200
 
-# Redirection des API vers les fonctions Netlify
+# Redirect APIs to Netlify functions
 /api/* /.netlify/functions/:splat 200
