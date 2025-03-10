@@ -1,23 +1,23 @@
 
 /**
- * Script pour configurer les types MIME dans vercel.json
- * Ce script vérifie et met à jour la configuration des headers MIME dans vercel.json
+ * Script to configure MIME types in vercel.json
+ * This script checks and updates the MIME header configuration in vercel.json
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// Chemin vers le fichier vercel.json
+// Path to vercel.json file
 const vercelConfigPath = path.join(process.cwd(), 'vercel.json');
 
-console.log('Vérification de la configuration MIME dans vercel.json...');
+console.log('Checking MIME configuration in vercel.json...');
 
 try {
-  // Vérifier si le fichier existe
+  // Check if file exists
   if (!fs.existsSync(vercelConfigPath)) {
-    console.log('Le fichier vercel.json n\'existe pas. Création d\'un fichier de configuration de base...');
+    console.log('vercel.json file does not exist. Creating a basic configuration file...');
     
-    // Créer un fichier de configuration de base
+    // Create a basic configuration file
     const baseConfig = {
       "version": 2,
       "buildCommand": "npm run build",
@@ -60,30 +60,30 @@ try {
     };
     
     fs.writeFileSync(vercelConfigPath, JSON.stringify(baseConfig, null, 2));
-    console.log('Fichier vercel.json créé avec succès.');
+    console.log('vercel.json file created successfully.');
     process.exit(0);
   }
 
-  // Lire le fichier existant
+  // Read existing file
   const configContent = fs.readFileSync(vercelConfigPath, 'utf8');
   let config;
 
   try {
     config = JSON.parse(configContent);
   } catch (parseError) {
-    console.error('Erreur lors de l\'analyse du fichier vercel.json:', parseError);
+    console.error('Error parsing vercel.json file:', parseError);
     process.exit(1);
   }
 
   let modified = false;
 
-  // Vérifier et ajouter la section headers si elle n'existe pas
+  // Check and add headers section if it doesn't exist
   if (!config.headers) {
     config.headers = [];
     modified = true;
   }
 
-  // Vérifier les entrées pour JavaScript
+  // Check entries for JavaScript
   const jsHeaderEntry = config.headers.find(h => h.source === "/(.*)\\.js$");
   if (!jsHeaderEntry) {
     config.headers.push({
@@ -98,7 +98,7 @@ try {
     modified = true;
   }
 
-  // Vérifier les entrées pour CSS
+  // Check entries for CSS
   const cssHeaderEntry = config.headers.find(h => h.source === "/(.*)\\.css$");
   if (!cssHeaderEntry) {
     config.headers.push({
@@ -113,7 +113,7 @@ try {
     modified = true;
   }
 
-  // Vérifier les entrées pour HTML
+  // Check entries for HTML
   const htmlHeaderEntry = config.headers.find(h => h.source === "/(.*)\\.html$");
   if (!htmlHeaderEntry) {
     config.headers.push({
@@ -128,7 +128,7 @@ try {
     modified = true;
   }
 
-  // Vérifier les routes pour les assets
+  // Check routes for assets
   if (!config.routes) {
     config.routes = [];
     modified = true;
@@ -146,17 +146,17 @@ try {
     modified = true;
   }
 
-  // Enregistrer les modifications si nécessaire
+  // Save changes if needed
   if (modified) {
     fs.writeFileSync(vercelConfigPath, JSON.stringify(config, null, 2));
-    console.log('Configuration MIME mise à jour dans vercel.json.');
+    console.log('MIME configuration updated in vercel.json.');
   } else {
-    console.log('La configuration MIME est déjà correctement configurée.');
+    console.log('MIME configuration is already correctly set up.');
   }
 
-  console.log('Vérification terminée avec succès.');
+  console.log('Check completed successfully.');
   process.exit(0);
 } catch (error) {
-  console.error('Erreur lors de la vérification/mise à jour de la configuration MIME:', error);
+  console.error('Error checking/updating MIME configuration:', error);
   process.exit(1);
 }

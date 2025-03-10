@@ -2,123 +2,123 @@
 #!/bin/bash
 
 echo "==================================================="
-echo "     DÉPLOIEMENT FILECHAT VERS VERCEL"
+echo "     DEPLOYING FILECHAT TO VERCEL"
 echo "==================================================="
 echo
 
-# Vérifier si Vercel CLI est installé
+# Check if Vercel CLI is installed
 if ! command -v vercel &> /dev/null; then
-    echo "[INFO] Vercel CLI n'est pas installé, installation en cours..."
+    echo "[INFO] Vercel CLI is not installed, installing..."
     npm install -g vercel
     
-    # Vérifier si l'installation a réussi
+    # Check if installation succeeded
     if ! command -v vercel &> /dev/null; then
-        echo "[ERREUR] L'installation automatique a échoué, tentative avec une autre méthode..."
-        # Essayer avec l'option --force
+        echo "[ERROR] Automatic installation failed, trying alternative method..."
+        # Try with --force option
         npm install -g vercel --force
         
-        # Vérifier à nouveau
+        # Check again
         if ! command -v vercel &> /dev/null; then
-            echo "[ERREUR] Installation de Vercel CLI impossible."
-            echo "Essayez manuellement avec: 'npm install -g vercel' ou 'yarn global add vercel'"
-            echo "Ou utilisez npx: utilisez 'npx vercel' à la place de 'vercel' dans les commandes"
+            echo "[ERROR] Failed to install Vercel CLI."
+            echo "Try manually with: 'npm install -g vercel' or 'yarn global add vercel'"
+            echo "Or use npx: use 'npx vercel' instead of 'vercel' in commands"
             
-            # Demander à l'utilisateur s'il veut continuer avec npx
-            read -p "Voulez-vous continuer avec npx vercel? (o/n): " use_npx
-            if [ "$use_npx" != "o" ] && [ "$use_npx" != "O" ]; then
-                echo "Déploiement annulé."
+            # Ask user if they want to continue with npx
+            read -p "Continue with npx vercel? (y/n): " use_npx
+            if [ "$use_npx" != "y" ] && [ "$use_npx" != "Y" ]; then
+                echo "Deployment cancelled."
                 exit 1
             fi
             
-            # Si l'utilisateur veut continuer, utiliser npx
+            # If user wants to continue, use npx
             VERCEL_CMD="npx vercel"
         else
-            echo "[OK] Vercel CLI installé avec succès (méthode alternative)."
+            echo "[OK] Vercel CLI installed successfully (alternative method)."
             VERCEL_CMD="vercel"
         fi
     else
-        echo "[OK] Vercel CLI installé avec succès."
+        echo "[OK] Vercel CLI installed successfully."
         VERCEL_CMD="vercel"
     fi
 else
-    echo "[OK] Vercel CLI déjà installé."
+    echo "[OK] Vercel CLI already installed."
     VERCEL_CMD="vercel"
 fi
 
-# Configuration pour le déploiement
+# Configuration for deployment
 export NODE_ENV=production
 export VITE_CLOUD_MODE=true
 export VITE_ALLOW_LOCAL_AI=false
 export SKIP_PYTHON_INSTALLATION=true
 
-# Nettoyer les fichiers de build précédents
-echo "[INFO] Nettoyage des fichiers temporaires..."
+# Clean up previous build files
+echo "[INFO] Cleaning up temporary files..."
 rm -rf dist
 
-# Installation des dépendances
-echo "[INFO] Installation des dépendances..."
+# Install dependencies
+echo "[INFO] Installing dependencies..."
 npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
 
-# Construction du projet
-echo "[ÉTAPE 2/5] Construction du projet..."
+# Build the project
+echo "[STEP 2/5] Building the project..."
 export NODE_OPTIONS="--max-old-space-size=4096"
 npm run build
 if [ $? -ne 0 ]; then
-    echo "[ERREUR] La construction du projet a échoué."
+    echo "[ERROR] Build failed."
     exit 1
 fi
-echo "[OK] Build terminé avec succès."
+echo "[OK] Build completed successfully."
 
-# Configurer les headers Vercel pour les types MIME
-echo "[ÉTAPE 3/5] Configuration des headers pour types MIME..."
+# Configure Vercel headers for MIME types
+echo "[STEP 3/5] Configuring headers for MIME types..."
 node scripts/vercel-headers.js
 if [ $? -ne 0 ]; then
-    echo "[ATTENTION] La configuration des headers a échoué, mais le déploiement continue."
+    echo "[WARNING] Header configuration failed, but deployment will continue."
 fi
 
-# Vérification de la connexion à Vercel
-echo "[ÉTAPE 4/5] Vérification de la connexion à Vercel..."
+# Check Vercel connection
+echo "[STEP 4/5] Checking Vercel connection..."
 $VERCEL_CMD whoami &> /dev/null
 if [ $? -ne 0 ]; then
-    echo "[INFO] Vous n'êtes pas connecté à Vercel. Connexion en cours..."
+    echo "[INFO] You are not logged in to Vercel. Logging in..."
     $VERCEL_CMD login
     if [ $? -ne 0 ]; then
-        echo "[ERREUR] La connexion à Vercel a échoué."
+        echo "[ERROR] Failed to log in to Vercel."
         exit 1
     fi
 fi
-echo "[OK] Connecté à Vercel."
+echo "[OK] Connected to Vercel."
 
-# Choix du type de déploiement
-echo "[ÉTAPE 5/5] Choisissez le type de déploiement:"
-echo "1. Déploiement de prévisualisation"
-echo "2. Déploiement en production"
-read -p "Votre choix (1/2): " choice
+# Choose deployment type
+echo "[STEP 5/5] Choose deployment type:"
+echo "1. Preview deployment"
+echo "2. Production deployment"
+read -p "Your choice (1/2): " choice
 
 if [ "$choice" = "1" ]; then
-    echo "[INFO] Déploiement d'une prévisualisation..."
+    echo "[INFO] Creating preview deployment..."
     $VERCEL_CMD
 else
-    echo "[INFO] Déploiement en production..."
+    echo "[INFO] Creating production deployment..."
     $VERCEL_CMD --prod
 fi
 
 if [ $? -ne 0 ]; then
-    echo "[ERREUR] Le déploiement a échoué."
+    echo "[ERROR] Deployment failed."
     exit 1
 fi
-echo "[OK] Déploiement terminé avec succès."
+echo "[OK] Deployment completed successfully."
 
 echo "==================================================="
-echo "     DÉPLOIEMENT TERMINÉ"
+echo "     DEPLOYMENT COMPLETE"
 echo "==================================================="
 echo
-echo "N'oubliez pas de configurer les variables d'environnement"
-echo "dans l'interface Vercel pour les fonctionnalités avancées."
+echo "Remember to configure environment variables"
+echo "in the Vercel interface for advanced features."
 echo
-echo "Variables à configurer:"
-echo "- VITE_SUPABASE_URL: URL de votre projet Supabase"
-echo "- VITE_SUPABASE_ANON_KEY: Clé anonyme de votre projet Supabase"
-echo "- VITE_CLOUD_API_URL: URL de l'API cloud (optionnel)"
+echo "Variables to configure:"
+echo "- VITE_SUPABASE_URL: Your Supabase project URL"
+echo "- VITE_SUPABASE_ANON_KEY: Your Supabase anonymous key"
+echo "- VITE_CLOUD_API_URL: Cloud API URL (optional)"
 echo
 echo "==================================================="
