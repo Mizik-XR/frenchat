@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { isNetlifyEnvironment } from '@/utils/environment/environmentDetection';
+import customPlaceholder from '../../assets/custom-placeholder.svg';
 
 interface LogoImageProps {
   className?: string;
@@ -36,7 +37,9 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
         './filechat-animation.gif',
         './assets/filechat-animation.gif', 
         '../filechat-animation.gif',
-        '../assets/filechat-animation.gif'
+        '../assets/filechat-animation.gif',
+        // Utiliser l'image de placeholder personnalisée comme option de secours
+        customPlaceholder
       );
       
       // Chemins absolus basés sur l'origine pour Netlify (secours)
@@ -50,7 +53,9 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
       possiblePaths.push(
         '/filechat-animation.gif',
         '/assets/filechat-animation.gif',
-        './filechat-animation.gif'
+        './filechat-animation.gif',
+        // Utiliser l'image de placeholder personnalisée comme option de secours
+        customPlaceholder
       );
     }
     
@@ -82,9 +87,10 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
         }
       }
       
-      // Si aucun chemin ne fonctionne
-      logImageAttempt('Tous les chemins ont échoué, utilisation du fallback');
-      setImageLoaded(false);
+      // Si aucun chemin ne fonctionne, utiliser notre placeholder personnalisé
+      logImageAttempt('Tous les chemins ont échoué, utilisation du placeholder personnalisé');
+      setImagePath(customPlaceholder);
+      setImageLoaded(true);
     };
     
     // Démarrer les tests de chemins
@@ -93,15 +99,16 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
     // Définir un délai maximum pour le chargement
     const timer = setTimeout(() => {
       if (!imageLoaded) {
-        logImageAttempt('Délai de chargement dépassé, utilisation du fallback');
-        setImageLoaded(false);
+        logImageAttempt('Délai de chargement dépassé, utilisation du placeholder personnalisé');
+        setImagePath(customPlaceholder);
+        setImageLoaded(true);
       }
     }, 5000);
     
     return () => clearTimeout(timer);
   }, []);
 
-  // Utiliser une icône de secours si l'image ne charge pas
+  // Utiliser notre composant de secours mais avec l'image de placeholder personnalisée
   if (!imageLoaded) {
     return (
       <div className={`flex items-center justify-center bg-blue-100 rounded-full ${className}`}>
@@ -117,7 +124,8 @@ export const LogoImage = ({ className = "h-10 w-10" }: LogoImageProps) => {
       className={className}
       onError={() => {
         console.warn(`LogoImage: erreur de chargement depuis ${imagePath}`);
-        setImageLoaded(false);
+        setImagePath(customPlaceholder);
+        setImageLoaded(true);
       }}
     />
   );

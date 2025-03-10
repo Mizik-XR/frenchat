@@ -96,13 +96,21 @@ const copyImportantFiles = (): PluginOption => {
         { src: './public/filechat-animation.gif', dest: './dist/assets/filechat-animation.gif' },
         { src: './public/diagnostic.html', dest: './dist/diagnostic.html' },
         { src: './_redirects', dest: './dist/_redirects' },
-        { src: './_headers', dest: './dist/_headers' }
+        { src: './_headers', dest: './dist/_headers' },
+        // Assurez-vous que le custom-placeholder.svg est copié également
+        { src: './src/assets/custom-placeholder.svg', dest: './dist/assets/custom-placeholder.svg' }
       ];
       
       // Copier chaque fichier
       filesToCopy.forEach(file => {
         try {
           if (fs.existsSync(file.src)) {
+            // Créer le répertoire de destination s'il n'existe pas
+            const destDir = path.dirname(file.dest);
+            if (!fs.existsSync(destDir)) {
+              fs.mkdirSync(destDir, { recursive: true });
+            }
+            
             fs.copyFileSync(file.src, file.dest);
             console.log(`✅ Fichier ${file.src} copié vers ${file.dest}`);
           } else {
