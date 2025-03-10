@@ -61,26 +61,24 @@ VITE_SKIP_PYTHON_INSTALLATION=true
 
 Dans l'interface Vercel, sous "Settings" > "Functions":
 
-1. **Function CPU**: Sélectionnez le niveau de CPU approprié
-   - **Standard** (1 vCPU, 1.7 GB Memory): Recommandé pour la plupart des cas d'utilisation
-   - **Performance** (1.7 vCPUs, 3 GB Memory): Pour les applications nécessitant plus de puissance
+1. **Function Memory et Duration**: Ces paramètres sont configurés dans votre fichier `vercel.json`:
+   ```json
+   {
+     "functions": {
+       "api/**/*": {
+         "memory": 1024,
+         "maxDuration": 10
+       }
+     }
+   }
+   ```
 
-2. **Function Regions**: Sélectionnez les régions proches de vos utilisateurs
+2. **Fluid Compute (fonctionnalité premium)**: 
+   - Cette option n'est disponible que pour les comptes Pro ou Enterprise
+   - Si vous avez accès à Fluid Compute, son activation est recommandée pour de meilleures performances
+   - L'application fonctionne parfaitement sans cette option
 
-3. **Function Concurrency**: Ajustez selon les besoins de votre application
-
-Ces paramètres peuvent également être configurés via le fichier `vercel.json`:
-
-```json
-{
-  "functions": {
-    "api/**/*": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  }
-}
-```
+3. **Function Regions**: Sélectionnez les régions proches de vos utilisateurs pour de meilleures performances
 
 ### Configuration optionnelle
 
