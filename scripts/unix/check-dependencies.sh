@@ -1,13 +1,13 @@
 
 #!/bin/bash
 
-# Fonction d'installation de Python si nécessaire
+# Function to install Python if needed
 install_python() {
-    echo "[INFO] Python non détecté, tentative d'installation..."
+    echo "[INFO] Python not detected, attempting installation..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS
-        echo "Veuillez installer Python depuis https://www.python.org/downloads/"
-        echo "Ou utilisez Homebrew: brew install python3"
+        echo "Please install Python from https://www.python.org/downloads/"
+        echo "Or use Homebrew: brew install python3"
         return 1
     elif [[ -f /etc/debian_version ]]; then
         # Debian/Ubuntu
@@ -17,25 +17,25 @@ install_python() {
         # RHEL/CentOS/Fedora
         sudo dnf install -y python3 python3-pip
     else
-        echo "Distribution non reconnue. Veuillez installer Python manuellement."
+        echo "Unrecognized distribution. Please install Python manually."
         return 1
     fi
     return 0
 }
 
-# Vérification de Python
-echo "[INFO] Vérification de Python..."
+# Check Python
+echo "[INFO] Checking Python..."
 if ! command -v python3 &> /dev/null
 then
     install_python
     if [ $? -ne 0 ]; then
-        echo "[ERREUR] Python 3 n'a pas pu être installé."
+        echo "[ERROR] Python 3 could not be installed."
         echo ""
-        echo "Appuyez sur une touche pour quitter..."
+        echo "Press any key to exit..."
         read -n 1
         exit 1
     fi
 fi
 
-echo "[OK] Python détecté: $(python3 --version)"
+echo "[OK] Python detected: $(python3 --version)"
 echo ""

@@ -12,10 +12,10 @@ export const OfflineAlert = ({ errorMessage }: OfflineAlertProps) => {
     <Alert variant="destructive">
       <AlertTriangle className="h-4 w-4" />
       <AlertDescription>
-        Impossible de charger les configurations existantes. Mode hors-ligne activé. 
-        Les clés seront stockées localement jusqu'à la résolution du problème.
+        Unable to load existing configurations. Offline mode activated.
+        Keys will be stored locally until the issue is resolved.
         <div className="mt-2 text-xs">
-          Détails: {errorMessage}
+          Details: {errorMessage}
         </div>
       </AlertDescription>
     </Alert>

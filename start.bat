@@ -3,20 +3,20 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title FileChat - Lanceur
+title FileChat - Launcher
 
 echo ===================================================
-echo     FILECHAT - LANCEUR
+echo     FILECHAT - LAUNCHER
 echo ===================================================
 echo.
-echo Choisissez un mode de démarrage:
+echo Choose a startup mode:
 echo.
-echo [1] Mode complet (IA locale + interface web)
-echo [2] Mode cloud uniquement (sans IA locale)
-echo [3] Maintenance (nettoyage, réparation)
-echo [4] Quitter
+echo [1] Full mode (Local AI + web interface)
+echo [2] Cloud mode only (without local AI)
+echo [3] Maintenance (cleanup, repair)
+echo [4] Exit
 echo.
-set /p CHOICE="Votre choix [1-4]: "
+set /p CHOICE="Your choice [1-4]: "
 
 if "%CHOICE%"=="1" (
     call scripts\windows\start-app.bat
@@ -28,7 +28,7 @@ if "%CHOICE%"=="1" (
     exit /b 0
 ) else (
     echo.
-    echo Choix invalide. Veuillez réessayer.
+    echo Invalid choice. Please try again.
     timeout /t 2 /nobreak > nul
     cls
     call %0

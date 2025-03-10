@@ -45,7 +45,7 @@ export const ConfigHeader = ({ onBack }: ConfigHeaderProps) => {
         className="flex items-center gap-2"
       >
         <LogOut className="h-4 w-4" />
-        <span>Déconnexion</span>
+        <span>Sign Out</span>
       </Button>
     </div>
   );

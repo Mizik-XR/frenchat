@@ -6,16 +6,16 @@ setlocal enabledelayedexpansion
 title FileChat - Maintenance
 
 echo ===================================================
-echo     MAINTENANCE DE FILECHAT
+echo     FILECHAT MAINTENANCE
 echo ===================================================
 echo.
-echo [1] Nettoyage de cache
-echo [2] Reconstruction de l'application
-echo [3] Vérification de l'environnement
-echo [4] Réparation des problèmes courants
-echo [5] Quitter
+echo [1] Cache Cleanup
+echo [2] Rebuild Application
+echo [3] Check Environment
+echo [4] Fix Common Issues
+echo [5] Exit
 echo.
-set /p CHOICE="Votre choix [1-5]: "
+set /p CHOICE="Your choice [1-5]: "
 
 if "%CHOICE%"=="1" goto clean_cache
 if "%CHOICE%"=="2" goto rebuild_app
@@ -26,20 +26,20 @@ if "%CHOICE%"=="5" goto end
 :clean_cache
 cls
 echo ===================================================
-echo     NETTOYAGE DE CACHE
+echo     CACHE CLEANUP
 echo ===================================================
 echo.
-echo [INFO] Suppression des caches...
+echo [INFO] Removing caches...
 if exist ".vite\" (
     rmdir /s /q .vite
-    echo [OK] Cache Vite supprimé.
+    echo [OK] Vite cache removed.
 )
 if exist "node_modules\.vite\" (
     rmdir /s /q node_modules\.vite
-    echo [OK] Cache Vite dans node_modules supprimé.
+    echo [OK] Vite cache in node_modules removed.
 )
 call npm cache clean --force
-echo [OK] Cache NPM nettoyé.
+echo [OK] NPM cache cleaned.
 echo.
 pause
 goto end
@@ -47,18 +47,18 @@ goto end
 :rebuild_app
 cls
 echo ===================================================
-echo     RECONSTRUCTION DE L'APPLICATION
+echo     REBUILD APPLICATION
 echo ===================================================
 echo.
-echo [INFO] Construction de l'application...
+echo [INFO] Building application...
 set NODE_OPTIONS=--max-old-space-size=4096
 call npm run build
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERREUR] Échec de la construction.
+    echo [ERROR] Build failed.
     pause
     goto end
 )
-echo [OK] Application reconstruite avec succès.
+echo [OK] Application rebuilt successfully.
 echo.
 pause
 goto end
@@ -66,20 +66,20 @@ goto end
 :check_env
 cls
 echo ===================================================
-echo     VÉRIFICATION DE L'ENVIRONNEMENT
+echo     ENVIRONMENT CHECK
 echo ===================================================
 echo.
-echo [INFO] Vérification de Node.js...
+echo [INFO] Checking Node.js...
 node -v
-echo [INFO] Vérification de NPM...
+echo [INFO] Checking NPM...
 npm -v
-echo [INFO] Vérification de Python...
+echo [INFO] Checking Python...
 python --version
 echo.
 if exist ".env.local" (
-    echo [INFO] Fichier .env.local détecté.
+    echo [INFO] .env.local file detected.
 ) else (
-    echo [INFO] Création du fichier .env.local...
+    echo [INFO] Creating .env.local file...
     (
         echo VITE_API_URL=http://localhost:8000
         echo VITE_ENVIRONMENT=development
@@ -87,7 +87,7 @@ if exist ".env.local" (
         echo VITE_LOVABLE_VERSION=dev
         echo FORCE_CLOUD_MODE=true
     ) > .env.local
-    echo [OK] Fichier .env.local créé.
+    echo [OK] .env.local file created.
 )
 echo.
 pause
@@ -96,22 +96,22 @@ goto end
 :repair
 cls
 echo ===================================================
-echo     RÉPARATION DES PROBLÈMES COURANTS
+echo     FIX COMMON ISSUES
 echo ===================================================
 echo.
-echo [INFO] Vérification des dépendances...
+echo [INFO] Checking dependencies...
 call npm install
-echo [INFO] Configuration du mode cloud...
+echo [INFO] Configuring cloud mode...
 echo FORCE_CLOUD_MODE=true > .env.local
 echo VITE_DISABLE_DEV_MODE=true >> .env.local
-echo [INFO] Reconstruction de l'application...
+echo [INFO] Rebuilding application...
 set NODE_OPTIONS=--max-old-space-size=4096
 call npm run build
 echo.
-echo [INFO] Vérification du script Lovable...
+echo [INFO] Checking Lovable script...
 findstr "gptengineer.js" "dist\index.html" >nul
 if !errorlevel! NEQ 0 (
-    echo [INFO] Ajout du script Lovable...
+    echo [INFO] Adding Lovable script...
     (for /f "delims=" %%i in (dist\index.html) do (
         echo %%i | findstr "<script type=\"module\" crossorigin" >nul
         if !errorlevel! EQU 0 (
@@ -120,12 +120,12 @@ if !errorlevel! NEQ 0 (
         echo %%i
     )) > dist\index.html.temp
     move /y dist\index.html.temp dist\index.html >nul
-    echo [OK] Script Lovable ajouté.
+    echo [OK] Lovable script added.
 ) else (
-    echo [OK] Script Lovable déjà présent.
+    echo [OK] Lovable script already present.
 )
 echo.
-echo [OK] Réparation terminée.
+echo [OK] Repair completed.
 pause
 goto end
 

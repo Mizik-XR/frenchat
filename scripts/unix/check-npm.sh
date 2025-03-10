@@ -1,42 +1,42 @@
 
 #!/bin/bash
 
-# Vérification des dépendances NPM
-echo "[INFO] Vérification des dépendances NPM..."
+# Check NPM dependencies
+echo "[INFO] Checking NPM dependencies..."
 if [ ! -d "node_modules" ]
 then
-    echo "[INFO] Installation des dépendances NPM..."
+    echo "[INFO] Installing NPM dependencies..."
     
-    # Vérifier si npm est disponible
+    # Check if npm is available
     if ! command -v npm &> /dev/null
     then
-        echo "[ERREUR] npm n'est pas installé ou n'est pas dans le PATH"
+        echo "[ERROR] npm is not installed or not in the PATH"
         echo ""
-        echo "Appuyez sur une touche pour quitter..."
+        echo "Press any key to exit..."
         read -n 1
         exit 1
     fi
     
-    # Vérifier les vulnérabilités avant l'installation
-    echo "[INFO] Vérification des vulnérabilités..."
+    # Check vulnerabilities before installation
+    echo "[INFO] Checking vulnerabilities..."
     npm audit --production
     
-    # Installation avec limitation des privilèges scripts
+    # Installation with limited script privileges
     npm install --no-fund --audit=true --ignore-scripts=false
     
     if [ $? -ne 0 ]
     then
-        echo "[ERREUR] Installation des dépendances NPM échouée"
+        echo "[ERROR] NPM dependencies installation failed"
         echo ""
-        echo "Appuyez sur une touche pour quitter..."
+        echo "Press any key to exit..."
         read -n 1
         exit 1
     fi
     
-    echo "[OK] Dépendances NPM installées avec succès"
+    echo "[OK] NPM dependencies installed successfully"
     
-    # Vérifier à nouveau les vulnérabilités après l'installation
-    echo "[INFO] Vérification finale des vulnérabilités..."
+    # Check vulnerabilities again after installation
+    echo "[INFO] Final vulnerability check..."
     npm audit --production
     echo ""
 fi

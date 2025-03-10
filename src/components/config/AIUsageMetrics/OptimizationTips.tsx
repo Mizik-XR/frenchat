@@ -6,18 +6,18 @@ export const OptimizationTips: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">Recommandations d'optimisation</CardTitle>
+        <CardTitle className="text-xl">Optimization Recommendations</CardTitle>
         <CardDescription>
-          Conseils pour réduire vos coûts d'utilisation d'IA
+          Tips to reduce your AI usage costs
         </CardDescription>
       </CardHeader>
       <CardContent>
         <ul className="space-y-2 list-disc pl-5">
-          <li>Utilisez des modèles locaux pour les tâches fréquentes ou routinières</li>
-          <li>Réduisez la longueur des prompts en étant plus concis</li>
-          <li>Utilisez le chunking intelligent pour optimiser l'indexation des documents</li>
-          <li>Limitez le nombre de tokens générés en paramétrant correctement vos requêtes</li>
-          <li>Utilisez la mise en cache des requêtes similaires pour éviter les duplications</li>
+          <li>Use local models for frequent or routine tasks</li>
+          <li>Reduce prompt length by being more concise</li>
+          <li>Use smart chunking to optimize document indexing</li>
+          <li>Limit the number of generated tokens by properly configuring your requests</li>
+          <li>Use caching for similar queries to avoid duplication</li>
         </ul>
       </CardContent>
     </Card>

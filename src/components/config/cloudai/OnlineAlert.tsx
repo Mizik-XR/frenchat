@@ -8,8 +8,8 @@ export const OnlineAlert = () => {
     <Alert>
       <AlertCircle className="h-4 w-4" />
       <AlertDescription>
-        Vos clés API sont stockées de manière sécurisée et chiffrées. 
-        Configurez au moins un fournisseur pour utiliser les fonctionnalités d'IA.
+        Your API keys are stored securely and encrypted.
+        Configure at least one provider to use AI features.
       </AlertDescription>
     </Alert>
   );

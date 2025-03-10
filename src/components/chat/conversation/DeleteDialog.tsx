@@ -25,17 +25,17 @@ export function DeleteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Confirmer la suppression</DialogTitle>
+          <DialogTitle>Confirm Deletion</DialogTitle>
           <DialogDescription>
-            Êtes-vous sûr de vouloir supprimer définitivement cette conversation ? Cette action est irréversible.
+            Are you sure you want to permanently delete this conversation? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Annuler
+            Cancel
           </Button>
           <Button variant="destructive" onClick={onConfirm}>
-            Supprimer
+            Delete
           </Button>
         </DialogFooter>
       </DialogContent>

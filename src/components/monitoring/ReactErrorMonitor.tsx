@@ -4,16 +4,16 @@ import { toast } from '@/hooks/use-toast';
 import { APP_STATE } from '@/integrations/supabase/client';
 
 /**
- * Composant qui surveille et capture les erreurs React non gérées
- * et les affiche de manière non intrusive à l'utilisateur
+ * Component that monitors and captures unhandled React errors
+ * and displays them to the user in a non-intrusive way
  */
 export const ReactErrorMonitor = () => {
   useEffect(() => {
-    // Fonction de gestion des erreurs non capturées
+    // Function to handle uncaught errors
     const handleUncaughtError = (event: ErrorEvent) => {
-      console.error('Erreur non gérée:', event.error);
+      console.error('Unhandled error:', event.error);
       
-      // Éviter de notifier pour les erreurs de réseau qui sont déjà gérées
+      // Avoid notifying for network errors that are already handled
       if (event.message && (
         event.message.includes('loading chunk') || 
         event.message.includes('network') ||
@@ -23,7 +23,7 @@ export const ReactErrorMonitor = () => {
         return;
       }
       
-      // Détection des problèmes liés à React
+      // Detect React-related issues
       const isReactError = event.message && (
         event.message.includes('React') ||
         event.message.includes('useLayoutEffect') ||
@@ -32,23 +32,23 @@ export const ReactErrorMonitor = () => {
       );
       
       if (isReactError) {
-        console.warn('Erreur React potentielle détectée, mise en mode fallback...');
+        console.warn('Potential React error detected, switching to fallback mode...');
         APP_STATE.isOfflineMode = true;
       }
       
-      // Notification à l'utilisateur
+      // Notify the user
       toast({
-        title: "Problème détecté",
-        description: "Une erreur s'est produite. L'application tente de récupérer automatiquement.",
+        title: "Problem detected",
+        description: "An error occurred. The application is attempting to recover automatically.",
         variant: "destructive"
       });
     };
 
-    // Fonction pour gérer les rejets de promesses non capturés
+    // Function to handle unhandled promise rejections
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('Promesse rejetée non gérée:', event.reason);
+      console.error('Unhandled promise rejection:', event.reason);
       
-      // Éviter de notifier pour certains types d'erreurs
+      // Avoid notifying for certain types of errors
       if (event.reason && (
         event.reason.message?.includes('aborted') ||
         event.reason.message?.includes('canceled')
@@ -56,7 +56,7 @@ export const ReactErrorMonitor = () => {
         return;
       }
       
-      // Détecter les problèmes de connexion à l'API
+      // Detect API connection issues
       const isConnectionError = event.reason && (
         event.reason.message?.includes('fetch') ||
         event.reason.message?.includes('network') ||
@@ -65,31 +65,31 @@ export const ReactErrorMonitor = () => {
       );
       
       if (isConnectionError) {
-        console.warn('Problème de connexion détecté, activation du mode hors ligne...');
+        console.warn('Connection issue detected, activating offline mode...');
         APP_STATE.isOfflineMode = true;
       }
       
-      // Notification à l'utilisateur
+      // Notify the user
       toast({
-        title: "Opération échouée",
+        title: "Operation failed",
         description: isConnectionError 
-          ? "Problème de connexion détecté. Mode hors ligne activé." 
-          : "Une requête a échoué. Veuillez réessayer.",
+          ? "Connection issue detected. Offline mode activated." 
+          : "A request failed. Please try again.",
         variant: "destructive"
       });
     };
 
-    // Enregistrement des gestionnaires d'événements
+    // Register event handlers
     window.addEventListener('error', handleUncaughtError);
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
-    // Fonction de nettoyage pour supprimer les gestionnaires d'événements
+    // Cleanup function to remove event handlers
     return () => {
       window.removeEventListener('error', handleUncaughtError);
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);
 
-  // Ce composant ne rend rien visuellement
+  // This component doesn't render anything visually
   return null;
 };

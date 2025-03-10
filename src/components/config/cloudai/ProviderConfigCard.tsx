@@ -33,7 +33,7 @@ export const ProviderConfigCard = ({
         <Label className="text-lg font-semibold">{info.name}</Label>
         {apiKey && (
           <span className="text-sm text-green-600 font-medium">
-            Configuré ✓
+            Configured ✓
           </span>
         )}
       </div>

@@ -21,14 +21,14 @@ export const AuthContainer: React.FC<AuthContainerProps> = ({ children }) => {
           onClick={() => navigate('/')}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Retour à l'accueil
+          Back to Home
         </Button>
         
         <div className="w-full max-w-md px-4">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Frenchat</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Filechat</h1>
             <p className="text-gray-600 mt-2">
-              Connectez-vous pour accéder à votre assistant IA personnel
+              Sign in to access your personal AI assistant
             </p>
           </div>
 
