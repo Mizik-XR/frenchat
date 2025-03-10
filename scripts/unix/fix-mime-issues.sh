@@ -35,16 +35,6 @@ fi
 
 echo "[STEP 1/3] Checking for proper MIME type definitions..."
 
-# Check if headers are set correctly in netlify.toml
-if [ -f "netlify.toml" ]; then
-    if ! grep -q "Content-Type.*application/javascript" netlify.toml; then
-        echo "[WARNING] JavaScript MIME type not properly set in netlify.toml"
-        echo "          Please update your netlify.toml file."
-    else
-        echo "[OK] MIME types are properly configured in netlify.toml"
-    fi
-fi
-
 # Check if headers are set correctly in vercel.json
 if [ -f "vercel.json" ]; then
     if ! grep -q "application/javascript" vercel.json; then

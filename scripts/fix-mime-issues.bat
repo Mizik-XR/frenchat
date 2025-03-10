@@ -39,17 +39,6 @@ if not exist "dist\index.html" (
 
 echo [STEP 1/3] Checking for proper MIME type definitions...
 
-REM Check if headers are set correctly in netlify.toml
-if exist "netlify.toml" (
-    findstr /c:"Content-Type.*application/javascript" netlify.toml >nul
-    if !errorlevel! NEQ 0 (
-        echo [WARNING] JavaScript MIME type not properly set in netlify.toml
-        echo           Please update your netlify.toml file.
-    ) else (
-        echo [OK] MIME types are properly configured in netlify.toml
-    )
-)
-
 REM Check if headers are set correctly in vercel.json
 if exist "vercel.json" (
     findstr /c:"application/javascript" vercel.json >nul

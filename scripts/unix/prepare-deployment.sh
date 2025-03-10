@@ -25,15 +25,13 @@ else
 fi
 echo
 
-# Configuration for deployment without Rust
-export NO_RUST_INSTALL=1
-export TRANSFORMERS_OFFLINE=1
+# Configuration for deployment
 export NODE_ENV=production
 
 # Verify and prepare configuration files
 echo "[STEP 2/4] Checking configuration files..."
-if [ ! -f "netlify.toml" ]; then
-    echo "[ERROR] netlify.toml file is missing."
+if [ ! -f "vercel.json" ]; then
+    echo "[ERROR] vercel.json file is missing."
     echo "         Run the configuration generation script."
     echo
     read -p "Press Enter to exit..." -n1 -s
@@ -84,11 +82,11 @@ echo
 echo "Your project is ready to be deployed!"
 echo
 echo "You can now:"
-echo " 1. Deploy to Netlify by connecting your GitHub repository"
-echo " 2. Deploy via Netlify CLI: netlify deploy"
-echo " 3. Use drag-and-drop of the 'dist' folder on the Netlify interface"
+echo " 1. Deploy to Vercel by connecting your GitHub repository"
+echo " 2. Deploy via Vercel CLI: vercel deploy"
+echo " 3. Use drag-and-drop of the 'dist' folder on the Vercel interface"
 echo
-echo "Make sure to configure environment variables in the Netlify interface."
+echo "Make sure to configure environment variables in the Vercel interface."
 echo
 read -p "Press Enter to continue..." -n1 -s
 exit 0
