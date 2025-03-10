@@ -50,18 +50,65 @@
       border-bottom: 1px solid #e2e8f0;
     }
     th { background: #f8fafc; }
+    .diagnostic-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .tool-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 15px;
+      width: calc(50% - 10px);
+      box-sizing: border-box;
+    }
+    .tool-card h3 {
+      margin-top: 0;
+      color: #3b82f6;
+    }
+    @media (max-width: 640px) {
+      .tool-card {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
   <h1>FileChat - Page de diagnostic Netlify</h1>
   <p>Cette page recueille des informations sur le déploiement de l'application pour faciliter le débogage.</p>
   
+  <div class="diagnostic-tools">
+    <div class="tool-card">
+      <h3>Diagnostic général</h3>
+      <p>Exécutez le diagnostic complet pour vérifier la configuration de l'application.</p>
+      <button onclick="runDiagnostics()">Exécuter le diagnostic complet</button>
+    </div>
+    
+    <div class="tool-card">
+      <h3>Diagnostic d'images</h3>
+      <p>Testez le chargement des images et identifiez les problèmes potentiels.</p>
+      <button onclick="window.location.href='./image-diagnostic.html'">Ouvrir le diagnostic d'images</button>
+    </div>
+    
+    <div class="tool-card">
+      <h3>Tests réseau</h3>
+      <p>Vérifiez la connectivité et les problèmes de réseau potentiels.</p>
+      <button onclick="testRelativePaths()">Tester les chemins relatifs</button>
+      <button onclick="testAPIConnectivity()" class="secondary">Tester la connectivité API</button>
+    </div>
+    
+    <div class="tool-card">
+      <h3>Tests système</h3>
+      <p>Vérifiez le chargement des scripts et l'environnement.</p>
+      <button onclick="testScriptLoading()" class="secondary">Tester le chargement de scripts</button>
+      <button onclick="testReactLoading()" class="secondary">Tester React</button>
+    </div>
+  </div>
+  
   <div>
-    <button onclick="runDiagnostics()">Exécuter le diagnostic complet</button>
-    <button onclick="testRelativePaths()">Tester les chemins relatifs</button>
-    <button onclick="testAPIConnectivity()" class="secondary">Tester la connectivité API</button>
     <button onclick="clearLogs()" class="secondary">Effacer les logs</button>
-    <button onclick="testScriptLoading()" class="secondary">Tester le chargement de scripts</button>
     <button onclick="window.location.href='/'">Retour à l'application</button>
   </div>
 
