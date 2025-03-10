@@ -75,7 +75,11 @@ Dans l'interface Vercel, sous "Settings" > "Functions":
 
 2. **Fluid Compute (fonctionnalité premium)**: 
    - Cette option n'est disponible que pour les comptes Pro ou Enterprise
-   - Si vous avez accès à Fluid Compute, son activation est recommandée pour de meilleures performances
+   - Pour l'activer:
+     1. Souscrivez à un abonnement Pro ou Enterprise
+     2. Accédez à "Settings" > "Functions" dans votre projet
+     3. Cochez la case "Fluid Compute"
+     4. Sauvegardez les modifications
    - L'application fonctionne parfaitement sans cette option
 
 3. **Function Regions**: Sélectionnez les régions proches de vos utilisateurs pour de meilleures performances
