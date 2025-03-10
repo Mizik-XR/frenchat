@@ -3,25 +3,23 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title FileChat - Préparation du déploiement
-
 echo ===================================================
-echo    PRÉPARATION DU DÉPLOIEMENT FILECHAT
+echo    FILECHAT PRÉPARATION AU DÉPLOIEMENT
 echo ===================================================
 echo.
-echo Cette procédure va préparer le projet pour déploiement:
+echo Cette procédure va préparer le projet pour le déploiement:
 echo  1. Vérification des fichiers de configuration
 echo  2. Optimisation du build
-echo  3. Tests de pré-déploiement
+echo  3. Tests pré-déploiement
+echo  4. Correction des problèmes de MIME types connus
 echo.
 echo ===================================================
 echo.
-echo Appuyez sur une touche pour continuer...
-pause >nul
+pause
 
-REM Nettoyer les fichiers inutiles
-echo [ÉTAPE 1/4] Nettoyage des fichiers temporaires...
-if exist "dist\" (
+REM Nettoyage des fichiers temporaires
+echo [ÉTAPE 1/5] Nettoyage des fichiers temporaires...
+if exist "dist" (
     rmdir /s /q dist
     echo [OK] Dossier dist supprimé avec succès.
 ) else (
@@ -29,26 +27,22 @@ if exist "dist\" (
 )
 echo.
 
-REM Configuration pour le déploiement sans Rust
-set "NO_RUST_INSTALL=1"
-set "TRANSFORMERS_OFFLINE=1"
-set "NODE_ENV=production"
-set "SKIP_PYTHON_INSTALLATION=true"
+REM Configuration pour le déploiement
+set NODE_ENV=production
 
-REM Vérifier et préparer les fichiers de configuration
-echo [ÉTAPE 2/4] Vérification des fichiers de configuration...
-if not exist "netlify.toml" (
-    echo [ERREUR] Le fichier netlify.toml est manquant.
-    echo         Exécutez le script de génération de configuration.
+REM Vérification et préparation des fichiers de configuration
+echo [ÉTAPE 2/5] Vérification des fichiers de configuration...
+if not exist "vercel.json" (
+    echo [ERREUR] Le fichier vercel.json est manquant.
+    echo          Exécutez le script de génération de configuration.
     echo.
-    echo Appuyez sur une touche pour quitter...
-    pause >nul
+    pause
     exit /b 1
 )
 
-REM Optimisation du build
-echo [ÉTAPE 3/4] Optimisation et build du projet...
-set "NODE_OPTIONS=--max-old-space-size=4096"
+REM Optimisation et build
+echo [ÉTAPE 3/5] Optimisation et build du projet...
+set NODE_OPTIONS=--max-old-space-size=4096
 
 REM Installation optimisée pour le déploiement
 echo [INFO] Installation des dépendances avec configuration optimisée...
@@ -56,45 +50,61 @@ call npm install --prefer-offline --no-audit --no-fund --loglevel=error --progre
 
 call npm run build
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERREUR] La construction du projet a échoué.
+    echo [ERREUR] Échec du build du projet.
     echo.
-    echo Appuyez sur une touche pour quitter...
-    pause >nul
+    pause
     exit /b 1
 )
-echo [OK] Projet construit avec succès.
+echo [OK] Projet compilé avec succès.
 echo.
 
 REM Vérification post-build
-echo [ÉTAPE 4/4] Vérification des fichiers de déploiement...
+echo [ÉTAPE 4/5] Vérification des fichiers de déploiement...
 if not exist "dist\index.html" (
     echo [ERREUR] Le fichier dist\index.html est manquant.
     echo.
-    echo Appuyez sur une touche pour quitter...
-    pause >nul
+    pause
     exit /b 1
+)
+
+REM Vérification et correction des chemins absolus dans index.html
+findstr "href=\"/assets" "dist\index.html" >nul
+if %ERRORLEVEL% EQU 0 (
+    echo [ATTENTION] Chemins absolus détectés dans index.html, conversion en chemins relatifs...
+    powershell -Command "(Get-Content dist\index.html) -replace 'href=\"/assets', 'href=\"./assets' | Set-Content dist\index.html"
+    echo [OK] Chemins href convertis avec succès.
+)
+
+findstr "src=\"/assets" "dist\index.html" >nul
+if %ERRORLEVEL% EQU 0 (
+    echo [ATTENTION] Chemins src absolus détectés dans index.html, conversion en chemins relatifs...
+    powershell -Command "(Get-Content dist\index.html) -replace 'src=\"/assets', 'src=\"./assets' | Set-Content dist\index.html"
+    echo [OK] Chemins src convertis avec succès.
+)
+
+REM Correction des problèmes de MIME types
+echo [ÉTAPE 5/5] Correction des problèmes de MIME types pour Vercel...
+node scripts\fix-vercel-mime-types.js
+if %ERRORLEVEL% NEQ 0 (
+    echo [ATTENTION] Des problèmes ont été rencontrés lors de la correction des MIME types.
+    echo            Le déploiement peut continuer, mais des erreurs pourraient survenir.
+) else (
+    echo [OK] Corrections des MIME types appliquées avec succès.
 )
 
 echo.
 echo ===================================================
-echo    PRÉPARATION DU DÉPLOIEMENT TERMINÉE
+echo    PRÉPARATION AU DÉPLOIEMENT TERMINÉE
 echo ===================================================
 echo.
-echo Votre projet est prêt à être déployé!
+echo Votre projet est prêt à être déployé !
 echo.
-echo Vous pouvez maintenant:
-echo  1. Déployer sur Netlify en connectant votre dépôt GitHub
-echo  2. Déployer via la CLI Netlify: netlify deploy
-echo  3. Utiliser le drag-and-drop du dossier 'dist' sur l'interface Netlify
+echo Vous pouvez maintenant :
+echo  1. Déployer sur Vercel en connectant votre dépôt GitHub
+echo  2. Déployer via la CLI Vercel : vercel deploy
+echo  3. Utiliser le glisser-déposer du dossier 'dist' sur l'interface Vercel
 echo.
-echo Assurez-vous de configurer les variables d'environnement dans l'interface Netlify:
-echo  - VITE_SUPABASE_URL
-echo  - VITE_SUPABASE_ANON_KEY
-echo  - VITE_CLOUD_API_URL (optionnel)
+echo N'oubliez pas de configurer les variables d'environnement dans l'interface Vercel.
 echo.
-echo [IMPORTANT] Pour le déploiement Netlify, NO_RUST_INSTALL=1 est activé par défaut
-echo            dans le fichier netlify.toml pour éviter les problèmes de compilation.
-echo.
-echo Appuyez sur une touche pour continuer...
-pause >nul
+pause
 exit /b 0
