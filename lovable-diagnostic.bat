@@ -3,138 +3,138 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title Lovable - Diagnostic d'intégration
+title Lovable - Integration Diagnostic
 
 echo ===================================================
-echo     DIAGNOSTIC D'INTÉGRATION LOVABLE
+echo     LOVABLE INTEGRATION DIAGNOSTIC
 echo ===================================================
 echo.
-echo Cet outil va analyser l'intégration de Lovable dans
-echo votre application et proposer des solutions.
+echo This tool will analyze Lovable integration in
+echo your application and suggest solutions.
 echo.
 echo ===================================================
 echo.
-echo Appuyez sur une touche pour démarrer l'analyse...
+echo Press any key to start analysis...
 pause >nul
 
-REM Vérification du script Lovable
-echo [TEST 1/5] Vérification du script Lovable dans index.html...
+REM Check Lovable script
+echo [TEST 1/5] Checking for Lovable script in index.html...
 if exist "index.html" (
     findstr "gptengineer.js" "index.html" >nul
     if !errorlevel! NEQ 0 (
-        echo [ÉCHEC] Le script Lovable n'est pas présent dans index.html.
+        echo [FAIL] Lovable script is not present in index.html.
         set LOVABLE_SCRIPT_ISSUE=1
     ) else (
-        echo [OK] Le script Lovable est présent dans index.html.
+        echo [OK] Lovable script is present in index.html.
     )
 ) else (
-    echo [ÉCHEC] Le fichier index.html est manquant.
+    echo [FAIL] index.html file is missing.
     set LOVABLE_SCRIPT_ISSUE=1
 )
 echo.
 
-REM Vérification du script dans le build
-echo [TEST 2/5] Vérification du script Lovable dans le build (dist)...
+REM Check script in build
+echo [TEST 2/5] Checking for Lovable script in build (dist)...
 if exist "dist\index.html" (
     findstr "gptengineer.js" "dist\index.html" >nul
     if !errorlevel! NEQ 0 (
-        echo [ÉCHEC] Le script Lovable n'est pas présent dans le build.
+        echo [FAIL] Lovable script is not present in the build.
         set LOVABLE_BUILD_ISSUE=1
     ) else (
-        echo [OK] Le script Lovable est présent dans le build.
+        echo [OK] Lovable script is present in the build.
     )
 ) else (
-    echo [INFO] Le dossier dist n'existe pas encore. Un build est nécessaire.
+    echo [INFO] dist folder doesn't exist yet. A build is needed.
     set LOVABLE_BUILD_ISSUE=1
 )
 echo.
 
-REM Vérification des variables d'environnement
-echo [TEST 3/5] Vérification de la configuration du projet...
+REM Check environment variables
+echo [TEST 3/5] Checking project configuration...
 if exist ".env.local" (
     findstr "VITE_DISABLE_DEV_MODE=1" ".env.local" >nul
     if !errorlevel! NEQ 0 (
-        echo [INFO] Mode développement activé, cela peut interférer avec Lovable.
+        echo [INFO] Development mode is enabled, which may interfere with Lovable.
         set ENV_ISSUE=1
     ) else (
-        echo [OK] Configuration correcte.
+        echo [OK] Correct configuration.
     )
 ) else (
-    echo [INFO] Fichier .env.local manquant, configuration par défaut utilisée.
+    echo [INFO] .env.local file missing, default configuration used.
 )
 echo.
 
-REM Test de construction
-echo [TEST 4/5] Test de construction rapide...
+REM Test build
+echo [TEST 4/5] Quick build test...
 call npm run build --silent
 if !errorlevel! NEQ 0 (
-    echo [ÉCHEC] La construction du projet a échoué.
+    echo [FAIL] Project build failed.
     set BUILD_ISSUE=1
 ) else (
-    echo [OK] Construction réussie.
+    echo [OK] Build successful.
 )
 echo.
 
-REM Vérification du navigateur (Chrome recommandé)
-echo [TEST 5/5] Vérification du navigateur par défaut...
+REM Check browser (Chrome recommended)
+echo [TEST 5/5] Checking default browser...
 reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.html\UserChoice" /v "ProgId" 2>nul | findstr "ChromeHTML" >nul
 if !errorlevel! NEQ 0 (
-    echo [INFO] Chrome n'est pas votre navigateur par défaut.
-    echo        Chrome ou Edge sont recommandés pour l'édition avec Lovable.
+    echo [INFO] Chrome is not your default browser.
+    echo        Chrome or Edge are recommended for editing with Lovable.
     set BROWSER_ISSUE=1
 ) else (
-    echo [OK] Chrome est votre navigateur par défaut.
+    echo [OK] Chrome is your default browser.
 )
 echo.
 
 echo ===================================================
-echo     RÉSULTATS DU DIAGNOSTIC
+echo     DIAGNOSTIC RESULTS
 echo ===================================================
 echo.
 
-REM Afficher le résumé et les recommandations
+REM Display summary and recommendations
 set ISSUES_FOUND=0
 if defined LOVABLE_SCRIPT_ISSUE (
     set /a ISSUES_FOUND+=1
-    echo [PROBLÈME] Le script Lovable n'est pas correctement intégré.
-    echo            Exécutez fix-edit-issues.bat pour corriger.
+    echo [ISSUE] Lovable script is not properly integrated.
+    echo         Run fix-edit-issues.bat to fix this.
 )
 if defined LOVABLE_BUILD_ISSUE (
     set /a ISSUES_FOUND+=1
-    echo [PROBLÈME] Le build ne contient pas le script Lovable.
-    echo            Exécutez fix-edit-issues.bat puis reconstruisez.
+    echo [ISSUE] Build does not contain Lovable script.
+    echo         Run fix-edit-issues.bat then rebuild.
 )
 if defined ENV_ISSUE (
     set /a ISSUES_FOUND+=1
-    echo [PROBLÈME] Configuration environnement non optimale pour Lovable.
-    echo            Ajoutez VITE_DISABLE_DEV_MODE=1 au fichier .env.local.
+    echo [ISSUE] Environment configuration not optimal for Lovable.
+    echo         Add VITE_DISABLE_DEV_MODE=1 to your .env.local file.
 )
 if defined BUILD_ISSUE (
     set /a ISSUES_FOUND+=1
-    echo [PROBLÈME] Échec de la construction.
-    echo            Vérifiez les messages d'erreur et corrigez les problèmes.
+    echo [ISSUE] Build failure.
+    echo         Check error messages and fix issues.
 )
 if defined BROWSER_ISSUE (
     set /a ISSUES_FOUND+=1
-    echo [PROBLÈME] Navigateur non optimal pour l'édition avec Lovable.
-    echo            Utilisez Google Chrome ou Microsoft Edge.
+    echo [ISSUE] Browser not optimal for editing with Lovable.
+    echo         Use Google Chrome or Microsoft Edge.
 )
 
 if %ISSUES_FOUND% EQU 0 (
-    echo [RÉSULTAT] Aucun problème détecté avec l'intégration Lovable.
-    echo            Si les problèmes persistent:
-    echo            1. Videz le cache de votre navigateur
-    echo            2. Désactivez les extensions qui pourraient interférer
-    echo            3. Essayez un autre navigateur (Chrome ou Edge)
+    echo [RESULT] No issues detected with Lovable integration.
+    echo          If problems persist:
+    echo          1. Clear your browser cache
+    echo          2. Disable extensions that might interfere
+    echo          3. Try another browser (Chrome or Edge)
 ) else (
-    echo [RÉSULTAT] %ISSUES_FOUND% problème(s) détecté(s).
-    echo            Suivez les recommandations ci-dessus.
+    echo [RESULT] %ISSUES_FOUND% issue(s) detected.
+    echo          Follow the recommendations above.
 )
 echo.
 
 echo ===================================================
-echo Pour corriger automatiquement les problèmes détectés,
-echo exécutez: fix-edit-issues.bat
+echo To automatically fix detected issues,
+echo run: fix-edit-issues.bat
 echo ===================================================
 echo.
 pause

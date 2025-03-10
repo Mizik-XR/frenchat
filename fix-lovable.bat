@@ -6,22 +6,22 @@ setlocal enabledelayedexpansion
 title Filechat - Fix Lovable Integration
 
 echo ===================================================
-echo     RÉPARATION INTÉGRATION LOVABLE
+echo     FIXING LOVABLE INTEGRATION
 echo ===================================================
 echo.
-echo Cet outil va résoudre les problèmes d'édition Lovable.
+echo This tool will fix issues with Lovable editing.
 echo.
-echo [ÉTAPE 1/3] Vérification du fichier index.html...
+echo [STEP 1/3] Checking index.html file...
 if exist "index.html" (
-    echo [INFO] Vérification de la présence du script gptengineer.js...
+    echo [INFO] Checking for gptengineer.js script...
     findstr "gptengineer.js" "index.html" >nul
     if !errorlevel! NEQ 0 (
-        echo [ATTENTION] Le script Lovable manque dans index.html, correction...
+        echo [WARNING] Lovable script is missing in index.html, fixing...
         
-        REM Sauvegarde du fichier original
+        REM Backup original file
         copy index.html index.html.backup >nul
         
-        REM Modifier le fichier index.html pour ajouter le script manquant
+        REM Modify index.html to add missing script
         (for /f "delims=" %%i in (index.html) do (
             echo %%i
             echo %%i | findstr "<script " >nul
@@ -31,52 +31,52 @@ if exist "index.html" (
         )) > index.html.temp
         
         move /y index.html.temp index.html >nul
-        echo [OK] Script gptengineer.js ajouté dans index.html.
+        echo [OK] gptengineer.js script added to index.html.
     ) else (
-        echo [OK] Le script gptengineer.js est déjà présent dans index.html.
+        echo [OK] gptengineer.js script is already present in index.html.
     )
 ) else (
-    echo [ERREUR] Le fichier index.html est manquant dans le répertoire racine.
+    echo [ERROR] index.html file is missing in the root directory.
     pause
     exit /b 1
 )
 echo.
 
-echo [ÉTAPE 2/3] Reconstruction de l'application...
+echo [STEP 2/3] Rebuilding application...
 call npm run build
 if errorlevel 1 (
-    echo [ERREUR] Reconstruction de l'application échouée.
+    echo [ERROR] Application rebuild failed.
     pause
     exit /b 1
 ) else (
-    echo [OK] Application reconstruite avec succès.
+    echo [OK] Application rebuilt successfully.
 )
 echo.
 
-echo [ÉTAPE 3/3] Vérification finale...
+echo [STEP 3/3] Final verification...
 if exist "dist\index.html" (
-    echo [INFO] Vérification de dist\index.html...
+    echo [INFO] Checking dist\index.html...
     findstr "gptengineer.js" "dist\index.html" >nul
     if !errorlevel! NEQ 0 (
-        echo [ATTENTION] Le script gptengineer.js est absent de dist\index.html.
-        echo             Application d'une correction manuelle...
+        echo [WARNING] gptengineer.js script is missing from dist\index.html.
+        echo            Applying manual fix...
         copy /y index.html dist\index.html >nul
-        echo [OK] Correction appliquée.
+        echo [OK] Fix applied.
     ) else (
-        echo [OK] Le fichier dist\index.html contient le script requis.
+        echo [OK] dist\index.html contains the required script.
     )
 ) else (
-    echo [INFO] Le dossier dist n'existe pas encore.
+    echo [INFO] dist folder doesn't exist yet.
 )
 echo.
 
 echo ===================================================
-echo     RÉPARATION TERMINÉE
+echo     FIX COMPLETED
 echo ===================================================
 echo.
-echo Pour appliquer les changements:
-echo 1. Redémarrez l'application
-echo 2. Videz le cache de votre navigateur ou utilisez le mode incognito
+echo To apply changes:
+echo 1. Restart the application
+echo 2. Clear your browser cache or use incognito mode
 echo.
 pause
 exit /b 0
