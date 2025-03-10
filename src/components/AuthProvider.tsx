@@ -19,7 +19,7 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading, signOut } = useAuthSession();
 
-  // Afficher le composant de chargement pendant la vérification de l'authentification
+  // Display loading component while checking authentication
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth doit être utilisé à l'intérieur d'un AuthProvider");
+    throw new Error("useAuth must be used inside an AuthProvider");
   }
   return context;
 };

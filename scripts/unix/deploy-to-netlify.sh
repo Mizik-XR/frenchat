@@ -2,47 +2,47 @@
 #!/bin/bash
 
 echo "==================================================="
-echo "    DÉPLOIEMENT FILECHAT VERS NETLIFY"
+echo "    FILECHAT DEPLOYMENT TO NETLIFY"
 echo "==================================================="
 echo
-echo "Ce script va déployer FileChat vers Netlify."
-echo "Assurez-vous d'avoir installé la CLI Netlify et"
-echo "d'être connecté à votre compte Netlify."
+echo "This script will deploy FileChat to Netlify."
+echo "Make sure you have installed the Netlify CLI and"
+echo "are logged in to your Netlify account."
 echo
-echo "Étapes:"
-echo "1. Vérification de l'environnement"
-echo "2. Préparation du build pour déploiement"
-echo "3. Déploiement vers Netlify"
+echo "Steps:"
+echo "1. Environment verification"
+echo "2. Build preparation for deployment"
+echo "3. Deployment to Netlify"
 echo
 echo "==================================================="
 echo
-read -p "Appuyez sur Entrée pour continuer..." -n1 -s
+read -p "Press Enter to continue..." -n1 -s
 echo
 
-# Vérifier si netlify CLI est installé
+# Check if netlify CLI is installed
 if ! command -v netlify &> /dev/null; then
-    echo "[INFO] La CLI Netlify n'est pas installée, installation en cours..."
+    echo "[INFO] Netlify CLI is not installed, installing..."
     npm install -g netlify-cli
     if [ $? -ne 0 ]; then
-        echo "[ERREUR] L'installation de la CLI Netlify a échoué."
+        echo "[ERROR] Netlify CLI installation failed."
         echo
-        echo "Pour l'installer manuellement, exécutez:"
+        echo "To install manually, run:"
         echo "npm install -g netlify-cli"
         echo
-        read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+        read -p "Press Enter to exit..." -n1 -s
         exit 1
     fi
-    echo "[OK] CLI Netlify installée avec succès."
+    echo "[OK] Netlify CLI installed successfully."
 fi
 
-# Désactiver l'installation de Rust pour le déploiement
+# Disable Rust installation for deployment
 export NO_RUST_INSTALL=1
 export NETLIFY_SKIP_PYTHON=true
 export TRANSFORMERS_OFFLINE=1
 export NODE_ENV=production
 
-# Nettoyer les fichiers inutiles
-echo "[INFO] Nettoyage des fichiers temporaires..."
+# Clean unnecessary files
+echo "[INFO] Cleaning temporary files..."
 if [ -d "dist" ]; then
     rm -rf dist
 fi
@@ -50,78 +50,78 @@ if [ -d "node_modules" ]; then
     rm -rf node_modules
 fi
 
-# Installation optimisée pour Netlify
-echo "[INFO] Installation des dépendances avec configuration pour Netlify..."
+# Optimized installation for Netlify
+echo "[INFO] Installing dependencies with configuration for Netlify..."
 npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
 
-# Préparer le build
-echo "[ÉTAPE 2/3] Préparation du build pour déploiement..."
+# Prepare the build
+echo "[STEP 2/3] Preparing build for deployment..."
 export NODE_OPTIONS="--max-old-space-size=4096"
 npm run build
 if [ $? -ne 0 ]; then
-    echo "[ERREUR] La construction du projet a échoué."
+    echo "[ERROR] Project build failed."
     echo
-    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+    read -p "Press Enter to exit..." -n1 -s
     exit 1
 fi
-echo "[OK] Build prêt pour déploiement."
+echo "[OK] Build ready for deployment."
 echo
 
-# Vérification de la connexion à Netlify
-echo "[ÉTAPE 3/3] Vérification de la connexion à Netlify..."
+# Check Netlify connection
+echo "[STEP 3/3] Checking Netlify connection..."
 netlify status > /dev/null 2>&1
 if [ $? -ne 0 ]; then
-    echo "[INFO] Vous n'êtes pas connecté à Netlify."
-    echo "[INFO] Connexion à Netlify..."
+    echo "[INFO] You are not connected to Netlify."
+    echo "[INFO] Connecting to Netlify..."
     netlify login
     if [ $? -ne 0 ]; then
-        echo "[ERREUR] Échec de la connexion à Netlify."
+        echo "[ERROR] Failed to connect to Netlify."
         echo
-        read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+        read -p "Press Enter to exit..." -n1 -s
         exit 1
     fi
 fi
-echo "[OK] Connecté à Netlify."
+echo "[OK] Connected to Netlify."
 echo
 
-# Déployer vers Netlify
-echo "[INFO] Voulez-vous:"
-echo "1. Déployer une prévisualisation (preview)"
-echo "2. Déployer en production"
-read -p "Choisissez une option (1 ou 2): " choice
+# Deploy to Netlify
+echo "[INFO] Would you like to:"
+echo "1. Deploy a preview"
+echo "2. Deploy to production"
+read -p "Choose an option (1 or 2): " choice
 
 if [ "$choice" = "1" ]; then
-    echo "[INFO] Déploiement d'une prévisualisation..."
+    echo "[INFO] Deploying a preview..."
     netlify deploy --dir=dist
 else
-    echo "[INFO] Déploiement en production..."
+    echo "[INFO] Deploying to production..."
     netlify deploy --prod --dir=dist
 fi
 
 if [ $? -ne 0 ]; then
-    echo "[ERREUR] Le déploiement a échoué."
+    echo "[ERROR] Deployment failed."
     echo
-    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+    read -p "Press Enter to exit..." -n1 -s
     exit 1
 fi
-echo "[OK] Déploiement terminé avec succès."
+echo "[OK] Deployment completed successfully."
 echo
 
 echo "==================================================="
-echo "     DÉPLOIEMENT TERMINÉ"
+echo "     DEPLOYMENT COMPLETED"
 echo "==================================================="
 echo
-echo "N'oubliez pas de configurer les variables d'environnement"
-echo "dans l'interface Netlify pour les fonctionnalités avancées."
+echo "Remember to configure environment variables"
+echo "in the Netlify interface for advanced features."
 echo
-echo "Variables à configurer:"
-echo "- VITE_SUPABASE_URL: URL de votre projet Supabase"
-echo "- VITE_SUPABASE_ANON_KEY: Clé anonyme de votre projet Supabase"
-echo "- VITE_CLOUD_API_URL: URL de l'API cloud (optionnel)"
+echo "Variables to configure:"
+echo "- VITE_SUPABASE_URL: Your Supabase project URL"
+echo "- VITE_SUPABASE_ANON_KEY: Your Supabase anonymous key"
+echo "- VITE_CLOUD_API_URL: Cloud API URL (optional)"
 echo
 echo "==================================================="
 echo
-echo "Vous pouvez maintenant partager le lien de déploiement avec le client."
+echo "You can now share the deployment link with your client."
 echo
-read -p "Appuyez sur Entrée pour continuer..." -n1 -s
+read -p "Press Enter to continue..." -n1 -s
 exit 0

@@ -2,93 +2,93 @@
 #!/bin/bash
 
 echo "==================================================="
-echo "    PRÉPARATION DU DÉPLOIEMENT FILECHAT"
+echo "    FILECHAT DEPLOYMENT PREPARATION"
 echo "==================================================="
 echo
-echo "Cette procédure va préparer le projet pour déploiement:"
-echo " 1. Vérification des fichiers de configuration"
-echo " 2. Optimisation du build"
-echo " 3. Tests de pré-déploiement"
+echo "This procedure will prepare the project for deployment:"
+echo " 1. Configuration files verification"
+echo " 2. Build optimization"
+echo " 3. Pre-deployment tests"
 echo
 echo "==================================================="
 echo
-read -p "Appuyez sur Entrée pour continuer..." -n1 -s
+read -p "Press Enter to continue..." -n1 -s
 echo
 
-# Nettoyer les fichiers inutiles
-echo "[ÉTAPE 1/4] Nettoyage des fichiers temporaires..."
+# Clean unnecessary files
+echo "[STEP 1/4] Cleaning temporary files..."
 if [ -d "dist" ]; then
     rm -rf dist
-    echo "[OK] Dossier dist supprimé avec succès."
+    echo "[OK] Dist folder successfully deleted."
 else
-    echo "[INFO] Le dossier dist n'existe pas, étape ignorée."
+    echo "[INFO] Dist folder does not exist, step skipped."
 fi
 echo
 
-# Configuration pour le déploiement sans Rust
+# Configuration for deployment without Rust
 export NO_RUST_INSTALL=1
 export TRANSFORMERS_OFFLINE=1
 export NODE_ENV=production
 
-# Vérifier et préparer les fichiers de configuration
-echo "[ÉTAPE 2/4] Vérification des fichiers de configuration..."
+# Verify and prepare configuration files
+echo "[STEP 2/4] Checking configuration files..."
 if [ ! -f "netlify.toml" ]; then
-    echo "[ERREUR] Le fichier netlify.toml est manquant."
-    echo "         Exécutez le script de génération de configuration."
+    echo "[ERROR] netlify.toml file is missing."
+    echo "         Run the configuration generation script."
     echo
-    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+    read -p "Press Enter to exit..." -n1 -s
     exit 1
 fi
 
-# Optimisation du build
-echo "[ÉTAPE 3/4] Optimisation et build du projet..."
+# Build optimization
+echo "[STEP 3/4] Optimizing and building the project..."
 export NODE_OPTIONS="--max-old-space-size=4096"
 
-# Installation optimisée pour le déploiement
-echo "[INFO] Installation des dépendances avec configuration optimisée..."
+# Optimized installation for deployment
+echo "[INFO] Installing dependencies with optimized configuration..."
 npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
 
 npm run build
 if [ $? -ne 0 ]; then
-    echo "[ERREUR] La construction du projet a échoué."
+    echo "[ERROR] Project build failed."
     echo
-    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+    read -p "Press Enter to exit..." -n1 -s
     exit 1
 fi
-echo "[OK] Projet construit avec succès."
+echo "[OK] Project built successfully."
 echo
 
-# Vérification post-build
-echo "[ÉTAPE 4/4] Vérification des fichiers de déploiement..."
+# Post-build verification
+echo "[STEP 4/4] Checking deployment files..."
 if [ ! -f "dist/index.html" ]; then
-    echo "[ERREUR] Le fichier dist/index.html est manquant."
+    echo "[ERROR] dist/index.html file is missing."
     echo
-    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+    read -p "Press Enter to exit..." -n1 -s
     exit 1
 fi
 
-# Vérification des chemins relatifs dans index.html
+# Check for absolute paths in index.html
 if grep -q "href=\"/assets" "dist/index.html" || grep -q "src=\"/assets" "dist/index.html"; then
-    echo "[ATTENTION] Chemins absolus détectés dans index.html, conversion en chemins relatifs..."
+    echo "[WARNING] Absolute paths detected in index.html, converting to relative paths..."
     sed -i.bak 's|href="/assets|href="./assets|g' dist/index.html
     sed -i.bak 's|src="/assets|src="./assets|g' dist/index.html
     rm -f dist/index.html.bak
-    echo "[OK] Chemins convertis avec succès."
+    echo "[OK] Paths converted successfully."
 fi
 
 echo
 echo "==================================================="
-echo "    PRÉPARATION DU DÉPLOIEMENT TERMINÉE"
+echo "    DEPLOYMENT PREPARATION COMPLETED"
 echo "==================================================="
 echo
-echo "Votre projet est prêt à être déployé!"
+echo "Your project is ready to be deployed!"
 echo
-echo "Vous pouvez maintenant:"
-echo " 1. Déployer sur Netlify en connectant votre dépôt GitHub"
-echo " 2. Déployer via la CLI Netlify: netlify deploy"
-echo " 3. Utiliser le drag-and-drop du dossier 'dist' sur l'interface Netlify"
+echo "You can now:"
+echo " 1. Deploy to Netlify by connecting your GitHub repository"
+echo " 2. Deploy via Netlify CLI: netlify deploy"
+echo " 3. Use drag-and-drop of the 'dist' folder on the Netlify interface"
 echo
-echo "Assurez-vous de configurer les variables d'environnement dans l'interface Netlify."
+echo "Make sure to configure environment variables in the Netlify interface."
 echo
-read -p "Appuyez sur Entrée pour continuer..." -n1 -s
+read -p "Press Enter to continue..." -n1 -s
 exit 0
