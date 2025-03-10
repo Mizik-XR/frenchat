@@ -1,8 +1,7 @@
 
 /**
- * Ce script génère et vérifie la configuration correcte des types MIME
- * dans le fichier vercel.json pour éviter les erreurs de Content-Type
- * lors du déploiement sur Vercel.
+ * Script pour configurer les types MIME dans vercel.json
+ * Ce script vérifie et met à jour la configuration des headers MIME dans vercel.json
  */
 
 const fs = require('fs');
@@ -24,7 +23,7 @@ try {
       "buildCommand": "npm run build",
       "outputDirectory": "dist",
       "routes": [
-        { "src": "/assets/.*\\.(js|css|svg|png|jpg|jpeg|gif|ico)$", "headers": { "content-type": "application/javascript", "cache-control": "public, max-age=31536000, immutable" }, "continue": true },
+        { "src": "/assets/.*\\.(js|css|svg|png|jpg|jpeg|gif|ico)$", "headers": { "cache-control": "public, max-age=31536000, immutable" }, "continue": true },
         { "src": "/(.*\\.(js|css|svg|png|jpg|jpeg|gif|ico))$", "headers": { "cache-control": "public, max-age=31536000, immutable" }, "dest": "/$1" },
         { "src": "/api/(.*)", "dest": "/api/$1" },
         { "src": "/(.*)", "dest": "/index.html" }
@@ -45,6 +44,15 @@ try {
             {
               "key": "Content-Type",
               "value": "text/css; charset=utf-8"
+            }
+          ]
+        },
+        {
+          "source": "/(.*)\\.html$",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "text/html; charset=utf-8"
             }
           ]
         }
@@ -99,6 +107,21 @@ try {
         {
           "key": "Content-Type",
           "value": "text/css; charset=utf-8"
+        }
+      ]
+    });
+    modified = true;
+  }
+
+  // Vérifier les entrées pour HTML
+  const htmlHeaderEntry = config.headers.find(h => h.source === "/(.*)\\.html$");
+  if (!htmlHeaderEntry) {
+    config.headers.push({
+      "source": "/(.*)\\.html$",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/html; charset=utf-8"
         }
       ]
     });

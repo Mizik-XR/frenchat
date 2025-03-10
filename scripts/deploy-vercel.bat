@@ -27,19 +27,19 @@ pause >nul
 
 REM Vérifier si vercel CLI est installé
 where vercel >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
+if !ERRORLEVEL! NEQ 0 (
     echo [INFO] Vercel CLI n'est pas configuré, installation en cours...
     call npm install -g vercel
     
     REM Vérifier si l'installation a réussi
     where vercel >nul 2>&1
-    if %ERRORLEVEL% NEQ 0 (
+    if !ERRORLEVEL! NEQ 0 (
         echo [ATTENTION] L'installation automatique a échoué, tentative avec --force...
         call npm install -g vercel --force
         
         REM Vérifier à nouveau
         where vercel >nul 2>&1
-        if %ERRORLEVEL% NEQ 0 (
+        if !ERRORLEVEL! NEQ 0 (
             echo [ERREUR] Installation de Vercel CLI impossible.
             echo.
             echo Vous pouvez essayer manuellement avec:
