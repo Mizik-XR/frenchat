@@ -99,20 +99,19 @@ window.initSentry = function() {
 const urlParams = new URLSearchParams(window.location.search);
 const forceCloud = urlParams.get('forceCloud') === 'true' || import.meta.env.VITE_CLOUD_MODE === 'true';
 const debugMode = urlParams.get('debug') === 'true';
-const netlifyMode = isNetlifyEnvironment() || import.meta.env.VITE_NETLIFY_DEPLOYMENT === 'true';
+const isNetlify = isNetlifyEnvironment() || import.meta.env.VITE_NETLIFY_DEPLOYMENT === 'true';
 
 // Configuration globale de l'application
 window.APP_CONFIG = {
-  forceCloudMode: forceCloud || netlifyMode,
-  debugMode: debugMode,
-  netlifyMode: netlifyMode
+  forceCloudMode: forceCloud || isNetlify,
+  debugMode: debugMode
 };
 
 if (forceCloud) {
   console.log('☁️ Mode cloud forcé par paramètre d\'URL ou variable d\'environnement');
 }
 
-if (netlifyMode) {
+if (isNetlify) {
   console.log('🌐 Mode Netlify détecté');
 }
 
@@ -222,7 +221,6 @@ declare global {
     APP_CONFIG?: {
       forceCloudMode?: boolean;
       debugMode?: boolean;
-      netlifyMode?: boolean;
     };
   }
 }

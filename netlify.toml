@@ -80,4 +80,3 @@
   from = "/diagnostic"
   to = "/diagnostic.html"
   status = 200
-
