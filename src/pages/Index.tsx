@@ -8,7 +8,7 @@ import { ToastTester } from '@/components/debug/ToastTester';
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [shouldShowLanding, setShouldShowLanding] = useState(false);
+  const [shouldShowLanding, setShouldShowLanding] = useState(true); // Changé à true par défaut
   const { user, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -16,16 +16,25 @@ const Index = () => {
     // Si l'authentification est toujours en cours, on attend
     if (isAuthLoading) return;
 
+    // En mode développement, vérifions si nous devons forcer l'affichage de la landing
+    const isDevelopment = process.env.NODE_ENV === 'development';
     const hasSeenLanding = localStorage.getItem('hasSeenLanding') === 'true';
+    
+    console.log("Index page: Auth status:", user ? "Logged in" : "Not logged in", 
+                "isDevelopment:", isDevelopment, 
+                "hasSeenLanding:", hasSeenLanding);
 
     // Logique de redirection
     if (user) {
       // Utilisateur connecté -> redirection vers /home
       navigate('/home', { replace: true });
-    } else if (!hasSeenLanding) {
-      // Nouvel utilisateur non connecté -> afficher la landing page
+    } else if (!hasSeenLanding || isDevelopment) {
+      // Nouvel utilisateur non connecté ou en mode dev -> afficher la landing page
       setShouldShowLanding(true);
-      localStorage.setItem('hasSeenLanding', 'true');
+      // Ne mettez pas à jour hasSeenLanding en mode dev pour toujours voir la landing
+      if (!isDevelopment) {
+        localStorage.setItem('hasSeenLanding', 'true');
+      }
     } else {
       // Utilisateur non connecté qui a déjà vu la landing page -> redirection vers /auth
       navigate('/auth', { replace: true });
@@ -55,4 +64,3 @@ const Index = () => {
 };
 
 export default Index;
-

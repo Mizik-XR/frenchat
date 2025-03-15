@@ -1,6 +1,7 @@
 
-// Ce fichier réexporte simplement depuis notre nouvelle structure de dossier
-import { useToast, ToastProvider, toast } from "./toast";
+// Ce fichier réexporte proprement depuis notre structure de dossier toast
+import { useToast, ToastProvider } from "./toast/toast-context";
+import { toast } from "./toast/toast-utils";
 import type { Toast, ToastVariant } from "./toast/types";
 
 export { 

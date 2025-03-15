@@ -37,7 +37,8 @@ export function useAuthForms() {
         variant: "success"
       });
       
-      navigate('/chat');
+      // Redirection vers la page d'accueil après connexion
+      navigate('/home');
     } catch (error: any) {
       console.error("Sign in error:", error);
       toast({
@@ -84,13 +85,15 @@ export function useAuthForms() {
           description: "Vérifiez votre email pour confirmer votre compte",
           variant: "success"
         });
+        // Rester sur la page d'authentification pour que l'utilisateur puisse se connecter après confirmation
       } else if (data.session) {
         toast({
           title: "Inscription réussie",
           description: "Votre compte a été créé avec succès",
           variant: "success"
         });
-        navigate('/chat');
+        // Contourner les erreurs de profil en redirigeant directement vers home
+        navigate('/home');
       }
     } catch (error: any) {
       console.error("Sign up error:", error);
