@@ -141,7 +141,7 @@ export function GuideSection() {
               </AccordionTrigger>
               <AccordionContent className="px-6 py-4 text-gray-300">
                 Pour signaler un bug ou demander une nouvelle fonctionnalité, utilisez le formulaire de feedback 
-                dans l'application (menu Aide > Signaler un problème) ou envoyez un email à l'équipe de support.
+                dans l'application (menu Aide {'>'}  Signaler un problème) ou envoyez un email à l'équipe de support.
                 Incluez autant de détails que possible, notamment les étapes pour reproduire le problème.
               </AccordionContent>
             </AccordionItem>
