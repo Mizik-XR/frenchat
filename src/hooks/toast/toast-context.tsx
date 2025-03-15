@@ -1,8 +1,7 @@
 
 import React, { createContext, useContext, useState, useMemo } from "react";
-import { State } from "./types";
+import { State, Toast } from "./types";
 import { dispatch, memoryState, listeners, createToast } from "./toast-utils";
-import { Toast } from "./types";
 
 type ToastContextType = {
   state: State;

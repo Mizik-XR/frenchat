@@ -14,3 +14,6 @@ export type Toast = {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 };
+
+// Add the State type that was missing
+export type State = { toasts: Toast[] };

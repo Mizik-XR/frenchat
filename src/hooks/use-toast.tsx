@@ -1,21 +1,20 @@
 
 import * as React from "react";
 import { useToast as useInternalToast } from "./toast/toast-context";
-import { ToastActionElement, Toast, ToastVariant } from "./toast/types";
+import type { ToastActionElement, Toast as ToastType, ToastVariant } from "./toast/types";
 import { createToast } from "./toast/toast-utils";
 
-// Re-export types
-export type { Toast, ToastVariant, ToastActionElement };
+// Re-export types with renamed type to avoid conflict
+export type { ToastType as Toast, ToastVariant, ToastActionElement };
 
 // Export the hook for use inside components
 export const useToast = useInternalToast;
 
 // Export the toast function for direct usage
-// This is the function that is missing in all imports
 export const toast = createToast;
 
-// Composant Toast pour le rendu
-export function Toast({
+// Renamed to ToastComponent to avoid conflict with the imported type
+export function ToastComponent({
   className,
   children,
   ...props

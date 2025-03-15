@@ -1,9 +1,7 @@
 
-import { Toast } from "../use-toast.tsx";
+import { Toast, State } from "./types";
 
 // Internal state management
-export type State = { toasts: Toast[] };
-
 export const listeners: ((state: State) => void)[] = [];
 export const memoryState: State = { toasts: [] };
 
