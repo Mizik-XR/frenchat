@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ToastProvider } from './hooks/use-toast';
 
 // Importation différée des composants pour améliorer les performances de chargement initial
 const Home = lazy(() => import('./pages/Home'));
@@ -91,18 +92,20 @@ function App() {
     <ErrorBoundary>
       {/* L'ordre des providers est crucial pour le bon fonctionnement */}
       <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
-        <QueryClientProvider client={queryClient}>
-          {/* Ajout du BrowserRouter autour de AuthProvider et des autres composants */}
-          <BrowserRouter>
-            <AuthProvider>
-              <SettingsProvider>
-                <ReactErrorMonitor />
-                <AppRouter />
-                <Toaster />
-              </SettingsProvider>
-            </AuthProvider>
-          </BrowserRouter>
-        </QueryClientProvider>
+        <ToastProvider>
+          <QueryClientProvider client={queryClient}>
+            {/* Ajout du BrowserRouter autour de AuthProvider et des autres composants */}
+            <BrowserRouter>
+              <AuthProvider>
+                <SettingsProvider>
+                  <ReactErrorMonitor />
+                  <AppRouter />
+                  <Toaster />
+                </SettingsProvider>
+              </AuthProvider>
+            </BrowserRouter>
+          </QueryClientProvider>
+        </ToastProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
