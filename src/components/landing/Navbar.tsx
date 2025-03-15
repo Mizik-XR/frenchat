@@ -7,6 +7,14 @@ interface NavbarProps {
 }
 
 export default function Navbar({ onJoinBeta }: NavbarProps) {
+  // Fonction pour faire défiler jusqu'à la section FAQ
+  const scrollToFAQ = () => {
+    const faqSection = document.getElementById('faq');
+    if (faqSection) {
+      faqSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <header className="fixed top-0 w-full z-50 bg-black/50 backdrop-blur-md border-b border-white/10">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
@@ -18,8 +26,15 @@ export default function Navbar({ onJoinBeta }: NavbarProps) {
           <a href="#features" className="text-gray-300 hover:text-white transition-colors">
             Fonctionnalités
           </a>
-          <a href="#pricing" className="text-gray-300 hover:text-white transition-colors">
-            Tarifs
+          <a 
+            href="#faq" 
+            className="text-gray-300 hover:text-white transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToFAQ();
+            }}
+          >
+            FAQ
           </a>
         </nav>
         <div className="flex items-center space-x-4">

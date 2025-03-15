@@ -79,7 +79,7 @@ export function GuideSection() {
           </div>
         </div>
         
-        <div className="mt-16">
+        <div className="mt-16" id="faq">
           <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
             <HelpCircle className="h-5 w-5 text-purple-500" />
             FAQ - Questions Fréquentes
@@ -141,7 +141,7 @@ export function GuideSection() {
               </AccordionTrigger>
               <AccordionContent className="px-6 py-4 text-gray-300">
                 Pour signaler un bug ou demander une nouvelle fonctionnalité, utilisez le formulaire de feedback 
-                dans l'application (menu Aide {'>'}  Signaler un problème) ou envoyez un email à l'équipe de support.
+                dans l'application (menu Aide {'>'} Signaler un problème) ou envoyez un email à l'équipe de support.
                 Incluez autant de détails que possible, notamment les étapes pour reproduire le problème.
               </AccordionContent>
             </AccordionItem>
