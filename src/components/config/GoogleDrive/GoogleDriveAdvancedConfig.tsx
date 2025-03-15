@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { useGoogleDrive } from '@/hooks/useGoogleDrive';
 import { GoogleDriveAlert } from './GoogleDriveAlert';
 import { useIndexingProgress } from '@/hooks/useIndexingProgress';
+import { useSupabaseUser } from '@/hooks/useSupabaseUser';
 
 export interface GoogleDriveAdvancedConfigProps {
   connected: boolean;
@@ -16,7 +17,13 @@ export interface GoogleDriveAdvancedConfigProps {
 
 export function GoogleDriveAdvancedConfig({ connected, onIndexingRequest }: GoogleDriveAdvancedConfigProps) {
   const [recursive, setRecursive] = useState(false);
-  const { isConnecting, isConnected, initiateGoogleAuth } = useGoogleDrive();
+  const { user } = useSupabaseUser();
+  
+  // Fix: Ajout des arguments requis (user et callback)
+  const { isConnecting, isConnected, initiateGoogleAuth } = useGoogleDrive(user, () => {
+    setHasPermissions(true);
+  });
+  
   const { indexingProgress, isLoading, updateProgress } = useIndexingProgress();
   
   const [error, setError] = useState<string | null>(null);
