@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Download, CheckCircle, AlertTriangle } from "lucide-react";
 import { ModelInfo } from "../data/modelData";
-import { SystemCapabilities } from "@/hooks/useSystemCapabilities";
+import { SystemCapabilities } from "@/types/system";
 import { isModelCompatible } from "../utils/modelUtils";
 
 interface ModelCardProps {

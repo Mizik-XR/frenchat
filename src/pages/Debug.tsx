@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSystemCapabilities } from '@/hooks/useSystemCapabilities';
 
 export default function Debug() {
-  const { capabilities, isAnalyzing, analyzeSystem } = useSystemCapabilities();
+  const { capabilities, isLoading } = useSystemCapabilities();
   const [logs, setLogs] = useState<string[]>([]);
   const { toast } = useToast();
 
@@ -15,9 +15,9 @@ export default function Debug() {
     setLogs([
       '[INFO] Application initialisée',
       '[INFO] Vérification des capacités système...',
-      `[INFO] Mémoire disponible: ${capabilities.memoryGB ? capabilities.memoryGB + ' GB' : 'Inconnue'}`,
-      `[INFO] CPU cores: ${capabilities.cpuCores || 'Inconnu'}`,
-      `[INFO] GPU disponible: ${capabilities.gpuAvailable ? 'Oui' : 'Non'}`,
+      `[INFO] Mémoire disponible: ${capabilities?.memoryInGB ? capabilities.memoryInGB + ' GB' : 'Inconnue'}`,
+      `[INFO] CPU cores: ${capabilities?.cpuCores || 'Inconnu'}`,
+      `[INFO] GPU disponible: ${capabilities?.hasGpu ? 'Oui' : 'Non'}`,
       '[INFO] Vérification de la connexion Ollama...',
       '[INFO] Test de connexion à Supabase...',
     ]);
@@ -57,6 +57,32 @@ export default function Debug() {
     });
   };
 
+  // Déterminer les modèles recommandés en fonction des capacités
+  const getRecommendedModels = () => {
+    if (!capabilities) return ['Chargement...'];
+    
+    if (capabilities.hasGpu && capabilities.memoryInGB && capabilities.memoryInGB >= 16) {
+      return ['Mixtral 8x7B', 'Llama 2 13B'];
+    } else if (capabilities.memoryInGB && capabilities.memoryInGB >= 8) {
+      return ['Mistral 7B', 'Llama 2 7B'];
+    } else {
+      return ['Mistral 7B (4-bit)', 'TinyLlama'];
+    }
+  };
+  
+  // Déterminer la catégorie du système
+  const getSystemCategory = () => {
+    if (!capabilities) return 'Analyse en cours';
+    
+    if (capabilities.hasGpu && capabilities.memoryInGB && capabilities.memoryInGB >= 16) {
+      return 'Haute performance';
+    } else if (capabilities.memoryInGB && capabilities.memoryInGB >= 8) {
+      return 'Performance moyenne';
+    } else {
+      return 'Performance de base';
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-8">Débogage et Diagnostic</h1>
@@ -70,33 +96,30 @@ export default function Debug() {
             <div className="space-y-4">
               <div>
                 <p className="text-sm font-medium">Mémoire RAM:</p>
-                <p className="text-lg">{capabilities.memoryGB ? `${capabilities.memoryGB} GB` : 'Non détecté'}</p>
+                <p className="text-lg">{capabilities?.memoryInGB ? `${capabilities.memoryInGB} GB` : 'Non détecté'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Processeur:</p>
-                <p className="text-lg">{capabilities.cpuCores ? `${capabilities.cpuCores} cœurs` : 'Non détecté'}</p>
+                <p className="text-lg">{capabilities?.cpuCores ? `${capabilities.cpuCores} cœurs` : 'Non détecté'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">GPU:</p>
-                <p className="text-lg">{capabilities.gpuAvailable ? 'Disponible' : 'Non disponible'}</p>
+                <p className="text-lg">{capabilities?.hasGpu ? 'Disponible' : 'Non disponible'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Catégorie système:</p>
-                <p className="text-lg">
-                  {capabilities.isHighEndSystem ? 'Haute performance' : 
-                   capabilities.isMidEndSystem ? 'Performance moyenne' : 'Performance de base'}
-                </p>
+                <p className="text-lg">{getSystemCategory()}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Modèles recommandés:</p>
                 <ul className="list-disc pl-5">
-                  {capabilities.recommendedModels.map((model, index) => (
+                  {getRecommendedModels().map((model, index) => (
                     <li key={index}>{model}</li>
                   ))}
                 </ul>
               </div>
-              <Button onClick={analyzeSystem} disabled={isAnalyzing}>
-                {isAnalyzing ? 'Analyse en cours...' : 'Analyser à nouveau'}
+              <Button onClick={handleRunDiagnostic} disabled={isLoading}>
+                {isLoading ? 'Analyse en cours...' : 'Analyser à nouveau'}
               </Button>
             </div>
           </CardContent>

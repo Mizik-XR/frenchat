@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ModelList from "./components/ModelList";
-import { SystemCapabilities } from "@/hooks/useSystemCapabilities";
+import { SystemCapabilities } from "@/types/system";
 import { safeButtonClick } from "./utils/modelUtils";
 
 interface ModelDownloaderProps {

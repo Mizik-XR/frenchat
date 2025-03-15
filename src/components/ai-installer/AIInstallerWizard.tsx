@@ -9,7 +9,7 @@ import { ModelDownloader } from "@/components/ai-installer/ModelDownloader";
 import { CheckCircle, AlertTriangle, ArrowRight, ArrowLeft } from "lucide-react";
 import { SystemCapabilities } from "@/types/system";
 import { InstallationSummary } from "./InstallationSummary";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { downloadInstallationScripts } from "@/utils/installationUtils";
 
 interface AIInstallerWizardProps {
@@ -23,6 +23,7 @@ export function AIInstallerWizard({ capabilities, onComplete, onSkip }: AIInstal
   const [ollamaInstalled, setOllamaInstalled] = useState(false);
   const [modelInstalled, setModelInstalled] = useState(false);
   const [installationLogs, setInstallationLogs] = useState<string[]>([]);
+  const { toast } = useToast();
   
   const addLogMessage = (message: string) => {
     setInstallationLogs(prev => [...prev, message]);

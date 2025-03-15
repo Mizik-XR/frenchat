@@ -111,9 +111,12 @@ async function detectGPU(): Promise<string | undefined> {
       return undefined;
     }
     
-    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    // Typecasting pour accéder aux méthodes WebGL
+    const webGLContext = gl as WebGLRenderingContext;
+    
+    const debugInfo = webGLContext.getExtension('WEBGL_debug_renderer_info');
     if (debugInfo) {
-      const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+      const renderer = webGLContext.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
       return renderer;
     }
     

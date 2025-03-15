@@ -1,6 +1,5 @@
-
 import { ModelInfo } from "../data/modelData";
-import { SystemCapabilities } from "@/hooks/useSystemCapabilities";
+import { SystemCapabilities } from "@/types/system";
 
 export const getFilteredModels = (
   models: ModelInfo[],

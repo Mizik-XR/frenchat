@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Cpu, Memory, HardDrive, Activity, Check } from "lucide-react";
+import { Cpu, HardDrive, Activity, Check } from "lucide-react";
 import { SystemCapabilities } from "@/types/system";
 import { cn } from "@/lib/utils";
 
@@ -108,7 +107,7 @@ export function HardwareDetection({ isLoading, capabilities, onReady }: Hardware
                   </div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg flex items-center gap-3">
-                  <Memory className="h-5 w-5 text-gray-500" />
+                  <Activity className="h-5 w-5 text-gray-500" />
                   <div>
                     <p className="text-sm font-medium">Mémoire RAM</p>
                     <p className="text-xs text-gray-500">

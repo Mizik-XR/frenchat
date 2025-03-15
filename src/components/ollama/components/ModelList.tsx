@@ -1,8 +1,7 @@
-
 import { models } from "../data/modelData";
 import { getFilteredModels, filterModelsByCategory } from "../utils/modelUtils";
 import ModelCard from "./ModelCard";
-import { SystemCapabilities } from "@/hooks/useSystemCapabilities";
+import { SystemCapabilities } from "@/types/system";
 
 interface ModelListProps {
   activeTab: string;
