@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/components/AuthProvider';
+import { APP_STATE } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
+import { toast } from "@/hooks/use-toast";
 
-// Type pour les statistiques d'utilisation
-export type UsageStatistics = {
+// Types pour les statistiques d'utilisation
+export interface UsageStatistics {
   totalTokensInput: number;
   totalTokensOutput: number;
   totalCostEstimated: number;
@@ -14,19 +15,18 @@ export type UsageStatistics = {
     tokensOutput: number;
     costEstimated: number;
   }>;
-  recentUsage: Array<{
+  recentUsage: {
     date: Date;
     tokensInput: number;
     tokensOutput: number;
     costEstimated: number;
     provider: string;
-  }>;
-};
+  }[];
+}
 
+// Hook pour obtenir et gérer les statistiques d'utilisation des crédits utilisateur
 export const useUserCreditUsage = () => {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
   const [usageStats, setUsageStats] = useState<UsageStatistics>({
     totalTokensInput: 0,
     totalTokensOutput: 0,
@@ -34,140 +34,181 @@ export const useUserCreditUsage = () => {
     usageByProvider: {},
     recentUsage: []
   });
-  
-  // Chargement des données d'utilisation
-  const loadUsageData = async () => {
-    if (!user?.id) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  // Fonction pour récupérer les données d'utilisation
+  const fetchUsageData = async () => {
+    // Si on est en mode hors ligne, renvoyer des données simulées
+    if (APP_STATE.isOfflineMode) {
+      setUsageStats(generateMockData());
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // Appeler la fonction Edge pour obtenir les métriques d'utilisation
-      const { data, error } = await supabase.functions.invoke('get-usage-metrics', {
-        body: { userId: user.id }
-      });
-      
-      if (error) throw error;
-      
-      if (data) {
-        // Traiter les données reçues
-        const usageByProvider: Record<string, any> = {};
-        const recentUsage: any[] = [];
-        
-        let totalTokensInput = 0;
-        let totalTokensOutput = 0;
-        let totalCostEstimated = 0;
-        
-        // Si la fonction ne renvoie pas de données, utiliser des données simulées
-        if (Array.isArray(data.metrics) && data.metrics.length > 0) {
-          data.metrics.forEach((metric: any) => {
-            totalTokensInput += metric.tokens_input || 0;
-            totalTokensOutput += metric.tokens_output || 0;
-            totalCostEstimated += metric.estimated_cost || 0;
-            
-            // Grouper par fournisseur
-            if (!usageByProvider[metric.provider]) {
-              usageByProvider[metric.provider] = {
-                count: 0,
-                tokensInput: 0,
-                tokensOutput: 0,
-                costEstimated: 0
-              };
-            }
-            
-            usageByProvider[metric.provider].count++;
-            usageByProvider[metric.provider].tokensInput += metric.tokens_input || 0;
-            usageByProvider[metric.provider].tokensOutput += metric.tokens_output || 0;
-            usageByProvider[metric.provider].costEstimated += metric.estimated_cost || 0;
-            
-            // Ajouter aux utilisations récentes (limité aux 30 derniers jours)
-            const createdAt = new Date(metric.created_at);
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            
-            if (createdAt >= thirtyDaysAgo) {
-              recentUsage.push({
-                date: createdAt,
-                tokensInput: metric.tokens_input || 0,
-                tokensOutput: metric.tokens_output || 0,
-                costEstimated: metric.estimated_cost || 0,
-                provider: metric.provider
-              });
-            }
-          });
-          
-          // Trier les utilisations récentes par date
-          recentUsage.sort((a, b) => b.date.getTime() - a.date.getTime());
-        } else {
-          // Utiliser des données simulées en l'absence de données réelles
-          console.warn('Aucune donnée d\'utilisation trouvée, utilisation de données simulées');
-          
-          // Simuler des données d'utilisation pour la démonstration
-          totalTokensInput = 12500;
-          totalTokensOutput = 8750;
-          totalCostEstimated = 0.32;
-          
-          const providers = ['gpt-3.5-turbo', 'gpt-4', 'claude-instant', 'huggingface'];
-          providers.forEach(provider => {
-            const input = Math.floor(Math.random() * 5000) + 1000;
-            const output = Math.floor(input * 0.7);
-            const cost = parseFloat((input + output) * 0.00002);
-            
-            usageByProvider[provider] = {
-              count: Math.floor(Math.random() * 20) + 5,
-              tokensInput: input,
-              tokensOutput: output,
-              costEstimated: cost
-            };
-          });
-          
-          // Simuler des utilisations récentes
-          for (let i = 0; i < 14; i++) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            
-            const provider = providers[Math.floor(Math.random() * providers.length)];
-            const tokensInput = Math.floor(Math.random() * 1000) + 500;
-            const tokensOutput = Math.floor(tokensInput * 0.7);
-            const costEstimated = parseFloat((tokensInput + tokensOutput) * 0.00002);
-            
-            recentUsage.push({
-              date,
-              tokensInput,
-              tokensOutput,
-              costEstimated,
-              provider
-            });
-          }
-        }
-        
-        setUsageStats({
-          totalTokensInput,
-          totalTokensOutput,
-          totalCostEstimated,
-          usageByProvider,
-          recentUsage
-        });
+      setIsLoading(true);
+      setError(null);
+
+      // Vérifier que l'utilisateur est authentifié
+      if (!user) {
+        throw new Error("Utilisateur non authentifié");
       }
+
+      // Appel à l'API pour récupérer les statistiques d'utilisation
+      const response = await fetch(`/api/usage-metrics?userId=${user.id}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      // Vérifier la réponse
+      if (!response.ok) {
+        throw new Error(`Erreur lors de la récupération des statistiques : ${response.statusText}`);
+      }
+
+      // Traiter les données
+      const data = await response.json();
+      setUsageStats(processUsageData(data));
     } catch (err) {
-      console.error('Erreur lors du chargement des données d\'utilisation:', err);
-      setError(err instanceof Error ? err : new Error('Erreur inconnue'));
+      console.error("Erreur lors de la récupération des statistiques d'utilisation :", err);
+      setError(err instanceof Error ? err : new Error(String(err)));
+      
+      // Générer des données simulées en cas d'erreur
+      setUsageStats(generateMockData());
+      
+      toast({
+        title: "Erreur de chargement",
+        description: "Impossible de charger vos statistiques d'utilisation. Données simulées affichées.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
   };
-  
-  useEffect(() => {
-    if (user?.id) {
-      loadUsageData();
+
+  // Traiter les données d'utilisation brutes en format utilisable
+  const processUsageData = (rawData: any): UsageStatistics => {
+    // Logique de traitement des données
+    // ... (Implémentation selon le format de données reçu)
+    return {
+      totalTokensInput: rawData.totalInputTokens || 0,
+      totalTokensOutput: rawData.totalOutputTokens || 0,
+      totalCostEstimated: rawData.totalCost || 0,
+      usageByProvider: rawData.byProvider || {},
+      recentUsage: rawData.history || []
+    };
+  };
+
+  // Générer des données simulées pour la démonstration ou le développement
+  const generateMockData = (): UsageStatistics => {
+    // Création de données simulées
+    return {
+      totalTokensInput: 158920,
+      totalTokensOutput: 36547,
+      totalCostEstimated: 0.47,
+      usageByProvider: {
+        'openai': {
+          count: 42,
+          tokensInput: 105630,
+          tokensOutput: 24156,
+          costEstimated: 0.32
+        },
+        'huggingface': {
+          count: 25,
+          tokensInput: 53290,
+          tokensOutput: 12391,
+          costEstimated: 0.15
+        }
+      },
+      recentUsage: Array(14).fill(0).map((_, i) => ({
+        date: new Date(Date.now() - i * 24 * 60 * 60 * 1000),
+        tokensInput: Math.floor(Math.random() * 10000) + 5000,
+        tokensOutput: Math.floor(Math.random() * 3000) + 1000,
+        costEstimated: parseFloat((Math.random() * 0.1).toFixed(3)),
+        provider: Math.random() > 0.5 ? 'openai' : 'huggingface'
+      }))
+    };
+  };
+
+  // Rafraîchir les données d'utilisation
+  const refreshUsageData = () => {
+    fetchUsageData();
+  };
+
+  // Fonction pour mettre à jour les crédits utilisateur
+  const updateUserCredits = async (amount: number) => {
+    try {
+      if (!user) {
+        throw new Error("Utilisateur non authentifié");
+      }
+      
+      // Conversion du nombre en chaîne pour résoudre l'erreur TS2345
+      const response = await fetch(`/api/user-credits/${user.id.toString()}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Échec de la mise à jour des crédits : ${response.statusText}`);
+      }
+      
+      toast({
+        title: "Crédits mis à jour",
+        description: `${amount} crédits ont été ajoutés à votre compte.`,
+        variant: "success"
+      });
+      
+      // Rafraîchir les données après la mise à jour
+      refreshUsageData();
+    } catch (err) {
+      console.error("Erreur lors de la mise à jour des crédits :", err);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour vos crédits.",
+        variant: "destructive"
+      });
     }
-  }, [user?.id]);
-  
+  };
+
+  // Fonction pour vérifier les crédits restants
+  const checkRemainingCredits = async () => {
+    try {
+      if (!user) return 0;
+      
+      // Conversion du nombre en chaîne pour résoudre l'erreur TS2345
+      const response = await fetch(`/api/user-credits/${user.id.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error(`Échec de la vérification des crédits : ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data.remainingCredits || 0;
+    } catch (err) {
+      console.error("Erreur lors de la vérification des crédits restants :", err);
+      return 0;
+    }
+  };
+
+  // Charger les données au montage du composant
+  useEffect(() => {
+    if (user || APP_STATE.isOfflineMode) {
+      fetchUsageData();
+    } else {
+      setIsLoading(false);
+    }
+  }, [user]);
+
   return {
+    usageStats,
     isLoading,
     error,
-    usageStats,
-    refreshUsageData: loadUsageData
+    refreshUsageData,
+    updateUserCredits,
+    checkRemainingCredits
   };
 };

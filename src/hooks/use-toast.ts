@@ -1,39 +1,30 @@
 
+// Nous n'importons plus useToast et toast de @radix-ui/react-toast car ils n'existent pas
 import { Toast, ToastActionElement, ToastProps } from "@/components/ui/toast";
 
-import {
-  useToast as useToastOriginal,
-  toast as toastOriginal,
-} from "@radix-ui/react-toast";
+// Type étendu pour inclure les variantes warning et success
+export type ToastVariant = "default" | "destructive" | "warning" | "success";
 
-// Étendre les variantes de toast pour inclure warning et success
-type ExtendedToastProps = ToastProps & {
-  variant?: "default" | "destructive" | "warning" | "success";
-};
-
-const useToast = () => {
-  const { toast: originalToast, ...rest } = useToastOriginal();
-
-  return {
-    ...rest,
-    toast: (props: ExtendedToastProps) => originalToast(props),
-  };
-};
-
-type ToastOptions = {
+// Type pour les options de toast
+export type ToastOptions = {
   title?: string;
   description?: string;
   action?: ToastActionElement;
-  variant?: "default" | "destructive" | "warning" | "success";
+  variant?: ToastVariant;
 };
 
-const toast = ({ title, description, action, variant = "default" }: ToastOptions) => {
-  toastOriginal({
+// Créer notre propre implémentation qui re-exporte depuis @/components/ui/use-toast
+export { useToast } from "@/components/ui/use-toast";
+
+// Fonction toast pour afficher des notifications
+export const toast = ({ title, description, action, variant = "default" }: ToastOptions) => {
+  // Importer dynamiquement pour éviter les problèmes de référence circulaire
+  const { toast: internalToast } = require("@/components/ui/use-toast");
+  
+  internalToast({
     title,
     description, 
     action,
     variant,
   });
 };
-
-export { useToast, toast };
