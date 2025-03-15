@@ -1,18 +1,15 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Folder } from '@/types/googleDrive';
+import { Folder, FolderPermissions } from '@/types/googleDrive';
 import { useAuth } from '@/components/AuthProvider';
 import { useGoogleDriveStatus } from './useGoogleDriveStatus';
+import { useToast } from '@/hooks/use-toast';
+import { useSharedFolders } from './google-drive/useSharedFolders';
+import { usePersonalFolders } from './google-drive/usePersonalFolders';
+import { useFolderPermissions } from './google-drive/useFolderPermissions';
 
-export interface Folder {
-  id: string;
-  name: string;
-  path: string;
-  is_shared?: boolean;
-  shared_with?: string[];
-  metadata?: Record<string, any>;
-}
+export { Folder, FolderPermissions };
 
 export const useGoogleDriveFolders = () => {
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -21,9 +18,47 @@ export const useGoogleDriveFolders = () => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { isConnected } = useGoogleDriveStatus();
+  const { toast } = useToast();
+  
+  // Import the hooks for different folder capabilities
+  const { 
+    folders: personalFolders, 
+    isLoading: isPersonalLoading,
+    fetchFolders,
+    stopSharingFolder,
+    updateSharedWith
+  } = usePersonalFolders();
+  
+  const {
+    sharedFolders,
+    isLoading: isSharedLoading,
+    fetchSharedWithMe
+  } = useSharedFolders();
+  
+  const {
+    updateFolderPermissions
+  } = useFolderPermissions();
+
+  // Function to refresh all folders
+  const refreshFolders = useCallback(async () => {
+    try {
+      if (fetchFolders) await fetchFolders();
+      if (fetchSharedWithMe) await fetchSharedWithMe();
+      
+      // Update the main folders list with both personal and shared folders
+      setFolders([...personalFolders, ...sharedFolders]);
+    } catch (err) {
+      console.error('Error refreshing folders:', err);
+      toast({
+        title: "Erreur",
+        description: "Impossible de rafraîchir la liste des dossiers",
+        variant: "destructive",
+      });
+    }
+  }, [fetchFolders, fetchSharedWithMe, personalFolders, sharedFolders, toast]);
 
   useEffect(() => {
-    const fetchFolders = async () => {
+    const fetchRootFolder = async () => {
       if (!user || !isConnected) {
         setFolders([]);
         setIsLoading(false);
@@ -34,14 +69,6 @@ export const useGoogleDriveFolders = () => {
       setError(null);
 
       try {
-        // Fetch folders from stored data
-        const { data: storedFolders, error: fetchError } = await supabase
-          .from('google_drive_folders')
-          .select('*')
-          .eq('user_id', user.id);
-
-        if (fetchError) throw fetchError;
-
         // Attempt to fetch root folder info
         const { data: rootFolderData, error: rootError } = await supabase
           .functions.invoke('get-google-drive-root', {
@@ -59,18 +86,9 @@ export const useGoogleDriveFolders = () => {
             }
           });
         }
-
-        // Transform stored folders to expected format
-        const formattedFolders: Folder[] = storedFolders?.map(folder => ({
-          id: folder.folder_id,
-          name: folder.name,
-          path: folder.path,
-          is_shared: folder.is_shared,
-          shared_with: folder.shared_with,
-          metadata: folder.metadata
-        })) || [];
-
-        setFolders(formattedFolders);
+        
+        // Update the main folders list with both personal and shared folders
+        setFolders([...personalFolders, ...sharedFolders]);
       } catch (err) {
         console.error('Erreur lors de la récupération des dossiers:', err);
         setError(err instanceof Error ? err.message : 'Erreur inconnue');
@@ -79,13 +97,20 @@ export const useGoogleDriveFolders = () => {
       }
     };
 
-    fetchFolders();
-  }, [user, isConnected]);
+    fetchRootFolder();
+  }, [user, isConnected, personalFolders, sharedFolders]);
 
   return {
     folders,
     rootFolder,
     isLoading,
-    error
+    error,
+    refreshFolders,
+    sharedFolders,
+    isSharedLoading,
+    // Add the functions from other hooks
+    updateFolderPermissions,
+    stopSharingFolder,
+    updateSharedWith
   };
 };

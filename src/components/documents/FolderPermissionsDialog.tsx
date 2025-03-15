@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -24,11 +23,8 @@ import {
   RefreshCcw 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Folder, 
-  FolderPermissions, 
-  useGoogleDriveFolders 
-} from '@/hooks/useGoogleDriveFolders';
+import { Folder, FolderPermissions } from '@/types/googleDrive';
+import { useGoogleDriveFolders } from '@/hooks/useGoogleDriveFolders';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Tabs, 

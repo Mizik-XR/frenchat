@@ -15,3 +15,4 @@ export interface Folder {
   permissions?: FolderPermissions;
   owner_email?: string;
 }
+

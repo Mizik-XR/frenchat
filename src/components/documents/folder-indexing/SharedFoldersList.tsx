@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Folder, Loader2, Eye, MessageSquare, RefreshCcw, Settings } from 'lucide-react';
-import { useGoogleDriveFolders, Folder as DriveFolder } from '@/hooks/useGoogleDriveFolders';
+import { useGoogleDriveFolders } from '@/hooks/useGoogleDriveFolders';
 import { FolderPermissionsDialog } from '../FolderPermissionsDialog';
 
 interface SharedFoldersListProps {
@@ -23,7 +23,7 @@ export function SharedFoldersList({ onSelectFolder }: SharedFoldersListProps) {
     );
   }
 
-  if (sharedFolders.length === 0) {
+  if (!sharedFolders || sharedFolders.length === 0) {
     return (
       <div className="text-center py-8 px-4 border rounded-lg">
         <Folder className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />

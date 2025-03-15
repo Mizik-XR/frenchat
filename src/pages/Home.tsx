@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,7 @@ export default function Home() {
   const [description, setDescription] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
-  const { refreshFolders } = useGoogleDriveFolders();
+  const { folders } = useGoogleDriveFolders();
   const { pickFolder } = useGoogleDrivePicker();
 
   useEffect(() => {
