@@ -1,5 +1,5 @@
 
 // Ce fichier réexporte le hook useToast et la fonction toast
-import { useToast, toast, type Toast, type ToastVariant } from "./use-toast.tsx";
+import { useToast, ToastProvider, toast, type Toast, type ToastVariant } from "./use-toast.tsx";
 
-export { useToast, toast, type Toast, type ToastVariant };
+export { useToast, ToastProvider, toast, type Toast, type ToastVariant };
