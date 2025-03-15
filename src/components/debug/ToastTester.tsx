@@ -1,68 +1,57 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import { LovableIntegrationTester } from "./LovableIntegrationTester";
 
 export const ToastTester = () => {
-  const { toast } = useToast();
-
-  const showDefaultToast = () => {
+  const testToast = (variant: "default" | "destructive" | "success" | "warning" = "default") => {
     toast({
-      title: "Toast par défaut",
-      description: "Ceci est un toast par défaut sans variante spécifiée",
+      title: `Test Toast (${variant})`,
+      description: "Ceci est un toast de test pour vérifier que les notifications fonctionnent correctement.",
+      variant: variant,
     });
   };
 
-  const showSuccessToast = () => {
-    toast({
-      title: "Succès",
-      description: "L'opération a été effectuée avec succès",
-      variant: "success",
-    });
-  };
-
-  const showWarningToast = () => {
-    toast({
-      title: "Avertissement",
-      description: "Attention, cette action pourrait avoir des conséquences",
-      variant: "warning",
-    });
-  };
-
-  const showErrorToast = () => {
+  const testError = () => {
     toast({
       title: "Erreur",
-      description: "Une erreur s'est produite lors de l'opération",
+      description: "Ceci est un message d'erreur de test.",
       variant: "destructive",
     });
   };
 
+  const testSuccess = () => {
+    toast({
+      title: "Succès",
+      description: "L'opération a été complétée avec succès.",
+      variant: "success",
+    });
+  };
+
+  const testWarning = () => {
+    toast({
+      title: "Avertissement",
+      description: "Attention, cette action pourrait avoir des conséquences.",
+      variant: "warning",
+    });
+  };
+
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Testeur de Toasts</CardTitle>
-        <CardDescription>
-          Cliquez sur les boutons ci-dessous pour tester les différents types de toasts
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <Button onClick={showDefaultToast} variant="outline">
-            Toast par défaut
-          </Button>
-          <Button onClick={showSuccessToast} variant="outline" className="border-green-500 text-green-500 hover:bg-green-50">
-            Toast de succès
-          </Button>
-          <Button onClick={showWarningToast} variant="outline" className="border-yellow-500 text-yellow-500 hover:bg-yellow-50">
-            Toast d'avertissement
-          </Button>
-          <Button onClick={showErrorToast} variant="outline" className="border-red-500 text-red-500 hover:bg-red-50">
-            Toast d'erreur
-          </Button>
+    <div className="space-y-6 p-4 bg-white rounded-lg shadow-md border">
+      <div>
+        <h3 className="text-lg font-medium mb-4">Tests des notifications</h3>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => testToast()} size="sm">Toast Normal</Button>
+          <Button onClick={testError} variant="destructive" size="sm">Toast Erreur</Button>
+          <Button onClick={testSuccess} className="bg-green-600 hover:bg-green-700" size="sm">Toast Succès</Button>
+          <Button onClick={testWarning} className="bg-amber-500 hover:bg-amber-600" size="sm">Toast Avertissement</Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      
+      <div className="pt-4 border-t">
+        <LovableIntegrationTester />
+      </div>
+    </div>
   );
 };
-
