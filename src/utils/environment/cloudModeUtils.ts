@@ -52,6 +52,9 @@ export function forceCloudMode(): void {
   
   window.localStorage.setItem('FORCE_CLOUD_MODE', 'true');
   window.localStorage.setItem('aiServiceType', 'cloud');
+  
+  // Log pour le débogage
+  console.log('Mode cloud forcé via forceCloudMode()');
 }
 
 /**
@@ -81,6 +84,14 @@ export function initializeCloudMode(): void {
   // Ajouter un écouteur pour les changements d'URL
   if (typeof window !== 'undefined') {
     window.addEventListener('popstate', checkUrlAndSetCloudMode);
+    
+    // Vérifier explicitement le hostname
+    if (window.location.hostname.includes('lovable') || 
+        window.location.hostname.includes('preview') || 
+        window.location.hostname.includes('netlify')) {
+      console.log('Environnement de prévisualisation détecté, activation du mode cloud');
+      forceCloudMode();
+    }
   }
 }
 

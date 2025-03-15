@@ -14,6 +14,7 @@ REM Configuration du mode cloud
 set "FORCE_CLOUD_MODE=1"
 set "VITE_CLOUD_MODE=true"
 set "VITE_ALLOW_LOCAL_AI=false"
+set "VITE_CORS_PROXY=true"
 
 REM Vérification du dossier dist
 if not exist "dist\" (
@@ -44,7 +45,16 @@ if %ERRORLEVEL% NEQ 0 (
     )
 )
 
-REM Démarrage du serveur web
+REM Vérifier la présence du script Lovable dans index.html
+type "dist\index.html" | findstr "gptengineer.js" >nul
+if %ERRORLEVEL% NEQ 0 (
+    echo [ATTENTION] Script Lovable non trouvé dans dist\index.html, application de correctifs...
+    copy /y index.html dist\index.html >nul
+    echo [OK] Correctifs appliqués.
+    echo.
+)
+
+REM Démarrage du serveur web avec CORS activé
 echo [INFO] Lancement de l'application...
 start "Serveur HTTP FileChat" /min cmd /c "http-server dist -p 8080 --cors -c-1"
 timeout /t 2 /nobreak > nul

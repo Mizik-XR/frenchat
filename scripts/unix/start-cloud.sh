@@ -10,6 +10,7 @@ echo ""
 export FORCE_CLOUD_MODE=1
 export VITE_CLOUD_MODE=true
 export VITE_ALLOW_LOCAL_AI=false
+export VITE_CORS_PROXY=true
 
 # Vérification du dossier dist
 if [ ! -d "dist" ]; then
@@ -40,7 +41,15 @@ if ! command -v http-server &> /dev/null; then
     echo "[OK] http-server installé."
 fi
 
-# Démarrage du serveur web
+# Vérifier la présence du script Lovable
+if ! grep -q "gptengineer.js" "dist/index.html"; then
+    echo "[ATTENTION] Script Lovable non trouvé dans dist/index.html, application de correctifs..."
+    cp index.html dist/index.html
+    echo "[OK] Correctifs appliqués."
+    echo ""
+fi
+
+# Démarrage du serveur web avec CORS activé
 echo "[INFO] Lancement de l'application..."
 http-server dist -p 8080 --cors -c-1 &
 SERVER_PID=$!

@@ -7,8 +7,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Frenchat - Votre assistant d'intelligence documentaire</title>
     <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
-    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
+    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" avec CORS fix -->
+    <script>
+      // Fonction pour contourner les problèmes CORS potentiels
+      function loadLovableScript() {
+        // Vérifier si nous sommes dans un environnement de prévisualisation
+        const isPreview = window.location.hostname.includes('lovable') || 
+                          window.location.hostname.includes('preview') ||
+                          window.location.hostname.includes('netlify');
+        
+        // En prévisualisation, on force le mode cloud
+        if (isPreview) {
+          localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+          localStorage.setItem('aiServiceType', 'cloud');
+        }
+        
+        // Charger le script Lovable de manière dynamique
+        const script = document.createElement('script');
+        script.src = 'https://cdn.gpteng.co/gptengineer.js';
+        script.type = 'module';
+        script.crossOrigin = 'anonymous';
+        document.head.appendChild(script);
+      }
+      
+      // Exécuter après le chargement du DOM
+      document.addEventListener('DOMContentLoaded', loadLovableScript);
+    </script>
     <!-- Style de base pour l'écran de chargement initial -->
     <style>
       #loading-screen {

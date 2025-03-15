@@ -9,7 +9,8 @@ export {
   isProduction,
   isDevelopment,
   isLovableEnvironment,
-  isNetlifyEnvironment
+  isNetlifyEnvironment,
+  isCloudMode
 } from './environmentDetection';
 
 // Exporter les fonctions de gestion d'URL
@@ -23,7 +24,24 @@ export {
 
 // Exporter les fonctions de détection du mode cloud
 export {
-  isCloudModeForced,
-  isClientMode,
-  isDebugMode
+  getApiBaseUrl,
+  isCloudModeInUrl,
+  forceCloudMode,
+  checkUrlAndSetCloudMode,
+  initializeCloudMode
 } from './cloudModeUtils';
+
+// Réexporter les fonctions du environmentDetection pour la compatibilité
+export { isCloudModeForced } from '../../../hooks/ai/environment/environmentDetection';
+
+// Fonctions utilitaires internes pour la gestion des modes
+export const isClientMode = () => {
+  return typeof window !== 'undefined' && 
+         window.localStorage.getItem('CLIENT_MODE') === 'true';
+};
+
+export const isDebugMode = () => {
+  return import.meta.env.DEV || 
+         (typeof window !== 'undefined' && 
+          window.localStorage.getItem('DEBUG_MODE') === 'true');
+};
