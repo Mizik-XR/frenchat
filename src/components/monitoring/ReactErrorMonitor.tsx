@@ -28,20 +28,33 @@ export const ReactErrorMonitor = () => {
         event.message.includes('React') ||
         event.message.includes('useLayoutEffect') ||
         event.message.includes('unstable_scheduleCallback') ||
-        event.message.includes('createElement')
+        event.message.includes('createElement') ||
+        event.message.includes('createContext') ||
+        event.message.includes('__JS_TOKEN__')
       );
       
       if (isReactError) {
         console.warn('Potential React error detected, switching to fallback mode...');
-        APP_STATE.isOfflineMode = true;
+        try {
+          APP_STATE.isOfflineMode = true;
+        } catch (e) {
+          console.warn('Failed to set offline mode, redirecting to cloud mode...');
+          setTimeout(() => {
+            window.location.href = '/?forceCloud=true&mode=cloud&client=true';
+          }, 1000);
+        }
       }
       
       // Notify the user
-      toast({
-        title: "Problem detected",
-        description: "An error occurred. The application is attempting to recover automatically.",
-        variant: "destructive"
-      });
+      try {
+        toast({
+          title: "Problem detected",
+          description: "An error occurred. The application is attempting to recover automatically.",
+          variant: "destructive"
+        });
+      } catch (e) {
+        console.error('Failed to show toast notification');
+      }
     };
 
     // Function to handle unhandled promise rejections
@@ -65,18 +78,26 @@ export const ReactErrorMonitor = () => {
       );
       
       if (isConnectionError) {
-        console.warn('Connection issue detected, activating offline mode...');
-        APP_STATE.isOfflineMode = true;
+        console.warn('Connection issue detected, attempting to activate offline mode...');
+        try {
+          APP_STATE.isOfflineMode = true;
+        } catch (e) {
+          console.warn('Failed to set offline mode');
+        }
       }
       
       // Notify the user
-      toast({
-        title: "Operation failed",
-        description: isConnectionError 
-          ? "Connection issue detected. Offline mode activated." 
-          : "A request failed. Please try again.",
-        variant: "destructive"
-      });
+      try {
+        toast({
+          title: "Operation failed",
+          description: isConnectionError 
+            ? "Connection issue detected. Offline mode activated." 
+            : "A request failed. Please try again.",
+          variant: "destructive"
+        });
+      } catch (e) {
+        console.error('Failed to show toast notification');
+      }
     };
 
     // Register event handlers

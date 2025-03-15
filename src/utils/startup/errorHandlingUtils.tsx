@@ -8,6 +8,12 @@ import { LoadingScreen } from '@/components/auth/LoadingScreen';
 export const handleLoadError = (error: Error) => {
   console.error("Erreur critique lors du chargement de l'application:", error);
   
+  // Mettre à jour le statut d'initialisation React
+  if (window.__REACT_INIT_STATUS__) {
+    window.__REACT_INIT_STATUS__.errors.push(error.message);
+    window.__REACT_INIT_STATUS__.attempts += 1;
+  }
+  
   // Afficher un message d'erreur utilisateur avec des options de récupération
   const rootElement = document.getElementById("root");
   if (rootElement) {
@@ -83,7 +89,23 @@ export const renderFallbackScreen = (rootElement: HTMLElement, message = "Erreur
       </div>
     );
     
-    createRoot(rootElement).render(<LoadingFallback />);
+    try {
+      createRoot(rootElement).render(<LoadingFallback />);
+    } catch (error) {
+      // Fallback au rendu HTML direct si createRoot échoue
+      rootElement.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 20px;">
+          <h2 style="color: #4f46e5; margin-bottom: 20px;">${message}</h2>
+          <p style="margin-bottom: 20px;">L'application rencontre un problème technique.</p>
+          <button onclick="window.location.reload()" style="background-color: #4f46e5; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-bottom: 10px; width: 200px;">
+            Réessayer
+          </button>
+          <button onclick="window.location.href = '/?forceCloud=true&mode=cloud&client=true'" style="background-color: white; color: #4f46e5; border: 1px solid #4f46e5; padding: 10px 20px; border-radius: 4px; cursor: pointer; width: 200px;">
+            Mode cloud
+          </button>
+        </div>
+      `;
+    }
   } catch (error) {
     console.error("Erreur lors du rendu de l'écran de secours:", error);
     rootElement.innerHTML = `
@@ -100,3 +122,14 @@ export const renderFallbackScreen = (rootElement: HTMLElement, message = "Erreur
     `;
   }
 };
+
+// Déclarer le type pour la variable globale de surveillance d'initialisation React
+declare global {
+  interface Window {
+    __REACT_INIT_STATUS__?: {
+      initialized: boolean;
+      attempts: number;
+      errors: string[];
+    };
+  }
+}

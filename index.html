@@ -80,14 +80,14 @@
       }
       
       // Function to enable recovery UI
-      function showRecoveryUI(errorMsg) {
+      function showRecoveryUI(errorMessage) {
         var loadingEl = document.getElementById('loading-screen');
         var retryBtn = document.querySelector('.retry-btn');
-        var errorMsg = document.querySelector('.error-message');
+        var errorMsgEl = document.querySelector('.error-message');
         
-        if (loadingEl && errorMsg && retryBtn) {
-          errorMsg.style.display = 'block';
-          errorMsg.textContent = errorMsg || "Error during initialization. Please try again.";
+        if (loadingEl && errorMsgEl && retryBtn) {
+          errorMsgEl.style.display = 'block';
+          errorMsgEl.textContent = errorMessage || "Error during initialization. Please try again.";
           retryBtn.style.display = 'inline-block';
         }
       }
@@ -101,16 +101,17 @@
             event.message.includes('MIME type') || 
             event.message.includes('createContext') ||
             event.message.includes('Cannot read properties of undefined') ||
-            event.message.includes('React')
+            event.message.includes('React') ||
+            event.message.includes('__JS_TOKEN__')
         )) {
           console.warn('Critical error detected, attempting recovery...');
           
           // Show recovery button immediately for React initialization errors
-          showRecoveryUI("React initialization error detected. Please try again.");
+          showRecoveryUI("React initialization error detected. Please try again or use cloud mode.");
           
           // Auto-recovery for severe errors - try cloud mode after 1.5 seconds
           setTimeout(function() {
-            console.log("Attempting automatic recovery...");
+            console.log("Attempting automatic recovery with cloud mode...");
             forceHomepageInCloudMode();
           }, 1500);
         }
@@ -130,6 +131,18 @@
         }).catch(function(err) {
           console.warn("Failed to create .env.local file", err);
         });
+      }
+
+      // Définir une variable globale pour surveiller si React est correctement initialisé
+      window.__REACT_INIT_STATUS__ = {
+        initialized: false,
+        attempts: 0,
+        errors: []
+      };
+      
+      // Créer un fichier .env.local si le paramètre forceCloud est présent
+      if (window.location.search.includes('forceCloud=true')) {
+        localStorage.setItem('FORCE_CLOUD_MODE', 'true');
       }
     </script>
   </head>

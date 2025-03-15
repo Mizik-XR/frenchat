@@ -46,6 +46,11 @@ export const renderApp = (rootElement: HTMLElement, queryClient: QueryClient): v
         </ErrorBoundary>
       );
       console.log("Application React montée avec succès");
+      
+      // Mettre à jour le statut d'initialisation React
+      if (window.__REACT_INIT_STATUS__) {
+        window.__REACT_INIT_STATUS__.initialized = true;
+      }
     } catch (renderError) {
       console.error("Erreur pendant le rendu initial:", renderError);
       root.render(<LoadingScreen showRetry={true} message="Erreur lors du rendu de l'application" />);
