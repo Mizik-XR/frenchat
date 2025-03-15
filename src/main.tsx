@@ -97,18 +97,23 @@ if (document.readyState === 'loading') {
 // Définir un délai maximum pour le montage de l'application
 setTimeout(() => {
   const loadingScreen = document.getElementById('loading-screen');
-  if (loadingScreen && loadingScreen.parentNode && loadingScreen.parentNode.id === 'root') {
-    console.warn("⚠️ Délai de montage dépassé, tentative de récupération...");
-    const errorMessage = document.querySelector('.error-message');
-    const retryBtn = document.querySelector('.retry-btn');
+  if (loadingScreen && loadingScreen.parentElement) {
+    // Fix: Using parentElement instead of parentNode.id
+    const isRootParent = loadingScreen.parentElement.id === 'root';
     
-    if (errorMessage) {
-      (errorMessage as HTMLElement).style.display = 'block';
-      (errorMessage as HTMLElement).textContent = "L'application met plus de temps que prévu à démarrer. Essayez le mode cloud.";
-    }
-    
-    if (retryBtn) {
-      (retryBtn as HTMLElement).style.display = 'inline-block';
+    if (isRootParent) {
+      console.warn("⚠️ Délai de montage dépassé, tentative de récupération...");
+      const errorMessage = document.querySelector('.error-message');
+      const retryBtn = document.querySelector('.retry-btn');
+      
+      if (errorMessage) {
+        (errorMessage as HTMLElement).style.display = 'block';
+        (errorMessage as HTMLElement).textContent = "L'application met plus de temps que prévu à démarrer. Essayez le mode cloud.";
+      }
+      
+      if (retryBtn) {
+        (retryBtn as HTMLElement).style.display = 'inline-block';
+      }
     }
   }
 }, 10000); // 10 secondes de délai maximum
