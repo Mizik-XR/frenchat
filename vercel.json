@@ -1,137 +1,32 @@
 
 {
-  "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
   "routes": [
-    { 
-      "src": "/assets/(.*)\\.js", 
-      "headers": { 
-        "Content-Type": "application/javascript; charset=utf-8",
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "Access-Control-Allow-Origin": "*"
-      }, 
-      "continue": true 
-    },
-    { 
-      "src": "/assets/(.*)\\.css", 
-      "headers": { 
-        "Content-Type": "text/css; charset=utf-8",
-        "Cache-Control": "public, max-age=31536000, immutable" 
-      }, 
-      "continue": true 
-    },
-    { 
-      "src": "/(.*)\\.js", 
-      "headers": { 
-        "Content-Type": "application/javascript; charset=utf-8",
-        "Cache-Control": "public, max-age=31536000, immutable" 
-      }, 
-      "dest": "/$1.js" 
-    },
-    { 
-      "src": "/(.*)\\.css", 
-      "headers": { 
-        "Content-Type": "text/css; charset=utf-8",
-        "Cache-Control": "public, max-age=31536000, immutable" 
-      }, 
-      "dest": "/$1.css" 
-    },
-    { 
-      "src": "/(.*)\\.(svg|png|jpg|jpeg|gif|ico|json|woff|woff2|eot|ttf|otf)$", 
-      "headers": { 
-        "Cache-Control": "public, max-age=31536000, immutable" 
-      }, 
-      "dest": "/$1.$2" 
-    },
-    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "handle": "filesystem" },
+    { "src": "/auth/google/callback", "dest": "/index.html" },
+    { "src": "/auth/microsoft/callback", "dest": "/index.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
-  "functions": {
-    "api/**/*": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "X-Requested-With, Content-Type, Authorization, X-Api-Token"
-        }
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
     },
     {
-      "source": "/(.*)\\.js$",
+      "source": "/(.*)\\.js",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript; charset=utf-8"
-        }
+        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
       ]
     },
     {
-      "source": "/(.*)\\.css$",
+      "source": "/(.*)\\.html",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/css; charset=utf-8"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)\\.html$",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/html; charset=utf-8"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)\\.json$",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/json; charset=utf-8"
-        }
+        { "key": "Cache-Control", "value": "no-cache" }
       ]
     }
-  ],
-  "env": {
-    "VITE_ENVIRONMENT": "production",
-    "VITE_CLOUD_MODE": "true",
-    "VITE_ALLOW_LOCAL_AI": "true",
-    "VITE_SKIP_PYTHON_INSTALLATION": "true",
-    "VITE_SITE_URL": "${VERCEL_URL}",
-    "VITE_SUPABASE_URL": "https://dbdueopvtlanxgumenpu.supabase.co",
-    "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZHVlb3B2dGxhbnhndW1lbnB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NzQ0NTIsImV4cCI6MjA1NTU1MDQ1Mn0.lPPbNJANU8Zc7i5OB9_atgDZ84Yp5SBjXCiIqjA79Tk",
-    "VITE_ALLOW_SIGNUP": "true"
-  },
-  "github": {
-    "silent": false,
-    "autoJobCancelation": true
-  }
+  ]
 }

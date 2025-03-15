@@ -3,6 +3,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { handleLoadError, renderFallbackScreen } from '@/utils/startup/errorHandlingUtils';
 
 // Fonction pour vérifier si le script Lovable est chargé
 function isLovableScriptLoaded() {
@@ -15,7 +16,19 @@ function isLovableScriptLoaded() {
   return false;
 }
 
-// Fonction pour initialiser l'application
+// Fonction pour s'assurer que React est correctement chargé
+function ensureReactLoaded() {
+  try {
+    // Test simple pour vérifier que React est disponible et fonctionne
+    React.createContext({});
+    return true;
+  } catch (error) {
+    console.error("React n'est pas correctement initialisé:", error);
+    return false;
+  }
+}
+
+// Fonction pour initialiser l'application avec des vérifications
 function initializeApp() {
   console.log("🚀 Initialisation de l'application...");
   const rootElement = document.getElementById('root');
@@ -26,6 +39,13 @@ function initializeApp() {
   }
   
   try {
+    // Vérifier que React est correctement chargé
+    if (!ensureReactLoaded()) {
+      console.error("❌ React n'est pas correctement initialisé");
+      renderFallbackScreen(rootElement, "Problème d'initialisation de React");
+      return;
+    }
+    
     console.log("🔄 Montage de l'application React...");
     const root = createRoot(rootElement);
     root.render(
@@ -36,19 +56,7 @@ function initializeApp() {
     console.log("✅ Application React montée avec succès");
   } catch (error) {
     console.error("❌ Erreur critique pendant l'initialisation:", error);
-    
-    // Afficher une erreur visible sur la page
-    if (rootElement) {
-      rootElement.innerHTML = `
-        <div style="font-family: system-ui; padding: 20px; text-align: center;">
-          <h2 style="color: #e11d48;">Erreur lors de l'initialisation</h2>
-          <p>Une erreur est survenue pendant le chargement de l'application.</p>
-          <button onclick="window.location.reload()" style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
-            Rafraîchir la page
-          </button>
-        </div>
-      `;
-    }
+    handleLoadError(error);
   }
 }
 

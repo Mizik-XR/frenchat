@@ -79,22 +79,34 @@
         window.location.href = '/?forceCloud=true&mode=cloud&client=true';
       }
       
-      // Error detection and recovery
+      // Error detection and recovery - specifically for React initialization errors
       window.addEventListener('error', function(event) {
-        if (event.message && (event.message.includes('useLayoutEffect') || event.message.includes('MIME type'))) {
-          console.warn('Error detected, attempting recovery...');
+        console.log("Erreur détectée:", event.message);
+        
+        if (event.message && (
+            event.message.includes('useLayoutEffect') || 
+            event.message.includes('MIME type') || 
+            event.message.includes('createContext') ||
+            event.message.includes('Cannot read properties of undefined')
+        )) {
+          console.warn('Erreur critique détectée, tentative de récupération...');
           
-          // Show recovery button after 5 seconds if loading fails
+          // Show recovery button immediately for React initialization errors
+          var loadingEl = document.getElementById('loading-screen');
+          var retryBtn = document.querySelector('.retry-btn');
+          var errorMsg = document.querySelector('.error-message');
+          
+          if (loadingEl && errorMsg && retryBtn) {
+            errorMsg.style.display = 'block';
+            errorMsg.textContent = "Erreur d'initialisation React détectée. Veuillez réessayer.";
+            retryBtn.style.display = 'inline-block';
+          }
+          
+          // Auto-recovery for severe errors - try cloud mode after 2 seconds
           setTimeout(function() {
-            var loadingEl = document.getElementById('loading-screen');
-            var retryBtn = document.querySelector('.retry-btn');
-            var errorMsg = document.querySelector('.error-message');
-            
-            if (loadingEl && errorMsg && retryBtn) {
-              errorMsg.style.display = 'block';
-              retryBtn.style.display = 'inline-block';
-            }
-          }, 5000);
+            console.log("Tentative de récupération automatique...");
+            forceHomepageInCloudMode();
+          }, 2000);
         }
       }, true);
     </script>
