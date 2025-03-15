@@ -25,9 +25,11 @@ export function isCloudModeForced(): boolean {
   }
   
   // Vérifier les paramètres d'URL et le localStorage
-  const forceCloud = window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true' ||
+  const forceCloud = typeof window !== 'undefined' && (
+    window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true' ||
     new URLSearchParams(window.location.search).get('forceCloud') === 'true' ||
-    isCloudMode();
+    isCloudMode()
+  );
   
   if (forceCloud) {
     console.log("Mode cloud forcé par paramètre URL ou localStorage");

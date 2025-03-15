@@ -32,7 +32,7 @@ export {
 } from './cloudModeUtils';
 
 // Réexporter les fonctions du environmentDetection pour la compatibilité
-export { isCloudModeForced } from '../../../hooks/ai/environment/environmentDetection';
+export { isCloudModeForced } from '../../hooks/ai/environment/environmentDetection';
 
 // Fonctions utilitaires internes pour la gestion des modes
 export const isClientMode = () => {
