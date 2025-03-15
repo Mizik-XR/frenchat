@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { IndexingProgress } from '@/types/config';
@@ -22,7 +21,6 @@ export const useIndexingProgress = (progressId?: string) => {
 
       if (error) throw error;
 
-      // Conversion sécurisée en type IndexingProgress
       const progressData: IndexingProgress = {
         ...data,
         total: data.total_files || 0,
@@ -59,7 +57,6 @@ export const useIndexingProgress = (progressId?: string) => {
     };
   }, [progressId]);
 
-  // Récupérer la progression d'indexation la plus récente si aucun ID n'est fourni
   useEffect(() => {
     if (progressId || !user) return;
 
@@ -75,13 +72,12 @@ export const useIndexingProgress = (progressId?: string) => {
           .single();
 
         if (error) {
-          if (error.code !== 'PGRST116') { // Pas de résultat trouvé
+          if (error.code !== 'PGRST116') {
             throw error;
           }
           return;
         }
 
-        // Conversion sécurisée en type IndexingProgress
         const progressData: IndexingProgress = {
           ...data,
           total: data.total_files || 0,
@@ -129,9 +125,7 @@ export const useIndexingProgress = (progressId?: string) => {
       if (error) throw error;
 
       if (data?.progressId) {
-        // Mise à jour du progress ID
         const newProgressId = data.progressId;
-        // Rediriger vers la page avec le nouveau progressId
         return newProgressId;
       }
 

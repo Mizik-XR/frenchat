@@ -21,3 +21,16 @@ export function safeClick(element: Element | null) {
     element.dispatchEvent(event);
   }
 }
+
+// Export the ModelDownloader component to fix the import error
+export const ModelDownloader = () => {
+  // This is a placeholder component that will be implemented later
+  // The actual implementation should be based on your existing code
+  return (
+    <div className="p-4">
+      <h2 className="text-lg font-medium">Téléchargement du modèle Ollama</h2>
+      <p>Interface de téléchargement et de gestion des modèles Ollama.</p>
+      {/* Implement the actual ModelDownloader UI here */}
+    </div>
+  );
+};
