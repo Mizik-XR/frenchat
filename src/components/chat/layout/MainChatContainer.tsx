@@ -1,15 +1,9 @@
 
-import React, { useState, useRef, useEffect } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { ChatMessage } from "@/components/chat/ChatMessage";
-import { Send, Home, ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
+import React, { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ThreeStateToggle } from "@/components/ui/ThreeStateToggle";
-import { SettingsDialog } from "@/components/chat/settings/SettingsDialog";
-import { AttachmentMenu } from "@/components/chat/input/AttachmentMenu";
-import { ModelSelector } from "@/components/chat/input/ModelSelector";
+import { ChatHeader } from "./ChatHeader";
+import { MessageArea } from "./MessageArea";
+import { ChatInputArea } from "./ChatInputArea";
 import type { Message } from "@/types/chat";
 
 interface MainChatContainerProps {
@@ -39,17 +33,7 @@ export function MainChatContainer({
 }: MainChatContainerProps) {
   const [inputValue, setInputValue] = useState("");
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
 
   const handleSendMessage = () => {
     if (!inputValue.trim() || !conversation) return;
@@ -78,12 +62,10 @@ export function MainChatContainer({
 
   const handleReplyToMessage = (message: Message) => {
     setReplyingTo(message);
-    inputRef.current?.focus();
   };
 
   const handleForwardMessage = (message: Message) => {
     setInputValue(message.content);
-    inputRef.current?.focus();
     toast({
       title: "Message transféré",
       description: "Le contenu du message a été copié dans la zone de texte",
@@ -92,7 +74,6 @@ export function MainChatContainer({
 
   const handleQuoteMessage = (message: Message) => {
     setInputValue(`> ${message.content}\n\n`);
-    inputRef.current?.focus();
   };
 
   const cancelReply = () => {
@@ -120,146 +101,38 @@ export function MainChatContainer({
     }
   };
 
-  if (!conversation) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full">
-        <div className="text-center p-8 max-w-md">
-          <h2 className="text-2xl font-bold mb-4">Bienvenue sur Frenchat</h2>
-          <p className="text-muted-foreground mb-6">
-            Posez vos questions ou téléchargez des documents pour commencer une conversation.
-          </p>
-          <Button 
-            className="bg-french-blue hover:bg-french-blue/90 flex items-center"
-            onClick={onCreateNewConversation}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Nouvelle conversation
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between p-2 border-b">
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <Home className="h-4 w-4" />
-          </Button>
-        </div>
+      <ChatHeader 
+        iaMode={iaMode} 
+        onIAModeChange={onIAModeChange} 
+      />
 
-        <div className="flex items-center gap-2">
-          <ThreeStateToggle
-            options={[
-              { value: "cloud", label: "IA Cloud" },
-              { value: "auto", label: "Auto" },
-              { value: "local", label: "IA Local" },
-            ]}
-            value={iaMode}
-            onValueChange={onIAModeChange}
-          />
+      <MessageArea 
+        conversation={conversation}
+        messages={messages}
+        onCreateNewConversation={onCreateNewConversation}
+        onReplyToMessage={handleReplyToMessage}
+        onForwardMessage={handleForwardMessage}
+        onQuoteMessage={handleQuoteMessage}
+      />
 
-          <Button variant="outline">Réinitialiser</Button>
-          <SettingsDialog />
-        </div>
-      </div>
-
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          {messages.length === 0 ? (
-            <div className="text-center p-8">
-              <h2 className="text-2xl font-bold mb-4">Bienvenue sur Frenchat</h2>
-              <p className="text-muted-foreground mb-6">
-                Posez vos questions ou téléchargez des documents pour commencer une conversation.
-              </p>
-              <Button 
-                className="bg-french-blue hover:bg-french-blue/90 flex items-center"
-                onClick={onCreateNewConversation}
-              >
-                <Plus className="mr-2 h-4 w-4" /> Nouvelle conversation
-              </Button>
-            </div>
-          ) : (
-            messages.map((message) => (
-              <ChatMessage
-                key={message.id}
-                message={message}
-                messages={messages}
-                onReply={() => handleReplyToMessage(message)}
-                onForward={() => handleForwardMessage(message)}
-                onQuote={() => handleQuoteMessage(message)}
-                isUser={message.role === 'user'}
-              />
-            ))
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
-
-      <form onSubmit={handleSubmit} className="p-4 border-t">
-        {replyingTo && (
-          <div className="flex items-center justify-between bg-muted p-2 rounded-md mb-2">
-            <div className="flex items-center">
-              <div className="w-1 h-full bg-french-blue mr-2" />
-              <div className="text-sm truncate">
-                <span className="font-medium">Réponse à: </span>
-                {replyingTo.content}
-              </div>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={cancelReply} 
-              className="h-6 w-6 p-0"
-              type="button"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-
-        <div className="flex items-start gap-2">
-          <div className="flex-1 flex items-start gap-2 bg-background rounded-md border">
-            <AttachmentMenu onAttach={handleAttachment} />
-            <Textarea
-              ref={inputRef}
-              placeholder="Tapez votre message..."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="min-h-[60px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-              rows={1}
-              disabled={isLoading}
-            />
-          </div>
-          <Button 
-            onClick={handleSendMessage} 
-            size="icon" 
-            className="bg-french-blue hover:bg-french-blue/90"
-            disabled={isLoading || !inputValue.trim()}
-            type="submit"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
-          <div>Mode: {iaMode === "auto" ? "Automatique" : iaMode === "cloud" ? "IA Cloud" : "IA Local"}</div>
-          {iaMode !== "auto" && (
-            <ModelSelector 
-              selectedModel={selectedModel} 
-              onSelectModel={onModelChange}
-              modelSource={iaMode === "cloud" ? "cloud" : "local"}
-            />
-          )}
-        </div>
-      </form>
+      {conversation && (
+        <ChatInputArea 
+          inputValue={inputValue}
+          setInputValue={setInputValue}
+          isLoading={isLoading}
+          replyingTo={replyingTo}
+          cancelReply={cancelReply}
+          handleAttachment={handleAttachment}
+          handleSendMessage={handleSendMessage}
+          handleKeyDown={handleKeyDown}
+          handleSubmit={handleSubmit}
+          iaMode={iaMode}
+          selectedModel={selectedModel}
+          onModelChange={onModelChange}
+        />
+      )}
     </div>
   );
 }
