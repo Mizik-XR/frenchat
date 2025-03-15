@@ -1,3 +1,4 @@
+
 import { ModelInfo } from "../data/modelData";
 import { SystemCapabilities } from "@/types/system";
 
@@ -5,9 +6,20 @@ export const getFilteredModels = (
   models: ModelInfo[],
   systemCapabilities: SystemCapabilities
 ): ModelInfo[] => {
-  if (systemCapabilities.isHighEndSystem) {
+  // Determine system tier based on available properties
+  const isHighEndSystem = systemCapabilities.hasGpu && 
+                          systemCapabilities.memoryInGB && 
+                          systemCapabilities.memoryInGB >= 16;
+                          
+  const isMidEndSystem = (!systemCapabilities.hasGpu || !isHighEndSystem) && 
+                         systemCapabilities.memoryInGB && 
+                         systemCapabilities.memoryInGB >= 8;
+                         
+  const isLowEndSystem = !isHighEndSystem && !isMidEndSystem;
+  
+  if (isHighEndSystem) {
     return models;
-  } else if (systemCapabilities.isMidEndSystem) {
+  } else if (isMidEndSystem) {
     return models.filter(
       m => !m.requirements.gpu && 
       parseInt(m.requirements.memory.split(' ')[0]) <= 8
@@ -33,12 +45,16 @@ export const isModelCompatible = (
   model: ModelInfo,
   systemCapabilities: SystemCapabilities
 ): boolean => {
-  if (model.requirements.gpu && !systemCapabilities.gpuAvailable) {
+  if (model.requirements.gpu && !systemCapabilities.hasGpu) {
     return false;
   }
   
+  // Determine low-end system based on memory
+  const isLowEndSystem = !systemCapabilities.memoryInGB || 
+                         systemCapabilities.memoryInGB < 8;
+  
   if (
-    systemCapabilities.isLowEndSystem && 
+    isLowEndSystem && 
     parseInt(model.requirements.memory.split(' ')[0]) > 4
   ) {
     return false;
