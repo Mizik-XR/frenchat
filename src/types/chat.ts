@@ -1,3 +1,4 @@
+
 export type AIProvider = 
   | 'huggingface' 
   | 'mistral' 
@@ -38,6 +39,7 @@ export interface WebUIConfig {
   temperature: number;
   maxTokens: number;
   analysisMode: AnalysisMode;
+  useMemory?: boolean;
 }
 
 export type Message = {

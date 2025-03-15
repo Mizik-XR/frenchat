@@ -1,143 +1,186 @@
 
-import { useState, useEffect } from "react";
-import { toast } from "@/hooks/use-toast";
-import { WebUIConfig, Message } from "@/types/chat";
-import { chatService } from "@/services/chatService";
-import { useAIProviders } from "./useAIProviders";
-import { useMessageReply } from "./useMessageReply";
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { AIProvider, AnalysisMode, Message, MessageMetadata, WebUIConfig } from '@/types/chat';
+import { toast } from '@/hooks/use-toast';
+import { useSecureApiProxy } from '@/hooks/useSecureApiProxy';
+import { useAuth } from '@/components/AuthProvider';
+import { v4 as uuidv4 } from 'uuid';
 
-export function useChatProcessing(selectedConversationId: string | null) {
-  const [isLoading, setIsLoading] = useState(false);
-  const { 
-    generateResponse, 
-    serviceType, 
-    localAIUrl,
-    getSystemPrompt 
-  } = useAIProviders();
-  
-  const {
-    replyToMessage,
-    handleReplyToMessage,
-    clearReplyToMessage,
-    buildReplyPrompt
-  } = useMessageReply();
+interface SendMessageOptions {
+  content: string;
+  conversationId: string;
+  files?: File[];
+  fileUrls?: string[];
+  replyTo?: { id: string; content: string; role: 'user' | 'assistant' };
+  config: WebUIConfig;
+}
 
-  useEffect(() => {
-    // Notification à l'utilisateur sur le type de service utilisé
-    if (serviceType === 'local' && localAIUrl) {
-      toast({
-        title: "Service IA local détecté",
-        description: "Utilisation du modèle IA local pour de meilleures performances",
-      });
-    } else if (serviceType === 'hybrid') {
-      toast({
-        title: "Mode automatique activé",
-        description: "L'IA alternera intelligemment entre modèles locaux et cloud selon vos requêtes",
-      });
-    }
-  }, [serviceType, localAIUrl]);
+export const useChatProcessing = () => {
+  const { user } = useAuth();
+  const secureApiProxy = useSecureApiProxy();
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const processMessage = async (
-    message: string,
-    webUIConfig: WebUIConfig,
-    documentId: string | null,
-    conversationContext?: string
-  ) => {
-    if (!selectedConversationId) {
-      throw new Error("No conversation selected");
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Prepare metadata and quoted message ID if replying to message
-      const replyMetadata = replyToMessage ? {
-        replyTo: {
-          id: replyToMessage.id,
-          content: replyToMessage.content,
-          role: replyToMessage.role
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ content, conversationId, files = [], fileUrls = [], replyTo, config }: SendMessageOptions) => {
+      if (!user) throw new Error('User not authenticated');
+      
+      setIsProcessing(true);
+      
+      try {
+        // Créer le message utilisateur
+        const userMessageId = uuidv4();
+        const timestamp = new Date();
+        
+        const userMessageMetadata: MessageMetadata = {};
+        
+        if (replyTo) {
+          userMessageMetadata.replyTo = replyTo;
         }
-      } : undefined;
-
-      // Add quotedMessageId if replying to a message
-      const quotedMessageId = replyToMessage ? replyToMessage.id : undefined;
-
-      // Send user message
-      await chatService.sendUserMessage(
-        message, 
-        selectedConversationId, 
-        'text', 
-        documentId, 
-        replyMetadata,
-        quotedMessageId
-      );
-
-      // Reset reply to message
-      clearReplyToMessage();
-
-      let prompt = message;
-      if (webUIConfig.useMemory && conversationContext) {
-        prompt = `Contexte précédent:\n${conversationContext}\n\nNouvelle question: ${message}`;
+        
+        // Upload des fichiers si nécessaire
+        const processedFileUrls = [...fileUrls];
+        
+        if (files.length > 0) {
+          for (const file of files) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const { data, error } = await supabase.functions.invoke('process-upload', {
+              body: formData,
+              headers: {
+                Accept: 'multipart/form-data',
+              },
+            });
+            
+            if (error) throw error;
+            if (data?.url) {
+              processedFileUrls.push(data.url);
+            }
+          }
+        }
+        
+        // Si des fichiers sont attachés, ajoutez-les aux métadonnées
+        if (processedFileUrls.length > 0) {
+          userMessageMetadata.documentId = processedFileUrls.join(',');
+        }
+        
+        // Enregistrer le message utilisateur
+        const { error: insertError } = await supabase
+          .from('chat_messages')
+          .insert({
+            id: userMessageId,
+            role: 'user',
+            content,
+            conversation_id: conversationId,
+            user_id: user.id,
+            metadata: userMessageMetadata,
+          });
+        
+        if (insertError) throw insertError;
+        
+        // Construire le message IA
+        const aiMessageId = uuidv4();
+        const aiMessageMetadata: MessageMetadata = {
+          provider: config.provider,
+          analysisMode: config.analysisMode,
+          aiService: {
+            type: 'hybrid',
+            endpoint: 'auto',
+            actualServiceUsed: 'cloud'
+          }
+        };
+        
+        // Préparer la requête pour l'API
+        let response;
+        switch (config.provider) {
+          case 'openai':
+          case 'mistral':
+          case 'anthropic':
+          case 'google':
+          case 'deepseek':
+          case 'deepseek-v2':
+          case 'gemma-3':
+          case 'huggingface':
+            response = await secureApiProxy.generateText({
+              provider: config.provider,
+              prompt: content,
+              conversationId,
+              messageId: aiMessageId,
+              options: {
+                temperature: config.temperature,
+                max_tokens: config.maxTokens,
+                useMemory: config.useMemory || false,
+                analysisMode: config.analysisMode
+              }
+            });
+            break;
+          default:
+            // Fallback to local service
+            const { data } = await supabase.functions.invoke('text-generation', {
+              body: {
+                prompt: content,
+                model: config.model,
+                temperature: config.temperature,
+                max_tokens: config.maxTokens
+              }
+            });
+            response = data?.generated_text || "Je n'ai pas pu générer de réponse.";
+        }
+        
+        // Enregistrer la réponse de l'IA
+        const { error: aiInsertError } = await supabase
+          .from('chat_messages')
+          .insert({
+            id: aiMessageId,
+            role: 'assistant',
+            content: response,
+            conversation_id: conversationId,
+            user_id: user.id,
+            metadata: aiMessageMetadata,
+          });
+        
+        if (aiInsertError) throw aiInsertError;
+        
+        return {
+          userMessage: {
+            id: userMessageId,
+            role: 'user',
+            content,
+            conversationId,
+            metadata: userMessageMetadata,
+            timestamp
+          },
+          assistantMessage: {
+            id: aiMessageId,
+            role: 'assistant',
+            content: response,
+            conversationId,
+            metadata: aiMessageMetadata,
+            timestamp: new Date()
+          }
+        };
+      } catch (error) {
+        console.error('Error processing chat:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Une erreur est survenue lors du traitement du message.',
+          variant: 'destructive',
+        });
+        throw error;
+      } finally {
+        setIsProcessing(false);
       }
-
-      // If replying to a message, add context
-      prompt = buildReplyPrompt(message, replyToMessage);
-
-      // Add AI service info to metadata
-      const aiServiceInfo = {
-        type: serviceType as 'local' | 'cloud' | 'hybrid',
-        endpoint: serviceType === 'local' ? localAIUrl : 'cloud',
-        actualServiceUsed: serviceType as 'local' | 'cloud'
-      };
-
-      const response = await generateResponse(
-        message, 
-        prompt, 
-        webUIConfig.model, 
-        webUIConfig
-      );
-
-      // Update service type possibly chosen automatically
-      const serviceUsed = localStorage.getItem('lastServiceUsed') || serviceType;
-
-      // Create type-safe metadata object
-      const metadata = { 
-        provider: webUIConfig.model,
-        analysisMode: webUIConfig.analysisMode,
-        aiService: {
-          ...aiServiceInfo,
-          actualServiceUsed: serviceUsed as 'local' | 'cloud'
-        }
-      };
-
-      await chatService.sendAssistantMessage(
-        response[0].generated_text,
-        selectedConversationId,
-        'text',
-        documentId,
-        metadata
-      );
-
-      return { content: response[0].generated_text };
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive"
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
 
   return {
-    isLoading,
-    replyToMessage,
-    processMessage,
-    handleReplyToMessage,
-    clearReplyToMessage,
-    serviceType,
-    localAIUrl
+    sendMessage: sendMessageMutation.mutate,
+    isProcessing,
+    isSuccess: sendMessageMutation.isSuccess,
+    isError: sendMessageMutation.isError,
+    error: sendMessageMutation.error,
+    reset: sendMessageMutation.reset,
   };
-}
+};

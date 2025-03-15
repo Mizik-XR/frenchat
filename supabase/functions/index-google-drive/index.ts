@@ -1,5 +1,5 @@
-import { serve } from 'std/server';
-import { createClient } from '@supabase/supabase-js';
+import { serve } from "std/server";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { DOMParser } from 'https://deno.land/x/deno_dom@v0.1.43/deno-dom-wasm.ts';
 import { load } from "https://deno.land/std@0.217.0/dotenv/mod.ts";
@@ -27,10 +27,8 @@ interface IndexingProgress {
   updated_at: string;
 }
 
-// Fonction pour récupérer et déchiffrer le token Google Drive
 async function getGoogleDriveToken(userId: string) {
   try {
-    // Appel à l'Edge Function google-oauth pour obtenir un token valide et déchiffré
     const { data, error } = await supabase.functions.invoke('google-oauth', {
       body: { 
         action: 'check_token_status', 
@@ -43,7 +41,6 @@ async function getGoogleDriveToken(userId: string) {
       throw new Error("Token invalide ou expiré");
     }
     
-    // Récupérer le token déchiffré
     const { data: tokenData, error: tokenError } = await supabase.functions.invoke('google-oauth', {
       body: { 
         action: 'get_token', 
@@ -154,10 +151,8 @@ async function processGoogleDocument(fileId: string, accessToken: string): Promi
       return null;
     }
 
-    // Extraire le texte visible
     let textContent = doc.body?.textContent || '';
 
-    // Nettoyer le texte (supprimer les espaces inutiles et les sauts de ligne)
     textContent = textContent.replace(/\s+/g, ' ').trim();
 
     return textContent;
@@ -176,13 +171,11 @@ async function indexFolder(
   progressId: string
 ): Promise<void> {
   try {
-    // Mise à jour de l'état de la progression
     await updateIndexingProgress(progressId, {
       current_folder: folderId,
       depth: depth
     });
 
-    // Récupération de la liste des fichiers et dossiers dans le dossier actuel
     const response = await fetch(
       `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and trashed=false&fields=files(id, name, mimeType, size, modifiedTime)&key=${googleDriveApiKey}`,
       {
@@ -209,29 +202,23 @@ async function indexFolder(
       return;
     }
 
-    // Mise à jour du nombre total de fichiers à traiter (si ce n'est pas déjà fait)
     const totalFiles = files.length;
     await updateIndexingProgress(progressId, {
       total_files: totalFiles,
     });
 
-    // Traitement de chaque fichier et sous-dossier
     for (const file of files) {
       try {
         const { id: fileId, name: fileName, mimeType, size, modifiedTime } = file;
 
-        // Mise à jour du dernier fichier traité
         await updateIndexingProgress(progressId, {
           last_processed_file: fileName,
         });
 
-        // Vérification du type de fichier
         if (mimeType === 'application/vnd.google-apps.folder') {
-          // Si c'est un dossier, indexez-le récursivement
           console.log(`Dossier trouvé: ${fileName} (${fileId})`);
           await indexFolder(userId, fileId, folderId, depth + 1, accessToken, progressId);
         } else {
-          // Si c'est un fichier, traitez-le
           console.log(`Fichier trouvé: ${fileName} (${fileId})`);
 
           let fileType = 'unknown';
@@ -242,8 +229,7 @@ async function indexFolder(
             content = await getFileContent(fileId, accessToken);
           } else if (mimeType === 'application/pdf') {
             fileType = 'pdf';
-            // Pour les PDF, vous pouvez extraire le texte avec une librairie appropriée si nécessaire
-            content = null; // L'extraction de texte PDF nécessite une librairie supplémentaire
+            content = null;
           } else if (mimeType === 'application/vnd.google-apps.document') {
             fileType = 'google-document';
             content = await processGoogleDocument(fileId, accessToken);
@@ -251,10 +237,9 @@ async function indexFolder(
             mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
           ) {
             fileType = 'docx';
-            content = null; // L'extraction de texte DOCX nécessite une librairie supplémentaire
+            content = null;
           }
 
-          // Insertion des informations du fichier dans la base de données
           const filePath = parentFolder ? `${parentFolder}/${fileName}` : fileName;
           const metadata = {
             googleDriveFileId: fileId,
@@ -271,12 +256,11 @@ async function indexFolder(
             metadata,
             content
           );
-        }
 
-        // Mise à jour du nombre de fichiers traités
-        await updateIndexingProgress(progressId, {
-          processed_files: (await getIndexingProgress(progressId))?.processed_files ? (await getIndexingProgress(progressId))?.processed_files! + 1 : 1,
-        });
+          await updateIndexingProgress(progressId, {
+            processed_files: (await getIndexingProgress(progressId))?.processed_files ? (await getIndexingProgress(progressId))?.processed_files! + 1 : 1,
+          });
+        }
       } catch (innerError) {
         console.error(`Erreur lors du traitement du fichier ${file.name} (${file.id}):`, innerError);
         await updateIndexingProgress(progressId, {
@@ -328,7 +312,6 @@ serve(async (req) => {
       });
     }
 
-    // Récupération du token Google Drive
     let accessToken;
     try {
       accessToken = await getGoogleDriveToken(userId);
@@ -340,7 +323,6 @@ serve(async (req) => {
       });
     }
 
-    // Démarrage de l'indexation
     await updateIndexingProgress(progressId, { status: 'running' });
     await indexFolder(userId, folderId, null, 0, accessToken, progressId);
     await updateIndexingProgress(progressId, { status: 'completed' });

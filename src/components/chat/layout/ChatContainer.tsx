@@ -1,136 +1,120 @@
 
-import { Card } from "@/components/ui/card";
-import { ChatHeader } from "../ChatHeader";
-import { MessageList } from "../MessageList";
-import { ChatInputContainer } from "./ChatInputContainer";
-import { SettingsPanel } from "../settings/SettingsPanel";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { Message, WebUIConfig, AIProvider, AnalysisMode } from "@/types/chat";
-import { NavigationControls } from "@/components/navigation/NavigationControls";
+import { useState, useEffect } from 'react';
+import { MainChatContainer } from './MainChatContainer';
+import { ChatInputContainer } from './ChatInputContainer';
+import { useConversations } from '@/hooks/useConversations';
+import { ChatHeader } from '../ChatHeader';
+import { useParams, useNavigate } from 'react-router-dom';
+import { WebUIConfig, AnalysisMode, AIProvider } from '@/types/chat';
 
 interface ChatContainerProps {
-  messages: Message[];
-  isLoading: boolean;
-  llmStatus: string;
-  webUIConfig: WebUIConfig;
-  input: string;
-  selectedDocumentId: string | null;
-  showSettings: boolean;
-  showUploader: boolean;
-  replyToMessage: Message | null;
-  onClearReply: () => void;
-  onModeChange: (mode: 'auto' | 'manual') => void;
-  onWebUIConfigChange: (config: Partial<WebUIConfig>) => void;
-  onProviderChange: (provider: AIProvider) => void;
-  onReplyToMessage: (message: Message) => void;
-  setInput: (input: string) => void;
-  setShowSettings: (show: boolean) => void;
-  setShowUploader: (show: boolean) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  onFilesSelected: (files: File[]) => Promise<void>;
-  onResetConversation: () => void;
-  onAnalysisModeChange: (mode: AnalysisMode) => void;
-  modelSource: 'cloud' | 'local';
-  onModelSourceChange: (source: 'cloud' | 'local') => void;
+  config: WebUIConfig;
+  setConfig: React.Dispatch<React.SetStateAction<WebUIConfig>>;
 }
 
-export const ChatContainer = ({
-  messages,
-  isLoading,
-  llmStatus,
-  webUIConfig,
-  input,
-  selectedDocumentId,
-  showSettings,
-  showUploader,
-  replyToMessage,
-  onClearReply,
-  onModeChange,
-  onWebUIConfigChange,
-  onProviderChange,
-  onReplyToMessage,
-  setInput,
-  setShowSettings,
-  setShowUploader,
-  onSubmit,
-  onFilesSelected,
-  onResetConversation,
-  onAnalysisModeChange,
-  modelSource,
-  onModelSourceChange
-}: ChatContainerProps) => {
-  return (
-    <Card className="h-full flex flex-col bg-white dark:bg-gray-900 shadow-sm relative overflow-hidden border-none">
-      {/* Tricolor header accent */}
-      <div className="absolute top-0 left-0 right-0 h-1 flex">
-        <div className="w-1/3 bg-blue-600"></div>
-        <div className="w-1/3 bg-white"></div>
-        <div className="w-1/3 bg-red-600"></div>
-      </div>
+export const ChatContainer = ({ config, setConfig }: ChatContainerProps) => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { conversations, activeConversation, setActiveConversation, createNewConversation } = useConversations();
+  const [inputValue, setInputValue] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    // Si un ID est fourni dans l'URL mais qu'il n'y a pas de conversation active
+    if (id && !activeConversation) {
+      const conversation = conversations.find((conv) => conv.id === id);
+      if (conversation) {
+        setActiveConversation(conversation);
+      } else {
+        // Si l'ID n'existe pas, rediriger vers la page de chat principale
+        navigate('/chat');
+      }
+    }
+    
+    // Si aucun ID n'est fourni et qu'il y a des conversations
+    if (!id && conversations.length > 0 && !activeConversation) {
+      const mostRecentConversation = [...conversations].sort(
+        (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      )[0];
       
-      <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-800 mt-1">
-        <NavigationControls />
-        <ChatHeader 
-          mode={webUIConfig.mode}
-          onModeChange={onModeChange}
-          showSettings={showSettings}
-          setShowSettings={setShowSettings}
-          onResetConversation={onResetConversation}
-          setShowUploader={setShowUploader}
-          modelSource={modelSource}
-          onModelSourceChange={onModelSourceChange}
-        />
-      </div>
+      if (mostRecentConversation) {
+        navigate(`/chat/${mostRecentConversation.id}`);
+      }
+    }
+    
+    // Si aucun ID n'est fourni et qu'il n'y a pas de conversations, créer une nouvelle conversation
+    if (!id && conversations.length === 0 && !activeConversation) {
+      handleNewChat();
+    }
+  }, [id, conversations, activeConversation, navigate]);
 
-      {llmStatus !== 'configured' && (
-        <Alert variant="destructive" className="m-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Veuillez configurer un modèle de langage dans les paramètres pour utiliser le chat.
-          </AlertDescription>
-        </Alert>
-      )}
+  const handleNewChat = async () => {
+    const newConversation = await createNewConversation();
+    if (newConversation) {
+      navigate(`/chat/${newConversation.id}`);
+    }
+  };
 
-      {showSettings && (
-        <div className="absolute top-16 right-4 z-50 w-80">
-          <SettingsPanel
-            webUIConfig={webUIConfig}
-            onWebUIConfigChange={onWebUIConfigChange}
-            onProviderChange={onProviderChange}
-            onAnalysisModeChange={onAnalysisModeChange}
-            modelSource={modelSource}
-            onModelSourceChange={onModelSourceChange}
-            onModeChange={onModeChange}
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleModelChange = (model: AIProvider) => {
+    setConfig((prev) => ({ ...prev, provider: model, model: model }));
+  };
+
+  const handleAnalysisModeChange = (mode: AnalysisMode) => {
+    setConfig((prev) => ({ ...prev, analysisMode: mode }));
+  };
+
+  const handleTemperatureChange = (temp: number) => {
+    setConfig((prev) => ({ ...prev, temperature: temp }));
+  };
+
+  const handleMaxTokensChange = (tokens: number) => {
+    setConfig((prev) => ({ ...prev, maxTokens: tokens }));
+  };
+
+  const handleUseMemoryChange = (useMemory: boolean) => {
+    setConfig((prev) => ({ ...prev, useMemory }));
+  };
+
+  return (
+    <div className="flex flex-col flex-1 h-screen bg-background overflow-hidden">
+      {activeConversation ? (
+        <>
+          <ChatHeader 
+            conversation={activeConversation} 
+            onNewChat={handleNewChat} 
+            selectedProvider={config.provider}
+            onProviderChange={handleModelChange}
+            selectedAnalysisMode={config.analysisMode}
+            onAnalysisModeChange={handleAnalysisModeChange}
           />
+          <MainChatContainer conversationId={activeConversation.id} isTyping={isTyping} />
+          <ChatInputContainer 
+            conversationId={activeConversation.id}
+            value={inputValue}
+            onChange={handleInputChange}
+            setInputValue={setInputValue}
+            setIsTyping={setIsTyping}
+            selectedModel={config.provider}
+            onModelChange={handleModelChange}
+            temperature={config.temperature}
+            onTemperatureChange={handleTemperatureChange}
+            maxTokens={config.maxTokens}
+            onMaxTokensChange={handleMaxTokensChange}
+            selectedAnalysisMode={config.analysisMode}
+            onAnalysisModeChange={handleAnalysisModeChange}
+            useMemory={config.useMemory || false}
+            onUseMemoryChange={handleUseMemoryChange}
+          />
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center h-full">
+          <p className="text-muted-foreground">Chargement de la conversation...</p>
         </div>
       )}
-
-      <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900 chat-container">
-        <MessageList 
-          messages={messages} 
-          isLoading={isLoading}
-          onReplyToMessage={onReplyToMessage}
-        />
-      </div>
-
-      <div className="chat-input-wrapper">
-        <ChatInputContainer
-          input={input}
-          setInput={setInput}
-          isLoading={isLoading}
-          selectedDocumentId={selectedDocumentId}
-          onSubmit={onSubmit}
-          mode={webUIConfig.mode}
-          model={webUIConfig.model}
-          showUploader={showUploader}
-          setShowUploader={setShowUploader}
-          onFilesSelected={onFilesSelected}
-          modelSource={modelSource}
-          replyToMessage={replyToMessage}
-          onClearReply={onClearReply}
-        />
-      </div>
-    </Card>
+    </div>
   );
 };

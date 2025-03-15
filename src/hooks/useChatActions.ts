@@ -1,111 +1,78 @@
 
-import { useState } from "react";
-import { AnalysisMode, WebUIConfig, Message } from "@/types/chat";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { useConversations } from '@/hooks/useConversations';
+import { useChatProcessing } from '@/hooks/chat/useChatProcessing';
+import { WebUIConfig } from '@/types/chat';
+import { toast } from '@/hooks/use-toast';
 
-export function useChatActions(
-  selectedConversationId: string | null,
-  webUIConfig: WebUIConfig,
-  processMessage: (message: string, config: WebUIConfig, documentId: string | null, context?: string) => Promise<any>,
-  clearMessages: () => void,
-  createNewConversation: (config: WebUIConfig) => Promise<any>,
-  messages: Message[]
-) {
+export const useChatActions = () => {
+  const { sendMessage } = useChatProcessing();
+  const { activeConversation, setActiveConversation, updateConversationMetadata } = useConversations();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent, input: string, setInput: (input: string) => void, selectedDocumentId: string | null, llmStatus: string) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    if (llmStatus !== 'configured') {
+  const handleSendMessage = async (
+    content: string,
+    conversationId: string,
+    files: File[] = [],
+    fileUrls: string[] = [],
+    replyTo: { id: string; content: string; role: 'user' | 'assistant' } | null = null,
+    config: WebUIConfig
+  ) => {
+    if (!content.trim() && files.length === 0 && fileUrls.length === 0) {
       toast({
-        title: "Configuration requise",
-        description: "Veuillez configurer un modèle de langage dans les paramètres",
-        variant: "destructive"
+        title: 'Message vide',
+        description: 'Veuillez saisir un message ou joindre un fichier.',
+        variant: 'destructive',
       });
       return;
     }
 
     setIsProcessing(true);
+
     try {
-      let currentConversationId = selectedConversationId;
-      if (!currentConversationId) {
-        const newConv = await createNewConversation(webUIConfig);
-        currentConversationId = newConv.id;
+      // Mise à jour du titre si c'est le premier message
+      if (activeConversation && activeConversation.title === 'Nouvelle conversation') {
+        const title = content.length > 30 ? content.substring(0, 27) + '...' : content;
+        await updateConversationMetadata(conversationId, { title });
+        
+        if (activeConversation) {
+          setActiveConversation({
+            ...activeConversation,
+            title,
+          });
+        }
       }
 
-      const conversationContext = webUIConfig.useMemory 
-        ? messages.slice(-5).map(m => `${m.role}: ${m.content}`).join('\n')
-        : '';
-
-      const message = input;
-      setInput('');
-      
-      await processMessage(
-        message, 
-        webUIConfig,
-        selectedDocumentId,
-        conversationContext
-      );
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive"
+      // Envoi du message avec gestion de la configuration et des pièces jointes
+      await sendMessage({
+        content,
+        conversationId,
+        files,
+        fileUrls,
+        replyTo: replyTo || undefined,
+        config: {
+          ...config,
+          useMemory: config.useMemory || false
+        }
       });
+
+      return true;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Une erreur est survenue lors de l\'envoi du message.',
+        variant: 'destructive',
+      });
+      return false;
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleResetConversation = () => {
-    clearMessages();
-    toast({
-      title: "Conversation réinitialisée",
-      description: "L'historique a été effacé",
-    });
-  };
-
-  const handleAnalysisModeChange = (mode: AnalysisMode) => {
-    toast({
-      title: "Mode d'analyse modifié",
-      description: `Mode ${mode} activé`,
-    });
-    return mode;
-  };
-
-  const handleFilesSelected = async (files: File[]) => {
-    try {
-      for (const file of files) {
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        await supabase.functions.invoke('upload-chat-file', {
-          body: formData
-        });
-
-        toast({
-          title: "Fichier ajouté",
-          description: `${file.name} a été uploadé avec succès`,
-        });
-      }
-      return true;
-    } catch (error) {
-      toast({
-        title: "Erreur d'upload",
-        description: "Une erreur est survenue lors de l'upload du fichier",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
   return {
+    handleSendMessage,
     isProcessing,
-    handleSubmit,
-    handleResetConversation,
-    handleAnalysisModeChange,
-    handleFilesSelected
   };
-}
+};
