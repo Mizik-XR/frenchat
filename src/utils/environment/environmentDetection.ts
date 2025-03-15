@@ -1,88 +1,106 @@
 
-// Détection de l'environnement
+/**
+ * Utilities for environment detection
+ */
 
 /**
- * Vérifie si l'application est en mode production
+ * Détecte si l'application s'exécute en environnement de production
+ * @returns true si l'application est en production
  */
-export function isProduction(): boolean {
-  return import.meta.env.PROD || window.location.hostname !== 'localhost';
-}
+export const isProduction = (): boolean => {
+  return import.meta.env.PROD || import.meta.env.MODE === 'production';
+};
 
 /**
- * Vérifie si l'application est en mode développement
+ * Détecte si l'application s'exécute en environnement de développement
+ * @returns true si l'application est en développement
  */
-export function isDevelopment(): boolean {
-  return import.meta.env.DEV && window.location.hostname === 'localhost';
-}
+export const isDevelopment = (): boolean => {
+  return import.meta.env.DEV || import.meta.env.MODE === 'development';
+};
 
 /**
- * Vérifie si l'application est dans l'environnement Lovable
+ * Détecte si l'application s'exécute sur une plateforme Netlify
  */
-export function isLovableEnvironment(): boolean {
-  return window.location.hostname.includes('lovable.ai');
-}
-
-/**
- * Vérifie si l'application est dans l'environnement Netlify
- */
-export function isNetlifyEnvironment(): boolean {
-  return window.location.hostname.includes('netlify.app');
-}
-
-/**
- * Vérifie si l'application est en mode cloud forcé
- */
-export function isCloudMode(): boolean {
-  return localStorage.getItem('aiServiceType') === 'cloud' ||
-         localStorage.getItem('FORCE_CLOUD_MODE') === 'true';
-}
-
-/**
- * Vérifie si l'IA locale est disponible
- */
-export function isLocalAIAvailable(): boolean {
-  return !isLovableEnvironment() && 
-         !isCloudMode() && 
-         localStorage.getItem('localAIUrl') !== null;
-}
-
-/**
- * Détecte le système d'exploitation de l'utilisateur
- */
-export function detectOperatingSystem(): 'windows' | 'macos' | 'linux' | 'other' {
-  const userAgent = window.navigator.userAgent.toLowerCase();
+export const isNetlifyEnvironment = (): boolean => {
+  if (typeof process !== 'undefined') {
+    return !!process.env.NETLIFY;
+  }
   
-  if (userAgent.indexOf('windows') !== -1) return 'windows';
-  if (userAgent.indexOf('mac') !== -1) return 'macos';
-  if (userAgent.indexOf('linux') !== -1) return 'linux';
+  // Vérifier si on est sur le domaine Netlify
+  if (typeof window !== 'undefined') {
+    return window.location.hostname.includes('netlify.app');
+  }
   
-  return 'other';
-}
+  return false;
+};
 
 /**
- * Détecte l'environnement de l'utilisateur
+ * Détecte si l'application s'exécute sur Lovable
  */
-export function detectUserEnvironment() {
-  return {
-    os: detectOperatingSystem(),
-    browser: detectBrowser(),
-    isProduction: isProduction(),
-    isDevelopment: isDevelopment(),
-    isCloud: isCloudMode(),
-    isLocalAIAvailable: isLocalAIAvailable()
-  };
-}
+export const isLovableEnvironment = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  // Vérifier le hostname
+  const isLovableDomain = 
+    window.location.host.includes('lovable.dev') || 
+    window.location.host.includes('lovable.app') ||
+    window.location.host.includes('lovableproject.com') ||
+    window.location.host.includes('localhost');
+  
+  // Vérifier si nous sommes dans un iframe
+  const isInIframe = window !== window.parent;
+  
+  // Vérifier si un paramètre Lovable est présent
+  const hasLovableParam = 
+    new URLSearchParams(window.location.search).get('lovable') === 'true' ||
+    window.location.search.includes('forceHideBadge=true');
+  
+  // Vérifier si le script gptengineer.js est chargé
+  const isLovableScriptLoaded = 
+    typeof window.gptengineer !== 'undefined' || 
+    document.querySelector('script[src*="gptengineer.js"]') !== null;
+  
+  return isLovableDomain || (isInIframe && hasLovableParam) || isLovableScriptLoaded;
+};
 
 /**
- * Détecte le navigateur de l'utilisateur
+ * Détecte si l'application fonctionne en mode cloud
  */
-function detectBrowser(): 'chrome' | 'firefox' | 'safari' | 'edge' | 'other' {
-  const userAgent = window.navigator.userAgent.toLowerCase();
+export const isCloudMode = (): boolean => {
+  // Vérifier d'abord si le mode cloud est explicitement forcé par la variable d'environnement
+  if (import.meta.env.VITE_CLOUD_MODE === 'true') {
+    return true;
+  }
   
-  if (userAgent.indexOf('chrome') !== -1 && userAgent.indexOf('edg') === -1) return 'chrome';
-  if (userAgent.indexOf('firefox') !== -1) return 'firefox';
-  if (userAgent.indexOf('safari') !== -1 && userAgent.indexOf('chrome') === -1) return 'safari';
-  if (userAgent.indexOf('edg') !== -1) return 'edge';
+  // Vérifier si nous sommes dans un environnement de prévisualisation Lovable
+  if (isLovableEnvironment()) {
+    return true;
+  }
   
-  return 'other';
+  // Vérifier si le mode cloud est forcé par un paramètre d'URL
+  if (typeof window !== 'undefined') {
+    const forceCloud = new URLSearchParams(window.location.search).get('forceCloud') === 'true';
+    if (forceCloud) {
+      return true;
+    }
+  }
+  
+  // Par défaut, utiliser le stockage local
+  if (typeof window !== 'undefined') {
+    return window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true';
+  }
+  
+  return false;
+};
+
+// Déclaration de type pour ajouter la propriété gptengineer à l'objet Window
+declare global {
+  interface Window {
+    gptengineer: any;
+    APP_CONFIG?: {
+      forceCloudMode?: boolean;
+      debugMode?: boolean;
+    };
+  }
 }

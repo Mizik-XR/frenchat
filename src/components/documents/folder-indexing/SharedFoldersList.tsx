@@ -23,7 +23,7 @@ export function SharedFoldersList({ onSelectFolder }: SharedFoldersListProps) {
     );
   }
 
-  if (!sharedFolders || sharedFolders.length === 0) {
+  if (sharedFolders.length === 0) {
     return (
       <div className="text-center py-8 px-4 border rounded-lg">
         <Folder className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />

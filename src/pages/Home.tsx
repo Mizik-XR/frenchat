@@ -1,151 +1,138 @@
 
-import React, { useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { FileText, FolderOpen, Bot, Database, BarChart } from "lucide-react";
-import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/AuthProvider";
+import { useGoogleDrivePicker } from "@/hooks/useGoogleDrivePicker";
 import { useGoogleDriveFolders } from "@/hooks/useGoogleDriveFolders";
-import { useSystemCapabilities } from "@/hooks/useSystemCapabilities";
-import { OnboardingIntro } from "@/components/onboarding/OnboardingIntro";
+import { FolderTree } from "@/components/FolderTree";
+import { GoogleDriveSync } from "@/components/GoogleDriveSync";
+import { OllamaPromotion } from "@/components/ollama/OllamaPromotion";
+import { UserCreditPanel } from "@/components/config/AIUsageMetrics/UserCreditPanel";
+import { GoogleDriveConnectionStatus } from "@/components/GoogleDriveConnectionStatus";
 
 export default function Home() {
   const navigate = useNavigate();
-  const { isConnected } = useGoogleDriveStatus();
-  const { folders, isLoading, refreshFolders } = useGoogleDriveFolders();
-  const { capabilities } = useSystemCapabilities();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [huggingFaceApiKey, setHuggingFaceApiKey] = useState('');
+  const [description, setDescription] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const { refreshFolders } = useGoogleDriveFolders();
+  const { pickFolder } = useGoogleDrivePicker();
 
   useEffect(() => {
-    if (isConnected) {
-      refreshFolders();
+    if (!user) {
+      navigate('/auth');
     }
-  }, [isConnected, refreshFolders]);
+  }, [user, navigate]);
+
+  const handleApiKeyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setHuggingFaceApiKey(event.target.value);
+  };
+
+  const handleDescriptionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(event.target.value);
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    // Simuler une synchronisation
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsSyncing(false);
+    toast({
+      title: "Synchronisation réussie!",
+      description: "Vos données ont été synchronisées avec succès.",
+    });
+  };
+
+  const handleFolderSelect = (folderId: string) => {
+    setSelectedFolderId(folderId);
+  };
 
   return (
-    <div className="container mx-auto py-8 px-4 space-y-6">
-      <OnboardingIntro />
-      
-      <h1 className="text-3xl font-bold mb-6">Bienvenue sur FileChat</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-blue-500" />
-              Intelligence Artificielle
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4 text-gray-600">
-              {capabilities.localAIReady 
-                ? "Votre système est compatible avec l'IA locale"
-                : "Configurez votre modèle d'IA préféré pour des réponses précises"}
-            </p>
-            <Button 
-              onClick={() => navigate("/config")} 
-              variant="outline"
-              className="w-full"
-            >
-              Configuration de l'IA
-            </Button>
-          </CardContent>
-        </Card>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">Bienvenue sur FileChat</h1>
+          <p className="text-gray-500">
+            Commencez à discuter avec vos fichiers en toute simplicité.
+          </p>
+        </div>
+        
+        {/* Promotion Ollama */}
+        <OllamaPromotion />
+        
+        {/* Affichage des crédits IA utilisateur */}
+        {user && <UserCreditPanel />}
+        
+        {/* Statut de connexion Google Drive */}
+        <GoogleDriveConnectionStatus />
         
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-green-500" />
-              Documents
-            </CardTitle>
+            <CardTitle>Configuration du compte</CardTitle>
+            <CardDescription>
+              Mettez à jour les informations de votre compte.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="mb-4 text-gray-600">
-              Gérez et accédez à vos documents pour les utiliser dans vos conversations.
-            </p>
-            <Button 
-              onClick={() => navigate("/documents")}
-              className="w-full"
-            >
-              Gérer les documents
-            </Button>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Clé API Hugging Face (optionnelle)
+              </label>
+              <Input
+                type="password"
+                value={huggingFaceApiKey}
+                onChange={handleApiKeyChange}
+                placeholder="Entrez votre clé API Hugging Face pour utiliser leurs modèles d'IA"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Cette clé est utilisée pour accéder aux modèles d'IA de Hugging Face. 
+                <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline ml-1">
+                  Obtenir une clé
+                </a>
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <Textarea
+                value={description}
+                onChange={handleDescriptionChange}
+                placeholder="Ajoutez une description pour votre compte"
+              />
+            </div>
           </CardContent>
+          <CardFooter>
+            <Button>Mettre à jour</Button>
+          </CardFooter>
         </Card>
-        
+
+        <GoogleDriveSync />
+
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FolderOpen className="h-5 w-5 text-purple-500" />
-              Google Drive
-            </CardTitle>
+            <CardTitle>Sélection du dossier Google Drive</CardTitle>
+            <CardDescription>
+              Choisissez le dossier à partir duquel synchroniser les fichiers.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="mb-4 text-gray-600">
-              {isConnected
-                ? `${folders.length} dossier(s) disponible(s)`
-                : "Connectez votre compte Google Drive pour accéder à vos fichiers."}
-            </p>
-            <Button 
-              onClick={() => navigate("/google-drive-config")}
-              variant={isConnected ? "outline" : "default"}
-              className="w-full"
-            >
-              {isConnected ? "Gérer les dossiers" : "Connecter Google Drive"}
-            </Button>
+            <FolderTree onFolderSelect={handleFolderSelect} />
           </CardContent>
+          <CardFooter>
+            <Button onClick={pickFolder}>Choisir un autre dossier</Button>
+          </CardFooter>
         </Card>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <Database className="h-5 w-5 text-blue-600" />
-              Indexation complète Drive
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4 text-gray-600">
-              Indexez l'intégralité de votre Google Drive pour des réponses basées sur tous vos documents.
-            </p>
-            <Button 
-              onClick={() => navigate("/documents?tab=full-drive")}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Configurer l'indexation complète
-            </Button>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart className="h-5 w-5 text-amber-500" />
-              Statistiques et utilisation
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4 text-gray-600">
-              Suivez votre utilisation, vos crédits API et la performance de vos modèles d'IA.
-            </p>
-            <Button 
-              onClick={() => navigate("/config?tab=usage")}
-              variant="outline"
-              className="w-full"
-            >
-              Voir les statistiques
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="flex justify-center mt-6">
-        <Button 
-          onClick={() => navigate("/chat")}
-          size="lg"
-          className="px-8"
-        >
-          Aller au chat
-        </Button>
+
+        <Button onClick={() => navigate('/chat')}>Aller au Chat</Button>
       </div>
     </div>
   );

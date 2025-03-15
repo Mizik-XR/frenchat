@@ -7,7 +7,6 @@ import { useAuth } from '@/components/AuthProvider';
 export const useIndexingProgress = (progressId?: string) => {
   const [progress, setProgress] = useState<IndexingProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
 
   const fetchProgress = async () => {
@@ -115,7 +114,6 @@ export const useIndexingProgress = (progressId?: string) => {
   }, [user, progressId]);
 
   const startIndexing = async (folderId: string, options?: Record<string, any>) => {
-    setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('index-google-drive', {
         body: { 
@@ -140,8 +138,6 @@ export const useIndexingProgress = (progressId?: string) => {
       console.error('Erreur lors du démarrage de l\'indexation:', err);
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
       return null;
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -149,8 +145,7 @@ export const useIndexingProgress = (progressId?: string) => {
     progress, 
     error,
     indexingProgress: progress,
-    startIndexing,
-    isLoading
+    startIndexing
   };
 };
 

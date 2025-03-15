@@ -1,199 +1,149 @@
 
 import { useState, useEffect } from 'react';
-import { detectOperatingSystem } from '@/utils/environment/environmentDetection';
 
-export interface SystemCapabilities {
-  memoryGB?: number;
-  cpuCores?: number;
-  gpuAvailable?: boolean;
+export type ServiceStatus = 'online' | 'offline' | 'checking' | 'error';
+
+export type SystemCapabilities = {
+  cuda: boolean;
+  gpu: {
+    available: boolean;
+    name: string | null;
+    memory: number | null;
+  };
+  ram: {
+    total: number;
+    available: number;
+  };
+  cpu: {
+    cores: number;
+    model: string | null;
+  };
+  os: string;
+  diskSpace: {
+    total: number;
+    available: number;
+  };
+  network: {
+    online: boolean;
+    latency: number | null;
+  };
+  browser: {
+    name: string;
+    version: string;
+  };
+  // Propriétés nécessaires pour les composants
+  gpuAvailable: boolean;
+  memoryGB: number;
+  cpuCores: number;
+  isHighEndSystem: boolean;
+  isMidEndSystem: boolean;
+  isLowEndSystem: boolean;
   recommendedModels: string[];
-  localAIReady: boolean;
-  os: 'windows' | 'macos' | 'linux' | 'other';
-  isHighEndSystem?: boolean;
-  isMidEndSystem?: boolean;
+};
+
+// Extend Navigator interface to include deviceMemory
+interface NavigatorWithMemory extends Navigator {
+  deviceMemory?: number;
 }
 
-/**
- * Hook qui détecte les capacités du système de l'utilisateur
- * pour déterminer quels modèles d'IA peuvent être exécutés localement
- */
 export function useSystemCapabilities() {
   const [capabilities, setCapabilities] = useState<SystemCapabilities>({
-    recommendedModels: ['mistral'], // Par défaut, recommander Mistral
-    localAIReady: false,
-    os: 'other'
+    cuda: false,
+    gpu: { available: false, name: null, memory: null },
+    ram: { total: 0, available: 0 },
+    cpu: { cores: 0, model: null },
+    os: 'unknown',
+    diskSpace: { total: 0, available: 0 },
+    network: { online: navigator?.onLine || false, latency: null },
+    browser: { name: 'unknown', version: 'unknown' },
+    // Initialisation des propriétés
+    gpuAvailable: false,
+    memoryGB: 0,
+    cpuCores: 0,
+    isHighEndSystem: false,
+    isMidEndSystem: false,
+    isLowEndSystem: true,
+    recommendedModels: ['mistral-7b', 'llama-2-7b', 'phi-2']
   });
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [llmStatus, setLlmStatus] = useState<ServiceStatus>('checking');
+
   const analyzeSystem = async () => {
-    setIsAnalyzing(true);
     try {
-      // Détection du système d'exploitation
-      const os = detectOperatingSystem();
+      setIsAnalyzing(true);
+      // Simuler une analyse système pour le moment
       
-      // Détection de la mémoire disponible
-      const memoryGB = detectMemory();
-      
-      // Détection du nombre de cœurs de processeur
-      const cpuCores = detectCpuCores();
-      
-      // Détection de la disponibilité du GPU
-      const gpuAvailable = await detectGpu();
-      
-      // Déterminer les modèles recommandés en fonction des ressources
-      const recommendedModels = getRecommendedModels(memoryGB, cpuCores, gpuAvailable);
-      
-      // Déterminer si le système est prêt pour l'IA locale
-      const localAIReady = determineLocalAIReadiness(memoryGB, cpuCores);
-      
-      // Déterminer le niveau du système
-      const isHighEndSystem = memoryGB !== undefined && memoryGB >= 16 && cpuCores !== undefined && cpuCores >= 8;
-      const isMidEndSystem = !isHighEndSystem && (memoryGB !== undefined && memoryGB >= 8 && cpuCores !== undefined && cpuCores >= 4);
-      
-      setCapabilities({
-        memoryGB,
-        cpuCores,
-        gpuAvailable,
-        recommendedModels,
-        localAIReady,
-        os,
-        isHighEndSystem,
-        isMidEndSystem
-      });
+      setTimeout(() => {
+        try {
+          // Vérification sécurisée des capacités WebGPU
+          const hasWebGPU = typeof window !== 'undefined' && 'gpu' in navigator;
+          
+          // Vérification sécurisée de la mémoire du navigateur
+          const navigatorWithMemory = navigator as NavigatorWithMemory;
+          const memoryEstimate = navigatorWithMemory.deviceMemory || 16;
+          
+          const cpuCores = navigator?.hardwareConcurrency || 4;
+          
+          // Mise à jour des capacités du système
+          setCapabilities({
+            ...capabilities,
+            gpuAvailable: hasWebGPU,
+            memoryGB: memoryEstimate,
+            cpuCores: cpuCores,
+            isHighEndSystem: cpuCores > 8,
+            isMidEndSystem: cpuCores >= 4 && cpuCores <= 8,
+            isLowEndSystem: cpuCores < 4,
+            network: { ...capabilities.network, online: navigator?.onLine || false },
+          });
+          
+          // Mettre à jour le statut LLM en fonction de la connectivité réseau
+          setLlmStatus(navigator?.onLine ? 'online' : 'offline');
+        } catch (error) {
+          console.error("Erreur lors de l'analyse du système:", error);
+          setLlmStatus('error');
+        } finally {
+          setIsAnalyzing(false);
+        }
+      }, 1000);
     } catch (error) {
-      console.error("Erreur lors de la détection des capacités système:", error);
-    } finally {
+      console.error("Erreur lors de l'initialisation de l'analyse:", error);
       setIsAnalyzing(false);
+      setLlmStatus('error');
     }
   };
-  
+
   useEffect(() => {
-    analyzeSystem();
+    try {
+      analyzeSystem();
+      
+      const handleOnlineStatusChange = () => {
+        setCapabilities(prev => ({
+          ...prev,
+          network: { ...prev.network, online: navigator?.onLine || false },
+        }));
+        setLlmStatus(navigator?.onLine ? 'online' : 'offline');
+      };
+      
+      // Ajout d'écouteurs d'événements avec gestion des erreurs
+      if (typeof window !== 'undefined') {
+        window.addEventListener('online', handleOnlineStatusChange);
+        window.addEventListener('offline', handleOnlineStatusChange);
+        
+        return () => {
+          window.removeEventListener('online', handleOnlineStatusChange);
+          window.removeEventListener('offline', handleOnlineStatusChange);
+        };
+      }
+    } catch (error) {
+      console.error("Erreur lors de la configuration des écouteurs d'événements:", error);
+    }
   }, []);
-  
-  return { capabilities, isAnalyzing, analyzeSystem };
-}
 
-/**
- * Détecte la mémoire disponible sur le système
- */
-function detectMemory(): number | undefined {
-  try {
-    // Utiliser l'API Navigator pour tenter de détecter la mémoire
-    // Note: deviceMemory n'est pas standard et peut ne pas être disponible sur tous les navigateurs
-    const nav = navigator as any;
-    if (nav.deviceMemory) {
-      return nav.deviceMemory;
-    }
-    
-    // Estimation approximative basée sur les limites de performance JavaScript
-    const perf = performance as any;
-    if (perf?.memory?.jsHeapSizeLimit) {
-      // Convertir les octets en GB et multiplier pour obtenir une estimation
-      return Math.round((perf.memory.jsHeapSizeLimit / 1073741824) * 2);
-    }
-    
-    // Valeur par défaut si la détection échoue
-    return 8;
-  } catch (error) {
-    console.error("Erreur lors de la détection de la mémoire:", error);
-    return undefined;
-  }
-}
-
-/**
- * Détecte le nombre de cœurs de processeur
- */
-function detectCpuCores(): number | undefined {
-  try {
-    return navigator.hardwareConcurrency || undefined;
-  } catch (error) {
-    console.error("Erreur lors de la détection des cœurs CPU:", error);
-    return undefined;
-  }
-}
-
-/**
- * Détecte la disponibilité du GPU
- */
-async function detectGpu(): Promise<boolean> {
-  try {
-    // Utiliser WebGL pour détecter la présence d'un GPU
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    
-    if (!gl) {
-      return false;
-    }
-    
-    // Vérifier si gl.getExtension et gl.getParameter sont disponibles
-    const webgl = gl as WebGLRenderingContext;
-    const debugInfo = webgl.getExtension('WEBGL_debug_renderer_info');
-    if (!debugInfo) {
-      return false;
-    }
-    
-    const renderer = webgl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-    
-    // Vérifier si le renderer contient des noms communs de GPU
-    const gpuKeywords = ['nvidia', 'amd', 'radeon', 'intel', 'iris', 'mali', 'apple gpu'];
-    const hasGpu = gpuKeywords.some(keyword => 
-      renderer.toLowerCase().includes(keyword)
-    );
-    
-    return hasGpu;
-  } catch (error) {
-    console.error("Erreur lors de la détection du GPU:", error);
-    return false;
-  }
-}
-
-/**
- * Détermine les modèles recommandés en fonction des ressources
- */
-function getRecommendedModels(
-  memoryGB?: number, 
-  cpuCores?: number, 
-  gpuAvailable?: boolean
-): string[] {
-  const models = [];
-  
-  // Configuration de base (toujours disponible)
-  models.push('mistral');
-  
-  // Ajouter plus de modèles en fonction des ressources disponibles
-  if (memoryGB && memoryGB >= 16) {
-    models.push('mixtral');
-  }
-  
-  if (cpuCores && cpuCores >= 8) {
-    models.push('llama3');
-  }
-  
-  if (gpuAvailable) {
-    models.push('phi');
-    
-    if (memoryGB && memoryGB >= 24) {
-      models.push('llama3-70b');
-    }
-  }
-  
-  // Si très peu de ressources, suggérer des modèles plus légers
-  if (memoryGB && memoryGB < 8) {
-    // Vider le tableau et ajouter seulement des modèles légers
-    models.length = 0;
-    models.push('phi-mini');
-    models.push('tiny-llama');
-  }
-  
-  return models;
-}
-
-/**
- * Détermine si le système est prêt pour l'IA locale
- */
-function determineLocalAIReadiness(memoryGB?: number, cpuCores?: number): boolean {
-  // Exiger un minimum de mémoire et de cœurs pour l'IA locale
-  return (memoryGB !== undefined && memoryGB >= 8) && 
-         (cpuCores !== undefined && cpuCores >= 4);
+  return {
+    capabilities,
+    isAnalyzing,
+    analyzeSystem,
+    llmStatus
+  };
 }

@@ -1,5 +1,6 @@
+
 import { useEffect, useRef, useState } from "react";
-import { createNoise3D } from "simplex-noise";
+import { useMousePosition } from "@/hooks/use-mouse-position";
 
 interface SparklesProps {
   id?: string;
@@ -7,147 +8,157 @@ interface SparklesProps {
   minSize?: number;
   maxSize?: number;
   particleDensity?: number;
-  particleColor?: string;
   className?: string;
-  style?: React.CSSProperties;
+  particleColor?: string;
+}
+
+interface Particle {
+  x: number;
+  y: number;
+  size: number;
+  speedX: number;
+  speedY: number;
+  color: string;
+  update: () => void;
+  draw: () => void;
 }
 
 export const SparklesCore = ({
-  id,
-  background,
-  minSize = 0.4,
-  maxSize = 1,
+  id = "tsparticles",
+  background = "transparent",
+  minSize = 0.6,
+  maxSize = 1.4,
   particleDensity = 100,
-  particleColor = "#FFF",
-  className,
-  style,
+  className = "h-full w-full",
+  particleColor = "#FFFFFF",
 }: SparklesProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
+  const mousePosition = useMousePosition();
+  const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    
-    const handleResize = () => {
-      if (canvasRef.current) {
-        const canvas = canvasRef.current;
-        const parent = canvas.parentElement as HTMLElement;
-        setSize({
-          width: parent?.offsetWidth || window.innerWidth,
-          height: parent?.offsetHeight || window.innerHeight,
-        });
-      }
-    };
+    setDimensions({
+      width: window.innerWidth,
+      height: window.innerHeight,
+    });
 
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    
-    const ctx = canvasRef.current.getContext("2d");
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const noise3D = createNoise3D();
-    let animationId: number;
-    let time = 0;
+    let particles: Particle[] = [];
+    let animationFrameId: number;
 
-    // Configuration
-    const particleCount = size.width * size.height / (10000 / particleDensity);
-    const particleArray: {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    class ParticleClass implements Particle {
       x: number;
       y: number;
       size: number;
       speedX: number;
       speedY: number;
-      life: number;
-      maxLife: number;
-    }[] = [];
+      color: string;
 
-    for (let i = 0; i < particleCount; i++) {
-      particleArray.push({
-        x: Math.random() * size.width,
-        y: Math.random() * size.height,
-        size: minSize + Math.random() * (maxSize - minSize),
-        speedX: Math.random() * 0.2 - 0.1,
-        speedY: Math.random() * 0.2 - 0.1,
-        life: Math.random() * 100,
-        maxLife: 100 + Math.random() * 100,
-      });
-    }
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * (maxSize - minSize) + minSize;
+        this.speedX = Math.random() * 0.5 - 0.25;
+        this.speedY = Math.random() * 0.5 - 0.25;
 
-    const render = () => {
-      ctx.clearRect(0, 0, size.width, size.height);
-      if (background) {
-        ctx.fillStyle = background;
-        ctx.fillRect(0, 0, size.width, size.height);
+        // Couleurs du drapeau français pour les particules
+        const colorRandom = Math.random();
+        if (colorRandom < 0.33) {
+          this.color = "#0055A4"; // Bleu
+        } else if (colorRandom < 0.66) {
+          this.color = "#FFFFFF"; // Blanc
+        } else {
+          this.color = "#EF4135"; // Rouge
+        }
       }
 
-      time += 0.003;
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
 
-      particleArray.forEach((particle) => {
-        particle.life += 0.2;
-        if (particle.life >= particle.maxLife) {
-          particle.life = 0;
-          particle.x = Math.random() * size.width;
-          particle.y = Math.random() * size.height;
+        if (this.x > canvas.width) this.x = 0;
+        if (this.x < 0) this.x = canvas.width;
+        if (this.y > canvas.height) this.y = 0;
+        if (this.y < 0) this.y = canvas.height;
+
+        // Interaction avec la souris
+        const dx = mousePosition.x - this.x;
+        const dy = mousePosition.y - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 100) {
+          const angle = Math.atan2(dy, dx);
+          this.x -= Math.cos(angle) * 1;
+          this.y -= Math.sin(angle) * 1;
         }
+      }
 
-        // Use noise to affect movement
-        const noiseValue = noise3D(
-          particle.x * 0.01,
-          particle.y * 0.01,
-          time
-        );
-
-        particle.x += particle.speedX + noiseValue * 0.5;
-        particle.y += particle.speedY + noiseValue * 0.5;
-
-        // Keep particles within bounds
-        if (particle.x > size.width) particle.x = 0;
-        if (particle.x < 0) particle.x = size.width;
-        if (particle.y > size.height) particle.y = 0;
-        if (particle.y < 0) particle.y = size.height;
-
-        // Calculate opacity based on lifetime
-        const opacity = Math.min(
-          1,
-          Math.min(
-            particle.life / 20,
-            (particle.maxLife - particle.life) / 20
-          )
-        );
-
+      draw() {
+        if (!ctx) return;
+        ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fillStyle = `${particleColor}${Math.floor(opacity * 255)
-          .toString(16)
-          .padStart(2, "0")}`;
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
+      }
+    }
+
+    const init = () => {
+      particles = [];
+      for (let i = 0; i < particleDensity; i++) {
+        particles.push(new ParticleClass());
+      }
+    };
+
+    const animate = () => {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach((particle) => {
+        particle.update();
+        particle.draw();
       });
 
-      animationId = requestAnimationFrame(render);
+      animationFrameId = requestAnimationFrame(animate);
     };
 
-    render();
-    return () => {
-      cancelAnimationFrame(animationId);
+    init();
+    animate();
+
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+      init();
     };
-  }, [size, minSize, maxSize, particleDensity, particleColor, background]);
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [maxSize, minSize, particleColor, particleDensity, mousePosition.x, mousePosition.y]);
 
   return (
     <canvas
-      id={id}
       ref={canvasRef}
-      width={size.width}
-      height={size.height}
+      id={id}
       className={className}
-      style={style}
+      style={{
+        background,
+        width: dimensions.width,
+        height: dimensions.height,
+      }}
     />
   );
 };
