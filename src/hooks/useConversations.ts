@@ -3,9 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Conversation, WebUIConfig } from "@/types/chat";
 import { toast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export function useConversations() {
   const queryClient = useQueryClient();
+  const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
 
   const { data: conversations, isLoading } = useQuery({
     queryKey: ['conversations'],
@@ -32,17 +34,28 @@ export function useConversations() {
     }
   });
 
-  const createNewConversation = async (webUIConfig: WebUIConfig) => {
+  const createNewConversation = async (webUIConfig?: WebUIConfig) => {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) {
       throw new Error("User not authenticated");
     }
 
+    const defaultConfig: WebUIConfig = {
+      model: 'huggingface',
+      provider: 'huggingface',
+      temperature: 0.7,
+      maxTokens: 500,
+      analysisMode: 'default',
+      useMemory: false
+    };
+
+    const config = webUIConfig || defaultConfig;
+
     const { data, error } = await supabase
       .from('chat_conversations')
       .insert({
         title: "Nouvelle conversation",
-        settings: webUIConfig,
+        settings: config,
         user_id: user.user.id,
         is_archived: false
       })
@@ -60,6 +73,20 @@ export function useConversations() {
 
     queryClient.invalidateQueries({ queryKey: ['conversations'] });
     return data;
+  };
+
+  const updateConversationMetadata = async (id: string, updates: { title?: string }) => {
+    const { error } = await supabase
+      .from('chat_conversations')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) throw error;
+    
+    // Refresh conversations data after update
+    queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    
+    return true;
   };
 
   const updateConversation = useMutation({
@@ -146,8 +173,11 @@ export function useConversations() {
 
   return {
     conversations,
+    activeConversation,
+    setActiveConversation,
     isLoading,
     createNewConversation,
+    updateConversationMetadata,
     updateConversation: updateConversation.mutate,
     deleteConversation: deleteConversation.mutate
   };

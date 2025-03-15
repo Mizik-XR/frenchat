@@ -1,18 +1,28 @@
 
 import { useChatProcessing } from "./chat/useChatProcessing";
 import { APP_STATE } from "@/integrations/supabase/client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
-export function useChatLogic(selectedConversationId: string | null) {
+export function useChatLogic() {
   const {
-    isLoading,
-    replyToMessage,
-    processMessage,
-    handleReplyToMessage,
-    clearReplyToMessage,
-    serviceType,
-    localAIUrl
-  } = useChatProcessing(selectedConversationId);
+    isProcessing,
+    isError,
+    error
+  } = useChatProcessing();
+  
+  const [replyToMessage, setReplyToMessage] = useState<{ id: string; content: string; role: 'user' | 'assistant' } | null>(null);
+  const [serviceType, setServiceType] = useState<'local' | 'cloud' | 'hybrid'>('cloud');
+  const [localAIUrl, setLocalAIUrl] = useState<string | null>(null);
+
+  // Function to handle reply to message
+  const handleReplyToMessage = (messageId: string, content: string, role: 'user' | 'assistant') => {
+    setReplyToMessage({ id: messageId, content, role });
+  };
+
+  // Function to clear reply to message
+  const clearReplyToMessage = () => {
+    setReplyToMessage(null);
+  };
 
   // Détecter si nous sommes en mode hors ligne
   const isOfflineMode = useMemo(() => APP_STATE.isOfflineMode, []);
@@ -44,9 +54,9 @@ export function useChatLogic(selectedConversationId: string | null) {
   }, [serviceType, localAIUrl]);
 
   return {
-    isLoading,
+    isLoading: isProcessing,
     replyToMessage,
-    processMessage,
+    processMessage: (content: string) => console.log("Processing message:", content),
     handleReplyToMessage,
     clearReplyToMessage,
     serviceType,

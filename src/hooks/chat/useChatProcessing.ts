@@ -94,7 +94,9 @@ export const useChatProcessing = () => {
         
         // Préparer la requête pour l'API
         let response;
-        switch (config.provider) {
+        const provider = config.provider as string;
+        
+        switch (provider) {
           case 'openai':
           case 'mistral':
           case 'anthropic':
@@ -103,18 +105,23 @@ export const useChatProcessing = () => {
           case 'deepseek-v2':
           case 'gemma-3':
           case 'huggingface':
-            response = await secureApiProxy.generateText({
-              provider: config.provider,
-              prompt: content,
-              conversationId,
-              messageId: aiMessageId,
-              options: {
-                temperature: config.temperature,
-                max_tokens: config.maxTokens,
-                useMemory: config.useMemory || false,
-                analysisMode: config.analysisMode
+            // Use secureApiProxy for text generation
+            response = await secureApiProxy.callApi(
+              'ai', 
+              'generate-text', 
+              {
+                provider: config.provider,
+                prompt: content,
+                conversationId,
+                messageId: aiMessageId,
+                options: {
+                  temperature: config.temperature,
+                  max_tokens: config.maxTokens,
+                  useMemory: config.useMemory || false,
+                  analysisMode: config.analysisMode
+                }
               }
-            });
+            );
             break;
           default:
             // Fallback to local service

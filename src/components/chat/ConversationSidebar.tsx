@@ -3,66 +3,47 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
-import { ConversationsList } from "./conversation/ConversationsList";
-import { RenameDialog } from "./conversation/RenameDialog";
-import { DeleteDialog } from "./conversation/DeleteDialog";
+import { useConversations } from "@/hooks/useConversations";
+import { useNavigate } from "react-router-dom";
 
-interface SidebarProps {
-  conversations: any[];
-  currentConversation: any;
-  onSelectConversation: (id: string) => void;
-  onCreateNewConversation: () => Promise<void>;
-  onRenameConversation: (id: string, title: string) => void;
-  onDeleteConversation: (id: string) => void;
+interface ConversationSidebarProps {
+  showTopics: boolean;
+  setShowTopics: (show: boolean) => void;
 }
 
-export function Sidebar({
-  conversations,
-  currentConversation,
-  onSelectConversation,
-  onCreateNewConversation,
-  onRenameConversation,
-  onDeleteConversation,
-}: SidebarProps) {
+export const ConversationSidebar = ({
+  showTopics,
+  setShowTopics
+}: ConversationSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [conversationToRename, setConversationToRename] = useState<any>(null);
-  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
-  const [newTitle, setNewTitle] = useState("");
+  const { conversations, isLoading, createNewConversation, activeConversation, setActiveConversation } = useConversations();
+  const navigate = useNavigate();
 
-  const handleRenameClick = (event: React.MouseEvent, conversation: any) => {
-    event.stopPropagation();
-    setConversationToRename(conversation);
-    setNewTitle(conversation.title);
-    setRenameDialogOpen(true);
-  };
-
-  const handleDeleteClick = (event: React.MouseEvent, id: string) => {
-    event.stopPropagation();
-    setConversationToDelete(id);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleRenameSave = () => {
-    if (conversationToRename && newTitle.trim() !== "") {
-      onRenameConversation(conversationToRename.id, newTitle);
-      setRenameDialogOpen(false);
+  const handleCreateNewConversation = async () => {
+    const newConversation = await createNewConversation();
+    if (newConversation) {
+      setActiveConversation(newConversation);
+      navigate(`/chat/${newConversation.id}`);
     }
   };
 
-  const handleDeleteConfirm = () => {
-    if (conversationToDelete) {
-      onDeleteConversation(conversationToDelete);
-      setDeleteDialogOpen(false);
+  const handleSelectConversation = (id: string) => {
+    const conversation = conversations?.find((conv) => conv.id === id);
+    if (conversation) {
+      setActiveConversation(conversation);
+      navigate(`/chat/${id}`);
     }
   };
+
+  const filteredConversations = conversations?.filter((conv) =>
+    conv.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="w-80 min-w-80 border-r border-border flex flex-col bg-background h-full">
       <div className="p-4 flex flex-col space-y-4">
         <Button 
-          onClick={onCreateNewConversation} 
+          onClick={handleCreateNewConversation} 
           className="w-full justify-center"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -79,28 +60,41 @@ export function Sidebar({
         </div>
       </div>
 
-      <ConversationsList
-        conversations={conversations}
-        currentConversation={currentConversation}
-        searchQuery={searchQuery}
-        onSelectConversation={onSelectConversation}
-        onRenameClick={handleRenameClick}
-        onDeleteClick={handleDeleteClick}
-      />
+      <div className="flex-1 overflow-auto px-4 py-2">
+        {isLoading ? (
+          <div className="flex justify-center p-4">
+            <p className="text-muted-foreground">Chargement...</p>
+          </div>
+        ) : filteredConversations?.length === 0 ? (
+          <div className="text-center p-4">
+            <p className="text-muted-foreground">Aucune conversation trouvée</p>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {filteredConversations?.map((conversation) => (
+              <li key={conversation.id}>
+                <Button
+                  variant={activeConversation?.id === conversation.id ? "secondary" : "ghost"}
+                  className="w-full justify-start text-left overflow-hidden"
+                  onClick={() => handleSelectConversation(conversation.id)}
+                >
+                  <span className="truncate">{conversation.title}</span>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-      <RenameDialog
-        open={renameDialogOpen}
-        title={newTitle}
-        onOpenChange={setRenameDialogOpen}
-        onTitleChange={setNewTitle}
-        onSave={handleRenameSave}
-      />
-
-      <DeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDeleteConfirm}
-      />
+      <div className="p-4 border-t">
+        <Button 
+          variant="outline" 
+          className="w-full justify-start"
+          onClick={() => setShowTopics(!showTopics)}
+        >
+          {showTopics ? "Masquer les sujets" : "Afficher les sujets prioritaires"}
+        </Button>
+      </div>
     </div>
   );
-}
+};

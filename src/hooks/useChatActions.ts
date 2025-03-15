@@ -8,7 +8,7 @@ import { toast } from '@/hooks/use-toast';
 
 export const useChatActions = () => {
   const { sendMessage } = useChatProcessing();
-  const { activeConversation, setActiveConversation, updateConversationMetadata } = useConversations();
+  const { activeConversation, setActiveConversation, updateConversation } = useConversations();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSendMessage = async (
@@ -34,7 +34,11 @@ export const useChatActions = () => {
       // Mise à jour du titre si c'est le premier message
       if (activeConversation && activeConversation.title === 'Nouvelle conversation') {
         const title = content.length > 30 ? content.substring(0, 27) + '...' : content;
-        await updateConversationMetadata(conversationId, { title });
+        
+        updateConversation({
+          id: conversationId,
+          title: title
+        });
         
         if (activeConversation) {
           setActiveConversation({

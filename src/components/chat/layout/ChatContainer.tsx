@@ -6,6 +6,7 @@ import { useConversations } from '@/hooks/useConversations';
 import { ChatHeader } from '../ChatHeader';
 import { useParams, useNavigate } from 'react-router-dom';
 import { WebUIConfig, AnalysisMode, AIProvider } from '@/types/chat';
+import { useChatState } from '@/hooks/useChatState';
 
 interface ChatContainerProps {
   config: WebUIConfig;
@@ -18,11 +19,15 @@ export const ChatContainer = ({ config, setConfig }: ChatContainerProps) => {
   const { conversations, activeConversation, setActiveConversation, createNewConversation } = useConversations();
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [mode, setMode] = useState<'auto' | 'manual'>('auto');
+  const [showSettings, setShowSettings] = useState(false);
+  const [showUploader, setShowUploader] = useState(false);
+  const [modelSource, setModelSource] = useState<'cloud' | 'local'>('cloud');
 
   useEffect(() => {
     // Si un ID est fourni dans l'URL mais qu'il n'y a pas de conversation active
     if (id && !activeConversation) {
-      const conversation = conversations.find((conv) => conv.id === id);
+      const conversation = conversations?.find((conv) => conv.id === id);
       if (conversation) {
         setActiveConversation(conversation);
       } else {
@@ -32,8 +37,8 @@ export const ChatContainer = ({ config, setConfig }: ChatContainerProps) => {
     }
     
     // Si aucun ID n'est fourni et qu'il y a des conversations
-    if (!id && conversations.length > 0 && !activeConversation) {
-      const mostRecentConversation = [...conversations].sort(
+    if (!id && conversations?.length > 0 && !activeConversation) {
+      const mostRecentConversation = [...(conversations || [])].sort(
         (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       )[0];
       
@@ -43,13 +48,13 @@ export const ChatContainer = ({ config, setConfig }: ChatContainerProps) => {
     }
     
     // Si aucun ID n'est fourni et qu'il n'y a pas de conversations, créer une nouvelle conversation
-    if (!id && conversations.length === 0 && !activeConversation) {
+    if (!id && (!conversations || conversations.length === 0) && !activeConversation) {
       handleNewChat();
     }
   }, [id, conversations, activeConversation, navigate]);
 
   const handleNewChat = async () => {
-    const newConversation = await createNewConversation();
+    const newConversation = await createNewConversation(config);
     if (newConversation) {
       navigate(`/chat/${newConversation.id}`);
     }
@@ -78,36 +83,58 @@ export const ChatContainer = ({ config, setConfig }: ChatContainerProps) => {
   const handleUseMemoryChange = (useMemory: boolean) => {
     setConfig((prev) => ({ ...prev, useMemory }));
   };
+  
+  const handleModeChange = (newMode: 'auto' | 'manual') => {
+    setMode(newMode);
+  };
+
+  const handleModelSourceChange = (source: 'cloud' | 'local') => {
+    setModelSource(source);
+  };
+
+  const handleResetConversation = () => {
+    // Reset conversation logic here
+    console.log("Resetting conversation");
+  };
 
   return (
     <div className="flex flex-col flex-1 h-screen bg-background overflow-hidden">
       {activeConversation ? (
         <>
           <ChatHeader 
-            conversation={activeConversation} 
-            onNewChat={handleNewChat} 
-            selectedProvider={config.provider}
-            onProviderChange={handleModelChange}
-            selectedAnalysisMode={config.analysisMode}
-            onAnalysisModeChange={handleAnalysisModeChange}
+            mode={mode}
+            onModeChange={handleModeChange}
+            showSettings={showSettings}
+            setShowSettings={setShowSettings}
+            onResetConversation={handleResetConversation}
+            setShowUploader={setShowUploader}
+            modelSource={modelSource}
+            onModelSourceChange={handleModelSourceChange}
           />
-          <MainChatContainer conversationId={activeConversation.id} isTyping={isTyping} />
-          <ChatInputContainer 
-            conversationId={activeConversation.id}
-            value={inputValue}
-            onChange={handleInputChange}
-            setInputValue={setInputValue}
-            setIsTyping={setIsTyping}
+          <MainChatContainer 
+            conversation={activeConversation}
+            messages={[]} 
+            isLoading={false}
+            iaMode={modelSource === 'local' ? 'local' : 'cloud'}
             selectedModel={config.provider}
+            onIAModeChange={(mode) => setModelSource(mode === 'local' ? 'local' : 'cloud')}
             onModelChange={handleModelChange}
-            temperature={config.temperature}
-            onTemperatureChange={handleTemperatureChange}
-            maxTokens={config.maxTokens}
-            onMaxTokensChange={handleMaxTokensChange}
-            selectedAnalysisMode={config.analysisMode}
-            onAnalysisModeChange={handleAnalysisModeChange}
-            useMemory={config.useMemory || false}
-            onUseMemoryChange={handleUseMemoryChange}
+            onSendMessage={() => {}}
+            onFileUpload={async () => {}}
+            onCreateNewConversation={handleNewChat}
+          />
+          <ChatInputContainer 
+            input={inputValue}
+            setInput={setInputValue}
+            isLoading={false}
+            selectedDocumentId={null}
+            onSubmit={(e) => e.preventDefault()}
+            mode={mode}
+            model={config.provider}
+            showUploader={showUploader}
+            setShowUploader={setShowUploader}
+            onFilesSelected={async () => {}}
+            modelSource={modelSource}
           />
         </>
       ) : (

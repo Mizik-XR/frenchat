@@ -20,7 +20,7 @@ interface PriorityTopic {
   content: string;
 }
 
-interface PriorityTopicsPanelProps {
+export interface PriorityTopicsPanelProps {
   messages: Message[];
   onTopicSelect: (messageId: string) => void;
   onClose: () => void;
@@ -28,10 +28,10 @@ interface PriorityTopicsPanelProps {
 }
 
 export function PriorityTopicsPanel({ 
-  messages, 
-  onTopicSelect, 
-  onClose,
-  onQuote 
+  messages = [], 
+  onTopicSelect = () => {}, 
+  onClose = () => {},
+  onQuote = () => {} 
 }: PriorityTopicsPanelProps) {
   const [priorityTopics, setPriorityTopics] = useState<PriorityTopic[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
