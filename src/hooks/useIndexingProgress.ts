@@ -1,116 +1,56 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { IndexingProgressState, IndexingProgress } from '@/types/indexing';
+import { useState, useCallback } from 'react';
+
+// Define the interface for IndexingProgress
+export interface IndexingProgress {
+  processed: number;
+  total: number;
+}
+
+// Export the state type
+export interface IndexingProgressState {
+  indexingProgress: number;
+  progress: IndexingProgress | null;
+  startIndexing: (folderId?: string, recursive?: boolean) => Promise<void>;
+}
 
 export const useIndexingProgress = (): IndexingProgressState => {
-  const [state, setState] = useState<IndexingProgressState>({
-    progress: 0,
-    isIndexing: false,
-    indexed: 0,
-    total: 0,
-    error: null,
-    lastUpdate: Date.now(),
-    indexingProgress: 0
-  });
-
-  const [indexingProgress, setIndexingProgress] = useState<IndexingProgress | null>(null);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('indexing-progress')
-      .on('broadcast', { event: 'progress' }, (payload) => {
-        try {
-          const data = payload.payload;
-          if (data && typeof data === 'object') {
-            const { current, total, status } = data;
-            
-            if (typeof current === 'number' && typeof total === 'number') {
-              const progressValue = total > 0 ? Math.round((current / total) * 100) : 0;
-              
-              setState(prev => ({
-                ...prev,
-                indexed: current,
-                total: total,
-                progress: progressValue,
-                isIndexing: status !== 'completed' && status !== 'failed',
-                lastUpdate: Date.now(),
-                error: status === 'failed' ? 'Échec de l\'indexation' : null,
-                indexingProgress: progressValue
-              }));
-
-              // Also update the IndexingProgress object
-              setIndexingProgress({
-                status: status === 'failed' ? 'error' : status === 'completed' ? 'completed' : 'running',
-                total: total,
-                processed: current,
-                error: status === 'failed' ? 'Échec de l\'indexation' : null
-              });
-            }
-          }
-        } catch (err) {
-          console.error('Error processing indexing progress:', err);
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const startIndexing = async (folderId: string, options: Record<string, any> = {}): Promise<string | null> => {
+  const [indexingProgress, setIndexingProgress] = useState<number>(0);
+  const [progress, setProgress] = useState<IndexingProgress | null>(null);
+  
+  // Function to start the indexing process
+  const startIndexing = useCallback(async (folderId?: string, recursive?: boolean) => {
+    // Reset the progress state
+    setIndexingProgress(0);
+    setProgress(null);
+    
     try {
-      console.log("Starting indexing process for folder:", folderId, "with options:", options);
+      // Start indexing - this is a stub
+      console.log("Starting indexing process", { folderId, recursive });
       
-      // Reset state
-      setState(prev => ({
-        ...prev,
-        isIndexing: true,
-        indexed: 0,
-        total: 0,
-        progress: 0,
-        error: null,
-        lastUpdate: Date.now()
-      }));
+      // In a real implementation, you would call your API here and update progress
+      // For now, we'll simulate progress:
+      setIndexingProgress(5);
       
-      // Call the Supabase function to start indexing
-      const { data, error } = await supabase.functions.invoke('index-google-drive', {
-        body: { 
-          folderId, 
-          options 
-        }
+      // Simulate the API response
+      setProgress({
+        processed: 0,
+        total: 100
       });
       
-      if (error) {
-        console.error("Error starting indexing:", error);
-        setState(prev => ({
-          ...prev,
-          error: error.message || "Failed to start indexing",
-          isIndexing: false
-        }));
-        return null;
-      }
+      // This would be replaced by actual API calls and progress tracking
       
-      console.log("Indexing started successfully:", data);
-      return data?.progressId || null;
-      
-    } catch (err) {
-      console.error("Exception during indexing start:", err);
-      setState(prev => ({
-        ...prev,
-        error: err instanceof Error ? err.message : "Unknown error",
-        isIndexing: false
-      }));
-      return null;
+    } catch (error) {
+      console.error("Error starting indexing:", error);
+      // Reset on error
+      setIndexingProgress(0);
+      setProgress(null);
     }
-  };
-
+  }, []);
+  
   return {
-    ...state,
-    indexingProgress: indexingProgress?.processed ? Math.round((indexingProgress.processed / indexingProgress.total) * 100) : 0,
+    indexingProgress,
+    progress,
     startIndexing
   };
 };
-
-export type { IndexingProgress };

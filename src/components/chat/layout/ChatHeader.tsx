@@ -8,9 +8,14 @@ import { SettingsDialog } from "@/components/chat/settings/SettingsDialog";
 interface ChatHeaderProps {
   iaMode: "cloud" | "auto" | "local";
   onIAModeChange: (mode: "cloud" | "auto" | "local") => void;
+  onResetConversation?: () => void;
 }
 
-export function ChatHeader({ iaMode, onIAModeChange }: ChatHeaderProps) {
+export function ChatHeader({ 
+  iaMode, 
+  onIAModeChange,
+  onResetConversation
+}: ChatHeaderProps) {
   return (
     <div className="flex items-center justify-between p-2 border-b">
       <div className="flex items-center">
@@ -36,7 +41,12 @@ export function ChatHeader({ iaMode, onIAModeChange }: ChatHeaderProps) {
           onValueChange={onIAModeChange}
         />
 
-        <Button variant="outline">Réinitialiser</Button>
+        <Button 
+          variant="outline" 
+          onClick={onResetConversation}
+        >
+          Réinitialiser
+        </Button>
         <SettingsDialog />
       </div>
     </div>

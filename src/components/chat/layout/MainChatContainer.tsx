@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ChatHeader } from "./ChatHeader";
 import { MessageArea } from "./MessageArea";
@@ -76,10 +76,6 @@ export function MainChatContainer({
     setInputValue(`> ${message.content}\n\n`);
   };
 
-  const cancelReply = () => {
-    setReplyingTo(null);
-  };
-
   const handleAttachment = (type: string) => {
     if (type === "upload") {
       // Simuler un clic sur l'input file
@@ -101,11 +97,18 @@ export function MainChatContainer({
     }
   };
 
+  const handleResetConversation = () => {
+    // Reset conversation logic - this is a stub that maintains the interface
+    console.log("Resetting conversation");
+    // The actual implementation would go here
+  };
+
   return (
     <div className="flex flex-col h-full">
       <ChatHeader 
         iaMode={iaMode} 
-        onIAModeChange={onIAModeChange} 
+        onIAModeChange={onIAModeChange}
+        onResetConversation={handleResetConversation}
       />
 
       <MessageArea 
@@ -123,7 +126,7 @@ export function MainChatContainer({
           setInputValue={setInputValue}
           isLoading={isLoading}
           replyingTo={replyingTo}
-          cancelReply={cancelReply}
+          cancelReply={() => setReplyingTo(null)}
           handleAttachment={handleAttachment}
           handleSendMessage={handleSendMessage}
           handleKeyDown={handleKeyDown}
