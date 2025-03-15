@@ -16,11 +16,24 @@ serve(async (req) => {
 
   try {
     // Analyser le corps de la requête
-    const { folder_id, user_id } = await req.json();
+    const { folderId, user_id, options, mode = 'folder' } = await req.json();
 
-    if (!folder_id || !user_id) {
+    if (!user_id) {
       return new Response(
-        JSON.stringify({ error: "ID de dossier et ID utilisateur requis" }),
+        JSON.stringify({ error: "ID utilisateur requis" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400 
+        }
+      );
+    }
+
+    // Pour l'indexation complète, on peut utiliser 'root' si aucun folderId n'est fourni
+    const targetFolderId = mode === 'full_drive' ? (folderId || 'root') : folderId;
+    
+    if (!targetFolderId) {
+      return new Response(
+        JSON.stringify({ error: "ID de dossier requis" }),
         { 
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 400 
@@ -46,7 +59,19 @@ serve(async (req) => {
       );
     }
 
-    // Commencer l'indexation (simulé ici, à implémenter réellement)
+    // Préparer les options d'indexation
+    const indexingOptions = {
+      ...(options || {}),
+      recursive: options?.recursive !== false,
+      maxDepth: options?.maxDepth || (mode === 'full_drive' ? 50 : 10),
+      batchSize: options?.batchSize || 100,
+      fullDriveMode: mode === 'full_drive',
+      priorityFileTypes: options?.priorityFileTypes || ['document', 'spreadsheet', 'presentation', 'pdf'],
+      throttleRequests: options?.throttleRequests !== false,
+      requestsPerMinute: options?.requestsPerMinute || 300
+    };
+
+    // Commencer l'indexation
     const indexingId = crypto.randomUUID();
     
     // Enregistrer le processus d'indexation
@@ -56,12 +81,16 @@ serve(async (req) => {
         id: indexingId,
         user_id: user_id,
         source: 'google_drive',
-        source_id: folder_id,
+        source_id: targetFolderId,
         status: 'pending',
         progress: 0,
         total_files: 0,
         processed_files: 0,
-        metadata: { folder_id }
+        metadata: { 
+          folder_id: targetFolderId,
+          options: indexingOptions,
+          mode: mode
+        }
       });
 
     if (progressError) {
@@ -78,17 +107,18 @@ serve(async (req) => {
     await supabase.functions.invoke('batch-index-google-drive', {
       body: {
         indexing_id: indexingId,
-        folder_id: folder_id,
+        folder_id: targetFolderId,
         user_id: user_id,
         access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token
+        refresh_token: tokens.refresh_token,
+        options: indexingOptions
       }
     });
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Indexation démarrée", 
+        message: mode === 'full_drive' ? "Indexation complète du Google Drive démarrée" : "Indexation du dossier démarrée", 
         indexing_id: indexingId 
       }),
       { 
