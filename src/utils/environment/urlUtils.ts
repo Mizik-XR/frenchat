@@ -1,127 +1,76 @@
 
 /**
- * Utilitaires pour la gestion des URLs
+ * Utilitaires pour la gestion des URLs et des redirections dans l'application
  */
 
-/**
- * Détecte l'URL de base de l'application en fonction de l'environnement
- * @returns L'URL de base de l'application
- */
 export const getBaseUrl = (): string => {
-  // Vérifier si nous sommes dans un navigateur
-  if (typeof window === 'undefined') {
-    // Côté serveur, utiliser la variable d'environnement ou une valeur par défaut
-    return process.env.VITE_SITE_URL || 'http://localhost:8080';
+  // Utiliser en priorité l'URL du site configurée
+  const configuredSiteUrl = import.meta.env.VITE_SITE_URL;
+  if (configuredSiteUrl) {
+    return configuredSiteUrl;
   }
-
-  // Obtenir l'hôte actuel
-  const currentHost = window.location.host;
-  const isLocalhost = 
-    currentHost.includes('localhost') || 
-    currentHost.includes('127.0.0.1');
   
-  // Déterminer le protocole (http pour localhost, https pour les autres)
-  const protocol = isLocalhost ? 'http' : 'https';
+  // Si nous sommes en développement, utiliser localhost
+  if (import.meta.env.DEV) {
+    return window.location.protocol + '//' + window.location.host;
+  }
   
-  return `${protocol}://${currentHost}`;
+  // Sinon, utiliser l'URL actuelle (en production)
+  return window.location.origin;
 };
 
-/**
- * Génère une URL de redirection pour l'authentification OAuth
- * @param path Le chemin de redirection (ex: "/auth/google/callback")
- * @returns L'URL complète de redirection
- */
 export const getRedirectUrl = (path: string): string => {
-  // Supprimer le slash initial si présent pour éviter les doubles slashes
-  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-  // Conserver les paramètres d'URL importants
-  const urlParams = getFormattedUrlParams();
-  return `${getBaseUrl()}/${cleanPath}${urlParams}`;
+  return `${getBaseUrl()}/${path}`;
 };
 
-/**
- * Retourne les paramètres d'URL formatés pour la navigation
- * @param additionalParams Paramètres supplémentaires à inclure
- * @returns Chaîne formatée des paramètres d'URL
- */
-export const getFormattedUrlParams = (additionalParams?: Record<string, string>): string => {
-  if (typeof window === 'undefined') return '';
+export const getFormattedUrlParams = (): string => {
+  const params = new URLSearchParams(window.location.search);
   
-  // Paramètres à conserver lors des redirections
-  const paramsToPersist = ['mode', 'client', 'debug', 'forceCloud', 'hideDebug'];
-  const urlParams = new URLSearchParams(window.location.search);
-  const persistedParams = new URLSearchParams();
+  // Filtrer et ne conserver que les paramètres utiles
+  const usefulParams = ['client', 'forceCloud', 'mode', 'hideDebug'];
+  const filteredParams = new URLSearchParams();
   
-  // Copier les paramètres à conserver
-  for (const param of paramsToPersist) {
-    if (urlParams.has(param)) {
-      persistedParams.set(param, urlParams.get(param)!);
+  usefulParams.forEach(param => {
+    if (params.has(param)) {
+      filteredParams.append(param, params.get(param) as string);
     }
-  }
+  });
   
-  // Si mode=cloud est présent, ajouter forceCloud=true
-  if (urlParams.get('mode') === 'cloud' && !persistedParams.has('forceCloud')) {
-    persistedParams.set('forceCloud', 'true');
-  }
-  
-  // S'assurer que tous les paramètres récurrents sont définis correctement
-  if (urlParams.has('client') || persistedParams.has('client')) {
-    persistedParams.set('client', 'true');
-  }
-  
-  // Ajouter les paramètres supplémentaires fournis
-  if (additionalParams) {
-    Object.entries(additionalParams).forEach(([key, value]) => {
-      persistedParams.set(key, value);
-    });
-  }
-  
-  const paramString = persistedParams.toString();
+  const paramString = filteredParams.toString();
   return paramString ? `?${paramString}` : '';
 };
 
-/**
- * Récupère tous les paramètres d'URL sous forme d'objet
- */
 export const getAllUrlParams = (): Record<string, string> => {
-  if (typeof window === 'undefined') return {};
+  const params = new URLSearchParams(window.location.search);
+  const result: Record<string, string> = {};
   
-  const urlParams = new URLSearchParams(window.location.search);
-  const params: Record<string, string> = {};
-  
-  urlParams.forEach((value, key) => {
-    params[key] = value;
+  params.forEach((value, key) => {
+    result[key] = value;
   });
   
-  return params;
+  return result;
 };
 
-/**
- * Génère une URL complète avec tous les paramètres normalisés pour le mode cloud
- * Utile pour les redirections OAuth et les liens de documentation
- * @param baseUrl URL de base (par défaut: URL actuelle)
- * @returns URL complète avec les paramètres normalisés
- */
-export const getNormalizedCloudModeUrl = (path?: string, baseUrl?: string): string => {
-  // Utiliser l'URL actuelle comme base par défaut
-  const base = baseUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8080');
+export const appendUrlParams = (url: string, params: Record<string, string>): string => {
+  const urlObj = new URL(url);
   
-  // Paramètres normalisés pour le mode cloud
-  const params = {
-    client: 'true',
-    hideDebug: 'true',
-    forceCloud: 'true',
-    mode: 'cloud'
-  };
-  
-  // Construire l'URL avec les paramètres normalisés
-  const searchParams = new URLSearchParams();
+  // Ajouter chaque paramètre à l'URL
   Object.entries(params).forEach(([key, value]) => {
-    searchParams.set(key, value);
+    urlObj.searchParams.append(key, value);
   });
   
-  // Ajouter le chemin s'il est fourni
-  const pathSegment = path ? `/${path.startsWith('/') ? path.substring(1) : path}` : '';
+  return urlObj.toString();
+};
+
+// Fonction spécifique pour les redirections OAuth de Google
+export const getGoogleOAuthRedirectUrl = (): string => {
+  const baseRedirectUrl = getRedirectUrl('auth/google/callback');
+  const params = getFormattedUrlParams();
   
-  return `${base}${pathSegment}?${searchParams.toString()}`;
+  // Si nous avons des paramètres, les ajouter à l'URL de redirection
+  if (params) {
+    return `${baseRedirectUrl}${params}`;
+  }
+  
+  return baseRedirectUrl;
 };
