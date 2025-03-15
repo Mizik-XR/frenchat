@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -29,13 +28,12 @@ interface ModelDownloaderProps {
   };
 }
 
-export const ModelDownloader = ({ systemCapabilities }: ModelDownloaderProps) => {
+const ModelDownloader = ({ systemCapabilities }: ModelDownloaderProps) => {
   const [activeTab, setActiveTab] = useState('recommended');
   const [downloadingModel, setDownloadingModel] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [installedModels, setInstalledModels] = useState<string[]>([]);
   
-  // Liste des modèles adaptés à différentes configurations
   const models: ModelInfo[] = [
     {
       id: 'llama3-8b',
@@ -112,7 +110,6 @@ export const ModelDownloader = ({ systemCapabilities }: ModelDownloaderProps) =>
     }
   ];
   
-  // Filtrer les modèles en fonction des capacités du système
   const getFilteredModels = () => {
     if (systemCapabilities.isHighEndSystem) {
       return models;
@@ -127,7 +124,6 @@ export const ModelDownloader = ({ systemCapabilities }: ModelDownloaderProps) =>
   
   const filteredModels = getFilteredModels();
   
-  // Filtrer par catégorie et onglet actif
   const displayedModels = filteredModels.filter(m => 
     activeTab === 'all' || m.category === activeTab
   );
@@ -136,7 +132,6 @@ export const ModelDownloader = ({ systemCapabilities }: ModelDownloaderProps) =>
     setDownloadingModel(modelId);
     setProgress(0);
     
-    // Simuler le téléchargement
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
@@ -161,6 +156,12 @@ export const ModelDownloader = ({ systemCapabilities }: ModelDownloaderProps) =>
     }
     
     return true;
+  };
+
+  const safeButtonClick = (element: HTMLElement | null) => {
+    if (element && typeof element.click === 'function') {
+      element.click();
+    }
   };
 
   return (
@@ -260,3 +261,5 @@ export const ModelDownloader = ({ systemCapabilities }: ModelDownloaderProps) =>
     </Card>
   );
 };
+
+export default ModelDownloader;

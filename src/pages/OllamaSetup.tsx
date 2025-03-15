@@ -1,7 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { OllamaInstaller } from "@/components/ollama/OllamaInstaller";
-import { ModelDownloader } from "@/components/ollama/ModelDownloader";
+import ModelDownloader from "@/components/ollama/ModelDownloader";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useSystemCapabilities } from "@/hooks/useSystemCapabilities";
