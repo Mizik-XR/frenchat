@@ -74,7 +74,7 @@ export function useIndexingProgress() {
     setIsLoading(true);
     try {
       // Préparer les options pour la fonction Edge
-      const requestBody = { 
+      const requestBody: any = { 
         folderId, 
         options,
       };

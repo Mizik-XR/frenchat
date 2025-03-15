@@ -84,7 +84,7 @@ export const ConversationItem = ({
       const { data, error } = await supabase.functions.invoke('export-to-google-drive', {
         body: { 
           conversationId: conversation.id,
-          title: conversation.title || `Conversation du ${format(new Date(conversation.created_at), 'dd/MM/yyyy', { locale: fr })}`
+          title: conversation.title || `Conversation du ${format(new Date(conversation.createdAt), 'dd/MM/yyyy', { locale: fr })}`
         }
       });
 
@@ -121,7 +121,7 @@ export const ConversationItem = ({
   };
 
   const formattedDate = format(
-    new Date(conversation.created_at), 
+    new Date(conversation.createdAt), 
     'dd MMM yyyy', 
     { locale: fr }
   );
