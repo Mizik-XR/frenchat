@@ -7,6 +7,7 @@ import { SignUpForm } from '@/components/auth/SignUpForm';
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthForms } from '@/hooks/useAuthForms';
+import { toast } from '@/hooks/toast';
 
 type AuthMode = 'signin' | 'signup' | 'password-reset';
 
@@ -29,6 +30,18 @@ const Auth = () => {
     handleMagicLink
   } = useAuthForms();
 
+  // Vérifier la présence d'un paramètre tab dans l'état de navigation
+  useEffect(() => {
+    if (location.state && location.state.tab) {
+      const tab = location.state.tab as string;
+      if (tab === 'signup') {
+        setMode('signup');
+      } else if (tab === 'signin') {
+        setMode('signin');
+      }
+    }
+  }, [location]);
+
   // Check for existing session
   useEffect(() => {
     const checkAuth = async () => {
@@ -39,6 +52,11 @@ const Auth = () => {
         }
       } catch (err) {
         console.error('Error checking auth:', err);
+        toast({
+          title: "Erreur d'authentification",
+          description: "Impossible de vérifier votre session",
+          variant: "destructive"
+        });
       } finally {
         setIsCheckingAuth(false);
       }
@@ -122,10 +140,18 @@ const Auth = () => {
                 try {
                   const { error } = await supabase.auth.resetPasswordForEmail(email);
                   if (error) throw error;
-                  alert('Instructions de réinitialisation envoyées à votre email');
+                  toast({
+                    title: "Réinitialisation envoyée",
+                    description: "Instructions de réinitialisation envoyées à votre email",
+                    variant: "success"
+                  });
                 } catch (err) {
                   console.error('Erreur de réinitialisation:', err);
-                  alert('Erreur lors de l\'envoi du lien de réinitialisation');
+                  toast({
+                    title: "Erreur",
+                    description: "Erreur lors de l'envoi du lien de réinitialisation",
+                    variant: "destructive"
+                  });
                 }
               };
               resetPassword();
