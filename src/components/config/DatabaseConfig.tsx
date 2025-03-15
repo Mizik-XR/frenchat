@@ -1,20 +1,50 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronDown, ChevronUp, Database } from "lucide-react";
+import { ChevronDown, ChevronUp, Database, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { isLocalDevelopment } from "@/services/apiConfig";
+import { buildSupabaseConsoleUrl } from "@/utils/environment/urlUtils";
+import { isUrlAccessible } from "@/utils/environment/urlUtils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const DatabaseConfig = () => {
   const [expanded, setExpanded] = useState(false);
+  const [isUrlWorking, setIsUrlWorking] = useState<boolean | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
 
   const toggleExpanded = () => setExpanded(!expanded);
+  
+  const supabaseUrl = buildSupabaseConsoleUrl("dbdueopvtlanxgumenpu");
 
-  const handleOpenConsole = () => {
+  const handleOpenConsole = async () => {
     if (isLocalDevelopment()) {
-      // Utilisez une URL absolue avec https:// pour éviter les problèmes de navigation
-      window.open("https://supabase.com/dashboard/project/dbdueopvtlanxgumenpu", "_blank");
+      // Vérifier si l'URL est accessible avant d'ouvrir
+      setIsChecking(true);
+      try {
+        const isAccessible = await isUrlAccessible(supabaseUrl);
+        setIsUrlWorking(isAccessible);
+        
+        if (isAccessible) {
+          window.open(supabaseUrl, "_blank");
+        } else {
+          toast({
+            title: "URL inaccessible",
+            description: "Impossible d'accéder à la console Supabase. Vérifiez votre connexion Internet.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        setIsUrlWorking(false);
+        toast({
+          title: "Erreur de vérification",
+          description: "Impossible de vérifier l'accessibilité de l'URL Supabase.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsChecking(false);
+      }
     } else {
       toast({
         title: "Accès limité",
@@ -23,6 +53,13 @@ export const DatabaseConfig = () => {
       });
     }
   };
+
+  // Vérifier l'URL au chargement du composant
+  useState(() => {
+    if (isLocalDevelopment()) {
+      isUrlAccessible(supabaseUrl).then(setIsUrlWorking).catch(() => setIsUrlWorking(false));
+    }
+  });
 
   return (
     <Card>
@@ -43,11 +80,34 @@ export const DatabaseConfig = () => {
           <p className="text-sm text-muted-foreground mb-4">
             Accédez à la console Supabase pour gérer directement votre base de données.
           </p>
-          <Button variant="outline" className="w-full" onClick={handleOpenConsole}>
-            Ouvrir la console Supabase
+          
+          {isUrlWorking === false && (
+            <Alert variant="warning" className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                L'URL de la console Supabase semble inaccessible. Vérifiez votre connexion Internet.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={handleOpenConsole}
+            disabled={isChecking}
+          >
+            {isChecking ? "Vérification de l'accessibilité..." : "Ouvrir la console Supabase"}
           </Button>
           <div className="text-xs text-muted-foreground mt-2 text-center">
             {isLocalDevelopment() ? "(Mode développement uniquement)" : "(Accès restreint en production)"}
+          </div>
+          
+          <div className="text-xs text-muted-foreground mt-4 pt-4 border-t">
+            <p>URL: {supabaseUrl}</p>
+            <p className="mt-1">Statut: {
+              isUrlWorking === null ? "Non vérifié" :
+              isUrlWorking ? "Accessible" : "Inaccessible"
+            }</p>
           </div>
         </CardContent>
       )}
