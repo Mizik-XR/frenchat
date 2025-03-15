@@ -1,4 +1,3 @@
-
 """
 Gestionnaire de cache pour le serveur d'inférence IA
 """
@@ -35,7 +34,8 @@ def init_cache():
         temperature REAL,
         top_p REAL,
         max_length INTEGER,
-        compressed BOOLEAN DEFAULT 0
+        compressed BOOLEAN DEFAULT 0,
+        user_id TEXT DEFAULT NULL
     )
     ''')
     
@@ -65,10 +65,15 @@ def init_cache():
     # Nettoyer les entrées expirées au démarrage
     clean_expired_entries()
 
-def generate_cache_id(prompt, system_prompt, model, temperature, top_p, max_length):
+def generate_cache_id(prompt, system_prompt, model, temperature, top_p, max_length, user_id=None):
     """Génère un ID de cache basé sur la requête"""
     # Créer une chaîne avec tous les paramètres pertinents
     cache_string = f"{prompt}|{system_prompt}|{model}|{temperature}|{top_p}|{max_length}"
+    
+    # Ajouter l'ID utilisateur si disponible pour la personnalisation
+    if user_id:
+        cache_string += f"|{user_id}"
+    
     # Générer un hash SHA-256
     return hashlib.sha256(cache_string.encode()).hexdigest()
 
@@ -106,7 +111,7 @@ def is_compression_enabled():
         logger.error(f"Erreur lors de la vérification de la compression: {e}")
         return False
 
-def check_cache(cache_id):
+def check_cache(cache_id, user_id=None):
     """Vérifie si une entrée existe dans le cache et n'a pas expiré"""
     if not CACHE_ENABLED:
         return None
@@ -122,11 +127,21 @@ def check_cache(cache_id):
         # Calculer le timestamp d'expiration
         expiry_time = int(time.time()) - cache_expiry
         
-        # Vérifier si l'entrée existe et n'a pas expiré
-        cursor.execute(
-            "SELECT response, compressed FROM response_cache WHERE id = ? AND created_at > ?", 
-            (cache_id, expiry_time)
-        )
+        # Préparer la requête de base
+        query = """
+            SELECT response, compressed 
+            FROM response_cache 
+            WHERE id = ? AND created_at > ?
+        """
+        params = [cache_id, expiry_time]
+        
+        # Si un user_id est fourni, vérifier pour cet utilisateur ou les entrées publiques
+        if user_id:
+            query += " AND (user_id = ? OR user_id IS NULL)"
+            params.append(user_id)
+        
+        # Exécuter la requête
+        cursor.execute(query, params)
         result = cursor.fetchone()
         
         if result:
@@ -154,7 +169,7 @@ def check_cache(cache_id):
         logger.error(f"Erreur lors de la vérification du cache: {e}")
         return None
 
-def update_cache(cache_id, prompt, system_prompt, model, response, temperature, top_p, max_length):
+def update_cache(cache_id, prompt, system_prompt, model, response, temperature, top_p, max_length, user_id=None):
     """Met à jour le cache avec une nouvelle entrée"""
     if not CACHE_ENABLED:
         return
@@ -173,9 +188,9 @@ def update_cache(cache_id, prompt, system_prompt, model, response, temperature, 
         
         # Insérer ou remplacer l'entrée dans le cache
         cursor.execute(
-            "INSERT OR REPLACE INTO response_cache VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT OR REPLACE INTO response_cache VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (cache_id, prompt, system_prompt, model, stored_response, int(time.time()), 
-             temperature, top_p, max_length, compression_enabled)
+             temperature, top_p, max_length, compression_enabled, user_id)
         )
         
         conn.commit()

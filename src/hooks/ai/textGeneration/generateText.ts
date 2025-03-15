@@ -100,8 +100,8 @@ export async function generateText(
       const estimatedOutputTokens = estimateTokenCount(responseText);
       const totalTokens = estimatedInputTokens + estimatedOutputTokens;
       
-      // Stocker dans le cache
-      await cacheResponse(prompt, systemPrompt, responseText, provider, totalTokens);
+      // Stocker dans le cache - maintenant avec l'ID utilisateur
+      await cacheResponse(prompt, systemPrompt, responseText, provider, totalTokens, userId);
       
       // Enregistrer l'utilisation et déduire les crédits
       if (userId) {

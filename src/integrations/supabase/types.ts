@@ -983,6 +983,7 @@ export type Database = {
           provider: string
           response: string
           tokens_used: number
+          user_id: string | null
         }
         Insert: {
           access_count?: number
@@ -996,6 +997,7 @@ export type Database = {
           provider: string
           response: string
           tokens_used?: number
+          user_id?: string | null
         }
         Update: {
           access_count?: number
@@ -1009,6 +1011,7 @@ export type Database = {
           provider?: string
           response?: string
           tokens_used?: number
+          user_id?: string | null
         }
         Relationships: []
       }

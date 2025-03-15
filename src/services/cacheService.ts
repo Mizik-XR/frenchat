@@ -43,6 +43,7 @@ export const cacheService = {
   async findCachedResponse(prompt: string, systemPrompt: string, provider: string): Promise<CachedResponse | null> {
     const hash = this.generateHash(prompt, systemPrompt, provider);
     
+    // Utiliser la requête avec RLS (les politiques filtreron automatiquement)
     const { data, error } = await supabase
       .from('response_cache')
       .select('*')
@@ -72,7 +73,8 @@ export const cacheService = {
     response: string, 
     provider: string, 
     tokensUsed: number,
-    expirationDays: number = 7
+    expirationDays: number = 7,
+    userId?: string
   ): Promise<string> {
     const hash = this.generateHash(prompt, systemPrompt, provider);
     const id = uuidv4();
@@ -91,7 +93,8 @@ export const cacheService = {
         provider,
         tokens_used: tokensUsed,
         hash,
-        expiration_date: expirationDate.toISOString()
+        expiration_date: expirationDate.toISOString(),
+        user_id: userId || null // Associer au user_id si disponible, sinon cache public
       });
     
     if (error) {
@@ -108,6 +111,7 @@ export const cacheService = {
   async purgeExpiredCache(): Promise<number> {
     const now = new Date().toISOString();
     
+    // Les politiques RLS s'appliqueront automatiquement ici aussi
     const { data, error } = await supabase
       .from('response_cache')
       .delete()

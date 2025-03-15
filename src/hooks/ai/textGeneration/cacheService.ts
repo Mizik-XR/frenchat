@@ -54,7 +54,8 @@ export async function cacheResponse(
   systemPrompt: string,
   responseText: string,
   provider: string,
-  totalTokens: number
+  totalTokens: number,
+  userId?: string
 ): Promise<void> {
   try {
     await cacheService.cacheResponse(
@@ -62,7 +63,9 @@ export async function cacheResponse(
       systemPrompt,
       responseText,
       provider,
-      totalTokens
+      totalTokens,
+      7, // expiration en jours
+      userId // transmettre l'ID utilisateur pour associer l'entrée
     );
     
     console.log(`Réponse mise en cache (${totalTokens} tokens estimés)`);
