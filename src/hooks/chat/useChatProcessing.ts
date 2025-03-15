@@ -30,6 +30,11 @@ export function useChatProcessing() {
         setIsError(false);
         setError(null);
 
+        // Vérifier que l'utilisateur est connecté
+        if (!user && !config?.allowAnonymous) {
+          throw new Error("Vous devez être connecté pour envoyer des messages");
+        }
+
         // Créer et sauvegarder le message utilisateur
         const userMessage = messageService.createUserMessage(
           content, 
@@ -40,33 +45,37 @@ export function useChatProcessing() {
           config
         );
         
-        await messageService.saveMessageToDatabase({
-          id: userMessage.id,
-          role: 'user' as 'user' | 'assistant',
-          content: userMessage.content,
-          conversationId: userMessage.conversationId,
-          metadata: userMessage.metadata,
-          timestamp: userMessage.timestamp
-        });
+        // Sauvegarder en base de données si l'utilisateur est connecté
+        if (user) {
+          await messageService.saveMessageToDatabase({
+            id: userMessage.id,
+            role: 'user',
+            content: userMessage.content,
+            conversationId: userMessage.conversationId,
+            metadata: userMessage.metadata,
+            timestamp: userMessage.timestamp
+          });
+        }
 
         // Générer la réponse selon le provider choisi
         let generatedText = "";
+        let modelProvider = config?.provider as AIProvider || 'mistral';
 
-        if (config.provider === 'openai-agent' && config.useRag) {
+        if (modelProvider === 'openai-agent' && config?.useRag) {
           generatedText = await aiProviderService.generateOpenAIAgentResponse(content, conversationId, config);
-        } else if (config.provider === 'openai') {
+        } else if (modelProvider === 'openai') {
           generatedText = await aiProviderService.generateOpenAIResponse(content, config);
-        } else if (config.provider === 'anthropic') {
+        } else if (modelProvider === 'anthropic') {
           generatedText = await aiProviderService.generateAnthropicResponse(content, config);
         } else {
           generatedText = await aiProviderService.generateStandardResponse(
             content, 
-            config.provider as AIProvider, 
+            modelProvider,
             config
           );
         }
 
-        // Créer et sauvegarder le message assistant
+        // Créer le message assistant
         const assistantMessage = messageService.createAssistantMessage(
           generatedText, 
           conversationId, 
@@ -74,14 +83,17 @@ export function useChatProcessing() {
           config
         );
         
-        await messageService.saveMessageToDatabase({
-          id: assistantMessage.id,
-          role: 'assistant' as 'user' | 'assistant',
-          content: assistantMessage.content,
-          conversationId: assistantMessage.conversationId,
-          metadata: assistantMessage.metadata,
-          timestamp: assistantMessage.timestamp
-        });
+        // Sauvegarder en base de données si l'utilisateur est connecté
+        if (user) {
+          await messageService.saveMessageToDatabase({
+            id: assistantMessage.id,
+            role: 'assistant',
+            content: assistantMessage.content,
+            conversationId: assistantMessage.conversationId,
+            metadata: assistantMessage.metadata,
+            timestamp: assistantMessage.timestamp
+          });
+        }
 
         return {
           userMessage,
@@ -90,16 +102,20 @@ export function useChatProcessing() {
       } catch (err) {
         console.error("Error processing message:", err);
         setIsError(true);
-        setError(err as Error);
+        setError(err instanceof Error ? err : new Error(String(err)));
         throw err;
       }
+    },
+    onError: (error) => {
+      console.error("Mutation error:", error);
     }
   });
 
   return {
     sendMessage: mutation.mutate,
+    sendMessageAsync: mutation.mutateAsync,
     isProcessing: mutation.isPending,
-    isLoading: mutation.isPending,
+    isLoading: mutation.isPending, 
     isSuccess: mutation.isSuccess,
     isError,
     error,

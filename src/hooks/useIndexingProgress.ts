@@ -11,6 +11,9 @@ export interface IndexingProgress {
   status: string;
   current_folder?: string;
   error?: string;
+  parent_folder?: string;
+  depth?: number;
+  last_processed_file?: string;
 }
 
 export function useIndexingProgress() {
@@ -40,6 +43,9 @@ export function useIndexingProgress() {
           processed: data.processed_files || 0,
           status: data.status,
           current_folder: data.current_folder,
+          parent_folder: data.parent_folder,
+          depth: data.depth,
+          last_processed_file: data.last_processed_file,
           error: data.error
         });
         return data;
@@ -67,20 +73,17 @@ export function useIndexingProgress() {
     
     setIsLoading(true);
     try {
-      // Simulation d'un appel d'API pour démarrer l'indexation
-      // Dans un environnement réel, cela appellerait une Edge Function Supabase
-      
-      const progressId = `progress_${Date.now()}`;
-      
-      // Simuler la création d'un enregistrement de progression
-      await supabase.from('indexing_progress').upsert({
-        id: progressId,
-        user_id: user.id,
-        status: 'running',
-        total_files: 0,
-        processed_files: 0,
-        metadata: { folder_id: folderId, options }
+      // Appel à la fonction Edge d'indexation
+      const { data, error } = await supabase.functions.invoke('index-google-drive', {
+        body: { 
+          folderId, 
+          options,
+          parent_folder: options.hasOwnProperty('parentFolder') ? options.parentFolder : null,
+          depth: options.hasOwnProperty('depth') ? options.depth : 2
+        }
       });
+      
+      if (error) throw error;
       
       toast({
         title: "Indexation démarrée",
@@ -90,7 +93,7 @@ export function useIndexingProgress() {
       // Déclencher une mise à jour immédiate
       fetchProgress();
       
-      return progressId;
+      return data?.progressId || null;
     } catch (error) {
       console.error('Erreur lors du démarrage de l\'indexation:', error);
       toast({
@@ -104,6 +107,37 @@ export function useIndexingProgress() {
     }
   }, [user, toast, fetchProgress]);
 
+  // Fonction pour annuler une indexation en cours
+  const cancelIndexing = useCallback(async () => {
+    if (!user || !indexingProgress) return false;
+    
+    try {
+      const { error } = await supabase
+        .from('indexing_progress')
+        .update({ status: 'cancelled' })
+        .eq('user_id', user.id)
+        .eq('status', 'running');
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Indexation annulée",
+        description: "L'indexation a été arrêtée"
+      });
+      
+      await fetchProgress();
+      return true;
+    } catch (error) {
+      console.error('Erreur lors de l\'annulation de l\'indexation:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'annuler l'indexation",
+        variant: "destructive",
+      });
+      return false;
+    }
+  }, [user, indexingProgress, toast, fetchProgress]);
+
   // Effet pour récupérer la progression initiale
   useEffect(() => {
     fetchProgress();
@@ -111,13 +145,35 @@ export function useIndexingProgress() {
     // Mettre en place un sondage pour les mises à jour régulières
     const interval = setInterval(fetchProgress, 5000);
     
-    return () => clearInterval(interval);
-  }, [fetchProgress]);
+    // Mettre en place un abonnement aux changements en temps réel
+    const subscription = supabase
+      .channel('indexing_progress_changes')
+      .on('postgres_changes', {
+        event: '*', 
+        schema: 'public',
+        table: 'indexing_progress',
+        filter: user ? `user_id=eq.${user.id}` : undefined,
+      }, fetchProgress)
+      .subscribe();
+    
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(subscription);
+    };
+  }, [fetchProgress, user]);
+
+  // Calculer le pourcentage de progression
+  const progressPercentage = indexingProgress && indexingProgress.total > 0 
+    ? Math.round((indexingProgress.processed / indexingProgress.total) * 100)
+    : 0;
 
   return {
     indexingProgress,
+    progressPercentage,
     startIndexing,
+    cancelIndexing,
     isLoading,
-    refreshProgress: fetchProgress
+    refreshProgress: fetchProgress,
+    isIndexing: indexingProgress?.status === 'running'
   };
 }
