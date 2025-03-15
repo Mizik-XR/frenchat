@@ -4,6 +4,39 @@ import { LLMProviderType } from "@/types/config";
 const OLLAMA_DEFAULT_URL = "http://localhost:11434";
 const PYTHON_DEFAULT_URL = "http://localhost:8000";
 
+/**
+ * Vérifie si l'environnement est compatible avec une exécution locale de l'IA
+ * @returns true si l'environnement est compatible
+ */
+export function isLocalAIEnvironmentCompatible(): boolean {
+  try {
+    // Vérifier si nous sommes dans un environnement qui bloque les connexions localhost
+    // comme un sandbox, un iframe avec contraintes de sécurité, etc.
+    const isIframe = window !== window.parent;
+    const isSecureContext = window.isSecureContext;
+    const isLocalStorageAvailable = typeof localStorage !== 'undefined';
+    
+    // Les connexions locales sont généralement bloquées dans ces contextes
+    const potentiallyRestricted = 
+      (isIframe && isSecureContext && window.location.hostname !== 'localhost') ||
+      (isSecureContext && window.location.protocol === 'https:' && 
+       !window.location.hostname.includes('localhost') && 
+       !window.location.hostname.includes('127.0.0.1'));
+    
+    // Si nous sommes dans un iframe sécurisé sur un domaine distant, 
+    // les connexions localhost sont probablement bloquées
+    if (potentiallyRestricted) {
+      console.log("Environnement potentiellement incompatible avec l'IA locale détecté");
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de la vérification de compatibilité:", error);
+    return false;
+  }
+}
+
 export async function isOllamaAvailable(): Promise<boolean> {
   try {
     const controller = new AbortController();
@@ -109,6 +142,12 @@ export async function detectLocalServices() {
       url: PYTHON_DEFAULT_URL
     }
   };
+  
+  // Vérifier d'abord si l'environnement est compatible
+  if (!isLocalAIEnvironmentCompatible()) {
+    console.log("Environnement incompatible avec l'IA locale, passage au mode cloud");
+    return results;
+  }
   
   // Détection d'Ollama
   results.ollama.available = await isOllamaAvailable();
