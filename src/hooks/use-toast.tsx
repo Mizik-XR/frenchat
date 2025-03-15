@@ -153,7 +153,8 @@ function dispatch(action: Action) {
   })
 }
 
-export type Toast = Partial<Omit<ToasterToast, "id">>
+// Define Toast type without removing the id field
+export type Toast = Partial<ToasterToast>
 
 export function toast(props: Toast) {
   const id = props.id || genId()
