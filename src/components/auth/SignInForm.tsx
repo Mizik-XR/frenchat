@@ -4,14 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Key, LogIn } from "lucide-react";
-import { AuthFormProps } from "./types";
-
-interface SignInFormProps extends AuthFormProps {
-  handleSignIn: (e: React.FormEvent) => Promise<void>;
-  handleMagicLink: (e: React.FormEvent) => Promise<void>;
-  rememberMe: boolean;
-  setRememberMe: (value: boolean) => void;
-}
+import { SignInFormProps } from "./types";
 
 export function SignInForm({ 
   loading, 
@@ -22,7 +15,9 @@ export function SignInForm({
   handleSignIn,
   handleMagicLink,
   rememberMe,
-  setRememberMe
+  setRememberMe,
+  switchToSignUp,
+  switchToPasswordReset
 }: SignInFormProps) {
   return (
     <form onSubmit={handleSignIn} className="space-y-4">

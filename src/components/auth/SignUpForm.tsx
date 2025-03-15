@@ -3,15 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Key, UserPlus } from "lucide-react";
-import { AuthFormProps } from "./types";
-
-interface SignUpFormProps extends AuthFormProps {
-  fullName: string;
-  setFullName: (name: string) => void;
-  confirmPassword: string;
-  setConfirmPassword: (password: string) => void;
-  handleSignUp: (e: React.FormEvent) => Promise<void>;
-}
+import { SignUpFormProps } from "./types";
 
 export function SignUpForm({
   loading,
@@ -23,7 +15,8 @@ export function SignUpForm({
   setFullName,
   confirmPassword,
   setConfirmPassword,
-  handleSignUp
+  handleSignUp,
+  switchToSignIn
 }: SignUpFormProps) {
   return (
     <form onSubmit={handleSignUp} className="space-y-4">
