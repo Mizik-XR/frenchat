@@ -3,14 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, Cpu, Server, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { getBaseUrl } from "@/utils/environment/urlUtils";
 
 export function InstallationGuide() {
-  // Utilisation de l'utilitaire d'URL pour construire des liens robustes
-  const getDownloadUrl = (fileName: string) => {
-    return `${getBaseUrl()}/downloads/${fileName}`;
-  };
-
   return (
     <div className="py-16 bg-black/95">
       <div className="container px-4 mx-auto">
@@ -76,12 +70,10 @@ export function InstallationGuide() {
               </ul>
             </CardContent>
             <CardFooter>
-              <a href={getDownloadUrl("filechat-setup.exe")} className="w-full">
-                <Button variant="outline" className="w-full gap-2">
-                  <Download className="h-4 w-4" />
-                  Télécharger pour Windows
-                </Button>
-              </a>
+              <Button variant="outline" className="w-full gap-2" onClick={() => window.location.href = "https://github.com/yourusername/filechat/releases/latest/download/start-universal.bat"}>
+                <Download className="h-4 w-4" />
+                Télécharger l'installateur
+              </Button>
             </CardFooter>
           </Card>
         </div>
@@ -89,38 +81,33 @@ export function InstallationGuide() {
         <div className="mt-12 p-6 bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-xl border border-blue-800/50">
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
             <ArrowRight className="h-5 w-5 text-blue-400" />
-            Autres téléchargements
+            Installation automatique
           </h3>
           
           <p className="text-gray-300 mb-4">
-            FileChat est disponible pour les plateformes suivantes:
+            Notre script d'installation intelligent détecte automatiquement votre matériel et installe la configuration optimale :
           </p>
           
-          <div className="grid gap-4 md:grid-cols-3">
-            <a href={getDownloadUrl("filechat-mac-intel.dmg")}>
-              <Button variant="outline" className="w-full gap-2">
-                <Download className="h-4 w-4" />
-                macOS (Intel)
-              </Button>
-            </a>
-            <a href={getDownloadUrl("filechat-mac-arm.dmg")}>
-              <Button variant="outline" className="w-full gap-2">
-                <Download className="h-4 w-4" />
-                macOS (Apple Silicon)
-              </Button>
-            </a>
-            <a href={getDownloadUrl("filechat-linux.tar.gz")}>
-              <Button variant="outline" className="w-full gap-2">
-                <Download className="h-4 w-4" />
-                Linux (x64)
-              </Button>
-            </a>
-          </div>
+          <ol className="list-decimal list-inside space-y-3 text-gray-300">
+            <li>
+              <span className="font-medium text-white">Détection du matériel</span> - Le script analyse votre CPU, GPU et mémoire disponible
+            </li>
+            <li>
+              <span className="font-medium text-white">Installation d'Ollama</span> - Mise en place du moteur d'IA locale optimisé pour votre matériel
+            </li>
+            <li>
+              <span className="font-medium text-white">Configuration de Mistral</span> - Téléchargement et configuration du modèle d'IA adapté
+            </li>
+            <li>
+              <span className="font-medium text-white">Paramétrage optimisé</span> - Configuration automatique pour des performances optimales
+            </li>
+          </ol>
           
           <div className="mt-5 flex justify-center">
-            <Link to="/docs/installation" className="text-blue-400 hover:text-blue-300 text-sm">
-              Instructions d'installation détaillées
-            </Link>
+            <Button variant="default" className="gap-2" onClick={() => window.location.href = "https://github.com/yourusername/filechat/releases/latest/download/start-universal.bat"}>
+              <Download className="h-4 w-4" />
+              Télécharger l'installateur universel
+            </Button>
           </div>
         </div>
       </div>

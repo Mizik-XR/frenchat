@@ -1,0 +1,16 @@
+
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ],
+  "env": {
+    "VITE_ENVIRONMENT": "production",
+    "VITE_CLOUD_MODE": "true",
+    "VITE_ALLOW_LOCAL_AI": "false",
+    "VITE_SKIP_PYTHON_INSTALLATION": "true"
+  }
+}
