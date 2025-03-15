@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy } from 'react';
 import { Route, Routes, Navigate, BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
@@ -9,7 +8,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { ToastProvider } from '@radix-ui/react-toast';
+import { ToastProvider } from '@/hooks/toast/toast-context';
+import * as RadixToast from '@radix-ui/react-toast';
 
 const Home = lazy(() => import('./pages/Home'));
 const Auth = lazy(() => import('./pages/Auth').then(module => ({ default: module.Auth })));
@@ -73,21 +73,24 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <ToastProvider>
-        <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
-          <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
-              <AuthProvider>
-                <SettingsProvider>
-                  <ReactErrorMonitor />
-                  <AppRouter />
-                  <Toaster />
-                </SettingsProvider>
-              </AuthProvider>
-            </BrowserRouter>
-          </QueryClientProvider>
-        </ThemeProvider>
-      </ToastProvider>
+      <RadixToast.Provider>
+        <ToastProvider>
+          <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
+            <QueryClientProvider client={queryClient}>
+              <BrowserRouter>
+                <AuthProvider>
+                  <SettingsProvider>
+                    <ReactErrorMonitor />
+                    <AppRouter />
+                    <Toaster />
+                  </SettingsProvider>
+                </AuthProvider>
+              </BrowserRouter>
+            </QueryClientProvider>
+          </ThemeProvider>
+        </ToastProvider>
+        <RadixToast.Viewport />
+      </RadixToast.Provider>
     </ErrorBoundary>
   );
 }
