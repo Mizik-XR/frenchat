@@ -1,79 +1,90 @@
 
-/**
- * Utilitaires pour la détection et la gestion du mode cloud
- */
+import { isLovableEnvironment, isNetlifyEnvironment } from './environmentDetection';
 
 /**
- * Vérifie si le mode cloud est forcé via les paramètres d'URL ou les variables d'environnement
- * @returns true si le mode cloud est forcé
- */
-export function isCloudModeForced(): boolean {
-  // Vérifier dans localStorage et dans les paramètres d'URL
-  const forceCloud = 
-    window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true' ||
-    new URLSearchParams(window.location.search).get('forceCloud') === 'true';
-  
-  // Vérifier dans les variables d'environnement
-  const envForceCloud = import.meta.env.VITE_FORCE_CLOUD_MODE === 'true';
-  
-  return forceCloud || envForceCloud;
-}
-
-/**
- * Vérifie si l'application est en mode client
- * @returns true si le mode client est activé
- */
-export function isClientMode(): boolean {
-  // Vérifier dans les paramètres d'URL
-  return new URLSearchParams(window.location.search).get('client') === 'true';
-}
-
-/**
- * Vérifie si le mode debug est activé
- * @returns true si le mode debug est activé et non masqué
- */
-export function isDebugMode(): boolean {
-  const urlParams = new URLSearchParams(window.location.search);
-  const debug = urlParams.get('debug') === 'true';
-  const hideDebug = urlParams.get('hideDebug') === 'true';
-  
-  return debug && !hideDebug;
-}
-
-/**
- * Définit le mode cloud dans le stockage local
- * @param enabled true pour activer le mode cloud, false pour le désactiver
- */
-export function setCloudMode(enabled: boolean): void {
-  if (enabled) {
-    window.localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-  } else {
-    window.localStorage.removeItem('FORCE_CLOUD_MODE');
-  }
-}
-
-/**
- * Vérifie si l'application est en environnement Netlify
- * @returns true si l'application est hébergée sur Netlify
- */
-export function isNetlifyEnvironment(): boolean {
-  return typeof process !== 'undefined' && process.env.NETLIFY === 'true' || 
-         import.meta.env.VITE_ENVIRONMENT === 'production' ||
-         window.location.hostname.includes('netlify.app');
-}
-
-/**
- * Détermine l'URL de base pour les appels API en fonction de l'environnement
- * @returns URL de base pour les appels API
+ * Retourne l'URL de base de l'API en fonction de l'environnement
+ * @returns URL de base de l'API
  */
 export function getApiBaseUrl(): string {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  // Utiliser l'URL de l'API définie dans les variables d'environnement
+  const configuredApiUrl = import.meta.env.VITE_API_URL;
+  
+  if (configuredApiUrl) {
+    return configuredApiUrl;
   }
   
+  // En environnement de développement
+  if (import.meta.env.DEV) {
+    return 'http://localhost:8000';
+  }
+  
+  // En environnement Netlify, utiliser les fonctions Netlify
   if (isNetlifyEnvironment()) {
     return '/.netlify/functions';
   }
   
-  return 'http://localhost:8000';
+  // En environnement Lovable, utiliser une API cloud
+  if (isLovableEnvironment()) {
+    return 'https://filechat-api.vercel.app/api';
+  }
+  
+  // Fallback pour les autres environnements
+  return '/api';
+}
+
+/**
+ * Vérifie si le mode cloud est explicitement forcé par l'URL
+ * @returns true si le mode cloud est forcé par l'URL
+ */
+export function isCloudModeInUrl(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('forceCloud') === 'true' || 
+         urlParams.get('mode') === 'cloud';
+}
+
+/**
+ * Force le mode cloud dans le localStorage
+ */
+export function forceCloudMode(): void {
+  if (typeof window === 'undefined') return;
+  
+  window.localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+  window.localStorage.setItem('aiServiceType', 'cloud');
+}
+
+/**
+ * Vérifie les paramètres d'URL et force le mode cloud si nécessaire
+ */
+export function checkUrlAndSetCloudMode(): void {
+  if (typeof window === 'undefined') return;
+  
+  if (isCloudModeInUrl()) {
+    forceCloudMode();
+    console.log('Mode cloud forcé par les paramètres d\'URL');
+  }
+  
+  // Vérifier également si nous sommes dans un environnement qui nécessite le mode cloud
+  if (isLovableEnvironment() || isNetlifyEnvironment()) {
+    forceCloudMode();
+    console.log('Mode cloud forcé par l\'environnement');
+  }
+}
+
+/**
+ * Initialise les paramètres de mode cloud au démarrage de l'application
+ */
+export function initializeCloudMode(): void {
+  checkUrlAndSetCloudMode();
+  
+  // Ajouter un écouteur pour les changements d'URL
+  if (typeof window !== 'undefined') {
+    window.addEventListener('popstate', checkUrlAndSetCloudMode);
+  }
+}
+
+// Exécution automatique au chargement du module
+if (typeof window !== 'undefined') {
+  initializeCloudMode();
 }

@@ -63,6 +63,36 @@ export const isLovableEnvironment = (): boolean => {
   return isLovableDomain || (isInIframe && hasLovableParam) || isLovableScriptLoaded;
 };
 
+/**
+ * Détecte si l'application fonctionne en mode cloud
+ */
+export const isCloudMode = (): boolean => {
+  // Vérifier d'abord si le mode cloud est explicitement forcé par la variable d'environnement
+  if (import.meta.env.VITE_CLOUD_MODE === 'true') {
+    return true;
+  }
+  
+  // Vérifier si nous sommes dans un environnement de prévisualisation Lovable
+  if (isLovableEnvironment()) {
+    return true;
+  }
+  
+  // Vérifier si le mode cloud est forcé par un paramètre d'URL
+  if (typeof window !== 'undefined') {
+    const forceCloud = new URLSearchParams(window.location.search).get('forceCloud') === 'true';
+    if (forceCloud) {
+      return true;
+    }
+  }
+  
+  // Par défaut, utiliser le stockage local
+  if (typeof window !== 'undefined') {
+    return window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true';
+  }
+  
+  return false;
+};
+
 // Déclaration de type pour ajouter la propriété gptengineer à l'objet Window
 declare global {
   interface Window {

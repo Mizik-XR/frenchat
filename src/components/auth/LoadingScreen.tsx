@@ -27,7 +27,8 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
     setIsPreviewEnvironment(
       hostname.includes('lovableproject.com') || 
       hostname.includes('preview') || 
-      hostname.includes('netlify')
+      hostname.includes('netlify') ||
+      hostname.includes('lovable.app')
     );
     
     const timer = setInterval(() => {
@@ -53,11 +54,17 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
       localStorage.setItem('app_loading_issue', 'true');
     }
     
+    // Forcer le mode cloud en environnement de prévisualisation
+    if (isPreviewEnvironment) {
+      localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+      localStorage.setItem('aiServiceType', 'cloud');
+    }
+    
     return () => {
       clearInterval(timer);
       console.error = originalError;
     };
-  }, [loadingTime]);
+  }, [loadingTime, isPreviewEnvironment]);
   
   // Afficher un bouton de relance après 10 secondes de chargement
   const shouldShowRetry = showRetry || loadingTime > 10 || hasLayoutEffect || criticalErrors.length > 0;
@@ -88,7 +95,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
     // Nettoyage complet en cas de problème sévère
     localStorage.clear();
     sessionStorage.clear();
-    window.location.href = '/?reset=true';
+    window.location.href = '/?reset=true&forceCloud=true&mode=cloud';
   };
   
   return (
@@ -133,10 +140,10 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
           <div className="mb-4 p-3 bg-blue-50 rounded-md w-full">
             <div className="flex items-center gap-2 text-blue-700 mb-1">
               <Info className="h-5 w-5" />
-              <p className="font-medium">Environnement de prévisualisation</p>
+              <p className="font-medium">Environnement de prévisualisation Lovable</p>
             </div>
             <p className="text-sm text-blue-600">
-              Dans cet environnement, les fonctionnalités d'IA locale et certaines intégrations sont limitées.
+              Mode cloud automatiquement activé pour assurer la compatibilité.
             </p>
           </div>
         )}
@@ -193,6 +200,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             <p>Problème useLayoutEffect détecté: {hasLayoutEffect ? "Oui" : "Non"}</p>
             <p>Route actuelle: {window.location.pathname}</p>
             <p>Erreurs critiques: {criticalErrors.length}</p>
+            <p>Mode cloud: {localStorage.getItem('FORCE_CLOUD_MODE') === 'true' ? "Oui" : "Non"}</p>
           </div>
         )}
       </div>
