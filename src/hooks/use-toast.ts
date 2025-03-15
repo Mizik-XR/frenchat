@@ -3,7 +3,7 @@
 // Correction : nous exportons maintenant correctement la fonction toast
 
 import { useToast } from "./toast/toast-context";
-import { toast } from "./use-toast.tsx";
+import { toast } from "./toast/toast-utils";
 import type { Toast, ToastVariant } from "./toast/types";
 
 export { useToast, toast };
