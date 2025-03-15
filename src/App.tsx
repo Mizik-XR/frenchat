@@ -1,6 +1,6 @@
 
-import React, { useEffect, Suspense } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Routes, Route, useLocation, BrowserRouter } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Auth from './pages/Auth';
 import Documents from './pages/Documents';
@@ -36,16 +36,16 @@ function App() {
   }, [location.search, toast]);
 
   return (
-    <>
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
         <Route 
           path="/docs/installation" 
           element={
-            <Suspense fallback={<div>Chargement...</div>}>
+            <React.Suspense fallback={<div>Chargement...</div>}>
               <InstallationDocs />
-            </Suspense>
+            </React.Suspense>
           } 
         />
         <Route path="/documents" element={<Documents />} />
@@ -56,7 +56,7 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
-    </>
+    </BrowserRouter>
   );
 }
 

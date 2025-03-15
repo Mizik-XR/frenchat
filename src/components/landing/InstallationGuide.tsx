@@ -76,13 +76,12 @@ export function InstallationGuide() {
               </ul>
             </CardContent>
             <CardFooter>
-              {/* Remplacer par une redirection vers la doc d'installation */}
-              <Link to="/docs/installation" className="w-full">
+              <a href={getDownloadUrl("filechat-setup.exe")} className="w-full">
                 <Button variant="outline" className="w-full gap-2">
                   <Download className="h-4 w-4" />
-                  Voir les instructions d'installation
+                  Télécharger pour Windows
                 </Button>
-              </Link>
+              </a>
             </CardFooter>
           </Card>
         </div>
@@ -90,34 +89,37 @@ export function InstallationGuide() {
         <div className="mt-12 p-6 bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-xl border border-blue-800/50">
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
             <ArrowRight className="h-5 w-5 text-blue-400" />
-            Mode Cloud Vercel
+            Autres téléchargements
           </h3>
           
           <p className="text-gray-300 mb-4">
-            Notre déploiement Vercel vous offre une performance et une fiabilité optimales :
+            FileChat est disponible pour les plateformes suivantes:
           </p>
           
-          <ol className="list-decimal list-inside space-y-3 text-gray-300">
-            <li>
-              <span className="font-medium text-white">Temps de chargement optimal</span> - Serveurs edge globaux pour une expérience rapide
-            </li>
-            <li>
-              <span className="font-medium text-white">Haute disponibilité</span> - Garantie de service pour une application fiable
-            </li>
-            <li>
-              <span className="font-medium text-white">Mise à l'échelle automatique</span> - S'adapte à vos besoins sans intervention
-            </li>
-            <li>
-              <span className="font-medium text-white">Protection des données</span> - Chiffrement et sécurité de niveau entreprise
-            </li>
-          </ol>
+          <div className="grid gap-4 md:grid-cols-3">
+            <a href={getDownloadUrl("filechat-mac-intel.dmg")}>
+              <Button variant="outline" className="w-full gap-2">
+                <Download className="h-4 w-4" />
+                macOS (Intel)
+              </Button>
+            </a>
+            <a href={getDownloadUrl("filechat-mac-arm.dmg")}>
+              <Button variant="outline" className="w-full gap-2">
+                <Download className="h-4 w-4" />
+                macOS (Apple Silicon)
+              </Button>
+            </a>
+            <a href={getDownloadUrl("filechat-linux.tar.gz")}>
+              <Button variant="outline" className="w-full gap-2">
+                <Download className="h-4 w-4" />
+                Linux (x64)
+              </Button>
+            </a>
+          </div>
           
           <div className="mt-5 flex justify-center">
-            <Link to="/auth" className="w-full max-w-xs">
-              <Button variant="default" className="w-full gap-2">
-                <Server className="h-4 w-4" />
-                Accéder à l'application
-              </Button>
+            <Link to="/docs/installation" className="text-blue-400 hover:text-blue-300 text-sm">
+              Instructions d'installation détaillées
             </Link>
           </div>
         </div>
