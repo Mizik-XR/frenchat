@@ -39,12 +39,14 @@ export type SystemCapabilities = {
   isMidEndSystem: boolean;
   isLowEndSystem: boolean;
   recommendedModels: string[];
+  // Ajout des propriétés manquantes
+  hasGpu: boolean;
+  memoryInGB: number;
+  cpuInfo: string;
+  gpuInfo: string;
+  browserInfo: string;
+  recommendedMode: string;
 };
-
-// Extend Navigator interface to include deviceMemory
-interface NavigatorWithMemory extends Navigator {
-  deviceMemory?: number;
-}
 
 export function useSystemCapabilities() {
   const [capabilities, setCapabilities] = useState<SystemCapabilities>({
@@ -63,16 +65,25 @@ export function useSystemCapabilities() {
     isHighEndSystem: false,
     isMidEndSystem: false,
     isLowEndSystem: true,
-    recommendedModels: ['mistral-7b', 'llama-2-7b', 'phi-2']
+    recommendedModels: ['mistral-7b', 'llama-2-7b', 'phi-2'],
+    // Initialisation des propriétés manquantes
+    hasGpu: false,
+    memoryInGB: 0,
+    cpuInfo: 'Non détecté',
+    gpuInfo: 'Non détecté',
+    browserInfo: 'Non détecté',
+    recommendedMode: 'hybrid'
   });
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [llmStatus, setLlmStatus] = useState<ServiceStatus>('checking');
+  // Ajout de la propriété isLoading manquante
+  const [isLoading, setIsLoading] = useState(true);
 
   const analyzeSystem = async () => {
     try {
       setIsAnalyzing(true);
-      // Simuler une analyse système pour le moment
+      setIsLoading(true);
       
       setTimeout(() => {
         try {
@@ -95,26 +106,35 @@ export function useSystemCapabilities() {
             isMidEndSystem: cpuCores >= 4 && cpuCores <= 8,
             isLowEndSystem: cpuCores < 4,
             network: { ...capabilities.network, online: navigator?.onLine || false },
+            // Mise à jour des propriétés manquantes
+            hasGpu: hasWebGPU,
+            memoryInGB: memoryEstimate,
+            cpuInfo: `${cpuCores} cœurs (${cpuCores > 6 ? "Performant" : "Standard"})`,
+            gpuInfo: hasWebGPU ? "GPU compatible WebGPU" : "Aucun GPU détecté",
+            browserInfo: navigator.userAgent,
+            recommendedMode: hasWebGPU && memoryEstimate > 8 ? 'local' : 'hybrid'
           });
           
-          // Mettre à jour le statut LLM en fonction de la connectivité réseau
           setLlmStatus(navigator?.onLine ? 'online' : 'offline');
         } catch (error) {
           console.error("Erreur lors de l'analyse du système:", error);
           setLlmStatus('error');
         } finally {
           setIsAnalyzing(false);
+          setIsLoading(false);
         }
       }, 1000);
     } catch (error) {
       console.error("Erreur lors de l'initialisation de l'analyse:", error);
       setIsAnalyzing(false);
+      setIsLoading(false);
       setLlmStatus('error');
     }
   };
 
   useEffect(() => {
     try {
+      setIsLoading(true);
       analyzeSystem();
       
       const handleOnlineStatusChange = () => {
@@ -137,13 +157,22 @@ export function useSystemCapabilities() {
       }
     } catch (error) {
       console.error("Erreur lors de la configuration des écouteurs d'événements:", error);
+      setIsLoading(false);
     }
+    
+    return () => {};
   }, []);
 
   return {
     capabilities,
     isAnalyzing,
     analyzeSystem,
-    llmStatus
+    llmStatus,
+    isLoading
   };
+}
+
+// Extend Navigator interface to include deviceMemory
+interface NavigatorWithMemory extends Navigator {
+  deviceMemory?: number;
 }

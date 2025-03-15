@@ -31,7 +31,7 @@ export function useChatProcessing() {
         setError(null);
 
         // Vérifier que l'utilisateur est connecté
-        if (!user && !config?.allowAnonymous) {
+        if (!user && !(config?.allowAnonymous === true)) {
           throw new Error("Vous devez être connecté pour envoyer des messages");
         }
 

@@ -61,7 +61,7 @@ export function useIndexingProgress() {
   }, [user]);
 
   // Fonction pour démarrer une nouvelle indexation
-  const startIndexing = useCallback(async (folderId: string, options = {}) => {
+  const startIndexing = useCallback(async (folderId: string, options: Record<string, any> = {}) => {
     if (!user) {
       toast({
         title: "Non connecté",
@@ -73,14 +73,18 @@ export function useIndexingProgress() {
     
     setIsLoading(true);
     try {
+      // Préparer les options pour la fonction Edge
+      const requestBody = { 
+        folderId, 
+        options,
+        // Utiliser les propriétés conditionnellement
+        parent_folder: options.parentFolder || null,
+        depth: options.depth !== undefined ? options.depth : 2
+      };
+      
       // Appel à la fonction Edge d'indexation
       const { data, error } = await supabase.functions.invoke('index-google-drive', {
-        body: { 
-          folderId, 
-          options,
-          parent_folder: options.hasOwnProperty('parentFolder') ? options.parentFolder : null,
-          depth: options.hasOwnProperty('depth') ? options.depth : 2
-        }
+        body: requestBody
       });
       
       if (error) throw error;
