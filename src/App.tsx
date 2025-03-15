@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy } from 'react';
 import { Route, Routes, Navigate, BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
