@@ -22,10 +22,10 @@ export const NavigationButtons = ({
         variant="outline"
         onClick={onPrevious}
       >
-        Previous
+        Précédent
       </Button>
       <Button variant="ghost" onClick={onSkip}>
-        Skip this step
+        Ignorer cette étape
       </Button>
     </div>
   );

@@ -2,22 +2,21 @@
 #!/bin/bash
 
 echo "==================================================="
-echo "    FILECHAT PRÉPARATION AU DÉPLOIEMENT"
+echo "    PRÉPARATION DU DÉPLOIEMENT FILECHAT"
 echo "==================================================="
 echo
-echo "Cette procédure va préparer le projet pour le déploiement:"
+echo "Cette procédure va préparer le projet pour déploiement:"
 echo " 1. Vérification des fichiers de configuration"
 echo " 2. Optimisation du build"
-echo " 3. Tests pré-déploiement"
-echo " 4. Correction des problèmes de MIME types connus"
+echo " 3. Tests de pré-déploiement"
 echo
 echo "==================================================="
 echo
 read -p "Appuyez sur Entrée pour continuer..." -n1 -s
 echo
 
-# Nettoyage des fichiers temporaires
-echo "[ÉTAPE 1/5] Nettoyage des fichiers temporaires..."
+# Nettoyer les fichiers inutiles
+echo "[ÉTAPE 1/4] Nettoyage des fichiers temporaires..."
 if [ -d "dist" ]; then
     rm -rf dist
     echo "[OK] Dossier dist supprimé avec succès."
@@ -26,21 +25,23 @@ else
 fi
 echo
 
-# Configuration pour le déploiement
+# Configuration pour le déploiement sans Rust
+export NO_RUST_INSTALL=1
+export TRANSFORMERS_OFFLINE=1
 export NODE_ENV=production
 
-# Vérification et préparation des fichiers de configuration
-echo "[ÉTAPE 2/5] Vérification des fichiers de configuration..."
-if [ ! -f "vercel.json" ]; then
-    echo "[ERREUR] Le fichier vercel.json est manquant."
+# Vérifier et préparer les fichiers de configuration
+echo "[ÉTAPE 2/4] Vérification des fichiers de configuration..."
+if [ ! -f "netlify.toml" ]; then
+    echo "[ERREUR] Le fichier netlify.toml est manquant."
     echo "         Exécutez le script de génération de configuration."
     echo
     read -p "Appuyez sur Entrée pour quitter..." -n1 -s
     exit 1
 fi
 
-# Optimisation et build
-echo "[ÉTAPE 3/5] Optimisation et build du projet..."
+# Optimisation du build
+echo "[ÉTAPE 3/4] Optimisation et build du projet..."
 export NODE_OPTIONS="--max-old-space-size=4096"
 
 # Installation optimisée pour le déploiement
@@ -49,16 +50,16 @@ npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=fa
 
 npm run build
 if [ $? -ne 0 ]; then
-    echo "[ERREUR] Échec du build du projet."
+    echo "[ERREUR] La construction du projet a échoué."
     echo
     read -p "Appuyez sur Entrée pour quitter..." -n1 -s
     exit 1
 fi
-echo "[OK] Projet compilé avec succès."
+echo "[OK] Projet construit avec succès."
 echo
 
 # Vérification post-build
-echo "[ÉTAPE 4/5] Vérification des fichiers de déploiement..."
+echo "[ÉTAPE 4/4] Vérification des fichiers de déploiement..."
 if [ ! -f "dist/index.html" ]; then
     echo "[ERREUR] Le fichier dist/index.html est manquant."
     echo
@@ -66,7 +67,7 @@ if [ ! -f "dist/index.html" ]; then
     exit 1
 fi
 
-# Vérification et correction des chemins absolus dans index.html
+# Vérification des chemins relatifs dans index.html
 if grep -q "href=\"/assets" "dist/index.html" || grep -q "src=\"/assets" "dist/index.html"; then
     echo "[ATTENTION] Chemins absolus détectés dans index.html, conversion en chemins relatifs..."
     sed -i.bak 's|href="/assets|href="./assets|g' dist/index.html
@@ -75,29 +76,19 @@ if grep -q "href=\"/assets" "dist/index.html" || grep -q "src=\"/assets" "dist/i
     echo "[OK] Chemins convertis avec succès."
 fi
 
-# Correction des problèmes de MIME types
-echo "[ÉTAPE 5/5] Correction des problèmes de MIME types pour Vercel..."
-node scripts/fix-vercel-mime-types.js
-if [ $? -ne 0 ]; then
-    echo "[ATTENTION] Des problèmes ont été rencontrés lors de la correction des MIME types."
-    echo "            Le déploiement peut continuer, mais des erreurs pourraient survenir."
-else
-    echo "[OK] Corrections des MIME types appliquées avec succès."
-fi
-
 echo
 echo "==================================================="
-echo "    PRÉPARATION AU DÉPLOIEMENT TERMINÉE"
+echo "    PRÉPARATION DU DÉPLOIEMENT TERMINÉE"
 echo "==================================================="
 echo
-echo "Votre projet est prêt à être déployé !"
+echo "Votre projet est prêt à être déployé!"
 echo
-echo "Vous pouvez maintenant :"
-echo " 1. Déployer sur Vercel en connectant votre dépôt GitHub"
-echo " 2. Déployer via la CLI Vercel : vercel deploy"
-echo " 3. Utiliser le glisser-déposer du dossier 'dist' sur l'interface Vercel"
+echo "Vous pouvez maintenant:"
+echo " 1. Déployer sur Netlify en connectant votre dépôt GitHub"
+echo " 2. Déployer via la CLI Netlify: netlify deploy"
+echo " 3. Utiliser le drag-and-drop du dossier 'dist' sur l'interface Netlify"
 echo
-echo "N'oubliez pas de configurer les variables d'environnement dans l'interface Vercel."
+echo "Assurez-vous de configurer les variables d'environnement dans l'interface Netlify."
 echo
 read -p "Appuyez sur Entrée pour continuer..." -n1 -s
 exit 0

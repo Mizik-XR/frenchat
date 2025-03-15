@@ -81,20 +81,15 @@ export const setupAuthMocks = ({
   profileQueryReturn = { data: null, error: null },
   configQueryReturn = { data: [], error: null },
 } = {}) => {
-  // Important: utiliser vi.fn() pour créer de vrais mocks sur lesquels on peut appeler mockResolvedValue
-  const getSessionMock = vi.fn().mockResolvedValue(getSessionReturn);
-  const signOutMock = vi.fn().mockResolvedValue(signOutReturn);
+  supabase.auth.getSession.mockResolvedValue(getSessionReturn);
+  supabase.auth.signOut.mockResolvedValue(signOutReturn);
   
-  // Remplacer les fonctions dans supabase.auth
-  supabase.auth.getSession = getSessionMock;
-  supabase.auth.signOut = signOutMock;
-  
-  // Configurer le mock pour supabase.from avec une implémentation appropriée
+  // Mock the from().select() chain for profile query
   const selectMock = vi.fn().mockReturnThis();
   const eqMock = vi.fn().mockReturnThis();
   const singleMock = vi.fn().mockResolvedValue(profileQueryReturn);
   
-  const fromMock = vi.fn().mockImplementation((table) => {
+  supabase.from.mockImplementation((table) => {
     if (table === 'user_profiles') {
       return {
         select: selectMock,
@@ -113,13 +108,9 @@ export const setupAuthMocks = ({
       single: vi.fn().mockResolvedValue({ data: null, error: null })
     };
   });
-  
-  supabase.from = fromMock;
 
   return {
     supabase,
-    getSessionMock,
-    signOutMock,
     selectMock,
     eqMock,
     singleMock

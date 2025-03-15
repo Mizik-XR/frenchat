@@ -2,92 +2,83 @@
 #!/bin/bash
 
 echo "==================================================="
-echo "   RÉPARATION DES PROBLÈMES D'ÉDITION LOVABLE"
+echo "     CORRECTION PROBLÈMES D'ÉDITION LOVABLE"
 echo "==================================================="
-echo ""
+echo
+echo "Cet outil va corriger le problème \"AI edits didn't result in any changes\""
+echo "en vérifiant que le script gptengineer.js est correctement intégré."
+echo
+echo "==================================================="
+echo
 
-# Vérification et correction du fichier index.html
-echo "[ÉTAPE 1/3] Vérification de l'intégration du script Lovable dans index.html..."
-
+# Vérifier et corriger index.html
+echo "[ÉTAPE 1/3] Vérification du fichier index.html..."
 if [ -f "index.html" ]; then
-  # Vérifier si le script est présent
-  if grep -q "gptengineer.js" "index.html"; then
-    echo "[OK] Script Lovable trouvé dans index.html."
-    
-    # Vérifier si le script est placé avant le script principal
-    if grep -A5 "gptengineer.js" "index.html" | grep -q "src=\"/src/main.tsx\""; then
-      echo "[OK] Script Lovable correctement placé avant le script principal."
+    echo "[INFO] Vérification de la présence du script gptengineer.js..."
+    if ! grep -q "gptengineer.js" "index.html"; then
+        echo "[ATTENTION] Le script Lovable manque dans index.html, correction..."
+        
+        # Sauvegarde du fichier original
+        cp index.html index.html.backup
+        
+        # Ajouter le script manquant avant le script principal
+        sed -i '/<script type="module" src="\/src\/main.tsx"><\/script>/i \    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->\n    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>' index.html
+        
+        echo "[OK] Script gptengineer.js ajouté dans index.html."
     else
-      echo "[ATTENTION] Script Lovable potentiellement mal positionné. Correction..."
-      # Sauvegarde du fichier
-      cp index.html index.html.bak
-      
-      # Tentative de correction en déplaçant le script
-      sed -i 's|<script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>|<!-- -->|g' index.html
-      sed -i 's|<head>|<head>\n    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>|g' index.html
-      
-      echo "[OK] Script Lovable repositionné dans index.html."
+        echo "[OK] Le script gptengineer.js est déjà présent dans index.html."
     fi
-  else
-    echo "[ERREUR] Script Lovable non trouvé dans index.html. Ajout..."
-    
-    # Sauvegarde du fichier
-    cp index.html index.html.bak
-    
-    # Ajout du script au début du head
-    sed -i 's|<head>|<head>\n    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>|g' index.html
-    
-    echo "[OK] Script Lovable ajouté à index.html."
-  fi
 else
-  echo "[ERREUR] Fichier index.html non trouvé à la racine du projet."
+    echo "[ERREUR] Le fichier index.html est manquant dans le répertoire racine."
+    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+    exit 1
 fi
+echo
 
-# Vérification et mise à jour des dépendances
-echo ""
-echo "[ÉTAPE 2/3] Vérification et mise à jour des dépendances..."
-
-# Vérifier si npm est installé
-if ! command -v npm &> /dev/null; then
-  echo "[ERREUR] npm n'est pas installé."
-  exit 1
+# Vérification dans le répertoire dist
+echo "[ÉTAPE 2/3] Vérification du fichier dist/index.html..."
+if [ -f "dist/index.html" ]; then
+    echo "[INFO] Vérification de la présence du script gptengineer.js dans le build..."
+    if ! grep -q "gptengineer.js" "dist/index.html"; then
+        echo "[ATTENTION] Le script Lovable manque dans dist/index.html, correction..."
+        
+        # Copier le fichier index.html corrigé dans dist
+        cp -f index.html dist/index.html
+        echo "[OK] Script gptengineer.js ajouté dans dist/index.html."
+    else
+        echo "[OK] Le script gptengineer.js est déjà présent dans dist/index.html."
+    fi
+else
+    echo "[INFO] Le dossier dist n'existe pas ou n'a pas encore été généré."
 fi
+echo
 
-# Installation des dépendances nécessaires
-npm install --no-save --silent
-
-echo "[OK] Dépendances mises à jour."
-
-# Nettoyage du cache
-echo ""
-echo "[ÉTAPE 3/3] Nettoyage du cache et reconstruction..."
-
-# Supprimer le dossier dist
-if [ -d "dist" ]; then
-  rm -rf dist
-  echo "[OK] Dossier dist supprimé."
-fi
-
-# Supprimer le cache de npm
-npm cache clean --force
-echo "[OK] Cache npm nettoyé."
-
-# Reconstruire l'application
+# Reconstruction de l'application
+echo "[ÉTAPE 3/3] Reconstruction de l'application..."
 npm run build
-if [ $? -eq 0 ]; then
-  echo "[OK] Application reconstruite avec succès."
+if [ $? -ne 0 ]; then
+    echo "[ERREUR] Reconstruction de l'application échouée."
+    echo "         Veuillez exécuter fix-blank-page.sh pour une réparation complète."
+    read -p "Appuyez sur Entrée pour quitter..." -n1 -s
+    exit 1
 else
-  echo "[ERREUR] Échec de la reconstruction de l'application."
-  exit 1
+    echo "[OK] Application reconstruite avec succès."
 fi
+echo
 
-echo ""
 echo "==================================================="
-echo "   PROBLÈMES D'ÉDITION LOVABLE CORRIGÉS"
+echo "     CORRECTION TERMINÉE AVEC SUCCÈS"
 echo "==================================================="
-echo ""
-echo "Les problèmes d'édition Lovable ont été corrigés."
-echo "Veuillez rafraîchir votre navigateur ou redémarrer votre serveur de développement."
-echo ""
-
+echo
+echo "La correction du problème d'édition est terminée."
+echo
+echo "Si vous êtes en train d'utiliser l'application:"
+echo "1. Fermez-la et relancez-la avec start-app-simplified.sh"
+echo "2. Effacez le cache de votre navigateur ou utilisez le mode incognito"
+echo
+echo "Si le problème persiste:"
+echo "1. Essayez d'utiliser Chrome ou Edge au lieu de Firefox"
+echo "2. Vérifiez que JavaScript est activé dans votre navigateur"
+echo
+read -p "Appuyez sur Entrée pour quitter..." -n1 -s
 exit 0

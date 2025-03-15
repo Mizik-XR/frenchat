@@ -2,15 +2,14 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <script src="https://cdn.gpteng.co/gptengineer.js"></script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>FileChat - Your Document Intelligence Assistant</title>
-    <meta name="description" content="FileChat automatically indexes all your documents from Google Drive and Microsoft Teams, allowing you to interact with your entire document knowledge base." />
-    <!-- Base style for initial loading screen -->
+    <title>Frenchat - Votre assistant d'intelligence documentaire</title>
+    <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
+    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
+    <!-- Style de base pour l'écran de chargement initial -->
     <style>
       #loading-screen {
         display: flex;
@@ -72,107 +71,54 @@
         margin-top: 1rem;
       }
     </style>
-    <!-- Error handling and recovery script -->
+    <!-- Script de gestion d'erreur et de récupération -->
     <script>
-      // Function to redirect to homepage with forced cloud mode parameters
+      // Fonction pour rediriger vers la page d'accueil avec des paramètres forcés de mode cloud
       function forceHomepageInCloudMode() {
         window.location.href = '/?forceCloud=true&mode=cloud&client=true';
       }
       
-      // Function to enable recovery UI
-      function showRecoveryUI(errorMessage) {
-        var loadingEl = document.getElementById('loading-screen');
-        var retryBtn = document.querySelector('.retry-btn');
-        var errorMsgEl = document.querySelector('.error-message');
-        
-        if (loadingEl && errorMsgEl && retryBtn) {
-          errorMsgEl.style.display = 'block';
-          errorMsgEl.textContent = errorMessage || "Error during initialization. Please try again.";
-          retryBtn.style.display = 'inline-block';
-        }
-      }
-      
-      // Error detection and recovery - specifically for React initialization errors
+      // Détection et récupération en cas d'erreur de chargement
       window.addEventListener('error', function(event) {
-        console.log("Error detected:", event.message);
-        
-        if (event.message && (
-            event.message.includes('useLayoutEffect') || 
-            event.message.includes('MIME type') || 
-            event.message.includes('createContext') ||
-            event.message.includes('Cannot read properties of undefined') ||
-            event.message.includes('React') ||
-            event.message.includes('__JS_TOKEN__')
-        )) {
-          console.warn('Critical error detected, attempting recovery...');
+        if (event.message && event.message.includes('useLayoutEffect')) {
+          console.warn('Erreur useLayoutEffect détectée, tentative de récupération...');
           
-          // Show recovery button immediately for React initialization errors
-          showRecoveryUI("React initialization error detected. Please try again or use cloud mode.");
-          
-          // Auto-recovery for severe errors - try cloud mode after 1.5 seconds
+          // Afficher le bouton de récupération après 5 secondes sans chargement
           setTimeout(function() {
-            console.log("Attempting automatic recovery with cloud mode...");
-            forceHomepageInCloudMode();
-          }, 1500);
+            var loadingEl = document.getElementById('loading-screen');
+            var retryBtn = document.querySelector('.retry-btn');
+            var errorMsg = document.querySelector('.error-message');
+            
+            if (loadingEl && errorMsg && retryBtn) {
+              errorMsg.style.display = 'block';
+              retryBtn.style.display = 'inline-block';
+            }
+          }, 5000);
         }
       }, true);
-      
-      // Create .env.local with cloud mode if needed
-      if (window.location.search.includes('createEnv=true')) {
-        console.log("Attempting to create .env.local file for cloud mode");
-        fetch('/api/create-env-file', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            content: 'VITE_CLOUD_MODE=true\nVITE_ALLOW_LOCAL_AI=false'
-          })
-        }).catch(function(err) {
-          console.warn("Failed to create .env.local file", err);
-        });
-      }
-
-      // Create Recovery .env.local file locally
-      // This will only work in development mode but provides a fallback
-      try {
-        if (window.location.search.includes('forceCloud=true')) {
-          localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-          console.log("Force cloud mode activated via localStorage");
-        }
-      } catch (e) {
-        console.warn("Failed to set localStorage", e);
-      }
-      
-      // Définir une variable globale pour surveiller si React est correctement initialisé
-      window.__REACT_INIT_STATUS__ = {
-        initialized: false,
-        attempts: 0,
-        errors: []
-      };
     </script>
   </head>
   <body>
-    <!-- Fallback message if JavaScript is disabled -->
+    <!-- Message de secours si le JavaScript est désactivé -->
     <noscript>
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center;">
-        <h1 style="color: #4f46e5; margin-bottom: 20px;">JavaScript is required</h1>
-        <p>This application requires JavaScript to be enabled.</p>
-        <p>Please enable it in your browser settings.</p>
+        <h1 style="color: #4f46e5; margin-bottom: 20px;">JavaScript est requis</h1>
+        <p>Cette application nécessite que JavaScript soit activé pour fonctionner.</p>
+        <p>Veuillez l'activer dans les paramètres de votre navigateur.</p>
       </div>
     </noscript>
     
-    <!-- Loading screen visible immediately -->
+    <!-- Écran de chargement visible immédiatement -->
     <div id="root">
       <div id="loading-screen">
         <div class="loading-container">
-          <h1 class="loading-title">FileChat</h1>
-          <p>Loading your document intelligence assistant...</p>
+          <h1 class="loading-title">Frenchat</h1>
+          <p>Chargement de votre assistant d'intelligence documentaire...</p>
           <div class="loading-bar"><div class="loading-bar-progress"></div></div>
-          <p style="font-size: 0.8rem; color: #6b7280;">If loading fails, try refreshing the page.</p>
-          <div class="error-message">Loading is taking longer than expected.</div>
-          <button class="retry-btn" onclick="window.location.reload()">Refresh page</button>
-          <button class="retry-btn" onclick="forceHomepageInCloudMode()" style="margin-left: 8px; background-color: #6366f1;">Cloud mode</button>
+          <p style="font-size: 0.8rem; color: #6b7280;">Si le chargement échoue, essayez de rafraîchir la page.</p>
+          <div class="error-message">Le chargement semble prendre plus de temps que prévu.</div>
+          <button class="retry-btn" onclick="window.location.reload()">Rafraîchir la page</button>
+          <button class="retry-btn" onclick="forceHomepageInCloudMode()" style="margin-left: 8px; background-color: #6366f1;">Mode cloud</button>
         </div>
       </div>
     </div>

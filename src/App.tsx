@@ -9,12 +9,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { ToastProvider } from '@/hooks/toast/toast-context';
-import * as RadixToast from '@radix-ui/react-toast';
 
-// Lazy-loaded components
+// Importation différée des composants pour améliorer les performances de chargement initial
 const Home = lazy(() => import('./pages/Home'));
-const Auth = lazy(() => import('./pages/Auth').then(module => ({ default: module.Auth })));
+const Auth = lazy(() => import('./pages/Auth'));
 const Config = lazy(() => import('./pages/Config'));
 const AdvancedConfig = lazy(() => import('./pages/AdvancedConfig'));
 const Chat = lazy(() => import('./pages/Chat'));
@@ -27,13 +25,13 @@ const OllamaSetup = lazy(() => import('./pages/OllamaSetup'));
 const Index = lazy(() => import('./pages/Index'));
 const Landing = lazy(() => import('./pages/Landing'));
 
-// Configurer le client de requête
+// Créer une nouvelle instance QueryClient avec configuration de retry
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       retryDelay: 1000,
-      staleTime: 5 * 60 * 1000,
+      staleTime: 5 * 60 * 1000, // 5 minutes
     },
   },
 });
@@ -42,7 +40,12 @@ const AppRouter = () => {
   return (
     <Suspense fallback={<LoadingScreen message="Chargement de la page..." />}>
       <Routes>
+        {/* Route racine - affiche Index qui décidera de rediriger ou d'afficher Landing */}
         <Route path="/" element={<Index />} />
+        
+        {/* Landing est maintenant rendu via Index quand nécessaire, pas besoin d'une route séparée */}
+        
+        {/* Routes importantes */}
         <Route path="/home" element={<Home />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/config" element={<Config />} />
@@ -55,12 +58,20 @@ const AppRouter = () => {
         <Route path="/database" element={<DatabaseView />} />
         <Route path="/debug" element={<Debug />} />
         <Route path="/ollama-setup" element={<OllamaSetup />} />
+        
+        {/* Routes pour la navigation marketing (redirigent vers les routes appropriées) */}
         <Route path="/features" element={<Navigate to="/landing?section=features" replace />} />
         <Route path="/how-it-works" element={<Navigate to="/landing?section=how-it-works" replace />} />
         <Route path="/examples" element={<Navigate to="/landing?section=examples" replace />} />
         <Route path="/pricing" element={<Navigate to="/landing?section=pricing" replace />} />
+        
+        {/* Nouvelle route explicite pour Landing quand accédée directement */}
         <Route path="/landing" element={<Landing />} />
+        
+        {/* Nouvelle route pour /ai qui redirige vers la page de configuration IA */}
         <Route path="/ai" element={<Navigate to="/config" replace />} />
+        
+        {/* Route de secours pour les chemins inconnus */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
@@ -68,43 +79,31 @@ const AppRouter = () => {
 };
 
 function App() {
+  // Vérification que nous sommes dans un navigateur avant le rendu complet
   const isClient = typeof window !== 'undefined';
-
+  
+  // Si nous ne sommes pas dans un navigateur, renvoyer un contenu minimal
   if (!isClient) {
     return <div>Chargement de l'application...</div>;
   }
 
-  // Enregistrer une détection d'erreur globale
-  window.addEventListener('error', (event) => {
-    console.error('Global error detected:', event.message);
-    if (event.message.includes('vendor-')) {
-      console.warn('Vendor script error detected. This might be related to a known issue with module initialization order.');
-    }
-  });
-
   return (
     <ErrorBoundary>
-      {/* Utiliser RadixToast.Provider pour gérer le viewport et le swipe */}
-      <RadixToast.Provider swipeDirection="right">
-        <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
-          <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
-              <AuthProvider>
-                <SettingsProvider>
-                  {/* Notre ToastProvider pour la gestion d'état */}
-                  <ToastProvider>
-                    <ReactErrorMonitor />
-                    <AppRouter />
-                    <Toaster />
-                    {/* Viewport pour les toasts */}
-                    <RadixToast.Viewport className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]" />
-                  </ToastProvider>
-                </SettingsProvider>
-              </AuthProvider>
-            </BrowserRouter>
-          </QueryClientProvider>
-        </ThemeProvider>
-      </RadixToast.Provider>
+      {/* L'ordre des providers est crucial pour le bon fonctionnement */}
+      <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
+        <QueryClientProvider client={queryClient}>
+          {/* Ajout du BrowserRouter autour de AuthProvider et des autres composants */}
+          <BrowserRouter>
+            <AuthProvider>
+              <SettingsProvider>
+                <ReactErrorMonitor />
+                <AppRouter />
+                <Toaster />
+              </SettingsProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

@@ -63,31 +63,6 @@ Ce document guide l'équipe dans la migration de l'application FileChat de Netli
 - L'intégration avec Supabase
 - Les configurations spécifiques à Vite
 
-## Optimisations avancées
-
-### Activation de Fluid Compute (abonnement Pro/Enterprise)
-
-Si vous disposez d'un abonnement Vercel Pro ou Enterprise, vous pouvez activer Fluid Compute pour améliorer les performances:
-
-1. Accédez à votre projet dans l'interface Vercel
-2. Allez dans "Settings" > "Functions"
-3. Activez l'option "Fluid Compute"
-4. Sauvegardez les modifications
-
-### Configuration des limites de mémoire et de durée
-
-Ces paramètres sont déjà configurés dans votre fichier `vercel.json`:
-```json
-{
-  "functions": {
-    "api/**/*": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  }
-}
-```
-
 ## Résolution des problèmes courants
 
 - **Problème**: Les API retournent 404  

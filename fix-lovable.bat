@@ -6,120 +6,77 @@ setlocal enabledelayedexpansion
 title Filechat - Fix Lovable Integration
 
 echo ===================================================
-echo     FIXING LOVABLE INTEGRATION
+echo     RÉPARATION INTÉGRATION LOVABLE
 echo ===================================================
 echo.
-echo This tool will fix issues with Lovable editing.
+echo Cet outil va résoudre les problèmes d'édition Lovable.
 echo.
-echo [STEP 1/4] Checking index.html file...
+echo [ÉTAPE 1/3] Vérification du fichier index.html...
 if exist "index.html" (
-    echo [INFO] Checking for gptengineer.js script...
+    echo [INFO] Vérification de la présence du script gptengineer.js...
     findstr "gptengineer.js" "index.html" >nul
     if !errorlevel! NEQ 0 (
-        echo [WARNING] Lovable script is missing in index.html, fixing...
+        echo [ATTENTION] Le script Lovable manque dans index.html, correction...
         
-        REM Backup original file
+        REM Sauvegarde du fichier original
         copy index.html index.html.backup >nul
         
-        REM Modify index.html to add missing script
+        REM Modifier le fichier index.html pour ajouter le script manquant
         (for /f "delims=" %%i in (index.html) do (
             echo %%i
-            echo %%i | findstr "<head>" >nul
+            echo %%i | findstr "<script " >nul
             if !errorlevel! EQU 0 (
-                echo     ^<script src="https://cdn.gpteng.co/gptengineer.js"^>^</script^>
+                echo     ^<script src="https://cdn.gpteng.co/gptengineer.js" type="module"^>^</script^>
             )
         )) > index.html.temp
         
         move /y index.html.temp index.html >nul
-        echo [OK] gptengineer.js script added to index.html.
+        echo [OK] Script gptengineer.js ajouté dans index.html.
     ) else (
-        echo [INFO] Checking if type="module" needs to be removed...
-        findstr "<script src=\"https://cdn.gpteng.co/gptengineer.js\" type=\"module\">" "index.html" >nul
-        if !errorlevel! EQU 0 (
-            echo [WARNING] Found type="module" attribute, removing it...
-            
-            REM Backup original file
-            copy index.html index.html.backup >nul
-            
-            REM Remove type="module" attribute
-            powershell -Command "(Get-Content index.html) -replace '<script src=\"https://cdn.gpteng.co/gptengineer.js\" type=\"module\">', '<script src=\"https://cdn.gpteng.co/gptengineer.js\">' | Set-Content index.html"
-            
-            echo [OK] type="module" attribute removed from gptengineer.js script.
-        ) else (
-            echo [OK] gptengineer.js script is correctly configured in index.html.
-        )
+        echo [OK] Le script gptengineer.js est déjà présent dans index.html.
     )
 ) else (
-    echo [ERROR] index.html file is missing in the root directory.
+    echo [ERREUR] Le fichier index.html est manquant dans le répertoire racine.
     pause
     exit /b 1
 )
 echo.
 
-echo [STEP 2/4] Clearing browser cache instructions...
-echo [INFO] Please perform these steps in your browser:
-echo   1. Open browser developer tools (F12 or right-click ^> Inspect)
-echo   2. Go to Application/Storage tab
-echo   3. Check 'Disable cache' option 
-echo   4. Clear site data or use incognito mode for testing
-echo.
-
-echo [STEP 3/4] Rebuilding application...
-REM Vérifier si npx est disponible
-where npx >nul 2>nul
-if !errorlevel! EQU 0 (
-    if exist "node_modules\.bin\vite.cmd" (
-        echo [INFO] Using local vite installation for build...
-        call npx vite build
-    ) else (
-        echo [INFO] Using npm run build...
-        call npm run build
-    )
+echo [ÉTAPE 2/3] Reconstruction de l'application...
+call npm run build
+if errorlevel 1 (
+    echo [ERREUR] Reconstruction de l'application échouée.
+    pause
+    exit /b 1
 ) else (
-    echo [INFO] Using npm run build directly...
-    call npm run build
-)
-
-if !errorlevel! NEQ 0 (
-    echo [ERROR] Application rebuild failed.
-    echo [ALTERNATIVE] Trying to install dependencies and rebuild...
-    call npm install --no-fund --loglevel=error
-    call npm run build
-    if !errorlevel! NEQ 0 (
-        echo [ERROR] Rebuild attempt failed after installing dependencies.
-        pause
-        exit /b 1
-    )
-) else (
-    echo [OK] Application rebuilt successfully.
+    echo [OK] Application reconstruite avec succès.
 )
 echo.
 
-echo [STEP 4/4] Final verification...
+echo [ÉTAPE 3/3] Vérification finale...
 if exist "dist\index.html" (
-    echo [INFO] Checking dist\index.html...
+    echo [INFO] Vérification de dist\index.html...
     findstr "gptengineer.js" "dist\index.html" >nul
     if !errorlevel! NEQ 0 (
-        echo [WARNING] gptengineer.js script is missing from dist\index.html.
-        echo            Applying manual fix...
+        echo [ATTENTION] Le script gptengineer.js est absent de dist\index.html.
+        echo             Application d'une correction manuelle...
         copy /y index.html dist\index.html >nul
-        echo [OK] Fix applied.
+        echo [OK] Correction appliquée.
     ) else (
-        echo [OK] dist\index.html contains the required script.
+        echo [OK] Le fichier dist\index.html contient le script requis.
     )
 ) else (
-    echo [INFO] dist folder doesn't exist yet.
+    echo [INFO] Le dossier dist n'existe pas encore.
 )
 echo.
 
 echo ===================================================
-echo     FIX COMPLETED
+echo     RÉPARATION TERMINÉE
 echo ===================================================
 echo.
-echo To apply changes:
-echo 1. Restart the application
-echo 2. Clear your browser cache or use incognito mode
-echo 3. Try a different browser (Chrome or Edge recommended)
+echo Pour appliquer les changements:
+echo 1. Redémarrez l'application
+echo 2. Videz le cache de votre navigateur ou utilisez le mode incognito
 echo.
 pause
 exit /b 0

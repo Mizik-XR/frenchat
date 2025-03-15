@@ -1,7 +1,7 @@
 
 # Déploiement sur Vercel
 
-Ce document explique comment déployer l'application FrenChat sur la plateforme Vercel.
+Ce document explique comment déployer l'application FileChat sur la plateforme Vercel.
 
 ## Prérequis
 
@@ -54,35 +54,6 @@ VITE_CLOUD_MODE=true
 VITE_ALLOW_LOCAL_AI=false
 VITE_SKIP_PYTHON_INSTALLATION=true
 ```
-
-### Optimisation des performances
-
-#### Configuration du CPU et de la mémoire
-
-Dans l'interface Vercel, sous "Settings" > "Functions":
-
-1. **Function Memory et Duration**: Ces paramètres sont configurés dans votre fichier `vercel.json`:
-   ```json
-   {
-     "functions": {
-       "api/**/*": {
-         "memory": 1024,
-         "maxDuration": 10
-       }
-     }
-   }
-   ```
-
-2. **Fluid Compute (fonctionnalité premium)**: 
-   - Cette option n'est disponible que pour les comptes Pro ou Enterprise
-   - Pour l'activer:
-     1. Souscrivez à un abonnement Pro ou Enterprise
-     2. Accédez à "Settings" > "Functions" dans votre projet
-     3. Cochez la case "Fluid Compute"
-     4. Sauvegardez les modifications
-   - L'application fonctionne parfaitement sans cette option
-
-3. **Function Regions**: Sélectionnez les régions proches de vos utilisateurs pour de meilleures performances
 
 ### Configuration optionnelle
 

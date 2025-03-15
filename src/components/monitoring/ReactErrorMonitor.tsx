@@ -4,16 +4,16 @@ import { toast } from '@/hooks/use-toast';
 import { APP_STATE } from '@/integrations/supabase/client';
 
 /**
- * Component that monitors and captures unhandled React errors
- * and displays them to the user in a non-intrusive way
+ * Composant qui surveille et capture les erreurs React non gérées
+ * et les affiche de manière non intrusive à l'utilisateur
  */
 export const ReactErrorMonitor = () => {
   useEffect(() => {
-    // Function to handle uncaught errors
+    // Fonction de gestion des erreurs non capturées
     const handleUncaughtError = (event: ErrorEvent) => {
-      console.error('Unhandled error:', event.error);
+      console.error('Erreur non gérée:', event.error);
       
-      // Avoid notifying for network errors that are already handled
+      // Éviter de notifier pour les erreurs de réseau qui sont déjà gérées
       if (event.message && (
         event.message.includes('loading chunk') || 
         event.message.includes('network') ||
@@ -23,45 +23,32 @@ export const ReactErrorMonitor = () => {
         return;
       }
       
-      // Detect React-related issues
+      // Détection des problèmes liés à React
       const isReactError = event.message && (
         event.message.includes('React') ||
         event.message.includes('useLayoutEffect') ||
         event.message.includes('unstable_scheduleCallback') ||
-        event.message.includes('createElement') ||
-        event.message.includes('createContext') ||
-        event.message.includes('__JS_TOKEN__')
+        event.message.includes('createElement')
       );
       
       if (isReactError) {
-        console.warn('Potential React error detected, switching to fallback mode...');
-        try {
-          APP_STATE.isOfflineMode = true;
-        } catch (e) {
-          console.warn('Failed to set offline mode, redirecting to cloud mode...');
-          setTimeout(() => {
-            window.location.href = '/?forceCloud=true&mode=cloud&client=true';
-          }, 1000);
-        }
+        console.warn('Erreur React potentielle détectée, mise en mode fallback...');
+        APP_STATE.isOfflineMode = true;
       }
       
-      // Notify the user
-      try {
-        toast({
-          title: "Problem detected",
-          description: "An error occurred. The application is attempting to recover automatically.",
-          variant: "destructive"
-        });
-      } catch (e) {
-        console.error('Failed to show toast notification');
-      }
+      // Notification à l'utilisateur
+      toast({
+        title: "Problème détecté",
+        description: "Une erreur s'est produite. L'application tente de récupérer automatiquement.",
+        variant: "destructive"
+      });
     };
 
-    // Function to handle unhandled promise rejections
+    // Fonction pour gérer les rejets de promesses non capturés
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('Unhandled promise rejection:', event.reason);
+      console.error('Promesse rejetée non gérée:', event.reason);
       
-      // Avoid notifying for certain types of errors
+      // Éviter de notifier pour certains types d'erreurs
       if (event.reason && (
         event.reason.message?.includes('aborted') ||
         event.reason.message?.includes('canceled')
@@ -69,7 +56,7 @@ export const ReactErrorMonitor = () => {
         return;
       }
       
-      // Detect API connection issues
+      // Détecter les problèmes de connexion à l'API
       const isConnectionError = event.reason && (
         event.reason.message?.includes('fetch') ||
         event.reason.message?.includes('network') ||
@@ -78,39 +65,31 @@ export const ReactErrorMonitor = () => {
       );
       
       if (isConnectionError) {
-        console.warn('Connection issue detected, attempting to activate offline mode...');
-        try {
-          APP_STATE.isOfflineMode = true;
-        } catch (e) {
-          console.warn('Failed to set offline mode');
-        }
+        console.warn('Problème de connexion détecté, activation du mode hors ligne...');
+        APP_STATE.isOfflineMode = true;
       }
       
-      // Notify the user
-      try {
-        toast({
-          title: "Operation failed",
-          description: isConnectionError 
-            ? "Connection issue detected. Offline mode activated." 
-            : "A request failed. Please try again.",
-          variant: "destructive"
-        });
-      } catch (e) {
-        console.error('Failed to show toast notification');
-      }
+      // Notification à l'utilisateur
+      toast({
+        title: "Opération échouée",
+        description: isConnectionError 
+          ? "Problème de connexion détecté. Mode hors ligne activé." 
+          : "Une requête a échoué. Veuillez réessayer.",
+        variant: "destructive"
+      });
     };
 
-    // Register event handlers
+    // Enregistrement des gestionnaires d'événements
     window.addEventListener('error', handleUncaughtError);
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
-    // Cleanup function to remove event handlers
+    // Fonction de nettoyage pour supprimer les gestionnaires d'événements
     return () => {
       window.removeEventListener('error', handleUncaughtError);
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);
 
-  // This component doesn't render anything visually
+  // Ce composant ne rend rien visuellement
   return null;
 };

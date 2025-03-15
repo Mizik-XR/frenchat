@@ -66,7 +66,7 @@ export function MainLayout() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() !== "" && currentConversationId) {
-      sendMessage(input);
+      sendMessage(input, currentConversationId, replyToMessage?.id);
       setInput("");
       setReplyToMessage(null);
     }
@@ -90,18 +90,6 @@ export function MainLayout() {
     );
   }
 
-  // Convert ChatMessage[] to Message[] for compatibility
-  const convertedMessages: Message[] = messages ? messages.map(m => ({
-    id: m.id,
-    role: m.role === 'system' ? 'assistant' : m.role,
-    content: m.content,
-    type: m.message_type || 'text',
-    conversationId: m.conversation_id,
-    timestamp: new Date(m.created_at),
-    metadata: m.metadata ? m.metadata as any : undefined,
-    replyTo: m.quoted_message_id
-  })) : [];
-
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar 
@@ -119,7 +107,7 @@ export function MainLayout() {
         }}
       />
       <ChatContainer 
-        messages={convertedMessages}
+        messages={messages || []}
         isLoading={messagesLoading}
         llmStatus="configured"
         webUIConfig={defaultWebUIConfig}

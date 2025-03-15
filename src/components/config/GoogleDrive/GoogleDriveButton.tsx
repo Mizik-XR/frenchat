@@ -1,19 +1,17 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
+import { useGoogleDriveStatus, getRedirectUrl } from "@/hooks/useGoogleDriveStatus";
 import { Check, Loader2, LogIn } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useGoogleDrive } from "./useGoogleDrive";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getRedirectUrl } from "@/utils/environment/urlUtils";
 
 export const GoogleDriveButton = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { isConnected, isChecking, reconnectGoogleDrive } = useGoogleDriveStatus();
   const { isConnecting, initiateGoogleAuth } = useGoogleDrive(user, async () => {
     toast({

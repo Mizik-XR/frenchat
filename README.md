@@ -1,35 +1,35 @@
 
-# Filechat - AI Conversational Assistant for Documents
+# Frenchat - Assistant IA Conversationnel pour Documents
 
-Filechat is an application that allows you to query your documents with artificial intelligence to get precise answers.
+Frenchat est une application qui vous permet d'interroger vos documents avec l'intelligence artificielle pour obtenir des réponses précises.
 
-## Quick Start Installation
+## Installation et Démarrage Rapide
 
 ### Windows
-1. Double-click on `setup.bat` for a complete automatic installation
-2. After installation, use the "Filechat" shortcut on your desktop to start the application
+1. Double-cliquez sur `setup.bat` pour une installation automatique complète
+2. Après l'installation, utilisez le raccourci "Frenchat" sur votre bureau pour démarrer l'application
 
 ### macOS / Linux
-1. Open a terminal in the application folder
-2. Run the following command:
+1. Ouvrez un terminal dans le dossier de l'application
+2. Exécutez la commande suivante:
    ```
    chmod +x start-ai-service.sh && ./start-ai-service.sh
    ```
 
-## Features
+## Fonctionnalités
 
-- **AI Chat** - Ask questions and get answers based on your documents
-- **Google Drive Integration** - Connect to Google Drive to analyze your documents
-- **Microsoft Teams Integration** - Access files shared in Teams (coming soon)
-- **Structured Document Generation** - Create intelligent reports and summaries
-- **Local AI** - Works locally on your computer, without sending your data externally
+- **Chat IA** - Posez des questions et obtenez des réponses basées sur vos documents
+- **Intégration Google Drive** - Connectez-vous à Google Drive pour analyser vos documents
+- **Intégration Microsoft Teams** - Accédez aux fichiers partagés dans Teams (bientôt disponible)
+- **Génération de documents structurés** - Créez des rapports et résumés intelligents
+- **IA locale** - Fonctionne en local sur votre ordinateur, sans envoyer vos données à l'extérieur
 
-## System Requirements
+## Configuration Requise
 
-- Windows 10/11 or macOS 10.15+ or Linux
-- 8 GB RAM minimum (16 GB recommended)
-- Internet connection for initial installation and access to cloud services
+- Windows 10/11 ou macOS 10.15+ ou Linux
+- 8 Go de RAM minimum (16 Go recommandés)
+- Connexion internet pour l'installation initiale et l'accès aux services cloud
 
 ## Support
 
-For any questions or assistance, please contact technical support.
+Pour toute question ou assistance, veuillez contacter le support technique.

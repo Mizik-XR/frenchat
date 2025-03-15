@@ -1,85 +1,41 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowUpDown, MessagesSquare, DollarSign } from 'lucide-react';
-import { formatNumber } from './utils';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { ModelUsage, HistoricalUsage } from "./types";
+import { formatNumber, getTotalTokens, getTotalCost, getMonthlyEstimate } from "./utils";
 
-export interface UsageSummaryCardsProps {
-  totalTokensInput: number;
-  totalTokensOutput: number;
-  estimatedCost: number;
-  isLoading?: boolean;
+interface UsageSummaryCardsProps {
+  modelUsage: ModelUsage[];
+  historicalUsage: HistoricalUsage[];
 }
 
-export const UsageSummaryCards = ({ 
-  totalTokensInput, 
-  totalTokensOutput, 
-  estimatedCost,
-  isLoading = false 
-}: UsageSummaryCardsProps) => {
-  const totalTokens = totalTokensInput + totalTokensOutput;
-  
-  if (isLoading) {
-    return (
-      <div className="grid gap-4 md:grid-cols-3">
-        {[1, 2, 3].map(i => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Chargement...</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-6 w-24 bg-muted rounded"></div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
+export const UsageSummaryCards: React.FC<UsageSummaryCardsProps> = ({ modelUsage, historicalUsage }) => {
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-3 mb-6">
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-            Tokens Totaux
-          </CardTitle>
+        <CardHeader className="py-3">
+          <CardTitle className="text-sm font-medium">Total Tokens</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatNumber(totalTokens)}</div>
-          <div className="text-xs text-muted-foreground">
-            Entrée: {formatNumber(totalTokensInput)} / Sortie: {formatNumber(totalTokensOutput)}
-          </div>
+          <div className="text-2xl font-bold">{formatNumber(getTotalTokens(modelUsage))}</div>
         </CardContent>
       </Card>
       
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <MessagesSquare className="h-4 w-4 text-muted-foreground" />
-            Conversations
-          </CardTitle>
+        <CardHeader className="py-3">
+          <CardTitle className="text-sm font-medium">Coût Total ($)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">-</div>
-          <div className="text-xs text-muted-foreground">
-            Cette information n'est pas disponible
-          </div>
+          <div className="text-2xl font-bold">${getTotalCost(modelUsage)}</div>
         </CardContent>
       </Card>
       
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-            Coût Estimé
-          </CardTitle>
+        <CardHeader className="py-3">
+          <CardTitle className="text-sm font-medium">Estimation Mensuelle</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{estimatedCost.toFixed(2)} $</div>
-          <div className="text-xs text-muted-foreground">
-            Basé sur les tarifs standard des fournisseurs
-          </div>
+          <div className="text-2xl font-bold">${getMonthlyEstimate(historicalUsage)}</div>
         </CardContent>
       </Card>
     </div>

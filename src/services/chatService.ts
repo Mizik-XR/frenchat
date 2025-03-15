@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { MessageMetadata, MessageType } from '@/types/chat';
-import { useAuth } from '@/components/AuthProvider';
 
 export const chatService = {
   /**
@@ -16,31 +15,19 @@ export const chatService = {
     quotedMessageId?: string
   ) {
     try {
-      const user = (await supabase.auth.getUser()).data.user;
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
-      const messageData = {
-        content,
-        role: 'user',
-        conversation_id: conversationId,
-        message_type: messageType,
-        user_id: user.id,
-        metadata: metadata || null
-      };
-
-      // Add these properties only if they exist
-      if (documentId) {
-        (messageData as any).document_id = documentId;
-      }
-      if (quotedMessageId) {
-        (messageData as any).quoted_message_id = quotedMessageId;
-      }
-
       const { data, error } = await supabase
         .from('chat_messages')
-        .insert(messageData)
+        .insert([
+          {
+            content,
+            role: 'user',
+            conversation_id: conversationId,
+            message_type: messageType,
+            document_id: documentId,
+            metadata,
+            quoted_message_id: quotedMessageId
+          }
+        ])
         .select()
         .single();
 
@@ -68,31 +55,19 @@ export const chatService = {
     quotedMessageId?: string
   ) {
     try {
-      const user = (await supabase.auth.getUser()).data.user;
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
-      const messageData = {
-        content,
-        role: 'assistant',
-        conversation_id: conversationId,
-        message_type: messageType,
-        user_id: user.id,
-        metadata: metadata || null
-      };
-
-      // Add these properties only if they exist
-      if (documentId) {
-        (messageData as any).document_id = documentId;
-      }
-      if (quotedMessageId) {
-        (messageData as any).quoted_message_id = quotedMessageId;
-      }
-
       const { data, error } = await supabase
         .from('chat_messages')
-        .insert(messageData)
+        .insert([
+          {
+            content,
+            role: 'assistant',
+            conversation_id: conversationId,
+            message_type: messageType,
+            document_id: documentId,
+            metadata,
+            quoted_message_id: quotedMessageId
+          }
+        ])
         .select()
         .single();
 

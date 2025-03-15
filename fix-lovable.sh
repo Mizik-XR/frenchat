@@ -2,106 +2,69 @@
 #!/bin/bash
 
 echo "==================================================="
-echo "     FIXING LOVABLE INTEGRATION"
+echo "     RÉPARATION INTÉGRATION LOVABLE"
 echo "==================================================="
 echo
-echo "This tool will fix issues with Lovable editing."
+echo "Cet outil va résoudre les problèmes d'édition Lovable."
 echo
 
-echo "[STEP 1/4] Checking index.html file..."
+echo "[ÉTAPE 1/3] Vérification du fichier index.html..."
 if [ -f "index.html" ]; then
-    echo "[INFO] Checking for gptengineer.js script..."
+    echo "[INFO] Vérification de la présence du script gptengineer.js..."
     if ! grep -q "gptengineer.js" "index.html"; then
-        echo "[WARNING] Lovable script is missing in index.html, fixing..."
+        echo "[ATTENTION] Le script Lovable manque dans index.html, correction..."
         
-        # Backup original file
+        # Sauvegarde du fichier original
         cp index.html index.html.backup
         
-        # Add missing script at beginning of head
-        sed -i 's/<head>/<head>\n    <script src="https:\/\/cdn.gpteng.co\/gptengineer.js"><\/script>/' index.html
+        # Ajouter le script manquant après le premier script détecté
+        awk '/<script /{print; print "    <script src=\"https://cdn.gpteng.co/gptengineer.js\" type=\"module\"></script>"; next}1' index.html > index.html.temp
         
-        echo "[OK] gptengineer.js script added to index.html."
+        mv index.html.temp index.html
+        echo "[OK] Script gptengineer.js ajouté dans index.html."
     else
-        echo "[INFO] Checking if type=\"module\" needs to be removed..."
-        if grep -q '<script src="https://cdn.gpteng.co/gptengineer.js" type="module">' "index.html"; then
-            echo "[WARNING] Found type=\"module\" attribute, removing it..."
-            
-            # Backup original file
-            cp index.html index.html.backup
-            
-            # Remove type="module" attribute
-            sed -i 's/<script src="https:\/\/cdn.gpteng.co\/gptengineer.js" type="module">/<script src="https:\/\/cdn.gpteng.co\/gptengineer.js">/' index.html
-            
-            echo "[OK] type=\"module\" attribute removed from gptengineer.js script."
-        else
-            echo "[OK] gptengineer.js script is correctly configured in index.html."
-        fi
+        echo "[OK] Le script gptengineer.js est déjà présent dans index.html."
     fi
 else
-    echo "[ERROR] index.html file is missing in the root directory."
+    echo "[ERREUR] Le fichier index.html est manquant dans le répertoire racine."
     exit 1
 fi
 echo
 
-echo "[STEP 2/4] Clearing browser cache instructions..."
-echo "[INFO] Please perform these steps in your browser:"
-echo "  1. Open browser developer tools (F12 or right-click > Inspect)"
-echo "  2. Go to Application/Storage tab"
-echo "  3. Check 'Disable cache' option" 
-echo "  4. Clear site data or use incognito mode for testing"
-echo
-
-echo "[STEP 3/4] Rebuilding application..."
-# Utiliser npx pour exécuter la commande vite installée localement
-if [ -f "node_modules/.bin/vite" ]; then
-    echo "[INFO] Using local vite installation for build..."
-    npx vite build
-elif [ -f "package.json" ]; then
-    echo "[INFO] Using npm run build..."
-    npm run build
-else
-    echo "[ERROR] Cannot find proper build command."
-    exit 1
-fi
-
+echo "[ÉTAPE 2/3] Reconstruction de l'application..."
+npm run build
 if [ $? -ne 0 ]; then
-    echo "[ERROR] Application rebuild failed."
-    echo "[ALTERNATIVE] Trying to install dependencies and rebuild..."
-    npm install --no-fund --loglevel=error
-    npm run build
-    if [ $? -ne 0 ]; then
-        echo "[ERROR] Rebuild attempt failed after installing dependencies."
-        exit 1
-    fi
+    echo "[ERREUR] Reconstruction de l'application échouée."
+    exit 1
 else
-    echo "[OK] Application rebuilt successfully."
+    echo "[OK] Application reconstruite avec succès."
 fi
 echo
 
-echo "[STEP 4/4] Final verification..."
+echo "[ÉTAPE 3/3] Vérification finale..."
 if [ -f "dist/index.html" ]; then
-    echo "[INFO] Checking dist/index.html..."
+    echo "[INFO] Vérification de dist/index.html..."
     if ! grep -q "gptengineer.js" "dist/index.html"; then
-        echo "[WARNING] gptengineer.js script is missing from dist/index.html."
-        echo "            Applying manual fix..."
+        echo "[ATTENTION] Le script gptengineer.js est absent de dist/index.html."
+        echo "            Application d'une correction manuelle..."
         cp -f index.html dist/index.html
-        echo "[OK] Fix applied."
+        echo "[OK] Correction appliquée."
     else
-        echo "[OK] dist/index.html contains the required script."
+        echo "[OK] Le fichier dist/index.html contient le script requis."
     fi
 else
-    echo "[INFO] dist folder doesn't exist yet."
+    echo "[INFO] Le dossier dist n'existe pas encore."
 fi
 echo
 
 echo "==================================================="
-echo "     FIX COMPLETED"
+echo "     RÉPARATION TERMINÉE"
 echo "==================================================="
 echo
-echo "To apply changes:"
-echo "1. Restart the application"
-echo "2. Clear your browser cache or use incognito mode"
-echo "3. Try a different browser (Chrome or Edge recommended)"
+echo "Pour appliquer les changements:"
+echo "1. Redémarrez l'application"
+echo "2. Videz le cache de votre navigateur ou utilisez le mode incognito"
 echo
 chmod +x fix-lovable.sh
+echo "Le script est maintenant exécutable avec ./fix-lovable.sh"
 exit 0

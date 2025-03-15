@@ -1,68 +1,43 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LoadingScreen } from '@/components/auth/LoadingScreen';
 import Landing from './Landing';
-import { useAuth } from '@/components/AuthProvider';
-import { ToastTester } from '@/components/debug/ToastTester';
+import { useAuth } from "@/components/AuthProvider";
+import { LoadingScreen } from '@/components/auth/LoadingScreen';
 
-const Index = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [shouldShowLanding, setShouldShowLanding] = useState(true);
-  const { user, isLoading: isAuthLoading } = useAuth();
+export default function Index() {
   const navigate = useNavigate();
-
+  const { user, isLoading } = useAuth();
+  const [showLanding, setShowLanding] = useState(false);
+  
   useEffect(() => {
-    // Si l'authentification est toujours en cours, on attend
-    if (isAuthLoading) return;
-
-    // En mode développement, regarder les paramètres
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    const hasSeenLanding = localStorage.getItem('hasSeenLanding') === 'true';
-    const forceLanding = new URLSearchParams(window.location.search).get('landing') === 'true';
+    console.log("Index page loaded, user:", user ? "Authenticated" : "Not authenticated", "isLoading:", isLoading);
     
-    console.log("Index page: Auth status:", user ? "Logged in" : "Not logged in", 
-                "isDevelopment:", isDevelopment, 
-                "hasSeenLanding:", hasSeenLanding,
-                "forceLanding:", forceLanding);
-
-    // Logique de redirection
-    if (user) {
-      // Utilisateur connecté -> redirection vers /home
-      navigate('/home', { replace: true });
-    } else if (forceLanding || !hasSeenLanding || isDevelopment) {
-      // Forcer la landing page ou nouvel utilisateur ou mode dev -> afficher landing
-      setShouldShowLanding(true);
-      // Ne pas mettre à jour hasSeenLanding en mode dev pour toujours voir la landing
-      if (!isDevelopment && !forceLanding) {
-        localStorage.setItem('hasSeenLanding', 'true');
+    // Stocker la route pour la gestion de session
+    localStorage.setItem('last_route', '/');
+    
+    // Seulement rediriger après que le statut d'authentification soit confirmé
+    if (!isLoading) {
+      if (user) {
+        console.log("Redirecting authenticated user to /chat");
+        navigate('/chat');
+      } else {
+        console.log("User not authenticated, showing landing page");
+        setShowLanding(true);
       }
-    } else {
-      // Utilisateur non connecté qui a déjà vu la landing page -> redirection vers /auth
-      navigate('/auth', { replace: true });
     }
+  }, [navigate, user, isLoading]);
 
-    setIsLoading(false);
-  }, [user, isAuthLoading, navigate]);
-
-  if (isLoading || isAuthLoading) {
-    return <LoadingScreen message="Préparation de votre environnement..." />;
+  // Afficher un écran de chargement pendant la vérification de l'authentification
+  if (isLoading) {
+    return <LoadingScreen message="Chargement de l'application..." />;
   }
-
-  // Afficher la landing page si nécessaire
-  if (shouldShowLanding) {
-    return (
-      <div>
-        <Landing />
-        <div className="fixed bottom-4 right-4 z-50">
-          <ToastTester />
-        </div>
-      </div>
-    );
+  
+  // Rendre la page d'accueil (Landing) si l'utilisateur n'est pas connecté et que le chargement est terminé
+  if (showLanding) {
+    return <Landing />;
   }
-
-  // Ce code ne devrait jamais être atteint car nous redirigeons toujours
-  return <LoadingScreen message="Redirection en cours..." />;
-};
-
-export default Index;
+  
+  // Écran de chargement par défaut pendant les transitions
+  return <LoadingScreen message="Préparation de votre expérience..." />;
+}

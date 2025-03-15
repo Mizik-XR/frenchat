@@ -14,11 +14,6 @@ echo      DÉMARRAGE UNIVERSEL DE FILECHAT
 echo ===================================================
 echo.
 
-REM Définir les variables d'environnement pour Supabase
-set "VITE_SUPABASE_URL=https://dbdueopvtlanxgumenpu.supabase.co"
-set "VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZHVlb3B2dGxhbnhndW1lbnB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NzQ0NTIsImV4cCI6MjA1NTU1MDQ1Mn0.lPPbNJANU8Zc7i5OB9_atgDZ84Yp5SBjXCiIqjA79Tk"
-set "VITE_ALLOW_SIGNUP=true"
-
 REM Détection du mode optimal
 set "USE_OLLAMA=0"
 set "USE_PYTHON=0"
@@ -54,13 +49,6 @@ if %ERRORLEVEL% EQU 0 (
 )
 echo.
 
-REM Option pour forcer la reconstruction
-set "FORCE_REBUILD=0"
-if "%1"=="--rebuild" (
-    set "FORCE_REBUILD=1"
-    echo [INFO] Option de reconstruction forcée activée
-)
-
 REM Animation de chargement
 echo Préparation de FileChat en cours...
 for /L %%i in (1,1,20) do (
@@ -72,26 +60,7 @@ echo.
 
 REM Vérification du dossier dist
 if not exist "dist\" (
-    set "FORCE_REBUILD=1"
-)
-
-if "%FORCE_REBUILD%"=="1" (
     echo [INFO] Construction de l'application en cours...
-    call npm run build
-    if errorlevel 1 (
-        echo [ERREUR] Construction de l'application échouée
-        echo.
-        echo Appuyez sur une touche pour quitter...
-        pause >nul
-        exit /b 1
-    )
-    echo [OK] Application construite avec succès.
-    echo.
-)
-
-REM Vérification du fichier index.html dans dist
-if not exist "dist\index.html" (
-    echo [INFO] Reconstruction de l'application en cours...
     call npm run build
     if errorlevel 1 (
         echo [ERREUR] Construction de l'application échouée
@@ -143,7 +112,12 @@ if defined USE_NPX (
 timeout /t 2 /nobreak > nul
 
 REM Construction de l'URL avec les paramètres appropriés
-set "APP_URL=http://localhost:8080"
+set "APP_URL=http://localhost:8080/?"
+if %FORCE_CLOUD_MODE% EQU 1 (
+    set "APP_URL=!APP_URL!client=true^&hideDebug=true^&forceCloud=true"
+) else (
+    set "APP_URL=!APP_URL!client=true"
+)
 
 REM Ouvrir le navigateur
 echo [INFO] Ouverture de FileChat dans votre navigateur...
@@ -165,7 +139,7 @@ if %USE_PYTHON% EQU 1 (
 echo [v] Mode cloud
 
 echo.
-echo URL d'accès: %APP_URL%
+echo URL d'accès: !APP_URL!
 echo.
 echo Cette fenêtre peut être minimisée. Ne la fermez pas tant que
 echo vous utilisez FileChat.

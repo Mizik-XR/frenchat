@@ -3,54 +3,54 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title FileChat - Cloud Mode
+title FileChat - Mode Cloud
 
 echo ===================================================
-echo     FILECHAT - CLOUD MODE
+echo     FILECHAT - MODE CLOUD
 echo ===================================================
 echo.
-echo This version starts FileChat in cloud-only mode,
-echo without requiring a local AI server.
+echo Cette version démarre FileChat en mode cloud uniquement,
+echo sans nécessiter de serveur IA local.
 echo.
 
-REM Check for http-server
+REM Vérification de http-server
 where http-server >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
-    echo [INFO] Installing http-server...
+    echo [INFO] Installation de http-server...
     call npm install -g http-server
     if %ERRORLEVEL% NEQ 0 (
-        echo [ERROR] Failed to install http-server.
+        echo [ERREUR] Échec de l'installation de http-server.
         pause
         exit /b 1
     )
-    echo [OK] http-server installed.
+    echo [OK] http-server installé.
 ) else (
-    echo [OK] http-server is already installed.
+    echo [OK] http-server est déjà installé.
 )
 
-REM Start HTTP server
-echo [INFO] Starting HTTP server...
-start "FileChat HTTP Server" /min cmd /c "http-server dist -p 8080 --cors -c-1"
-echo [OK] HTTP server started.
+REM Démarrage du serveur HTTP
+echo [INFO] Démarrage du serveur HTTP...
+start "Serveur HTTP FileChat" /min cmd /c "http-server dist -p 8080 --cors -c-1"
+echo [OK] Serveur HTTP démarré.
 echo.
 
-REM Open browser with cloud parameters
+REM Ouverture du navigateur avec paramètres cloud
 timeout /t 1 /nobreak > nul
 start "" "http://localhost:8080/?client=true&hideDebug=true&forceCloud=true&mode=cloud"
 
 echo.
 echo ===================================================
-echo         FILECHAT STARTED IN CLOUD MODE
+echo         FILECHAT DÉMARRÉ EN MODE CLOUD
 echo ===================================================
 echo.
-echo Web Application: http://localhost:8080/?client=true^&hideDebug=true^&forceCloud=true^&mode=cloud
+echo Application Web: http://localhost:8080/?client=true^&hideDebug=true^&forceCloud=true^&mode=cloud
 echo.
-echo To stop the service, close this window and the HTTP server window.
+echo Pour arrêter le service, fermez cette fenêtre et la fenêtre du serveur HTTP.
 echo.
-echo Press any key to close this window...
+echo Appuyez sur une touche pour fermer cette fenêtre...
 pause >nul
 
-REM Close the process
-taskkill /F /FI "WINDOWTITLE eq FileChat HTTP Server" >nul 2>nul
+REM Fermeture du processus
+taskkill /F /FI "WINDOWTITLE eq Serveur HTTP FileChat" >nul 2>nul
 
 exit /b 0

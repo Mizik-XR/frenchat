@@ -11,8 +11,9 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
-      // Configuration optimisée pour React
+      // Configurer React pour éviter les conflits potentiels
       jsxRuntime: 'automatic',
+      // La propriété fastRefresh n'est pas reconnue, supprimons-la
       babel: {
         plugins: []
       }
@@ -24,83 +25,44 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Configuration améliorée pour la production
   build: {
-    // Optimisations
-    minify: mode === 'production' ? 'esbuild' : false,
+    // Utilisation d'esbuild au lieu de terser pour la minification
+    minify: 'esbuild',
+    // Configuration d'esbuild pour la minification
     target: 'es2015',
-    sourcemap: mode === 'development',
-    cssCodeSplit: true,
     rollupOptions: {
       output: {
-        // Distribution optimisée des chunks pour éviter les erreurs "Cannot access X before initialization"
+        // Séparation du code en chunks pour un meilleur chargement
         manualChunks: (id) => {
+          // On crée un chunk pour chaque lib importante
           if (id.includes('node_modules')) {
-            // Empêcher les problèmes d'initialisation de React
-            if (id.includes('react/') || id.includes('react-dom/')) {
-              return 'vendor-react';
-            }
-            
-            // Séparation des modules de toast pour éviter toute dépendance circulaire
-            if (id.includes('@radix-ui/react-toast')) {
-              return 'vendor-toast-radix';
-            }
-            if (id.includes('sonner') || id.includes('toast')) {
-              return 'vendor-toast-system';
-            }
-            
-            // Autres séparations
-            if (id.includes('lucide')) return 'vendor-lucide';
-            if (id.includes('@tanstack')) return 'vendor-tanstack';
             if (id.includes('@supabase')) return 'vendor-supabase';
+            if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
             if (id.includes('@radix-ui')) return 'vendor-radix';
-            
-            return 'vendor';
-          }
-          
-          // Isoler les hooks et utils pour éviter les dépendances circulaires
-          if (id.includes('/hooks/toast/')) {
-            return 'app-toast-system';
-          }
-          if (id.includes('/hooks/')) {
-            return 'app-hooks';
-          }
-          if (id.includes('/utils/')) {
-            return 'app-utils';
+            if (id.includes('lucide')) return 'vendor-lucide';
+            return 'vendor'; // autres libs
           }
         },
-        entryFileNames: 'assets/js/[name].[hash].js',
-        chunkFileNames: 'assets/js/[name].[hash].js',
-        assetFileNames: 'assets/[ext]/[name].[hash].[ext]'
       },
-      // Exclure le script gptengineer.js du bundling
-      external: ['https://cdn.gpteng.co/gptengineer.js']
+      external: [
+        // Exclure le script gptengineer.js du processus de bundling
+        'https://cdn.gpteng.co/gptengineer.js'
+      ]
     },
-    chunkSizeWarningLimit: 1000,
+    // Activer la compression
+    reportCompressedSize: true,
+    chunkSizeWarningLimit: 1000, // Augmenter la limite d'avertissement
   },
+  // Configuration pour améliorer le comportement du cache
   optimizeDeps: {
-    include: [
-      'react', 
-      'react-dom', 
-      'react-router-dom',
-      '@radix-ui/react-toast',
-      'lucide-react',
-      'sonner'
-    ],
-    exclude: ['gptengineer', 'lovable-tagger']
+    include: ['react', 'react-dom', 'react-router-dom'],
+    exclude: ['gptengineer']
   },
+  // Configuration de la gestion des assets
+  assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg'],
+  // Configuration script pour le mode développement et production
   define: {
-    // Définir des constantes globales
-    __LOVABLE_MODE__: JSON.stringify(mode === 'development' ? "development" : "production"),
-    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-  },
-  esbuild: {
-    // Optimisations avancées
-    jsxFactory: 'React.createElement',
-    jsxFragment: 'React.Fragment',
-    target: ['es2020', 'chrome80', 'edge79', 'firefox72', 'safari13'],
-    // Désactiver certaines options qui pourraient causer des problèmes
-    keepNames: true,
-    treeShaking: true,
-    legalComments: 'none'
+    __LOVABLE_MODE__: JSON.stringify(mode),
   }
 }));

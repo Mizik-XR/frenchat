@@ -20,8 +20,8 @@ if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] Node.js n'est pas installé.
     echo         Téléchargez-le depuis https://nodejs.org/
 ) else (
-    for /f "tokens=*" %%a in ('node --version') do set NODE_VERSION=%%a
-    echo [OK] Node.js !NODE_VERSION! est correctement installé.
+    node --version
+    echo [OK] Node.js est correctement installé.
 )
 echo.
 
@@ -34,12 +34,12 @@ if %ERRORLEVEL% NEQ 0 (
         echo        Le mode cloud reste disponible.
         echo        Pour utiliser l'IA en local, installez Python depuis https://www.python.org/downloads/
     ) else (
-        for /f "tokens=*" %%a in ('python3 --version') do set PYTHON_VERSION=%%a
-        echo [OK] !PYTHON_VERSION! est installé.
+        python3 --version
+        echo [OK] Python3 est installé.
     )
 ) else (
-    for /f "tokens=*" %%a in ('python --version') do set PYTHON_VERSION=%%a
-    echo [OK] !PYTHON_VERSION! est correctement installé.
+    python --version
+    echo [OK] Python est correctement installé.
 )
 echo.
 
@@ -73,30 +73,9 @@ echo.
 echo [5] Vérification de la build...
 if exist "dist\index.html" (
     echo [OK] Build existante détectée.
-    
-    REM Vérification des types MIME
-    echo [5.1] Analyse des risques de problèmes MIME sur Vercel...
-    findstr "type=\"module\"" "dist\index.html" >nul
-    if %ERRORLEVEL% EQU 0 (
-        echo  [OK] Les attributs type="module" sont présents dans les balises script.
-    ) else (
-        echo  [ATTENTION] Balises script sans attribut type="module" détectées.
-        echo              Utilisez le script de correction avant le déploiement.
-    )
-    
-    if exist "vercel.json" (
-        findstr "application/javascript" "vercel.json" >nul
-        if %ERRORLEVEL% EQU 0 (
-            echo  [OK] Configuration MIME pour JavaScript présente dans vercel.json.
-        ) else (
-            echo  [ATTENTION] Configuration MIME possiblement incomplète dans vercel.json.
-        )
-    ) else (
-        echo  [ATTENTION] Fichier vercel.json manquant. Nécessaire pour un déploiement correct.
-    )
 ) else (
     echo [INFO] Aucune build détectée.
-    echo        Exécutez 'npm run build' pour créer une build.
+    echo        Exécutez "npm run build" pour créer une build.
 )
 echo.
 
@@ -106,35 +85,38 @@ if %ERRORLEVEL% EQU 0 (
     echo [OK] Connexion à Internet fonctionnelle.
 ) else (
     echo [ATTENTION] Problème de connexion Internet détecté.
-    echo            Vérifiez votre connexion réseau.
+    echo             Vérifiez votre connexion réseau.
 )
 echo.
 
 echo ===================================================
-echo   RÉSULTATS ET RECOMMANDATIONS
+echo     RÉSULTATS ET RECOMMANDATIONS
 echo ===================================================
 echo.
 echo Modes disponibles:
 echo.
-echo [✓] Mode cloud (toujours disponible)
+echo [v] Mode cloud (toujours disponible)
 
 if %OLLAMA_RUNNING% EQU 1 (
-    echo [✓] Mode IA locale via Ollama (détecté et actif)
+    echo [v] Mode IA locale via Ollama (détecté et actif)
 ) else (
     echo [ ] Mode IA locale via Ollama (non disponible)
 )
 
 python -c "import transformers" >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
-    echo [✓] Mode IA locale via Python et Hugging Face (disponible)
+    echo [v] Mode IA locale via Python et Hugging Face (disponible)
 ) else (
     echo [ ] Mode IA locale via Python et Hugging Face (non disponible)
 )
 echo.
 
-echo Recommandation pour le déploiement:
-echo - Avant de déployer sur Vercel, exécutez: scripts\prepare-deployment.bat
-echo - Cela corrigera automatiquement les problèmes de MIME types connus
+echo Recommandation:
+if %OLLAMA_RUNNING% EQU 1 (
+    echo - Utilisez "start-universal.bat" pour démarrer avec Ollama (mode hybride)
+) else (
+    echo - Utilisez "start-app-simplified.bat" pour le mode cloud uniquement
+)
 echo.
 
 echo ===================================================

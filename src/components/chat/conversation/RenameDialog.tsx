@@ -30,26 +30,26 @@ export function RenameDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Rename Conversation</DialogTitle>
+          <DialogTitle>Renommer la conversation</DialogTitle>
           <DialogDescription>
-            Enter a new title for this conversation
+            Saisissez un nouveau titre pour cette conversation
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
           <Input
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
-            placeholder="Conversation title"
+            placeholder="Titre de la conversation"
             className="w-full"
             autoFocus
           />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Annuler
           </Button>
           <Button onClick={onSave}>
-            Save
+            Enregistrer
           </Button>
         </DialogFooter>
       </DialogContent>

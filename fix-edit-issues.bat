@@ -3,102 +3,102 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title FileChat - Fix Editing Issues
+title FileChat - Correction problèmes d'édition
 
 echo ===================================================
-echo     FIXING LOVABLE EDITING ISSUES
+echo     CORRECTION PROBLÈMES D'ÉDITION LOVABLE
 echo ===================================================
 echo.
-echo This tool will fix the "AI edits didn't result in any changes"
-echo issue by ensuring the gptengineer.js script is properly integrated.
+echo Cet outil va corriger le problème "AI edits didn't result in any changes"
+echo en vérifiant que le script gptengineer.js est correctement intégré.
 echo.
 echo ===================================================
 echo.
 
-REM Display Supabase debug info
-echo [INFO] Supabase Environment Variables
+REM Afficher les informations de débogage Supabase
+echo [INFO] Variables d'environnement Supabase
 echo VITE_SUPABASE_URL=%VITE_SUPABASE_URL%
-echo VITE_SUPABASE_ANON_KEY defined: %VITE_SUPABASE_ANON_KEY:~0,5%...
+echo VITE_SUPABASE_ANON_KEY définie: %VITE_SUPABASE_ANON_KEY:~0,5%...
 echo.
 
-REM Check and fix index.html
-echo [STEP 1/3] Checking index.html file...
+REM Vérifier et corriger index.html
+echo [ÉTAPE 1/3] Vérification du fichier index.html...
 if exist "index.html" (
-    echo [INFO] Checking for gptengineer.js script...
+    echo [INFO] Vérification de la présence du script gptengineer.js...
     findstr "gptengineer.js" "index.html" >nul
     if !errorlevel! NEQ 0 (
-        echo [WARNING] Lovable script is missing in index.html, fixing...
+        echo [ATTENTION] Le script Lovable manque dans index.html, correction...
         
-        REM Backup original file
+        REM Sauvegarde du fichier original
         copy index.html index.html.backup >nul
         
-        REM Modify index.html to add missing script
+        REM Modifier le fichier index.html pour ajouter le script manquant
         (for /f "delims=" %%i in (index.html) do (
             echo %%i
             echo %%i | findstr "<script type=\"module\" src=\"/src/main.tsx\"></script>" >nul
             if !errorlevel! EQU 0 (
-                echo     ^<!-- Script required for Lovable "Pick and Edit" functionality --^>
+                echo     ^<!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" --^>
                 echo     ^<script src="https://cdn.gpteng.co/gptengineer.js" type="module"^>^</script^>
             )
         )) > index.html.temp
         
         move /y index.html.temp index.html >nul
-        echo [OK] gptengineer.js script added to index.html.
+        echo [OK] Script gptengineer.js ajouté dans index.html.
     ) else (
-        echo [OK] gptengineer.js script is already present in index.html.
+        echo [OK] Le script gptengineer.js est déjà présent dans index.html.
     )
 ) else (
-    echo [ERROR] index.html file is missing in the root directory.
+    echo [ERREUR] Le fichier index.html est manquant dans le répertoire racine.
     pause
     exit /b 1
 )
 echo.
 
-REM Check dist directory
-echo [STEP 2/3] Checking dist/index.html file...
+REM Vérification dans le répertoire dist
+echo [ÉTAPE 2/3] Vérification du fichier dist/index.html...
 if exist "dist\index.html" (
-    echo [INFO] Checking for gptengineer.js script in build...
+    echo [INFO] Vérification de la présence du script gptengineer.js dans le build...
     findstr "gptengineer.js" "dist\index.html" >nul
     if !errorlevel! NEQ 0 (
-        echo [WARNING] Lovable script is missing in dist/index.html, fixing...
+        echo [ATTENTION] Le script Lovable manque dans dist/index.html, correction...
         
-        REM Copy corrected index.html to dist
+        REM Copier le fichier index.html corrigé dans dist
         copy /y index.html dist\index.html >nul
-        echo [OK] gptengineer.js script added to dist/index.html.
+        echo [OK] Script gptengineer.js ajouté dans dist/index.html.
     ) else (
-        echo [OK] gptengineer.js script is already present in dist/index.html.
+        echo [OK] Le script gptengineer.js est déjà présent dans dist/index.html.
     )
 ) else (
-    echo [INFO] dist folder doesn't exist or hasn't been generated yet.
+    echo [INFO] Le dossier dist n'existe pas ou n'a pas encore été généré.
 )
 echo.
 
-REM Rebuild the application
-echo [STEP 3/3] Rebuilding application...
+REM Reconstruction de l'application
+echo [ÉTAPE 3/3] Reconstruction de l'application...
 call npm run build
 if errorlevel 1 (
-    echo [ERROR] Application rebuild failed.
-    echo         Please run fix-blank-page.bat for a complete repair.
+    echo [ERREUR] Reconstruction de l'application échouée.
+    echo         Veuillez exécuter fix-blank-page.bat pour une réparation complète.
     pause
     exit /b 1
 ) else (
-    echo [OK] Application rebuilt successfully.
+    echo [OK] Application reconstruite avec succès.
 )
 echo.
 
 echo ===================================================
-echo     FIX COMPLETED SUCCESSFULLY
+echo     CORRECTION TERMINÉE AVEC SUCCÈS
 echo ===================================================
 echo.
-echo The editing issue fix is complete.
+echo La correction du problème d'édition est terminée.
 echo.
-echo If you are currently using the application:
-echo 1. Close and restart it with start-app-simplified.bat
-echo 2. Clear your browser cache or use incognito mode
+echo Si vous êtes en train d'utiliser l'application:
+echo 1. Fermez-la et relancez-la avec start-app-simplified.bat
+echo 2. Effacez le cache de votre navigateur ou utilisez le mode incognito
 echo.
-echo If the issue persists:
-echo 1. Try using Chrome or Edge instead of Firefox
-echo 2. Make sure JavaScript is enabled in your browser
+echo Si le problème persiste:
+echo 1. Essayez d'utiliser Chrome ou Edge au lieu de Firefox
+echo 2. Vérifiez que JavaScript est activé dans votre navigateur
 echo.
 pause
 exit /b 0

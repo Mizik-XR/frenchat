@@ -3,73 +3,73 @@
 
 clear
 echo "==================================================="
-echo "     FILECHAT MAINTENANCE"
+echo "     MAINTENANCE DE FILECHAT"
 echo "==================================================="
 echo ""
-echo "[1] Cache cleanup"
-echo "[2] Rebuild application"
-echo "[3] Environment check"
-echo "[4] Fix common issues"
-echo "[5] Exit"
+echo "[1] Nettoyage de cache"
+echo "[2] Reconstruction de l'application"
+echo "[3] Vérification de l'environnement"
+echo "[4] Réparation des problèmes courants"
+echo "[5] Quitter"
 echo ""
-read -p "Your choice [1-5]: " CHOICE
+read -p "Votre choix [1-5]: " CHOICE
 
 case $CHOICE in
     1)
         clear
         echo "==================================================="
-        echo "     CACHE CLEANUP"
+        echo "     NETTOYAGE DE CACHE"
         echo "==================================================="
         echo ""
-        echo "[INFO] Removing caches..."
+        echo "[INFO] Suppression des caches..."
         if [ -d ".vite" ]; then
             rm -rf .vite
-            echo "[OK] Vite cache deleted."
+            echo "[OK] Cache Vite supprimé."
         fi
         if [ -d "node_modules/.vite" ]; then
             rm -rf node_modules/.vite
-            echo "[OK] Vite cache in node_modules deleted."
+            echo "[OK] Cache Vite dans node_modules supprimé."
         fi
         npm cache clean --force
-        echo "[OK] NPM cache cleaned."
+        echo "[OK] Cache NPM nettoyé."
         echo ""
-        read -p "Press Enter to continue..." -n1 -s
+        read -p "Appuyez sur Entrée pour continuer..." -n1 -s
         ;;
     2)
         clear
         echo "==================================================="
-        echo "     REBUILDING APPLICATION"
+        echo "     RECONSTRUCTION DE L'APPLICATION"
         echo "==================================================="
         echo ""
-        echo "[INFO] Building application..."
+        echo "[INFO] Construction de l'application..."
         export NODE_OPTIONS="--max-old-space-size=4096"
         npm run build
         if [ $? -ne 0 ]; then
-            echo "[ERROR] Build failed."
-            read -p "Press Enter to continue..." -n1 -s
+            echo "[ERREUR] Échec de la construction."
+            read -p "Appuyez sur Entrée pour continuer..." -n1 -s
             exit 1
         fi
-        echo "[OK] Application rebuilt successfully."
+        echo "[OK] Application reconstruite avec succès."
         echo ""
-        read -p "Press Enter to continue..." -n1 -s
+        read -p "Appuyez sur Entrée pour continuer..." -n1 -s
         ;;
     3)
         clear
         echo "==================================================="
-        echo "     ENVIRONMENT CHECK"
+        echo "     VÉRIFICATION DE L'ENVIRONNEMENT"
         echo "==================================================="
         echo ""
-        echo "[INFO] Checking Node.js..."
+        echo "[INFO] Vérification de Node.js..."
         node -v
-        echo "[INFO] Checking NPM..."
+        echo "[INFO] Vérification de NPM..."
         npm -v
-        echo "[INFO] Checking Python..."
+        echo "[INFO] Vérification de Python..."
         python --version 2>/dev/null || python3 --version
         echo ""
         if [ -f ".env.local" ]; then
-            echo "[INFO] .env.local file detected."
+            echo "[INFO] Fichier .env.local détecté."
         else
-            echo "[INFO] Creating .env.local file..."
+            echo "[INFO] Création du fichier .env.local..."
             cat > .env.local << EOF
 VITE_API_URL=http://localhost:8000
 VITE_ENVIRONMENT=development
@@ -77,45 +77,45 @@ VITE_SITE_URL=http://localhost:8080
 VITE_LOVABLE_VERSION=dev
 FORCE_CLOUD_MODE=true
 EOF
-            echo "[OK] .env.local file created."
+            echo "[OK] Fichier .env.local créé."
         fi
         echo ""
-        read -p "Press Enter to continue..." -n1 -s
+        read -p "Appuyez sur Entrée pour continuer..." -n1 -s
         ;;
     4)
         clear
         echo "==================================================="
-        echo "     FIXING COMMON ISSUES"
+        echo "     RÉPARATION DES PROBLÈMES COURANTS"
         echo "==================================================="
         echo ""
-        echo "[INFO] Checking dependencies..."
+        echo "[INFO] Vérification des dépendances..."
         npm install
-        echo "[INFO] Configuring cloud mode..."
+        echo "[INFO] Configuration du mode cloud..."
         echo "FORCE_CLOUD_MODE=true" > .env.local
         echo "VITE_DISABLE_DEV_MODE=true" >> .env.local
-        echo "[INFO] Rebuilding application..."
+        echo "[INFO] Reconstruction de l'application..."
         export NODE_OPTIONS="--max-old-space-size=4096"
         npm run build
         echo ""
-        echo "[INFO] Checking Lovable script..."
+        echo "[INFO] Vérification du script Lovable..."
         if ! grep -q "gptengineer.js" "dist/index.html"; then
-            echo "[INFO] Adding Lovable script..."
+            echo "[INFO] Ajout du script Lovable..."
             sed -i.bak '/<script type="module" crossorigin/i \    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>' dist/index.html
             rm -f dist/index.html.bak
-            echo "[OK] Lovable script added."
+            echo "[OK] Script Lovable ajouté."
         else
-            echo "[OK] Lovable script already present."
+            echo "[OK] Script Lovable déjà présent."
         fi
         echo ""
-        echo "[OK] Repairs completed."
-        read -p "Press Enter to continue..." -n1 -s
+        echo "[OK] Réparation terminée."
+        read -p "Appuyez sur Entrée pour continuer..." -n1 -s
         ;;
     5)
         exit 0
         ;;
     *)
         echo ""
-        echo "Invalid choice. Please try again."
+        echo "Choix invalide. Veuillez réessayer."
         sleep 2
         source $0
         ;;

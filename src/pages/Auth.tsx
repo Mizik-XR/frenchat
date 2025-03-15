@@ -1,213 +1,206 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/components/AuthProvider';
+import React, { useEffect, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase, handleProfileQuery, APP_STATE } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 import { SignInForm } from '@/components/auth/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm';
+import { AuthContainer } from '@/components/auth/AuthContainer';
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuthForms } from '@/hooks/useAuthForms';
-import { toast } from '@/hooks/toast';
+import { toast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
-type AuthMode = 'signin' | 'signup' | 'password-reset';
-
-const Auth = () => {
-  const [mode, setMode] = useState<AuthMode>('signin');
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const { user, isLoading } = useAuth();
-  const navigate = useNavigate();
+export default function Auth() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [offlineMode, setOfflineMode] = useState(APP_STATE.isOfflineMode);
   const location = useLocation();
+  const authForms = useAuthForms();
   
-  const {
-    email, setEmail,
-    password, setPassword,
-    fullName, setFullName,
-    confirmPassword, setConfirmPassword,
-    rememberMe, setRememberMe,
-    isLoading: isSubmitting,
-    handleSignIn,
-    handleSignUp,
-    handleMagicLink
-  } = useAuthForms();
+  // Get selected tab from navigation state
+  const defaultTab = location.state?.tab || 'signin';
 
-  // Vérifier la présence d'un paramètre tab dans l'état de navigation
   useEffect(() => {
-    if (location.state && location.state.tab) {
-      const tab = location.state.tab as string;
-      if (tab === 'signup') {
-        setMode('signup');
-      } else if (tab === 'signin') {
-        setMode('signin');
-      }
+    console.log("Auth component initializing");
+    
+    // Vérifier si on est en mode hors ligne
+    if (APP_STATE.isOfflineMode) {
+      setOfflineMode(true);
+      setLoading(false);
+      setError("Application en mode hors ligne. L'authentification n'est pas disponible.");
+      console.log("Mode hors ligne détecté dans Auth.tsx");
+      return;
     }
-  }, [location]);
-
-  // Check for existing session
-  useEffect(() => {
-    const checkAuth = async () => {
+    
+    const checkSession = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        if (data.session) {
-          navigate('/chat');
+        if (!supabase) {
+          throw new Error("Client Supabase non disponible. Vérifiez votre connexion Internet.");
         }
-      } catch (err) {
-        console.error('Error checking auth:', err);
-        toast({
-          title: "Erreur d'authentification",
-          description: "Impossible de vérifier votre session",
-          variant: "destructive"
-        });
+        
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error retrieving session:', error);
+          setError('Une erreur est survenue lors de la vérification de votre session.');
+          toast({
+            title: "Erreur d'authentification",
+            description: "Problème de connexion avec le serveur. Veuillez réessayer.",
+            variant: "destructive",
+          });
+        }
+        setSession(currentSession);
+      } catch (error) {
+        console.error('Error in checkSession:', error);
+        setError('Une erreur inattendue est survenue.');
       } finally {
-        setIsCheckingAuth(false);
+        setLoading(false);
       }
     };
 
-    if (!isLoading) {
-      checkAuth();
-    }
-  }, [isLoading, navigate]);
+    checkSession();
 
-  // Navigate to chat if already authenticated
-  useEffect(() => {
-    if (user && !isLoading && !isCheckingAuth) {
-      navigate('/chat');
-    }
-  }, [user, isLoading, navigate, isCheckingAuth]);
+    // Ajouter un gestionnaire pour mode hors ligne
+    const handleOfflineChange = () => {
+      setOfflineMode(APP_STATE.isOfflineMode);
+      if (APP_STATE.isOfflineMode) {
+        setError("Application en mode hors ligne. L'authentification n'est pas disponible.");
+      }
+    };
+    
+    // Écouteur d'événement pour les changements de mode hors ligne
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'OFFLINE_MODE') {
+        handleOfflineChange();
+      }
+    });
 
-  // Check for password reset mode from URL
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get('mode') === 'password-reset') {
-      setMode('password-reset');
-      const emailParam = searchParams.get('email');
-      if (emailParam) setEmail(emailParam);
+    // Ne configurer l'écouteur de changement d'état d'authentification que si Supabase est disponible
+    let subscription: { unsubscribe: () => void } | null = null;
+    
+    if (supabase) {
+      const { data: authData } = supabase.auth.onAuthStateChange((_event, session) => {
+        console.log("Auth state changed", _event, session);
+        setSession(session);
+        
+        // Si user vient de s'inscrire ou de se connecter, vérifier les erreurs de base de données
+        if (session && (_event === 'SIGNED_IN' || _event === 'SIGNED_UP')) {
+          handleProfileQuery(session.user.id)
+            .then(({ error }) => {
+              if (error) {
+                console.warn("Problème de profil détecté, mais continuation avec la session:", error);
+                toast({
+                  title: "Avertissement",
+                  description: "Votre profil a été initialisé avec des valeurs par défaut.",
+                  duration: 5000,
+                });
+              }
+            });
+        }
+      });
+      
+      subscription = authData.subscription;
     }
-  }, [location, setEmail]);
 
-  // Show loading screen while checking auth
-  if (isLoading || isCheckingAuth) {
+    return () => {
+      subscription?.unsubscribe();
+      window.removeEventListener('storage', handleOfflineChange);
+    };
+  }, []);
+
+  // Use redirect path from state, or default to home
+  const redirectTo = location.state?.from || '/';
+  console.log("Redirection path if authenticated:", redirectTo);
+
+  if (loading) {
     return <AuthLoadingScreen />;
   }
 
+  // If user is authenticated, redirect to requested page or home
+  if (session) {
+    console.log("User is authenticated, redirecting to:", redirectTo);
+    return <Navigate to={redirectTo} replace />;
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            {mode === 'signin' ? 'Connexion à FileChat' : 
-             mode === 'signup' ? 'Créer votre compte' : 
-             'Réinitialiser le mot de passe'}
-          </h2>
+    <AuthContainer>
+      {offlineMode && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Mode Hors Ligne</AlertTitle>
+          <AlertDescription>
+            L'application fonctionne en mode hors ligne. L'authentification n'est pas disponible.
+            <br />
+            <button 
+              className="text-blue-600 hover:text-blue-800 underline mt-2"
+              onClick={() => {
+                APP_STATE.setOfflineMode(false);
+                setOfflineMode(false);
+                setError(null);
+                window.location.reload();
+              }}
+            >
+              Tenter de se reconnecter
+            </button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {!offlineMode && (
+        <Card className="border-gray-200 shadow-lg">
+          <CardHeader className="pb-0">
+            <Tabs defaultValue={defaultTab} className="w-full">
+              <TabsList className="grid grid-cols-2 mb-4">
+                <TabsTrigger value="signin">Connexion</TabsTrigger>
+                <TabsTrigger value="signup">Inscription</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="signin">
+                <CardContent className="pt-6">
+                  <SignInForm 
+                    loading={authForms.isLoading}
+                    email={authForms.email}
+                    setEmail={authForms.setEmail}
+                    password={authForms.password}
+                    setPassword={authForms.setPassword}
+                    handleSignIn={authForms.handleSignIn}
+                    handleMagicLink={authForms.handleMagicLink}
+                    rememberMe={authForms.rememberMe}
+                    setRememberMe={authForms.setRememberMe}
+                  />
+                </CardContent>
+              </TabsContent>
+              
+              <TabsContent value="signup">
+                <CardContent className="pt-6">
+                  <SignUpForm 
+                    loading={authForms.isLoading}
+                    email={authForms.email}
+                    setEmail={authForms.setEmail}
+                    password={authForms.password}
+                    setPassword={authForms.setPassword}
+                    fullName={authForms.fullName}
+                    setFullName={authForms.setFullName}
+                    confirmPassword={authForms.confirmPassword}
+                    setConfirmPassword={authForms.setConfirmPassword}
+                    handleSignUp={authForms.handleSignUp}
+                  />
+                </CardContent>
+              </TabsContent>
+            </Tabs>
+          </CardHeader>
+        </Card>
+      )}
+      
+      {error && (
+        <div className="mt-4 p-3 bg-red-100 text-red-800 rounded-md text-sm">
+          {error}
         </div>
-
-        {mode === 'signin' ? (
-          <SignInForm 
-            loading={isSubmitting}
-            email={email}
-            setEmail={setEmail}
-            password={password}
-            setPassword={setPassword}
-            handleSignIn={handleSignIn}
-            handleMagicLink={handleMagicLink}
-            rememberMe={rememberMe}
-            setRememberMe={setRememberMe}
-            switchToSignUp={() => setMode('signup')}
-            switchToPasswordReset={() => setMode('password-reset')}
-          />
-        ) : mode === 'signup' ? (
-          <SignUpForm 
-            loading={isSubmitting}
-            email={email}
-            setEmail={setEmail}
-            password={password}
-            setPassword={setPassword}
-            fullName={fullName}
-            setFullName={setFullName}
-            confirmPassword={confirmPassword}
-            setConfirmPassword={setConfirmPassword}
-            handleSignUp={handleSignUp}
-            switchToSignIn={() => setMode('signin')}
-          />
-        ) : (
-          <div className="mt-8 space-y-6">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Entrez votre adresse e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.
-            </p>
-            <form className="space-y-6" onSubmit={(e) => {
-              e.preventDefault();
-              // Gérer la réinitialisation du mot de passe
-              const resetPassword = async () => {
-                try {
-                  const { error } = await supabase.auth.resetPasswordForEmail(email);
-                  if (error) throw error;
-                  toast({
-                    title: "Réinitialisation envoyée",
-                    description: "Instructions de réinitialisation envoyées à votre email",
-                    variant: "success"
-                  });
-                } catch (err) {
-                  console.error('Erreur de réinitialisation:', err);
-                  toast({
-                    title: "Erreur",
-                    description: "Erreur lors de l'envoi du lien de réinitialisation",
-                    variant: "destructive"
-                  });
-                }
-              };
-              resetPassword();
-            }}>
-              <div>
-                <label htmlFor="email" className="sr-only">Adresse e-mail</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
-                  placeholder="Adresse e-mail"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div>
-                <button
-                  type="submit"
-                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:ring-offset-gray-900"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <span className="flex items-center">
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Envoi en cours...
-                    </span>
-                  ) : (
-                    'Envoyer le lien de réinitialisation'
-                  )}
-                </button>
-              </div>
-              <div className="text-sm text-center">
-                <button
-                  type="button"
-                  className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
-                  onClick={() => setMode('signin')}
-                  disabled={isSubmitting}
-                >
-                  Retour à la connexion
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </AuthContainer>
   );
-};
-
-// Export default pour le lazy loading
-export default Auth;
-export { Auth };
+}

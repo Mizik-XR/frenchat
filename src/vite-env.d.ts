@@ -8,8 +8,6 @@ interface ImportMetaEnv {
   readonly VITE_ENVIRONMENT?: string;
   readonly VITE_SITE_URL?: string;
   readonly VITE_LOVABLE_VERSION?: string;
-  readonly VITE_CLOUD_MODE?: string;
-  readonly VITE_ALLOW_LOCAL_AI?: string;
 }
 
 interface ImportMeta {
@@ -20,15 +18,4 @@ interface ImportMeta {
     accept(cb?: (cb: () => void) => void): void;
   };
   readonly url: string;
-}
-
-// Déclaration pour la variable globale React initialization status
-interface Window {
-  __REACT_INIT_STATUS__?: {
-    initialized: boolean;
-    attempts: number;
-    errors: string[];
-  };
-  forceHomepageInCloudMode?: () => void;
-  showRecoveryUI?: (message: string) => void;
 }

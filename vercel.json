@@ -1,48 +1,16 @@
 
 {
   "version": 2,
-  "public": true,
-  "builds": [
-    { "src": "package.json", "use": "@vercel/static-build" }
-  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "routes": [
-    {
-      "src": "/assets/(.*)\\.js",
-      "headers": { "Content-Type": "application/javascript; charset=utf-8" },
-      "continue": true
-    },
-    {
-      "src": "/(.*)\\.js",
-      "headers": { "Content-Type": "application/javascript; charset=utf-8" },
-      "continue": true
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ],
-  "headers": [
-    {
-      "source": "/(.*)\\.js$",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript; charset=utf-8"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=3600"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)\\.css$",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/css; charset=utf-8"
-        }
-      ]
-    }
-  ]
+  "env": {
+    "VITE_ENVIRONMENT": "production",
+    "VITE_CLOUD_MODE": "true",
+    "VITE_ALLOW_LOCAL_AI": "false",
+    "VITE_SKIP_PYTHON_INSTALLATION": "true"
+  }
 }

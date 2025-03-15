@@ -1,21 +1,25 @@
 
-import { isLovableEnvironment } from '@/utils/environment/environmentDetection';
+import { isLovableEnvironment, isNetlifyEnvironment } from '@/utils/environment/environmentDetection';
 
 /**
- * Detects if cloud mode is forced
- * @returns true if cloud mode is forced
+ * Détecte si le mode cloud est forcé
+ * @returns true si le mode cloud est forcé
  */
 export function isCloudModeForced(): boolean {
-  // Check for forced cloud mode
+  // Dans un environnement de production Netlify, on préfère toujours utiliser les fonctions Netlify
+  if (isNetlifyEnvironment() && import.meta.env.VITE_ALLOW_LOCAL_AI !== 'true') {
+    return true;
+  }
+  
   return window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true' ||
     new URLSearchParams(window.location.search).get('forceCloud') === 'true' ||
     isLovableEnvironment();
 }
 
 /**
- * Handles service mode changes
- * @param callback Function to call when the mode changes
- * @returns Cleanup function
+ * Gère les changements de mode de service
+ * @param callback Fonction à appeler lorsque le mode change
+ * @returns Fonction de nettoyage
  */
 export function setupServiceModeListener(callback: () => void): () => void {
   const handleStorageChange = () => {
@@ -27,11 +31,11 @@ export function setupServiceModeListener(callback: () => void): () => void {
 }
 
 /**
- * Checks if local AI is allowed in the current environment
- * @returns true if local AI is allowed
+ * Vérifie si l'IA locale est autorisée dans l'environnement actuel
+ * @returns true si l'IA locale est autorisée
  */
 export function isLocalAIAllowed(): boolean {
-  // Check environment variable to explicitly allow local AI
+  // Vérifier la variable d'environnement pour autoriser explicitement l'IA locale
   return import.meta.env.VITE_ALLOW_LOCAL_AI === 'true' || 
-         !import.meta.env.VITE_CLOUD_MODE; // In local environment, it's always allowed
+         !isNetlifyEnvironment(); // En local (hors Netlify), c'est toujours autorisé
 }

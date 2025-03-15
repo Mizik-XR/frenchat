@@ -1,29 +1,30 @@
 
-# Filechat Documentation
+# Documentation Frenchat
 
-Welcome to the official documentation for Filechat, your conversational AI solution for document analysis and indexing.
+Bienvenue dans la documentation officielle de Frenchat, votre solution d'intelligence artificielle conversationnelle pour l'analyse et l'indexation de documents.
 
-## Table of Contents
+## Table des matières
 
-1. [General Overview](./presentation.md)
-2. [Architecture and Components](./architecture.md)
-3. [Installation and Launch Guide](./installation.md)
-4. [OAuth Configuration and Indexing](./oauth-indexation.md)
-5. [RAG Module and AI](./rag-ia.md)
-6. [UI/UX: "WhatsApp" Style](./ui-ux.md)
-7. [Supported AI Models](./ai-models.md)
-8. [Updates, Maintenance and Testing](./maintenance.md)
-9. [Roadmap and New Features](./roadmap.md)
-10. [Complete Wiki](./wiki.md)
+1. [Présentation générale](./presentation.md)
+2. [Architecture et composants](./architecture.md)
+3. [Guide d'installation et de lancement](./installation.md)
+4. [Configuration OAuth et indexation](./oauth-indexation.md)
+5. [Module RAG et IA](./rag-ia.md)
+6. [UI/UX : Style "WhatsApp"](./ui-ux.md)
+7. [Modèles d'IA supportés](./ai-models.md)
+8. [Mises à jour, maintenance et tests](./maintenance.md)
+9. [Roadmap et nouvelles fonctionnalités](./roadmap.md)
+10. [Wiki complet](./wiki.md)
 
-## Quick Introduction
+## Introduction rapide
 
-Filechat is an application that allows you to index, analyze, and query your documents via a modern conversational interface. The application is built on:
+Frenchat est une application permettant d'indexer, analyser et interroger vos documents via une interface conversationnelle moderne. L'application s'appuie sur:
 
-- An intuitive "WhatsApp"-style user interface 
-- Document indexing from Google Drive and Microsoft Teams
-- Local or cloud artificial intelligence (user's choice)
-- Data visualization tools (charts, tables)
-- A system for generating and exporting structured documents
+- Une interface utilisateur intuitive type "WhatsApp" 
+- L'indexation de documents depuis Google Drive et Microsoft Teams
+- Une intelligence artificielle locale ou cloud (au choix de l'utilisateur)
+- Des outils de visualisation de données (graphiques, tableaux)
+- Un système de génération et d'export de documents structurés
 
-To get started, check out the [installation guide](./installation.md) or the [general overview](./presentation.md).
+Pour commencer, consultez le [guide d'installation](./installation.md) ou la [présentation générale](./presentation.md).
+

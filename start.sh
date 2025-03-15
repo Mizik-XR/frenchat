@@ -3,17 +3,17 @@
 
 clear
 echo "==================================================="
-echo "     FILECHAT - LAUNCHER"
+echo "     FILECHAT - LANCEUR"
 echo "==================================================="
 echo ""
-echo "Choose a startup mode:"
+echo "Choisissez un mode de démarrage:"
 echo ""
-echo "[1] Full mode (Local AI + web interface)"
-echo "[2] Cloud mode only (without local AI)"
-echo "[3] Maintenance (cleanup, repair)"
-echo "[4] Exit"
+echo "[1] Mode complet (IA locale + interface web)"
+echo "[2] Mode cloud uniquement (sans IA locale)"
+echo "[3] Maintenance (nettoyage, réparation)"
+echo "[4] Quitter"
 echo ""
-read -p "Your choice [1-4]: " CHOICE
+read -p "Votre choix [1-4]: " CHOICE
 
 case $CHOICE in
     1)
@@ -30,7 +30,7 @@ case $CHOICE in
         ;;
     *)
         echo ""
-        echo "Invalid choice. Please try again."
+        echo "Choix invalide. Veuillez réessayer."
         sleep 2
         bash $0
         ;;

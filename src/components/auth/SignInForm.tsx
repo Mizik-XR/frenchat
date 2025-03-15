@@ -4,7 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Key, LogIn } from "lucide-react";
-import { SignInFormProps } from "./types";
+import { AuthFormProps } from "./types";
+
+interface SignInFormProps extends AuthFormProps {
+  handleSignIn: (e: React.FormEvent) => Promise<void>;
+  handleMagicLink: (e: React.FormEvent) => Promise<void>;
+  rememberMe: boolean;
+  setRememberMe: (value: boolean) => void;
+}
 
 export function SignInForm({ 
   loading, 
@@ -15,9 +22,7 @@ export function SignInForm({
   handleSignIn,
   handleMagicLink,
   rememberMe,
-  setRememberMe,
-  switchToSignUp,
-  switchToPasswordReset
+  setRememberMe
 }: SignInFormProps) {
   return (
     <form onSubmit={handleSignIn} className="space-y-4">
@@ -52,29 +57,18 @@ export function SignInForm({
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="remember"
-            checked={rememberMe}
-            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-          />
-          <Label 
-            htmlFor="remember" 
-            className="text-sm font-normal cursor-pointer"
-          >
-            Se souvenir de moi
-          </Label>
-        </div>
-        
-        <Button
-          type="button"
-          variant="link"
-          className="text-sm text-indigo-600 dark:text-indigo-400 p-0"
-          onClick={switchToPasswordReset}
+      <div className="flex items-center space-x-2">
+        <Checkbox 
+          id="remember"
+          checked={rememberMe}
+          onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+        />
+        <Label 
+          htmlFor="remember" 
+          className="text-sm font-normal cursor-pointer"
         >
-          Mot de passe oublié?
-        </Button>
+          Se souvenir de moi
+        </Label>
       </div>
 
       <Button
@@ -91,7 +85,7 @@ export function SignInForm({
           <div className="w-full border-t border-gray-300"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">Ou</span>
+          <span className="px-2 bg-white text-gray-500">Ou</span>
         </div>
       </div>
 
@@ -105,20 +99,6 @@ export function SignInForm({
         <Mail className="w-4 h-4 mr-2" />
         Connexion avec un lien magique
       </Button>
-      
-      <div className="text-center mt-4">
-        <span className="text-sm text-gray-600 dark:text-gray-400">
-          Vous n'avez pas de compte?{" "}
-        </span>
-        <Button
-          type="button"
-          variant="link"
-          className="text-sm text-indigo-600 dark:text-indigo-400 p-0"
-          onClick={switchToSignUp}
-        >
-          S'inscrire
-        </Button>
-      </div>
     </form>
   );
 }

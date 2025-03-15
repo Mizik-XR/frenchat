@@ -7,12 +7,12 @@ interface WizardNavigationProps {
   onStepClick: (step: number) => void;
 }
 
-// Main steps of the wizard
+// Les étapes principales du wizard
 const STEPS = [
-  { title: "Welcome", description: "Initial application setup" },
-  { title: "Sources", description: "Import your documents" },
-  { title: "Intelligence", description: "AI Configuration" },
-  { title: "Finalization", description: "Final verification" }
+  { title: "Bienvenue", description: "Configuration initiale de l'application" },
+  { title: "Sources", description: "Importation de vos documents" },
+  { title: "Intelligence", description: "Configuration de l'IA" },
+  { title: "Finalisation", description: "Vérification finale" }
 ];
 
 export const WizardNavigation = ({ currentStep, onStepClick }: WizardNavigationProps) => {

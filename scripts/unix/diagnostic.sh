@@ -2,7 +2,7 @@
 #!/bin/bash
 
 echo "================================"
-echo "   DIAGNOSTIC COMPLET DE FILECHAT"
+echo "Diagnostic de l'environnement FileChat"
 echo "================================"
 echo 
 
@@ -15,127 +15,87 @@ done
 echo " OK!"
 echo
 
-echo "[1] Vérification de l'environnement JavaScript..."
-if command -v node &> /dev/null; then
-    node --version
-    echo "[OK] Node.js est correctement installé."
-else
-    echo "[ERREUR] Node.js n'est pas installé."
-    echo "         Téléchargez-le depuis https://nodejs.org/"
-fi
-echo 
-
-echo "[2] Vérification de Python..."
-PYTHON_STATUS=0
+echo "[1] Vérification de Python..."
 if command -v python3 &> /dev/null; then
     python3 --version
-    echo "[OK] Python3 est correctement installé."
-    PYTHON_STATUS=1
-elif command -v python &> /dev/null; then
-    python --version
     echo "[OK] Python est correctement installé."
-    PYTHON_STATUS=1
 else
-    echo "[INFO] Python n'est pas installé ou n'est pas dans le PATH."
-    echo "       Le mode cloud reste disponible."
-    echo "       Pour utiliser l'IA en local, installez Python depuis https://www.python.org/downloads/"
+    echo "[ATTENTION] Python n'est pas installé ou n'est pas dans votre PATH."
+    echo "            Cela ne pose pas de problème en mode cloud uniquement."
 fi
 echo 
 
-echo "[3] Vérification d'Ollama..."
-OLLAMA_RUNNING=0
+echo "[2] Vérification de Ollama..."
 if lsof -Pi :11434 -sTCP:LISTEN -t >/dev/null 2>&1; then
-    echo "[OK] Ollama est en cours d'exécution sur le port 11434."
-    OLLAMA_RUNNING=1
+    echo "[OK] Ollama est actif et fonctionne sur votre système."
+    echo "     C'est la solution recommandée pour l'IA locale."
 else
     if command -v ollama &> /dev/null; then
-        echo "[INFO] Ollama est installé mais n'est pas en cours d'exécution."
-        echo "       Démarrez Ollama pour utiliser l'IA locale."
+        echo "[INFO] Ollama est installé mais n'est pas actif."
+        echo "       Vous pouvez démarrer Ollama pour utiliser l'IA locale."
     else
-        echo "[INFO] Ollama n'est pas détecté sur ce système."
-        echo "       Téléchargez-le depuis https://ollama.ai/download"
+        echo "[INFO] Ollama n'est pas installé."
+        echo "       Téléchargement recommandé: https://ollama.ai/download"
     fi
 fi
 echo 
 
-echo "[4] Vérification des dépendances npm..."
-if [ -d "node_modules" ]; then
-    echo "[OK] Dépendances npm installées."
+echo "[3] Vérification de Rust..."
+if command -v rustc >/dev/null 2>&1; then
+    echo "[OK] Rust est correctement installé:"
+    rustc --version
+    cargo --version
 else
-    echo "[INFO] Les dépendances npm ne sont pas installées."
-    echo "       Exécutez 'npm install' pour les installer."
+    echo "[INFO] Rust n'est pas installé."
+    echo "       Ce n'est pas un problème si vous utilisez Ollama ou le mode cloud."
 fi
 echo 
 
-echo "[5] Vérification de la build..."
-if [ -f "dist/index.html" ]; then
-    echo "[OK] Build existante détectée."
+echo "[4] Vérification de l'environnement virtuel..."
+if [ -d "venv" ]; then
+    echo "[OK] Environnement virtuel trouvé."
+    source venv/bin/activate
     
-    # Vérification des types MIME
-    echo "[5.1] Analyse des risques de problèmes MIME sur Vercel..."
-    if grep -q "type=\"module\"" "dist/index.html"; then
-        echo "  [OK] Les attributs type=\"module\" sont présents dans les balises script."
-    else
-        echo "  [ATTENTION] Balises script sans attribut type=\"module\" détectées."
-        echo "              Utilisez le script de correction avant le déploiement."
-    fi
+    echo "[5] Versions des packages installés:"
+    pip list | grep -E "torch|transformers|tokenizers|fastapi" || echo "     Aucun package IA trouvé (mode cloud uniquement)"
+    echo 
     
-    if [ -f "vercel.json" ]; then
-        if grep -q "application/javascript" "vercel.json"; then
-            echo "  [OK] Configuration MIME pour JavaScript présente dans vercel.json."
-        else
-            echo "  [ATTENTION] Configuration MIME possiblement incomplète dans vercel.json."
-        fi
-    else
-        echo "  [ATTENTION] Fichier vercel.json manquant. Nécessaire pour un déploiement correct."
-    fi
+    echo "[6] Test d'importation Python..."
+    python3 -c "try: import transformers; import tokenizers; import fastapi; print('[OK] Import réussi!'); except ImportError as e: print('[INFO] Certains packages ne sont pas installés:',e)" 2>/dev/null
 else
-    echo "[INFO] Aucune build détectée."
-    echo "       Exécutez 'npm run build' pour créer une build."
+    echo "[INFO] Environnement virtuel non trouvé."
+    echo "       Ce n'est pas un problème si vous utilisez le mode cloud uniquement."
 fi
-echo 
 
-echo "[6] Test de connectivité réseau..."
-if ping -c 1 api.openai.com >/dev/null 2>&1; then
-    echo "[OK] Connexion à Internet fonctionnelle."
-else
-    echo "[ATTENTION] Problème de connexion Internet détecté."
-    echo "            Vérifiez votre connexion réseau."
-fi
-echo 
-
+echo
 echo "================================"
-echo "   RÉSULTATS ET RECOMMANDATIONS"
+echo "Recommandations"
 echo "================================"
 echo
-echo "Modes disponibles:"
-echo
-echo "[✓] Mode cloud (toujours disponible)"
-
-if [ "$OLLAMA_RUNNING" -eq 1 ]; then
-    echo "[✓] Mode IA locale via Ollama (détecté et actif)"
+echo "Votre système est configuré pour:"
+if [ -d "venv" ]; then
+    echo "[V] Mode IA locale (Python)"
 else
-    echo "[ ] Mode IA locale via Ollama (non disponible)"
+    echo "[ ] Mode IA locale (Python) - Non configuré"
 fi
 
-if [ "$PYTHON_STATUS" -eq 1 ]; then
-    if python3 -c "import transformers" >/dev/null 2>&1 || python -c "import transformers" >/dev/null 2>&1; then
-        echo "[✓] Mode IA locale via Python et Hugging Face (disponible)"
-    else
-        echo "[ ] Mode IA locale via Python et Hugging Face (non disponible)"
-    fi
+if lsof -Pi :11434 -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo "[V] Mode IA locale (Ollama) - Recommandé"
 else
-    echo "[ ] Mode IA locale via Python et Hugging Face (non disponible)"
+    echo "[ ] Mode IA locale (Ollama) - Non configuré/actif"
 fi
-echo
 
-echo "Recommandation pour le déploiement:"
-echo "- Avant de déployer sur Vercel, exécutez: ./scripts/unix/prepare-deployment.sh"
-echo "- Cela corrigera automatiquement les problèmes de MIME types connus"
+echo "[V] Mode Cloud (Toujours disponible)"
 echo
-
+echo "Solution recommandée:"
+echo "-------------------"
+echo "1. Utiliser Ollama pour l'IA locale (simple et efficace)"
+echo "2. Utiliser le mode cloud si l'IA locale n'est pas nécessaire"
+echo
+echo "================================"
+echo "Fin du diagnostic"
 echo "================================"
 echo
-echo "Appuyez sur Entrée pour quitter..."
-read
-
+echo "Pour obtenir de l'aide supplémentaire, contactez le support technique."
+echo
+read -p "Appuyez sur Entrée pour continuer..." -n1 -s

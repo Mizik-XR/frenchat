@@ -93,17 +93,22 @@ export async function logTokenUsage(
   try {
     const { supabase } = await import('@/integrations/supabase/client');
     
-    // Appeler la fonction Edge pour enregistrer l'utilisation
-    await supabase.functions.invoke('log-token-usage', {
-      body: { 
-        userId,
+    // Calculer le coût estimé en fonction du fournisseur
+    const costPerToken = getProviderCostPerToken(provider);
+    const totalTokens = inputTokens + outputTokens;
+    const estimatedCost = fromCache ? 0 : totalTokens * costPerToken;
+    
+    await supabase
+      .from('ai_usage_metrics')
+      .insert({
+        user_id: userId,
         provider,
-        inputTokens,
-        outputTokens,
-        fromCache,
-        operationType: 'chat'
-      }
-    });
+        tokens_input: inputTokens,
+        tokens_output: outputTokens,
+        estimated_cost: estimatedCost,
+        from_cache: fromCache,
+        operation_type: 'chat'
+      });
   } catch (error) {
     console.error("Erreur lors de l'enregistrement de l'utilisation des tokens:", error);
   }

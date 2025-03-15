@@ -1,17 +1,17 @@
 
 #!/bin/bash
 
-# Check if dist directory exists, otherwise build the application
+# Vérification si le répertoire dist existe, sinon construire l'application
 if [ ! -d "dist" ]; then
-    echo "[INFO] Building web application..."
+    echo "[INFO] Build de l'application web..."
     npm run build
     if [ $? -ne 0 ]; then
-        echo "[ERROR] Application build failed"
+        echo "[ERREUR] Build de l'application échoué"
         echo ""
-        echo "Press any key to exit..."
+        echo "Appuyez sur une touche pour quitter..."
         read -n 1
         exit 1
     fi
-    echo "[OK] Application built successfully"
+    echo "[OK] Application construite avec succès"
     echo ""
 fi

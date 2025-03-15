@@ -2,22 +2,22 @@
 export const providerInfo = {
   openai: {
     name: "OpenAI",
-    description: "OpenAI API Configuration (GPT-4, GPT-3.5)",
+    description: "Configuration de l'API OpenAI (GPT-4, GPT-3.5)",
     placeholder: "sk-..."
   },
   perplexity: {
     name: "Perplexity",
-    description: "Perplexity AI API Configuration",
+    description: "Configuration de l'API Perplexity AI",
     placeholder: "pplx-..."
   },
   deepseek: {
     name: "DeepSeek",
-    description: "DeepSeek API Configuration",
-    placeholder: "DeepSeek API Key"
+    description: "Configuration de l'API DeepSeek",
+    placeholder: "Clé API DeepSeek"
   },
   anthropic: {
     name: "Anthropic",
-    description: "Anthropic API Configuration (Claude)",
+    description: "Configuration de l'API Anthropic (Claude)",
     placeholder: "sk-ant-..."
   }
 };

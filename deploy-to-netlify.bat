@@ -3,57 +3,63 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title FileChat - Déploiement vers Vercel
+title FileChat - Déploiement vers Netlify
 
 echo ===================================================
-echo     DÉPLOIEMENT FILECHAT VERS VERCEL
+echo     DÉPLOIEMENT FILECHAT VERS NETLIFY
 echo ===================================================
 echo.
-echo Ce script va déployer FileChat vers Vercel.
-echo Assurez-vous d'avoir installé la CLI Vercel et
-echo d'être connecté à votre compte Vercel.
+echo Ce script va déployer FileChat vers Netlify.
+echo Assurez-vous d'avoir installé la CLI Netlify et
+echo d'être connecté à votre compte Netlify.
 echo.
 echo Étapes:
 echo 1. Vérification de l'environnement
 echo 2. Préparation du build pour déploiement
-echo 3. Déploiement vers Vercel
+echo 3. Déploiement vers Netlify
 echo.
 echo ===================================================
 echo.
 echo Appuyez sur une touche pour continuer...
 pause >nul
 
-REM Vérifier si vercel CLI est installé
-where vercel >nul 2>&1
+REM Vérifier si netlify CLI est installé
+where netlify >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
-    echo [INFO] Vercel CLI n'est pas configuré, installation en cours...
-    call npm install -g vercel
+    echo [INFO] Netlify CLI n'est pas configuré, installation en cours...
+    call npm install -g netlify-cli
     if %ERRORLEVEL% NEQ 0 (
-        echo [ERREUR] L'installation de la CLI Vercel a échoué.
+        echo [ERREUR] L'installation de la CLI Netlify a échoué.
         echo.
         echo Pour l'installer manuellement, exécutez:
-        echo npm install -g vercel
+        echo npm install -g netlify-cli
         echo.
         echo Appuyez sur une touche pour quitter...
         pause >nul
         exit /b 1
     )
-    echo [OK] CLI Vercel installée avec succès.
+    echo [OK] CLI Netlify installée avec succès.
 )
 
-REM Configuration pour le déploiement
+REM Désactiver l'installation de Rust pour le déploiement
+set "NO_RUST_INSTALL=1"
+set "NETLIFY_SKIP_PYTHON=true"
+set "TRANSFORMERS_OFFLINE=1"
 set "NODE_ENV=production"
 set "VITE_CLOUD_MODE=true"
 set "VITE_ALLOW_LOCAL_AI=false"
-set "SKIP_PYTHON_INSTALLATION=true"
 
 REM Nettoyer les fichiers inutiles
 echo [INFO] Nettoyage des fichiers temporaires...
 if exist "dist\" rmdir /s /q dist
 
-REM Installation optimisée pour Vercel
-echo [INFO] Installation des dépendances avec configuration pour Vercel...
+REM Installation optimisée pour Netlify
+echo [INFO] Installation des dépendances avec configuration pour Netlify...
 call npm install --prefer-offline --no-audit --no-fund --loglevel=error --progress=false
+
+REM Exécution du script de préparation
+echo [INFO] Exécution du script de préparation...
+node scripts/netlify-prebuild.js
 
 REM Préparer le build
 echo [ÉTAPE 2/3] Préparation du build pour déploiement...
@@ -69,36 +75,36 @@ if %ERRORLEVEL% NEQ 0 (
 echo [OK] Build prêt pour déploiement.
 echo.
 
-REM Vérifier la connexion à Vercel
-echo [ÉTAPE 3/3] Vérification de la connexion à Vercel...
-vercel whoami >nul 2>nul
+REM Vérifier la connexion à Netlify
+echo [ÉTAPE 3/3] Vérification de la connexion à Netlify...
+netlify status >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
-    echo [INFO] Vous n'êtes pas connecté à Vercel.
-    echo [INFO] Connexion à Vercel...
-    vercel login
+    echo [INFO] Vous n'êtes pas connecté à Netlify.
+    echo [INFO] Connexion à Netlify...
+    netlify login
     if %ERRORLEVEL% NEQ 0 (
-        echo [ERREUR] Échec de la connexion à Vercel.
+        echo [ERREUR] Échec de la connexion à Netlify.
         echo.
         echo Appuyez sur une touche pour quitter...
         pause >nul
         exit /b 1
     )
 )
-echo [OK] Connecté à Vercel.
+echo [OK] Connecté à Netlify.
 echo.
 
-REM Déployer vers Vercel
+REM Déployer vers Netlify
 echo [INFO] Voulez-vous:
-echo 1. Déployer une prévisualisation
+echo 1. Déployer une prévisualisation (preview)
 echo 2. Déployer en production
 choice /C 12 /N /M "Choisissez une option (1 ou 2): "
 
 if %ERRORLEVEL% EQU 1 (
     echo [INFO] Déploiement d'une prévisualisation...
-    vercel
+    netlify deploy --dir=dist
 ) else (
     echo [INFO] Déploiement en production...
-    vercel --prod
+    netlify deploy --prod --dir=dist
 )
 
 if %ERRORLEVEL% NEQ 0 (
@@ -116,7 +122,7 @@ echo     DÉPLOIEMENT TERMINÉ
 echo ===================================================
 echo.
 echo N'oubliez pas de configurer les variables d'environnement
-echo dans l'interface Vercel pour les fonctionnalités avancées.
+echo dans l'interface Netlify pour les fonctionnalités avancées.
 echo.
 echo Variables à configurer:
 echo - VITE_SUPABASE_URL: URL de votre projet Supabase

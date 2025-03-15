@@ -1,6 +1,5 @@
-
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { serve } from 'std/server';
+import { createClient } from '@supabase/supabase-js';
 import { corsHeaders } from '../_shared/cors.ts';
 import { DOMParser } from 'https://deno.land/x/deno_dom@v0.1.43/deno-dom-wasm.ts';
 import { load } from "https://deno.land/std@0.217.0/dotenv/mod.ts";
@@ -10,8 +9,6 @@ const env = await load();
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || env['SUPABASE_URL'] || '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || env['SUPABASE_SERVICE_ROLE_KEY'] || '';
 const googleDriveApiKey = Deno.env.get('GOOGLE_DRIVE_API_KEY') || env['GOOGLE_DRIVE_API_KEY'] || '';
-
-console.log(`[DÉMARRAGE] Function 'index-google-drive' démarrée avec URL=${supabaseUrl.substring(0, 8)}... et Google Drive API Key présente: ${!!googleDriveApiKey}`);
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -30,10 +27,10 @@ interface IndexingProgress {
   updated_at: string;
 }
 
+// Fonction pour récupérer et déchiffrer le token Google Drive
 async function getGoogleDriveToken(userId: string) {
   try {
-    console.log(`[TOKEN] Récupération du token pour l'utilisateur ${userId.substring(0, 8)}...`);
-    
+    // Appel à l'Edge Function google-oauth pour obtenir un token valide et déchiffré
     const { data, error } = await supabase.functions.invoke('google-oauth', {
       body: { 
         action: 'check_token_status', 
@@ -42,12 +39,11 @@ async function getGoogleDriveToken(userId: string) {
     });
     
     if (error || !data.isValid) {
-      console.error(`[TOKEN ERREUR] Vérification du token: ${error?.message || data?.error || 'Token invalide'}`);
+      console.error("Erreur lors de la récupération du token:", error || data.error);
       throw new Error("Token invalide ou expiré");
     }
     
-    console.log(`[TOKEN] Token valide, récupération du token déchiffré`);
-    
+    // Récupérer le token déchiffré
     const { data: tokenData, error: tokenError } = await supabase.functions.invoke('google-oauth', {
       body: { 
         action: 'get_token', 
@@ -56,32 +52,27 @@ async function getGoogleDriveToken(userId: string) {
     });
     
     if (tokenError || !tokenData.access_token) {
-      console.error(`[TOKEN ERREUR] Récupération du token déchiffré: ${tokenError?.message || 'Token manquant'}`);
+      console.error("Erreur lors de la récupération du token déchiffré:", tokenError);
       throw new Error("Impossible d'obtenir le token d'accès");
     }
     
-    console.log(`[TOKEN] Token récupéré avec succès`);
     return tokenData.access_token;
   } catch (error) {
-    console.error(`[TOKEN ERREUR CRITIQUE] ${error.message}`, error);
+    console.error("Erreur lors de la récupération du token Google Drive:", error);
     throw error;
   }
 }
 
 async function updateIndexingProgress(progressId: string, updates: Partial<IndexingProgress>) {
-  console.log(`[PROGRESSION] Mise à jour de la progression ${progressId}: ${JSON.stringify(updates)}`);
-  
   const { error } = await supabase
     .from('indexing_progress')
     .update(updates)
     .eq('id', progressId);
 
   if (error) {
-    console.error(`[PROGRESSION ERREUR] Mise à jour de la progression: ${error.message}`, error);
+    console.error('Erreur lors de la mise à jour de la progression de l\'indexation:', error);
     throw new Error(`Erreur lors de la mise à jour de la progression: ${error.message}`);
   }
-  
-  console.log(`[PROGRESSION] Mise à jour réussie pour ${progressId}`);
 }
 
 async function insertUploadedDocument(
@@ -96,8 +87,6 @@ async function insertUploadedDocument(
   previewUrl: string | null = null,
   contentHash: string | null = null
 ) {
-  console.log(`[DOCUMENT] Insertion du document "${title}" de type ${fileType}`);
-  
   const { data, error } = await supabase
     .from('uploaded_documents')
     .insert([
@@ -114,21 +103,18 @@ async function insertUploadedDocument(
         content_hash: contentHash
       },
     ])
-    .select();
+    .select()
 
   if (error) {
-    console.error(`[DOCUMENT ERREUR] Insertion du document "${title}": ${error.message}`, error);
+    console.error('Erreur lors de l\'insertion du document uploadé:', error);
     throw new Error(`Erreur lors de l'insertion du document: ${error.message}`);
   }
 
-  console.log(`[DOCUMENT] Document "${title}" inséré avec succès, ID: ${data?.[0]?.id || 'inconnu'}`);
   return data ? data[0] : null;
 }
 
 async function getFileContent(fileId: string, accessToken: string): Promise<string | null> {
   try {
-    console.log(`[CONTENU] Récupération du contenu pour le fichier ${fileId.substring(0, 8)}...`);
-    
     const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -136,23 +122,19 @@ async function getFileContent(fileId: string, accessToken: string): Promise<stri
     });
 
     if (!response.ok) {
-      console.error(`[CONTENU ERREUR] ${fileId}: HTTP ${response.status} ${response.statusText}`);
+      console.error(`Erreur lors de la récupération du contenu du fichier ${fileId}: ${response.status} ${response.statusText}`);
       return null;
     }
 
-    const content = await response.text();
-    console.log(`[CONTENU] Contenu récupéré pour ${fileId}: ${content.length} caractères`);
-    return content;
+    return await response.text();
   } catch (error) {
-    console.error(`[CONTENU ERREUR] ${fileId}: ${error.message}`, error);
+    console.error(`Erreur lors de la récupération du contenu du fichier ${fileId}:`, error);
     return null;
   }
 }
 
 async function processGoogleDocument(fileId: string, accessToken: string): Promise<string | null> {
   try {
-    console.log(`[DOC GOOGLE] Traitement du Google Doc ${fileId.substring(0, 8)}...`);
-    
     const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/html`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -160,17 +142,15 @@ async function processGoogleDocument(fileId: string, accessToken: string): Promi
     });
 
     if (!response.ok) {
-      console.error(`[DOC GOOGLE ERREUR] ${fileId}: HTTP ${response.status} ${response.statusText}`);
+      console.error(`Erreur lors de la récupération du contenu du Google Doc ${fileId}: ${response.status} ${response.statusText}`);
       return null;
     }
 
     const htmlContent = await response.text();
-    console.log(`[DOC GOOGLE] HTML récupéré pour ${fileId}: ${htmlContent.length} caractères`);
-    
     const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
 
     if (!doc) {
-      console.error(`[DOC GOOGLE ERREUR] Impossible de parser le HTML pour ${fileId}`);
+      console.error("Impossible de parser le contenu HTML du Google Doc");
       return null;
     }
 
@@ -179,11 +159,10 @@ async function processGoogleDocument(fileId: string, accessToken: string): Promi
 
     // Nettoyer le texte (supprimer les espaces inutiles et les sauts de ligne)
     textContent = textContent.replace(/\s+/g, ' ').trim();
-    console.log(`[DOC GOOGLE] Texte extrait pour ${fileId}: ${textContent.length} caractères`);
 
     return textContent;
   } catch (error) {
-    console.error(`[DOC GOOGLE ERREUR] ${fileId}: ${error.message}`, error);
+    console.error(`Erreur lors du traitement du Google Doc ${fileId}:`, error);
     return null;
   }
 }
@@ -197,8 +176,6 @@ async function indexFolder(
   progressId: string
 ): Promise<void> {
   try {
-    console.log(`[DOSSIER] Indexation du dossier ${folderId} (profondeur: ${depth})`);
-    
     // Mise à jour de l'état de la progression
     await updateIndexingProgress(progressId, {
       current_folder: folderId,
@@ -206,12 +183,8 @@ async function indexFolder(
     });
 
     // Récupération de la liste des fichiers et dossiers dans le dossier actuel
-    console.log(`[DOSSIER] Récupération des fichiers dans ${folderId}`);
-    const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and trashed=false&fields=files(id, name, mimeType, size, modifiedTime)&key=${googleDriveApiKey}`;
-    console.log(`[DOSSIER] URL API: ${url.substring(0, 100)}...`);
-    
     const response = await fetch(
-      url,
+      `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and trashed=false&fields=files(id, name, mimeType, size, modifiedTime)&key=${googleDriveApiKey}`,
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -220,10 +193,7 @@ async function indexFolder(
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[DOSSIER ERREUR] Récupération des fichiers: HTTP ${response.status} ${response.statusText}`);
-      console.error(`[DOSSIER ERREUR] Détails: ${errorText.substring(0, 500)}`);
-      
+      console.error(`Erreur lors de la récupération des fichiers du dossier ${folderId}: ${response.status} ${response.statusText}`);
       await updateIndexingProgress(progressId, {
         status: 'error',
         error: `Erreur de l'API Google Drive: ${response.status} ${response.statusText}`,
@@ -235,11 +205,9 @@ async function indexFolder(
     const files = data.files;
 
     if (!files || files.length === 0) {
-      console.log(`[DOSSIER] Aucun fichier dans le dossier ${folderId}`);
+      console.log(`Aucun fichier trouvé dans le dossier ${folderId}`);
       return;
     }
-
-    console.log(`[DOSSIER] ${files.length} fichiers trouvés dans ${folderId}`);
 
     // Mise à jour du nombre total de fichiers à traiter (si ce n'est pas déjà fait)
     const totalFiles = files.length;
@@ -248,12 +216,9 @@ async function indexFolder(
     });
 
     // Traitement de chaque fichier et sous-dossier
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      
+    for (const file of files) {
       try {
         const { id: fileId, name: fileName, mimeType, size, modifiedTime } = file;
-        console.log(`[FICHIER ${i+1}/${files.length}] Traitement de "${fileName}" (${fileId.substring(0, 8)}...) - Type: ${mimeType}`);
 
         // Mise à jour du dernier fichier traité
         await updateIndexingProgress(progressId, {
@@ -263,11 +228,11 @@ async function indexFolder(
         // Vérification du type de fichier
         if (mimeType === 'application/vnd.google-apps.folder') {
           // Si c'est un dossier, indexez-le récursivement
-          console.log(`[DOSSIER RÉCURSIF] Traitement du sous-dossier "${fileName}"`);
+          console.log(`Dossier trouvé: ${fileName} (${fileId})`);
           await indexFolder(userId, fileId, folderId, depth + 1, accessToken, progressId);
         } else {
           // Si c'est un fichier, traitez-le
-          console.log(`[FICHIER] Traitement du fichier "${fileName}"`);
+          console.log(`Fichier trouvé: ${fileName} (${fileId})`);
 
           let fileType = 'unknown';
           let content = null;
@@ -277,7 +242,8 @@ async function indexFolder(
             content = await getFileContent(fileId, accessToken);
           } else if (mimeType === 'application/pdf') {
             fileType = 'pdf';
-            console.log(`[FICHIER] Fichier PDF, pas d'extraction de contenu pour ${fileId}`);
+            // Pour les PDF, vous pouvez extraire le texte avec une librairie appropriée si nécessaire
+            content = null; // L'extraction de texte PDF nécessite une librairie supplémentaire
           } else if (mimeType === 'application/vnd.google-apps.document') {
             fileType = 'google-document';
             content = await processGoogleDocument(fileId, accessToken);
@@ -285,9 +251,7 @@ async function indexFolder(
             mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
           ) {
             fileType = 'docx';
-            console.log(`[FICHIER] Fichier DOCX, pas d'extraction de contenu pour ${fileId}`);
-          } else {
-            console.log(`[FICHIER] Type de fichier non supporté pour l'extraction: ${mimeType}`);
+            content = null; // L'extraction de texte DOCX nécessite une librairie supplémentaire
           }
 
           // Insertion des informations du fichier dans la base de données
@@ -310,16 +274,11 @@ async function indexFolder(
         }
 
         // Mise à jour du nombre de fichiers traités
-        const progress = await getIndexingProgress(progressId);
-        const processedFiles = (progress?.processed_files || 0) + 1;
-        
         await updateIndexingProgress(progressId, {
-          processed_files: processedFiles,
+          processed_files: (await getIndexingProgress(progressId))?.processed_files ? (await getIndexingProgress(progressId))?.processed_files! + 1 : 1,
         });
-        
-        console.log(`[PROGRESSION] ${processedFiles}/${totalFiles} fichiers traités (${Math.round((processedFiles/totalFiles)*100)}%)`);
       } catch (innerError) {
-        console.error(`[FICHIER ERREUR] Erreur lors du traitement de "${file.name}" (${file.id}): ${innerError.message}`, innerError);
+        console.error(`Erreur lors du traitement du fichier ${file.name} (${file.id}):`, innerError);
         await updateIndexingProgress(progressId, {
           status: 'error',
           error: `Erreur lors du traitement du fichier ${file.name}: ${innerError.message}`,
@@ -327,9 +286,9 @@ async function indexFolder(
       }
     }
 
-    console.log(`[DOSSIER] Dossier ${folderId} indexé avec succès`);
+    console.log(`Dossier ${folderId} indexé avec succès.`);
   } catch (error) {
-    console.error(`[DOSSIER ERREUR CRITIQUE] Dossier ${folderId}: ${error.message}`, error);
+    console.error(`Erreur lors de l'indexation du dossier ${folderId}:`, error);
     await updateIndexingProgress(progressId, {
       status: 'error',
       error: `Erreur lors de l'indexation du dossier ${folderId}: ${error.message}`,
@@ -338,8 +297,6 @@ async function indexFolder(
 }
 
 async function getIndexingProgress(progressId: string): Promise<IndexingProgress | null> {
-  console.log(`[PROGRESSION] Récupération de la progression ${progressId}`);
-  
   const { data, error } = await supabase
     .from('indexing_progress')
     .select('*')
@@ -347,7 +304,7 @@ async function getIndexingProgress(progressId: string): Promise<IndexingProgress
     .single();
 
   if (error) {
-    console.error(`[PROGRESSION ERREUR] Récupération de la progression: ${error.message}`, error);
+    console.error('Erreur lors de la récupération de la progression de l\'indexation:', error);
     return null;
   }
 
@@ -355,21 +312,16 @@ async function getIndexingProgress(progressId: string): Promise<IndexingProgress
 }
 
 serve(async (req) => {
-  console.log(`[REQUÊTE] Nouvelle requête: ${req.method} ${new URL(req.url).pathname}`);
-  
   if (req.method === 'OPTIONS') {
-    console.log(`[CORS] Réponse aux options CORS`);
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const body = await req.json();
-    const { userId, folderId, progressId } = body;
-    
-    console.log(`[REQUÊTE] Paramètres: userId=${userId?.substring(0, 8)}... folderId=${folderId} progressId=${progressId}`);
+    const { userId, folderId, progressId } = await req.json();
+    console.log('Fonction index-google-drive invoquée avec les paramètres:', { userId, folderId, progressId });
 
     if (!userId || !folderId || !progressId) {
-      console.error(`[VALIDATION] Paramètres manquants: userId=${!!userId}, folderId=${!!folderId}, progressId=${!!progressId}`);
+      console.error('Paramètres manquants.');
       return new Response(JSON.stringify({ error: 'Paramètres userId, folderId et progressId requis.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -377,12 +329,11 @@ serve(async (req) => {
     }
 
     // Récupération du token Google Drive
-    console.log(`[WORKFLOW] Récupération du token Google Drive`);
     let accessToken;
     try {
       accessToken = await getGoogleDriveToken(userId);
     } catch (tokenError) {
-      console.error(`[TOKEN ERREUR] ${tokenError.message}`, tokenError);
+      console.error("Erreur lors de la récupération du token Google Drive:", tokenError);
       return new Response(JSON.stringify({ error: 'Token Google Drive invalide ou expiré.' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -390,17 +341,15 @@ serve(async (req) => {
     }
 
     // Démarrage de l'indexation
-    console.log(`[WORKFLOW] Démarrage de l'indexation pour le dossier ${folderId}`);
     await updateIndexingProgress(progressId, { status: 'running' });
     await indexFolder(userId, folderId, null, 0, accessToken, progressId);
     await updateIndexingProgress(progressId, { status: 'completed' });
-    console.log(`[WORKFLOW] Indexation terminée avec succès pour le dossier ${folderId}`);
 
     return new Response(JSON.stringify({ message: 'Indexation terminée avec succès.' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error(`[ERREUR CRITIQUE] ${error.message}`, error);
+    console.error('Erreur lors de l\'exécution de la fonction index-google-drive:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
