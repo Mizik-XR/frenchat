@@ -4,22 +4,30 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/components/AuthProvider';
 import { SignInForm } from '@/components/auth/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm';
-import { handleProfileQuery } from '@/integrations/supabase/client';
 import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthForms } from '@/hooks/useAuthForms';
 
 type AuthMode = 'signin' | 'signup' | 'password-reset';
 
-export const Auth = () => {
+const Auth = () => {
   const [mode, setMode] = useState<AuthMode>('signin');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  const {
+    email, setEmail,
+    password, setPassword,
+    fullName, setFullName,
+    confirmPassword, setConfirmPassword,
+    rememberMe, setRememberMe,
+    isLoading: isSubmitting,
+    handleSignIn,
+    handleSignUp,
+    handleMagicLink
+  } = useAuthForms();
 
   // Check for existing session
   useEffect(() => {
@@ -53,59 +61,10 @@ export const Auth = () => {
     const searchParams = new URLSearchParams(location.search);
     if (searchParams.get('mode') === 'password-reset') {
       setMode('password-reset');
-      const email = searchParams.get('email');
-      if (email) setEmail(email);
+      const emailParam = searchParams.get('email');
+      if (emailParam) setEmail(emailParam);
     }
-  }, [location]);
-
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
-
-    try {
-      if (mode === 'signin') {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-      } else if (mode === 'signup') {
-        const { error, data } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        if (error) throw error;
-
-        if (data.user) {
-          // Save initial user preferences
-          await supabase.from('user_preferences').insert({
-            user_id: data.user.id,
-            onboarding_completed: false,
-          });
-
-          // Listen for auth state change
-          const authListener = supabase.auth.onAuthStateChange((event) => {
-            // Check for the SIGNED_UP event
-            if (event === "SIGNED_IN") {
-              navigate('/onboarding');
-              authListener.data.subscription.unsubscribe();
-            }
-          });
-        }
-      } else if (mode === 'password-reset') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email);
-        if (error) throw error;
-        alert('Password reset instructions sent to your email');
-      }
-    } catch (err) {
-      console.error('Auth error:', err);
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  }, [location, setEmail]);
 
   // Show loading screen while checking auth
   if (isLoading || isCheckingAuth) {
@@ -130,10 +89,12 @@ export const Auth = () => {
             setEmail={setEmail}
             password={password}
             setPassword={setPassword}
-            onSubmit={handleSubmit}
+            handleSignIn={handleSignIn}
+            handleMagicLink={handleMagicLink}
+            rememberMe={rememberMe}
+            setRememberMe={setRememberMe}
             switchToSignUp={() => setMode('signup')}
             switchToPasswordReset={() => setMode('password-reset')}
-            error={error}
           />
         ) : mode === 'signup' ? (
           <SignUpForm 
@@ -142,16 +103,33 @@ export const Auth = () => {
             setEmail={setEmail}
             password={password}
             setPassword={setPassword}
-            onSubmit={handleSubmit}
+            fullName={fullName}
+            setFullName={setFullName}
+            confirmPassword={confirmPassword}
+            setConfirmPassword={setConfirmPassword}
+            handleSignUp={handleSignUp}
             switchToSignIn={() => setMode('signin')}
-            error={error}
           />
         ) : (
           <div className="mt-8 space-y-6">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Entrez votre adresse e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.
             </p>
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={(e) => {
+              e.preventDefault();
+              // Gérer la réinitialisation du mot de passe
+              const resetPassword = async () => {
+                try {
+                  const { error } = await supabase.auth.resetPasswordForEmail(email);
+                  if (error) throw error;
+                  alert('Instructions de réinitialisation envoyées à votre email');
+                } catch (err) {
+                  console.error('Erreur de réinitialisation:', err);
+                  alert('Erreur lors de l\'envoi du lien de réinitialisation');
+                }
+              };
+              resetPassword();
+            }}>
               <div>
                 <label htmlFor="email" className="sr-only">Adresse e-mail</label>
                 <input
@@ -167,9 +145,6 @@ export const Auth = () => {
                   disabled={isSubmitting}
                 />
               </div>
-              {error && (
-                <div className="text-red-500 text-sm">{error}</div>
-              )}
               <div>
                 <button
                   type="submit"
@@ -207,5 +182,6 @@ export const Auth = () => {
   );
 };
 
-// Export default for lazy loading
+// Export default pour le lazy loading
 export default Auth;
+export { Auth };

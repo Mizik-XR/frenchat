@@ -44,7 +44,7 @@ export const OptimizationTips: React.FC<OptimizationTipsProps> = ({ usageStats, 
         ) : (
           <>
             {ratio > 2 && (
-              <Alert variant="warning">
+              <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Ratio entrée/sortie élevé</AlertTitle>
                 <AlertDescription>
@@ -55,7 +55,7 @@ export const OptimizationTips: React.FC<OptimizationTipsProps> = ({ usageStats, 
             )}
             
             {gpt4Percentage > 50 && (
-              <Alert variant="warning">
+              <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Utilisation importante de GPT-4</AlertTitle>
                 <AlertDescription>
@@ -66,7 +66,7 @@ export const OptimizationTips: React.FC<OptimizationTipsProps> = ({ usageStats, 
             )}
             
             {hasSpikeUsage && (
-              <Alert variant="warning">
+              <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Pics d'utilisation</AlertTitle>
                 <AlertDescription>
@@ -77,7 +77,7 @@ export const OptimizationTips: React.FC<OptimizationTipsProps> = ({ usageStats, 
             )}
             
             {!hasSpikeUsage && ratio <= 2 && gpt4Percentage <= 50 && (
-              <Alert variant="success">
+              <Alert>
                 <CheckCircle className="h-4 w-4" />
                 <AlertTitle>Bonne utilisation</AlertTitle>
                 <AlertDescription>

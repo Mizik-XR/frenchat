@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../components/AuthProvider';
 import { DateTime } from 'luxon';
-import { getRedirectUrl as environmentGetRedirectUrl } from '@/utils/environment/urlUtils';
+import { getRedirectUrl } from '@/utils/environment/urlUtils';
 
 export type GoogleDriveConnectionData = {
   email?: string;
@@ -25,13 +25,21 @@ export type GoogleDriveStatus = {
   isConfigured: boolean;
   configuredAt?: Date;
   clientId?: string;
+  isChecking: boolean;
+  connectionData: GoogleDriveConnectionData | null;
+  error: string | null;
+  checkGoogleDriveConnection: () => Promise<void>;
+  reconnectGoogleDrive: () => Promise<void>;
+  disconnectGoogleDrive: () => Promise<void>;
 };
 
 export const useGoogleDriveStatus = () => {
   const { user } = useAuth();
   const [isChecking, setIsChecking] = useState(false);
   const [connectionData, setConnectionData] = useState<GoogleDriveConnectionData | null>(null);
-  const [status, setStatus] = useState<GoogleDriveStatus>({
+  const [status, setStatus] = useState<Omit<GoogleDriveStatus, 
+    'isChecking' | 'connectionData' | 'error' | 'checkGoogleDriveConnection' | 
+    'reconnectGoogleDrive' | 'disconnectGoogleDrive'>>({
     isConnected: false,
     isLoading: true,
     isConfigured: false
@@ -56,7 +64,7 @@ export const useGoogleDriveStatus = () => {
         .select('*')
         .eq('user_id', userId)
         .eq('provider', 'google_drive')
-        .single();
+        .maybeSingle();
 
       if (authError && !authError.message.includes('No rows found')) {
         console.error('Erreur lors de la vérification des tokens OAuth:', authError);
@@ -99,9 +107,8 @@ export const useGoogleDriveStatus = () => {
       let configDetails = {};
       if (serviceConfig?.configuration) {
         try {
-          configDetails = typeof serviceConfig.configuration === 'string' 
-            ? JSON.parse(serviceConfig.configuration) 
-            : serviceConfig.configuration;
+          const config = serviceConfig.configuration;
+          configDetails = typeof config === 'string' ? JSON.parse(config) : config;
         } catch (e) {
           console.error('Erreur de parsing de la configuration:', e);
         }
@@ -111,8 +118,10 @@ export const useGoogleDriveStatus = () => {
       const configuredAt = serviceConfig ? new Date(serviceConfig.created_at) : undefined;
       
       // Extract client_id safely
-      const clientId = typeof configDetails === 'object' && configDetails ? 
-        (configDetails as any).client_id : undefined;
+      let clientId: string | undefined = undefined;
+      if (typeof configDetails === 'object' && configDetails) {
+        clientId = (configDetails as any).client_id;
+      }
 
       setStatus({
         isConnected,
@@ -144,7 +153,7 @@ export const useGoogleDriveStatus = () => {
   const reconnectGoogleDrive = useCallback(async () => {
     setIsChecking(true);
     try {
-      const redirectUri = environmentGetRedirectUrl('auth/google/callback');
+      const redirectUri = getRedirectUrl('auth/google/callback');
       const { data, error } = await supabase.functions.invoke('unified-oauth-proxy', {
         body: { 
           provider: 'google',
@@ -222,7 +231,7 @@ export const useGoogleDriveStatus = () => {
   };
 };
 
-// Utility function for getting redirect URL
+// Utility function for getting redirect URL - exported to avoid conflicts
 export const getGoogleDriveRedirectUrl = (path: string): string => {
-  return environmentGetRedirectUrl(path);
+  return getRedirectUrl(path);
 };

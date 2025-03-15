@@ -1,3 +1,4 @@
+
 /**
  * Utilitaires pour l'état et le chargement de l'application
  */
