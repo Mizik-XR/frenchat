@@ -24,16 +24,30 @@ if exist "index.html" (
         REM Modify index.html to add missing script
         (for /f "delims=" %%i in (index.html) do (
             echo %%i
-            echo %%i | findstr "<script " >nul
+            echo %%i | findstr "<head>" >nul
             if !errorlevel! EQU 0 (
-                echo     ^<script src="https://cdn.gpteng.co/gptengineer.js" type="module"^>^</script^>
+                echo     ^<script src="https://cdn.gpteng.co/gptengineer.js"^>^</script^>
             )
         )) > index.html.temp
         
         move /y index.html.temp index.html >nul
         echo [OK] gptengineer.js script added to index.html.
     ) else (
-        echo [OK] gptengineer.js script is already present in index.html.
+        echo [INFO] Checking if type="module" needs to be removed...
+        findstr "<script src=\"https://cdn.gpteng.co/gptengineer.js\" type=\"module\">" "index.html" >nul
+        if !errorlevel! EQU 0 (
+            echo [WARNING] Found type="module" attribute, removing it...
+            
+            REM Backup original file
+            copy index.html index.html.backup >nul
+            
+            REM Remove type="module" attribute
+            powershell -Command "(Get-Content index.html) -replace '<script src=\"https://cdn.gpteng.co/gptengineer.js\" type=\"module\">', '<script src=\"https://cdn.gpteng.co/gptengineer.js\">' | Set-Content index.html"
+            
+            echo [OK] type="module" attribute removed from gptengineer.js script.
+        ) else (
+            echo [OK] gptengineer.js script is correctly configured in index.html.
+        )
     )
 ) else (
     echo [ERROR] index.html file is missing in the root directory.

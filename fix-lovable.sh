@@ -17,13 +17,25 @@ if [ -f "index.html" ]; then
         # Backup original file
         cp index.html index.html.backup
         
-        # Add missing script after the first script detected
-        awk '/<script /{print; print "    <script src=\"https://cdn.gpteng.co/gptengineer.js\" type=\"module\"></script>"; next}1' index.html > index.html.temp
+        # Add missing script at beginning of head
+        sed -i 's/<head>/<head>\n    <script src="https:\/\/cdn.gpteng.co\/gptengineer.js"><\/script>/' index.html
         
-        mv index.html.temp index.html
         echo "[OK] gptengineer.js script added to index.html."
     else
-        echo "[OK] gptengineer.js script is already present in index.html."
+        echo "[INFO] Checking if type=\"module\" needs to be removed..."
+        if grep -q '<script src="https://cdn.gpteng.co/gptengineer.js" type="module">' "index.html"; then
+            echo "[WARNING] Found type=\"module\" attribute, removing it..."
+            
+            # Backup original file
+            cp index.html index.html.backup
+            
+            # Remove type="module" attribute
+            sed -i 's/<script src="https:\/\/cdn.gpteng.co\/gptengineer.js" type="module">/<script src="https:\/\/cdn.gpteng.co\/gptengineer.js">/' index.html
+            
+            echo "[OK] type=\"module\" attribute removed from gptengineer.js script."
+        else
+            echo "[OK] gptengineer.js script is correctly configured in index.html."
+        fi
     fi
 else
     echo "[ERROR] index.html file is missing in the root directory."
