@@ -1,197 +1,199 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { Message, MessageMetadata } from "@/types/chat";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthSession } from './useAuthSession';
+import { APP_STATE } from '@/integrations/supabase/client';
 
-export function useChatMessages(conversationId: string | null) {
-  const [messages, setMessages] = useState<Message[]>([]);
+// Types pour les messages
+export type MessageRole = 'user' | 'assistant' | 'system';
+export type MessageType = 'text' | 'image' | 'file' | 'audio' | 'video';
+
+export interface MessageMetadata {
+  fileId?: string;
+  fileName?: string;
+  fileSize?: number;
+  mimeType?: string;
+  imagePath?: string;
+  quotedMessageId?: string;
+  processingStatus?: 'pending' | 'processing' | 'completed' | 'error';
+  processingError?: string;
+  sourceDocuments?: Array<{
+    title: string;
+    content: string;
+    url?: string;
+    similarity?: number;
+  }>;
+  [key: string]: any;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: MessageRole;
+  content: string;
+  type: MessageType;
+  createdAt: Date;
+  metadata?: MessageMetadata;
+  quotedMessage?: ChatMessage;
+}
+
+export interface MessageInput {
+  conversation_id: string;
+  role: MessageRole;
+  content: string;
+  type: string;
+  quoted_message_id?: string;
+}
+
+export const useChatMessages = (conversationId: string | null) => {
+  const { session } = useAuthSession();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Fonction pour formater les messages depuis Supabase
-  const formatMessages = useCallback((data: any[]): Message[] => {
-    return data.map((msg: any) => ({
-      id: msg.id,
-      role: msg.role,
-      content: msg.content,
-      type: msg.type || 'text',
-      conversationId: msg.conversation_id,
-      timestamp: new Date(msg.created_at),
-      replyTo: msg.reply_to,
-      quotedMessageId: msg.quoted_message_id,
-      metadata: msg.metadata
-    }));
-  }, []);
+  // Charger les messages
+  const loadMessages = useCallback(async () => {
+    if (!conversationId || !session?.user?.id) {
+      setMessages([]);
+      return;
+    }
 
-  // Fonction pour récupérer les messages
-  const fetchMessages = useCallback(async (convoId: string) => {
-    if (!convoId) return;
-    
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      console.log(`Fetching messages for conversation: ${convoId}`);
-      
+      // Si nous sommes en mode hors ligne, utiliser des données fictives
+      if (APP_STATE.isOfflineMode) {
+        console.log('Mode hors ligne: utilisation de données simulées pour les messages');
+        const sampleMessages: ChatMessage[] = [
+          {
+            id: '1',
+            role: 'user',
+            content: 'Bonjour, comment puis-je vous aider aujourd\'hui?',
+            type: 'text',
+            createdAt: new Date(Date.now() - 3600000)
+          },
+          {
+            id: '2',
+            role: 'assistant',
+            content: 'Bonjour! Je suis votre assistant IA prêt à répondre à vos questions. Comment puis-je vous aider aujourd\'hui?',
+            type: 'text',
+            createdAt: new Date(Date.now() - 3500000)
+          }
+        ];
+        setMessages(sampleMessages);
+        setIsLoading(false);
+        return;
+      }
+
+      // Récupérer les messages de la conversation depuis Supabase
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
-        .eq('conversation_id', convoId)
+        .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
-      
+
       if (error) throw error;
-      
-      const formattedMessages = formatMessages(data);
-      setMessages(formattedMessages);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      setError("Impossible de récupérer les messages. Veuillez réessayer.");
-      toast.error("Erreur de connexion");
+
+      // Transformer les données
+      const transformedMessages: ChatMessage[] = (data || []).map(msg => ({
+        id: msg.id,
+        role: msg.role as MessageRole,
+        content: msg.content,
+        type: msg.message_type as MessageType,
+        createdAt: new Date(msg.created_at),
+        metadata: msg.metadata || {}
+      }));
+
+      // Ajouter les références aux messages cités
+      const messagesMap = new Map<string, ChatMessage>();
+      transformedMessages.forEach(msg => messagesMap.set(msg.id, msg));
+
+      transformedMessages.forEach(msg => {
+        const quotedId = msg.metadata?.quotedMessageId;
+        if (quotedId && messagesMap.has(quotedId)) {
+          msg.quotedMessage = messagesMap.get(quotedId);
+        }
+      });
+
+      setMessages(transformedMessages);
+    } catch (err) {
+      console.error('Erreur lors du chargement des messages:', err);
+      setError(err instanceof Error ? err : new Error('Erreur inconnue'));
     } finally {
       setIsLoading(false);
     }
-  }, [formatMessages]);
+  }, [conversationId, session?.user?.id]);
 
-  // Charger les messages au changement de conversation
-  useEffect(() => {
-    if (conversationId) {
-      fetchMessages(conversationId);
-    } else {
-      setMessages([]);
-      setError(null);
+  // Envoyer un message
+  const sendMessage = useCallback(async (input: MessageInput): Promise<ChatMessage | null> => {
+    if (!session?.user?.id || !conversationId) {
+      setError(new Error('Utilisateur non authentifié ou conversation non spécifiée'));
+      return null;
     }
-  }, [conversationId, fetchMessages]);
 
-  // Fonction pour ajouter un message utilisateur
-  const addUserMessage = useCallback((content: string, replyToId?: string): Message => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: content,
-      type: 'text',
-      conversationId: conversationId || 'default',
-      timestamp: new Date(),
-      quotedMessageId: replyToId
-    };
-    
-    setMessages((prev) => [...prev, newMessage]);
-    return newMessage;
-  }, [conversationId]);
+    try {
+      // Préparer les données à insérer
+      const messageData = {
+        conversation_id: input.conversation_id,
+        role: input.role,
+        content: input.content,
+        message_type: input.type,
+        user_id: session.user.id,
+        metadata: input.quoted_message_id 
+          ? { quotedMessageId: input.quoted_message_id }
+          : {}
+      };
 
-  // Fonction pour mettre à jour le dernier message
-  const updateLastMessage = useCallback((content: string, context?: string) => {
-    setMessages((prev) => {
-      const updated = [...prev];
-      if (updated.length > 0) {
-        const lastMsg = { ...updated[updated.length - 1] };
-        lastMsg.content = content;
-        if (context) lastMsg.context = context;
-        updated[updated.length - 1] = lastMsg;
+      // Insérer le message dans la base de données
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert(messageData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Transformer le message inséré
+      const newMessage: ChatMessage = {
+        id: data.id,
+        role: data.role as MessageRole,
+        content: data.content,
+        type: data.message_type as MessageType,
+        createdAt: new Date(data.created_at),
+        metadata: data.metadata || {}
+      };
+
+      // Si le message cite un autre message, ajouter la référence
+      if (input.quoted_message_id) {
+        const quotedMessage = messages.find(msg => msg.id === input.quoted_message_id);
+        if (quotedMessage) {
+          newMessage.quotedMessage = quotedMessage;
+        }
       }
-      return updated;
-    });
-  }, []);
 
-  // Fonction pour ajouter une réponse de l'assistant
-  const setAssistantResponse = useCallback((content: string, context?: string, metadata?: MessageMetadata): Message => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      role: 'assistant',
-      content: content,
-      type: 'text',
-      context: context,
-      metadata: metadata,
-      conversationId: conversationId || 'default',
-      timestamp: new Date(),
-    };
-    
-    setMessages((prev) => [...prev, newMessage]);
-    return newMessage;
-  }, [conversationId]);
+      // Mettre à jour l'état des messages
+      setMessages(prevMessages => [...prevMessages, newMessage]);
 
-  // Fonction pour effacer tous les messages
-  const clearMessages = useCallback(() => {
-    setMessages([]);
-    setError(null);
-  }, []);
-
-  // Fonction pour sauvegarder un message dans Supabase
-  const saveMessageToSupabase = useCallback(async (messageData: {
-    conversation_id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    type: string;
-    quoted_message_id?: string;
-  }) => {
-    const { error } = await supabase
-      .from('chat_messages')
-      .insert(messageData);
-    
-    if (error) throw error;
-  }, []);
-
-  // Fonction pour simuler une réponse de l'IA
-  const generateAIResponse = useCallback(async (content: string, convoId: string) => {
-    try {
-      const responseText = "Voici une réponse de l'assistant IA à votre message: " + content;
-      
-      await saveMessageToSupabase({
-        conversation_id: convoId,
-        role: 'assistant',
-        content: responseText,
-        type: 'text'
-      });
-      
-      setAssistantResponse(responseText);
-      setIsLoading(false);
+      return newMessage;
     } catch (err) {
-      console.error("Error processing response:", err);
-      setError("Erreur lors du traitement de la réponse");
-      toast.error("Erreur de traitement");
-      setIsLoading(false);
+      console.error('Erreur lors de l\'envoi du message:', err);
+      setError(err instanceof Error ? err : new Error('Erreur inconnue'));
+      return null;
     }
-  }, [saveMessageToSupabase, setAssistantResponse]);
+  }, [conversationId, session?.user?.id, messages]);
 
-  // Fonction principale pour envoyer un message
-  const sendMessage = useCallback(async (content: string, convoId: string, replyToId?: string) => {
-    if (!content.trim() || !convoId) return;
-
-    try {
-      const userMessage = addUserMessage(content, replyToId);
-      setIsLoading(true);
-      setError(null);
-
-      await saveMessageToSupabase({
-        conversation_id: convoId,
-        role: 'user',
-        content: content,
-        type: 'text',
-        quoted_message_id: replyToId
-      });
-
-      // Simulation de réponse IA avec un délai
-      setTimeout(() => {
-        generateAIResponse(content, convoId);
-      }, 1000);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      setError("Impossible d'envoyer le message");
-      toast.error("Erreur d'envoi");
-      setIsLoading(false);
+  // Charger les messages au montage du composant
+  useEffect(() => {
+    if (conversationId && session?.user?.id) {
+      loadMessages();
     }
-  }, [addUserMessage, generateAIResponse, saveMessageToSupabase]);
+  }, [conversationId, session?.user?.id, loadMessages]);
 
   return {
     messages,
     isLoading,
     error,
-    setIsLoading,
-    addUserMessage,
-    updateLastMessage,
-    setAssistantResponse,
-    clearMessages,
-    sendMessage,
-    fetchMessages
+    refreshMessages: loadMessages,
+    sendMessage
   };
-}
+};

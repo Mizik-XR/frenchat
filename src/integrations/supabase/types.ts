@@ -116,6 +116,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage_metrics: {
+        Row: {
+          created_at: string
+          estimated_cost: number
+          from_cache: boolean
+          id: string
+          operation_type: string
+          provider: string
+          tokens_input: number
+          tokens_output: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          estimated_cost?: number
+          from_cache?: boolean
+          id?: string
+          operation_type?: string
+          provider: string
+          tokens_input?: number
+          tokens_output?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          estimated_cost?: number
+          from_cache?: boolean
+          id?: string
+          operation_type?: string
+          provider?: string
+          tokens_input?: number
+          tokens_output?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       archived_documents: {
         Row: {
           archived_at: string | null
@@ -829,6 +865,7 @@ export type Database = {
           id: string
           metadata: Json | null
           provider: string
+          provider_user_info: Json | null
           refresh_token: string | null
           updated_at: string | null
           user_id: string
@@ -840,6 +877,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           provider: string
+          provider_user_info?: Json | null
           refresh_token?: string | null
           updated_at?: string | null
           user_id: string
@@ -851,6 +889,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           provider?: string
+          provider_user_info?: Json | null
           refresh_token?: string | null
           updated_at?: string | null
           user_id?: string
@@ -892,6 +931,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           client_id: string | null
           created_at: string | null
           email: string | null
@@ -901,6 +941,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          avatar_url?: string | null
           client_id?: string | null
           created_at?: string | null
           email?: string | null
@@ -910,6 +951,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          avatar_url?: string | null
           client_id?: string | null
           created_at?: string | null
           email?: string | null
@@ -928,10 +970,53 @@ export type Database = {
           },
         ]
       }
+      response_cache: {
+        Row: {
+          access_count: number
+          created_at: string
+          estimated_cost: number
+          expires_at: string
+          id: string
+          key: string
+          metadata: Json | null
+          prompt: string
+          provider: string
+          response: string
+          tokens_used: number
+        }
+        Insert: {
+          access_count?: number
+          created_at?: string
+          estimated_cost?: number
+          expires_at: string
+          id?: string
+          key: string
+          metadata?: Json | null
+          prompt: string
+          provider: string
+          response: string
+          tokens_used?: number
+        }
+        Update: {
+          access_count?: number
+          created_at?: string
+          estimated_cost?: number
+          expires_at?: string
+          id?: string
+          key?: string
+          metadata?: Json | null
+          prompt?: string
+          provider?: string
+          response?: string
+          tokens_used?: number
+        }
+        Relationships: []
+      }
       service_configurations: {
         Row: {
           client_id: string | null
           config: Json
+          configuration: Json | null
           created_at: string
           error_message: string | null
           id: string
@@ -945,6 +1030,7 @@ export type Database = {
         Insert: {
           client_id?: string | null
           config?: Json
+          configuration?: Json | null
           created_at?: string
           error_message?: string | null
           id?: string
@@ -958,6 +1044,7 @@ export type Database = {
         Update: {
           client_id?: string | null
           config?: Json
+          configuration?: Json | null
           created_at?: string
           error_message?: string | null
           id?: string
@@ -1380,6 +1467,12 @@ export type Database = {
       cleanup_expired_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_minimal_profile: {
+        Args: {
+          user_id: string
+        }
+        Returns: Json
       }
       halfvec_avg: {
         Args: {

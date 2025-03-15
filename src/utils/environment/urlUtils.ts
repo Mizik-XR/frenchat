@@ -74,3 +74,9 @@ export const getGoogleOAuthRedirectUrl = (): string => {
   
   return baseRedirectUrl;
 };
+
+// Fonction pour obtenir l'URL normalisée en mode cloud
+export const getNormalizedCloudModeUrl = (): string => {
+  const baseUrl = getBaseUrl();
+  return baseUrl.replace(/\/$/, ''); // Supprimer le "/" final s'il existe
+};
