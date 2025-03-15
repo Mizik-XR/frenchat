@@ -5,6 +5,22 @@ import { Download, Cpu, Server, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function InstallationGuide() {
+  // Fonction pour télécharger l'installateur universel
+  const downloadInstaller = () => {
+    // URL est relative au domaine actuel
+    const fileName = "start-universal.bat";
+    const fileUrl = `${window.location.origin}/${fileName}`;
+    
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log(`Téléchargement du fichier ${fileName} depuis ${fileUrl}`);
+  };
+
   return (
     <div className="py-16 bg-black/95">
       <div className="container px-4 mx-auto">
@@ -70,7 +86,7 @@ export function InstallationGuide() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full gap-2" onClick={() => window.location.href = "https://github.com/yourusername/filechat/releases/latest/download/start-universal.bat"}>
+              <Button variant="outline" className="w-full gap-2" onClick={downloadInstaller}>
                 <Download className="h-4 w-4" />
                 Télécharger l'installateur
               </Button>
@@ -104,7 +120,7 @@ export function InstallationGuide() {
           </ol>
           
           <div className="mt-5 flex justify-center">
-            <Button variant="default" className="gap-2" onClick={() => window.location.href = "https://github.com/yourusername/filechat/releases/latest/download/start-universal.bat"}>
+            <Button variant="default" className="gap-2" onClick={downloadInstaller}>
               <Download className="h-4 w-4" />
               Télécharger l'installateur universel
             </Button>

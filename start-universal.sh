@@ -360,5 +360,7 @@ cleanup() {
 # Intercepter Ctrl+C pour nettoyer proprement
 trap cleanup INT TERM
 
-# Attendre indéfiniment
-wait
+# Attendre indéfiniment - cela maintient le script en cours d'exécution
+while true; do
+    sleep 1
+done

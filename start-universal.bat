@@ -130,7 +130,7 @@ if not exist "dist\" (
     if not exist "node_modules\" (
         echo [ACTION] Installation des dépendances Node.js...
         call npm install
-        if errorlevel 1 (
+        if %ERRORLEVEL% NEQ 0 (
             echo [ERREUR] Installation des dépendances échouée
             echo [INFO] Appuyez sur une touche pour quitter...
             pause >nul
@@ -139,7 +139,7 @@ if not exist "dist\" (
     )
     
     call npm run build
-    if errorlevel 1 (
+    if %ERRORLEVEL% NEQ 0 (
         echo [ERREUR] Construction de l'application échouée
         echo [INFO] Appuyez sur une touche pour quitter...
         pause >nul
@@ -198,7 +198,7 @@ where http-server >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo [ACTION] Installation du serveur web...
     call npm install -g http-server >nul 2>nul
-    if errorlevel 1 (
+    if %ERRORLEVEL% NEQ 0 (
         echo [INFO] Utilisation de npx comme alternative...
         start "Serveur Web FileChat" /min cmd /c "npx http-server dist -p 8080 -c-1 --cors"
     ) else (
@@ -248,12 +248,9 @@ echo.
 echo Pour quitter, fermez cette fenêtre.
 echo ===================================================
 echo.
-pause >nul
 
-echo.
-echo Fermeture de FileChat...
-taskkill /F /IM "node.exe" /FI "WINDOWTITLE eq Serveur Web FileChat" >nul 2>nul
-if %USE_PYTHON% EQU 1 (
-    taskkill /F /IM "python.exe" /FI "WINDOWTITLE eq Serveur IA Python" >nul 2>nul
-)
-exit /b 0
+REM Boucle infinie pour garder la fenêtre ouverte
+echo Appuyez sur Ctrl+C pour quitter...
+:boucle
+timeout /t 3600 /nobreak > nul
+goto boucle
