@@ -57,11 +57,10 @@ export const isLovableEnvironment = (): boolean => {
     window.location.search.includes('forceHideBadge=true');
   
   // Vérifier si le script gptengineer.js est chargé
-  const isLovableScriptLoaded = 
-    typeof window.gptengineer !== 'undefined' || 
+  const hasLovableScript = 
     document.querySelector('script[src*="gptengineer.js"]') !== null;
   
-  return isLovableDomain || (isInIframe && hasLovableParam) || isLovableScriptLoaded;
+  return isLovableDomain || (isInIframe && hasLovableParam) || hasLovableScript;
 };
 
 /**
@@ -97,7 +96,7 @@ export const isCloudMode = (): boolean => {
 // Déclaration de type pour ajouter la propriété gptengineer à l'objet Window
 declare global {
   interface Window {
-    gptengineer: any;
+    gptengineer?: any;
     APP_CONFIG?: {
       forceCloudMode?: boolean;
       debugMode?: boolean;

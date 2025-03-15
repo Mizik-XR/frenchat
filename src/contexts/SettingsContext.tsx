@@ -1,6 +1,16 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { isLocalAIAllowed } from '@/hooks/ai/environment/environmentDetection';
+
+// Fonction pour vérifier si l'IA locale est autorisée
+const isLocalAIAllowed = (): boolean => {
+  // Vérifier si nous sommes dans un environnement sans serveur local
+  if (window.location.hostname.includes('lovable') || 
+      window.location.search.includes('forceCloud') ||
+      localStorage.getItem('FORCE_CLOUD_MODE') === 'true') {
+    return false;
+  }
+  return true;
+};
 
 interface SettingsContextType {
   theme: 'light' | 'dark' | 'system';

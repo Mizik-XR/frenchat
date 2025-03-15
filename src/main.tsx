@@ -15,8 +15,19 @@ const renderApp = () => {
       return;
     }
 
+    // S'assurer que React et ReactDOM sont disponibles
+    if (!React || !ReactDOM) {
+      console.error('React ou ReactDOM non disponible');
+      throw new Error('React dependency missing');
+    }
+
+    // Vérifier explicitement createRoot
+    if (typeof ReactDOM.createRoot !== 'function') {
+      console.error('ReactDOM.createRoot n\'est pas une fonction');
+      throw new Error('ReactDOM.createRoot not available');
+    }
+
     // Éviter les conflits avec d'autres environnements et bibliothèques
-    // Nettoyer les détections de fonctionnalités qui pourraient venir d'autres projets
     if (window.navigator && 'permissions' in window.navigator) {
       try {
         // Désactiver les requêtes pour les fonctionnalités non utilisées par notre application
@@ -67,7 +78,10 @@ const renderApp = () => {
         <div style="text-align: center; padding: 2rem;">
           <h1>Erreur de chargement</h1>
           <p>L'application n'a pas pu démarrer correctement. Veuillez rafraîchir la page.</p>
-          <button onclick="window.location.reload()" style="padding: 0.5rem 1rem; margin-top: 1rem;">
+          <button onclick="window.location.href = '/?forceCloud=true'" style="padding: 0.5rem 1rem; margin-top: 1rem;">
+            Mode cloud
+          </button>
+          <button onclick="window.location.reload()" style="padding: 0.5rem 1rem; margin-top: 1rem; margin-left: 0.5rem;">
             Rafraîchir
           </button>
         </div>
@@ -80,6 +94,7 @@ const renderApp = () => {
       <div style="text-align: center; padding: 2rem;">
         <h1>Erreur critique</h1>
         <p>Une erreur critique s'est produite pendant le démarrage de l'application.</p>
+        <p>Détails: ${outerError instanceof Error ? outerError.message : 'Erreur inconnue'}</p>
         <button onclick="window.location.href = '/?forceCloud=true&reset=true'" style="padding: 0.5rem 1rem; margin-top: 1rem;">
           Redémarrer en mode sécurisé
         </button>
@@ -89,11 +104,6 @@ const renderApp = () => {
 };
 
 // Lancer l'application avec une gestion d'erreurs améliorée
-window.addEventListener('DOMContentLoaded', () => {
-  renderApp();
-});
-
-// Exécuter également immédiatement au cas où le DOM est déjà chargé
 if (document.readyState === 'loading') {
   window.addEventListener('DOMContentLoaded', renderApp);
 } else {
