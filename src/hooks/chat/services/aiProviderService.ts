@@ -1,12 +1,12 @@
+
 import { useAIProviders } from "../useAIProviders";
 import { useHuggingFace } from "../../useHuggingFace";
 import { useSecureApiProxy } from "../../useSecureApiProxy";
 import { useOpenAIAgents } from "../../ai/useOpenAIAgents";
-import { WebUIConfig } from "@/types/chat";
+import { WebUIConfig, AIProvider } from "@/types/chat";
 import { fetchRagContext, extractAnthropicResponse } from "../utils/responseHandlers";
 import { saveMessageToDatabase } from "../utils/responseHandlers";
 import { SendMessageOptions } from "../types";
-import { WebUIConfig, AIProvider } from "@/types/chat";
 
 /**
  * Service for generating AI responses using different providers
@@ -79,7 +79,7 @@ export const useAIProviderService = () => {
   /**
    * Generate a response using standard providers (Huggingface, etc.)
    */
-  const generateStandardResponse = async (content: string, provider: string, config: WebUIConfig) => {
+  const generateStandardResponse = async (content: string, provider: AIProvider, config: WebUIConfig) => {
     const results = await generateResponse(
       content,
       content,
