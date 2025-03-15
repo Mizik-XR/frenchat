@@ -127,7 +127,7 @@ export function useChatProcessing() {
             ]
           });
           
-          // Vérification du type de réponse et extraction sécuritaire du contenu
+          // Vérification sécuritaire du type de réponse et extraction du contenu
           if (response && 
               typeof response === 'object' && 
               'content' in response && 

@@ -1,340 +1,110 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+
+import { serve } from "https://deno.land/std/http/server.ts";
+import { createClient } from '@supabase/supabase-js';
 import { corsHeaders } from '../_shared/cors.ts';
-import { DOMParser } from 'https://deno.land/x/deno_dom@v0.1.43/deno-dom-wasm.ts';
-import { load } from "https://deno.land/std@0.217.0/dotenv/mod.ts";
 
-const env = await load();
-
-const supabaseUrl = Deno.env.get('SUPABASE_URL') || env['SUPABASE_URL'] || '';
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || env['SUPABASE_SERVICE_ROLE_KEY'] || '';
-const googleDriveApiKey = Deno.env.get('GOOGLE_DRIVE_API_KEY') || env['GOOGLE_DRIVE_API_KEY'] || '';
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-interface IndexingProgress {
-  id: string;
-  user_id: string;
-  status: string;
-  total_files: number | null;
-  processed_files: number | null;
-  current_folder: string | null;
-  parent_folder: string | null;
-  last_processed_file: string | null;
-  depth: number | null;
-  error: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-async function getGoogleDriveToken(userId: string) {
-  try {
-    const { data, error } = await supabase.functions.invoke('google-oauth', {
-      body: { 
-        action: 'check_token_status', 
-        userId: userId 
-      }
-    });
-    
-    if (error || !data.isValid) {
-      console.error("Erreur lors de la récupération du token:", error || data.error);
-      throw new Error("Token invalide ou expiré");
-    }
-    
-    const { data: tokenData, error: tokenError } = await supabase.functions.invoke('google-oauth', {
-      body: { 
-        action: 'get_token', 
-        userId: userId 
-      }
-    });
-    
-    if (tokenError || !tokenData.access_token) {
-      console.error("Erreur lors de la récupération du token déchiffré:", tokenError);
-      throw new Error("Impossible d'obtenir le token d'accès");
-    }
-    
-    return tokenData.access_token;
-  } catch (error) {
-    console.error("Erreur lors de la récupération du token Google Drive:", error);
-    throw error;
-  }
-}
-
-async function updateIndexingProgress(progressId: string, updates: Partial<IndexingProgress>) {
-  const { error } = await supabase
-    .from('indexing_progress')
-    .update(updates)
-    .eq('id', progressId);
-
-  if (error) {
-    console.error('Erreur lors de la mise à jour de la progression de l\'indexation:', error);
-    throw new Error(`Erreur lors de la mise à jour de la progression: ${error.message}`);
-  }
-}
-
-async function insertUploadedDocument(
-  userId: string,
-  title: string,
-  filePath: string,
-  fileType: string,
-  mimeType: string,
-  size: number,
-  metadata: any,
-  content: string | null = null,
-  previewUrl: string | null = null,
-  contentHash: string | null = null
-) {
-  const { data, error } = await supabase
-    .from('uploaded_documents')
-    .insert([
-      {
-        user_id: userId,
-        title: title,
-        file_path: filePath,
-        file_type: fileType,
-        mime_type: mimeType,
-        size: size,
-        metadata: metadata,
-        content: content,
-        preview_url: previewUrl,
-        content_hash: contentHash
-      },
-    ])
-    .select()
-
-  if (error) {
-    console.error('Erreur lors de l\'insertion du document uploadé:', error);
-    throw new Error(`Erreur lors de l'insertion du document: ${error.message}`);
-  }
-
-  return data ? data[0] : null;
-}
-
-async function getFileContent(fileId: string, accessToken: string): Promise<string | null> {
-  try {
-    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      console.error(`Erreur lors de la récupération du contenu du fichier ${fileId}: ${response.status} ${response.statusText}`);
-      return null;
-    }
-
-    return await response.text();
-  } catch (error) {
-    console.error(`Erreur lors de la récupération du contenu du fichier ${fileId}:`, error);
-    return null;
-  }
-}
-
-async function processGoogleDocument(fileId: string, accessToken: string): Promise<string | null> {
-  try {
-    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/html`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      console.error(`Erreur lors de la récupération du contenu du Google Doc ${fileId}: ${response.status} ${response.statusText}`);
-      return null;
-    }
-
-    const htmlContent = await response.text();
-    const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
-
-    if (!doc) {
-      console.error("Impossible de parser le contenu HTML du Google Doc");
-      return null;
-    }
-
-    let textContent = doc.body?.textContent || '';
-
-    textContent = textContent.replace(/\s+/g, ' ').trim();
-
-    return textContent;
-  } catch (error) {
-    console.error(`Erreur lors du traitement du Google Doc ${fileId}:`, error);
-    return null;
-  }
-}
-
-async function indexFolder(
-  userId: string,
-  folderId: string,
-  parentFolder: string | null,
-  depth: number,
-  accessToken: string,
-  progressId: string
-): Promise<void> {
-  try {
-    await updateIndexingProgress(progressId, {
-      current_folder: folderId,
-      depth: depth
-    });
-
-    const response = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and trashed=false&fields=files(id, name, mimeType, size, modifiedTime)&key=${googleDriveApiKey}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      console.error(`Erreur lors de la récupération des fichiers du dossier ${folderId}: ${response.status} ${response.statusText}`);
-      await updateIndexingProgress(progressId, {
-        status: 'error',
-        error: `Erreur de l'API Google Drive: ${response.status} ${response.statusText}`,
-      });
-      return;
-    }
-
-    const data = await response.json();
-    const files = data.files;
-
-    if (!files || files.length === 0) {
-      console.log(`Aucun fichier trouvé dans le dossier ${folderId}`);
-      return;
-    }
-
-    const totalFiles = files.length;
-    await updateIndexingProgress(progressId, {
-      total_files: totalFiles,
-    });
-
-    for (const file of files) {
-      try {
-        const { id: fileId, name: fileName, mimeType, size, modifiedTime } = file;
-
-        await updateIndexingProgress(progressId, {
-          last_processed_file: fileName,
-        });
-
-        if (mimeType === 'application/vnd.google-apps.folder') {
-          console.log(`Dossier trouvé: ${fileName} (${fileId})`);
-          await indexFolder(userId, fileId, folderId, depth + 1, accessToken, progressId);
-        } else {
-          console.log(`Fichier trouvé: ${fileName} (${fileId})`);
-
-          let fileType = 'unknown';
-          let content = null;
-
-          if (mimeType === 'text/plain') {
-            fileType = 'text';
-            content = await getFileContent(fileId, accessToken);
-          } else if (mimeType === 'application/pdf') {
-            fileType = 'pdf';
-            content = null;
-          } else if (mimeType === 'application/vnd.google-apps.document') {
-            fileType = 'google-document';
-            content = await processGoogleDocument(fileId, accessToken);
-          } else if (
-            mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-          ) {
-            fileType = 'docx';
-            content = null;
-          }
-
-          const filePath = parentFolder ? `${parentFolder}/${fileName}` : fileName;
-          const metadata = {
-            googleDriveFileId: fileId,
-            modifiedTime: modifiedTime,
-          };
-
-          await insertUploadedDocument(
-            userId,
-            fileName,
-            filePath,
-            fileType,
-            mimeType,
-            size,
-            metadata,
-            content
-          );
-
-          await updateIndexingProgress(progressId, {
-            processed_files: (await getIndexingProgress(progressId))?.processed_files ? (await getIndexingProgress(progressId))?.processed_files! + 1 : 1,
-          });
-        }
-      } catch (innerError) {
-        console.error(`Erreur lors du traitement du fichier ${file.name} (${file.id}):`, innerError);
-        await updateIndexingProgress(progressId, {
-          status: 'error',
-          error: `Erreur lors du traitement du fichier ${file.name}: ${innerError.message}`,
-        });
-      }
-    }
-
-    console.log(`Dossier ${folderId} indexé avec succès.`);
-  } catch (error) {
-    console.error(`Erreur lors de l'indexation du dossier ${folderId}:`, error);
-    await updateIndexingProgress(progressId, {
-      status: 'error',
-      error: `Erreur lors de l'indexation du dossier ${folderId}: ${error.message}`,
-    });
-  }
-}
-
-async function getIndexingProgress(progressId: string): Promise<IndexingProgress | null> {
-  const { data, error } = await supabase
-    .from('indexing_progress')
-    .select('*')
-    .eq('id', progressId)
-    .single();
-
-  if (error) {
-    console.error('Erreur lors de la récupération de la progression de l\'indexation:', error);
-    return null;
-  }
-
-  return data;
-}
+// Configuration de Supabase
+const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 serve(async (req) => {
+  // Gestion des requêtes OPTIONS pour CORS
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const { userId, folderId, progressId } = await req.json();
-    console.log('Fonction index-google-drive invoquée avec les paramètres:', { userId, folderId, progressId });
+    // Analyser le corps de la requête
+    const { folder_id, user_id } = await req.json();
 
-    if (!userId || !folderId || !progressId) {
-      console.error('Paramètres manquants.');
-      return new Response(JSON.stringify({ error: 'Paramètres userId, folderId et progressId requis.' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!folder_id || !user_id) {
+      return new Response(
+        JSON.stringify({ error: "ID de dossier et ID utilisateur requis" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400 
+        }
+      );
     }
 
-    let accessToken;
-    try {
-      accessToken = await getGoogleDriveToken(userId);
-    } catch (tokenError) {
-      console.error("Erreur lors de la récupération du token Google Drive:", tokenError);
-      return new Response(JSON.stringify({ error: 'Token Google Drive invalide ou expiré.' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // Récupérer les informations d'accès à Google Drive
+    const { data: tokens, error: tokenError } = await supabase
+      .from('oauth_tokens')
+      .select('access_token, refresh_token')
+      .eq('user_id', user_id)
+      .eq('provider', 'google')
+      .maybeSingle();
+
+    if (tokenError || !tokens) {
+      return new Response(
+        JSON.stringify({ error: "Tokens d'accès Google Drive non trouvés" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401 
+        }
+      );
     }
 
-    await updateIndexingProgress(progressId, { status: 'running' });
-    await indexFolder(userId, folderId, null, 0, accessToken, progressId);
-    await updateIndexingProgress(progressId, { status: 'completed' });
+    // Commencer l'indexation (simulé ici, à implémenter réellement)
+    const indexingId = crypto.randomUUID();
+    
+    // Enregistrer le processus d'indexation
+    const { error: progressError } = await supabase
+      .from('indexing_progress')
+      .insert({
+        id: indexingId,
+        user_id: user_id,
+        source: 'google_drive',
+        source_id: folder_id,
+        status: 'pending',
+        progress: 0,
+        total_files: 0,
+        processed_files: 0,
+        metadata: { folder_id }
+      });
 
-    return new Response(JSON.stringify({ message: 'Indexation terminée avec succès.' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    if (progressError) {
+      return new Response(
+        JSON.stringify({ error: "Erreur lors de l'enregistrement du processus d'indexation" }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500 
+        }
+      );
+    }
+
+    // Appeler la fonction Edge Supabase pour le traitement en arrière-plan
+    await supabase.functions.invoke('batch-index-google-drive', {
+      body: {
+        indexing_id: indexingId,
+        folder_id: folder_id,
+        user_id: user_id,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token
+      }
     });
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: "Indexation démarrée", 
+        indexing_id: indexingId 
+      }),
+      { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200 
+      }
+    );
   } catch (error) {
-    console.error('Erreur lors de l\'exécution de la fonction index-google-drive:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error("Erreur:", error);
+    
+    return new Response(
+      JSON.stringify({ error: "Erreur interne" }),
+      { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500 
+      }
+    );
   }
 });
