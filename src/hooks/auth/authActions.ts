@@ -28,3 +28,25 @@ export function useSignOut() {
     }
   };
 }
+
+// Fonction pour créer un compte et définir le profil
+export async function signUpAndCreateProfile(email: string, password: string, metadata: any = {}) {
+  try {
+    console.log("Tentative d'inscription avec email:", email, "et métadonnées:", metadata);
+    
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata,
+      }
+    });
+    
+    if (error) throw error;
+    
+    return { success: true, user: data.user };
+  } catch (error) {
+    console.error("Erreur d'inscription:", error);
+    throw error;
+  }
+}

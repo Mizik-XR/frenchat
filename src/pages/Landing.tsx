@@ -60,6 +60,7 @@ export default function Landing() {
 
   // Gestionnaires d'événements pour les boutons
   const handleJoinBeta = () => {
+    // Rediriger vers la page d'inscription avec l'onglet "signup" sélectionné par défaut
     navigate('/auth', { state: { tab: 'signup' } });
   };
 
