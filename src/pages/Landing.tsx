@@ -4,7 +4,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
-import { PricingSection } from "@/components/landing/PricingSection";
+import { SystemRequirements } from "@/components/landing/SystemRequirements";
+import { GuideSection } from "@/components/landing/GuideSection";
 import { SparklesCore } from "@/components/landing/SparklesCore";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
@@ -95,8 +96,11 @@ export default function Landing() {
         <section id="features">
           <FeaturesSection />
         </section>
-        <section id="pricing">
-          <PricingSection />
+        <section id="system-requirements">
+          <SystemRequirements />
+        </section>
+        <section id="guide">
+          <GuideSection />
         </section>
       </div>
       
