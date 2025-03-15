@@ -12,9 +12,11 @@ export function isLovableScriptLoaded(): boolean {
   const scripts = document.querySelectorAll('script');
   for (const script of scripts) {
     if (script.src && script.src.includes('gptengineer.js')) {
+      console.log("Script Lovable détecté dans le DOM");
       return true;
     }
   }
+  console.warn("Script Lovable non détecté dans le DOM");
   return false;
 }
 
@@ -23,7 +25,9 @@ export function isLovableScriptLoaded(): boolean {
  * @returns Boolean indiquant si l'objet est initialisé
  */
 export function isLovableInitialized(): boolean {
-  return typeof (window as any).__GPT_ENGINEER__ !== 'undefined';
+  const isInitialized = typeof (window as any).__GPT_ENGINEER__ !== 'undefined';
+  console.log("Lovable initialisé:", isInitialized);
+  return isInitialized;
 }
 
 /**
@@ -73,15 +77,10 @@ export function injectLovableScript(): Promise<void> {
     }
 
     // Supprimer l'ancien script s'il existe mais n'est pas initialisé
-    if (isLovableScriptLoaded() && !isLovableInitialized()) {
-      const scripts = document.querySelectorAll('script');
-      for (const script of scripts) {
-        if (script.src && script.src.includes('gptengineer.js')) {
-          script.remove();
-          console.log("Ancien script Lovable supprimé pour réinitialisation");
-          break;
-        }
-      }
+    const oldScript = document.querySelector('script[src*="gptengineer.js"]');
+    if (oldScript) {
+      console.log("Ancien script Lovable trouvé, suppression pour réinstallation");
+      oldScript.remove();
     }
 
     console.log("Tentative d'injection du script Lovable");
@@ -89,6 +88,7 @@ export function injectLovableScript(): Promise<void> {
     script.src = 'https://cdn.gpteng.co/gptengineer.js';
     script.type = 'module';
     script.async = true;
+    
     script.onload = () => {
       console.log("Script Lovable injecté avec succès");
       // Attendre un court délai pour l'initialisation
@@ -98,17 +98,23 @@ export function injectLovableScript(): Promise<void> {
           console.log("Script Lovable initialisé avec succès");
           resolve();
         } else {
-          console.warn("Script Lovable chargé mais non initialisé");
+          console.warn("Script Lovable chargé mais non initialisé après délai");
           // Résoudre quand même pour éviter de bloquer
           resolve();
         }
-      }, 500);
+      }, 1000);
     };
+    
     script.onerror = (err) => {
       console.error("Erreur lors de l'injection du script Lovable", err);
       reject(err);
     };
 
-    document.head.appendChild(script);
+    // Insérer au début du head pour s'assurer qu'il est chargé avant les autres scripts
+    if (document.head.firstChild) {
+      document.head.insertBefore(script, document.head.firstChild);
+    } else {
+      document.head.appendChild(script);
+    }
   });
 }

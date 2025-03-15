@@ -1,8 +1,9 @@
 
-// Fichier de compatibilité avec shadcn/ui - redirige vers notre implémentation de toast
+// Fichier de compatibilité pour shadcn/ui - utilise notre système de toast
 import { useToast } from "@/hooks/toast/toast-context";
 import { toast } from "@/hooks/toast/toast-utils";
-import type { Toast, ToastVariant } from "@/hooks/toast/types";
+import type { Toast as ToastType, ToastVariant, ToastActionElement } from "@/hooks/toast/types";
 
-// Réexporte les éléments nécessaires pour la compatibilité avec shadcn
-export { useToast, toast, type Toast, type ToastVariant };
+// Export des noms standards pour la compatibilité avec shadcn
+export { useToast, toast };
+export type { ToastType as Toast, ToastVariant, ToastActionElement };

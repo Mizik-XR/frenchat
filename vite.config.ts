@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
+      // Configuration optimisée pour React
       jsxRuntime: 'automatic',
       babel: {
         plugins: []
@@ -33,18 +34,21 @@ export default defineConfig(({ mode }) => ({
       output: {
         // Amélioration de la distribution des chunks
         manualChunks: (id) => {
-          // Bloquer l'ordre d'initialisation circulaire
           if (id.includes('node_modules')) {
             // Empêcher les problèmes d'initialisation de React
             if (id.includes('react') || id.includes('react-dom')) {
               return 'vendor-react';
             }
-            // Séparation plus fine des modules Radix
+            // Séparation fine des modules Radix et Toast
             if (id.includes('@radix-ui/react-toast')) {
               return 'vendor-radix-toast';
             }
             if (id.includes('@radix-ui')) {
               return 'vendor-radix';
+            }
+            // Séparation du système de toast pour éviter les dépendances circulaires
+            if (id.includes('sonner') || id.includes('toast')) {
+              return 'vendor-toast-system';
             }
             // Autres librairies communes
             if (id.includes('lucide')) return 'vendor-lucide';
@@ -69,7 +73,8 @@ export default defineConfig(({ mode }) => ({
       'react-dom', 
       'react-router-dom',
       '@radix-ui/react-toast',
-      'lucide-react'
+      'lucide-react',
+      'sonner'
     ],
     exclude: ['gptengineer', 'lovable-tagger']
   },
@@ -80,7 +85,7 @@ export default defineConfig(({ mode }) => ({
   },
   // Améliorer les performances et l'expérience de développement
   esbuild: {
-    // Désactiver JSX auto pour éviter les erreurs de build
+    // Configuration optimisée
     jsxFactory: 'React.createElement',
     jsxFragment: 'React.Fragment',
     // Optimisations pour les navigateurs plus récents
