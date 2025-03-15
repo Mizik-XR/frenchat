@@ -7,12 +7,12 @@ import { toast } from "@/hooks/use-toast";
 import { Message } from "@/types/chat";
 import { TopicItem } from "./priority-topics/TopicItem";
 import { TopicFilters } from "./priority-topics/TopicFilters";
-import { isImportantMessage, getTopicTitle, determineMessagePriority } from "./priority-topics/utils";
+import { isImportantMessage, getTopicTitle, determineMessagePriority, formatMessageTimestamp } from "./priority-topics/utils";
 
 interface PriorityTopic {
   id: string;
   title: string;
-  timestamp: Date;
+  timestamp: number;
   isCompleted: boolean;
   isArchived: boolean;
   priority: 'high' | 'medium' | 'low';
@@ -54,7 +54,7 @@ export function PriorityTopicsPanel({
       return acc;
     }, []);
 
-    setPriorityTopics(topics.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()));
+    setPriorityTopics(topics.sort((a, b) => b.timestamp - a.timestamp));
   }, [messages]);
 
   const handleTopicComplete = (topicId: string) => {
