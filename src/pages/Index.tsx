@@ -1,43 +1,58 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Landing from './Landing';
-import { useAuth } from "@/components/AuthProvider";
 import { LoadingScreen } from '@/components/auth/LoadingScreen';
+import Landing from './Landing';
+import { useAuth } from '@/components/AuthProvider';
+import { ToastTester } from '@/components/debug/ToastTester';
 
-export default function Index() {
+const Index = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [shouldShowLanding, setShouldShowLanding] = useState(false);
+  const { user, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
-  const [showLanding, setShowLanding] = useState(false);
-  
-  useEffect(() => {
-    console.log("Index page loaded, user:", user ? "Authenticated" : "Not authenticated", "isLoading:", isLoading);
-    
-    // Stocker la route pour la gestion de session
-    localStorage.setItem('last_route', '/');
-    
-    // Seulement rediriger après que le statut d'authentification soit confirmé
-    if (!isLoading) {
-      if (user) {
-        console.log("Redirecting authenticated user to /chat");
-        navigate('/chat');
-      } else {
-        console.log("User not authenticated, showing landing page");
-        setShowLanding(true);
-      }
-    }
-  }, [navigate, user, isLoading]);
 
-  // Afficher un écran de chargement pendant la vérification de l'authentification
-  if (isLoading) {
-    return <LoadingScreen message="Chargement de l'application..." />;
+  useEffect(() => {
+    // Si l'authentification est toujours en cours, on attend
+    if (isAuthLoading) return;
+
+    const hasSeenLanding = localStorage.getItem('hasSeenLanding') === 'true';
+
+    // Logique de redirection
+    if (user) {
+      // Utilisateur connecté -> redirection vers /home
+      navigate('/home', { replace: true });
+    } else if (!hasSeenLanding) {
+      // Nouvel utilisateur non connecté -> afficher la landing page
+      setShouldShowLanding(true);
+      localStorage.setItem('hasSeenLanding', 'true');
+    } else {
+      // Utilisateur non connecté qui a déjà vu la landing page -> redirection vers /auth
+      navigate('/auth', { replace: true });
+    }
+
+    setIsLoading(false);
+  }, [user, isAuthLoading, navigate]);
+
+  if (isLoading || isAuthLoading) {
+    return <LoadingScreen message="Préparation de votre environnement..." />;
   }
-  
-  // Rendre la page d'accueil (Landing) si l'utilisateur n'est pas connecté et que le chargement est terminé
-  if (showLanding) {
-    return <Landing />;
+
+  // Afficher la landing page si nécessaire
+  if (shouldShowLanding) {
+    return (
+      <div>
+        <Landing />
+        <div className="fixed bottom-4 right-4 z-50">
+          <ToastTester />
+        </div>
+      </div>
+    );
   }
-  
-  // Écran de chargement par défaut pendant les transitions
-  return <LoadingScreen message="Préparation de votre expérience..." />;
-}
+
+  // Ce code ne devrait jamais être atteint car nous redirigeons toujours
+  return <LoadingScreen message="Redirection en cours..." />;
+};
+
+export default Index;
+
