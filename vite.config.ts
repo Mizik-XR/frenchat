@@ -54,9 +54,9 @@ export default defineConfig(({ mode }) => ({
           }
         },
         // Format de sortie avec entryFileNames et chunkFileNames pour mieux contrôler le nommage
-        entryFileNames: 'assets/js/[name]-[hash].js',
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
+        entryFileNames: 'assets/js/[name].[hash].js',
+        chunkFileNames: 'assets/js/[name].[hash].js',
+        assetFileNames: 'assets/[ext]/[name].[hash].[ext]'
       },
       // Exclure le script gptengineer.js du bundling
       external: ['https://cdn.gpteng.co/gptengineer.js']

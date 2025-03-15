@@ -4,16 +4,16 @@ import { useToast as useInternalToast } from "./toast/toast-context";
 import type { ToastActionElement, Toast as ToastType, ToastVariant } from "./toast/types";
 import { createToast } from "./toast/toast-utils";
 
-// Re-export types with renamed type to avoid conflict
+// Re-export types avec renommage pour éviter les conflits
 export type { ToastType as Toast, ToastVariant, ToastActionElement };
 
-// Export the hook for use inside components
+// Export le hook pour utilisation dans les composants
 export const useToast = useInternalToast;
 
-// Export the toast function for direct usage
+// Export la fonction toast pour usage direct
 export const toast = createToast;
 
-// Renamed to ToastComponent to avoid conflict with the imported type
+// Renommé en ToastComponent pour éviter le conflit avec le type Toast
 export function ToastComponent({
   className,
   children,

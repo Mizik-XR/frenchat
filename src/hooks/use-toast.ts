@@ -1,7 +1,5 @@
 
-// Ce fichier réexporte le hook useToast et la fonction toast
-// Correction : nous exportons maintenant correctement la fonction toast
-
+// Ce fichier réexporte le hook useToast et la fonction toast pour plus de compatibilité
 import { useToast } from "./toast/toast-context";
 import { toast } from "./toast/toast-utils";
 import type { Toast, ToastVariant } from "./toast/types";

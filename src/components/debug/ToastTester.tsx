@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast"; // Utilisation de notre système de toast corrigé
 import { LovableIntegrationTester } from "./LovableIntegrationTester";
 
 export const ToastTester = () => {
