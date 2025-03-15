@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
 import { BestPracticesSection } from "@/components/landing/BestPracticesSection";
+import RoadmapSection from "@/components/landing/RoadmapSection";
 
 export default function Landing() {
   const location = useLocation();
@@ -86,6 +87,9 @@ export default function Landing() {
         <Hero onJoinBeta={handleJoinBeta} onSeeExamples={handleSeeExamples} />
         <section id="features">
           <FeaturesSection />
+        </section>
+        <section id="roadmap">
+          <RoadmapSection />
         </section>
         <section id="best-practices">
           <BestPracticesSection />

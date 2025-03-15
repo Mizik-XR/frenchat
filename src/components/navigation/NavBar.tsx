@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   Settings, 
@@ -8,7 +8,8 @@ import {
   FileText, 
   BarChart, 
   Menu, 
-  ChevronDown
+  ChevronDown,
+  MapPin
 } from 'lucide-react';
 import { ModeToggle } from "../ThemeToggle";
 import { UserAvatar } from '../auth/UserAvatar';
@@ -28,6 +29,7 @@ import { NotificationCenter } from '../notifications/NotificationCenter';
 
 export const NavBar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { unreadCount } = useUserNotifications();
   const [showMenu, setShowMenu] = useState(false);
@@ -38,6 +40,11 @@ export const NavBar = () => {
 
   const closeMobileMenu = () => {
     setShowMenu(false);
+  };
+
+  const navigateTo = (path: string) => {
+    navigate(path);
+    closeMobileMenu();
   };
 
   const renderNavLinks = () => (
@@ -85,6 +92,15 @@ export const NavBar = () => {
           <Settings className="h-4 w-4 mr-2" />
           Configuration
         </Link>
+      </Button>
+      <Button
+        onClick={() => navigate('/landing?section=roadmap')}
+        variant="ghost"
+        size="sm"
+        className="hidden md:flex"
+      >
+        <MapPin className="h-4 w-4 mr-2" />
+        Roadmap
       </Button>
     </>
   );
@@ -147,6 +163,10 @@ export const NavBar = () => {
                   <BarChart className="mr-2 h-4 w-4" />
                   <span>Monitoring</span>
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigateTo('/landing?section=roadmap')} className="cursor-pointer">
+                <MapPin className="mr-2 h-4 w-4" />
+                <span>Roadmap</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -211,6 +231,13 @@ export const NavBar = () => {
                 <Settings className="h-4 w-4 mr-2" />
                 Configuration
               </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => navigateTo('/landing?section=roadmap')}
+            >
+              <MapPin className="h-4 w-4 mr-2" />
+              Roadmap
             </Button>
           </div>
         </div>

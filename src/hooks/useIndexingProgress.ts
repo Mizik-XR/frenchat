@@ -2,13 +2,24 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface IndexingProgressState {
+  progress: number;
+  isIndexing: boolean;
+  indexed: number;
+  total: number;
+  error: string | null;
+  lastUpdate: number;
+}
+
 export const useIndexingProgress = () => {
-  const [progress, setProgress] = useState(0);
-  const [isIndexing, setIsIndexing] = useState(false);
-  const [indexed, setIndexed] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+  const [state, setState] = useState<IndexingProgressState>({
+    progress: 0,
+    isIndexing: false,
+    indexed: 0,
+    total: 0,
+    error: null,
+    lastUpdate: Date.now()
+  });
 
   useEffect(() => {
     const channel = supabase
@@ -20,17 +31,15 @@ export const useIndexingProgress = () => {
             const { current, total, status } = data;
             
             if (typeof current === 'number' && typeof total === 'number') {
-              setIndexed(current);
-              setTotal(total);
-              setProgress(total > 0 ? Math.round((current / total) * 100) : 0);
-              setIsIndexing(status !== 'completed' && status !== 'failed');
-              setLastUpdate(Date.now());
-              
-              if (status === 'failed') {
-                setError('Échec de l\'indexation');
-              } else {
-                setError(null);
-              }
+              setState(prev => ({
+                ...prev,
+                indexed: current,
+                total: total,
+                progress: total > 0 ? Math.round((current / total) * 100) : 0,
+                isIndexing: status !== 'completed' && status !== 'failed',
+                lastUpdate: Date.now(),
+                error: status === 'failed' ? 'Échec de l\'indexation' : null
+              }));
             }
           }
         } catch (err) {
@@ -44,12 +53,5 @@ export const useIndexingProgress = () => {
     };
   }, []);
 
-  return {
-    progress,
-    isIndexing,
-    indexed,
-    total,
-    error,
-    lastUpdate
-  };
+  return state;
 };

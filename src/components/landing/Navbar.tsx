@@ -1,135 +1,124 @@
 
+import { useState, useEffect } from 'react';
+import { Menu, X, MapPin } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { LogoImage } from "../common/LogoImage";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
-import { cn } from "@/lib/utils";
-import { ChevronDown } from "lucide-react";
+import { ModeToggle } from "../ThemeToggle";
 
 interface NavbarProps {
-  onJoinBeta?: () => void;
+  onJoinBeta: () => void;
 }
 
 export default function Navbar({ onJoinBeta }: NavbarProps) {
-  const scrollToSection = (sectionId: string) => {
-    const section = document.getElementById(sectionId);
-    if (section) {
-      section.scrollIntoView({ behavior: 'smooth' });
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    setIsMenuOpen(false);
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-black/50 backdrop-blur-md border-b border-white/10">
-      <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <div className="flex items-center gap-2">
-          <LogoImage className="h-8 w-8" />
-          <span className="text-white font-bold text-xl">Frenchat</span>
-        </div>
-        
-        <NavigationMenu className="hidden md:flex">
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <NavigationMenuTrigger className="bg-transparent text-gray-300 hover:text-white hover:bg-white/10">
-                Sections
-              </NavigationMenuTrigger>
-              <NavigationMenuContent className="bg-black/90 backdrop-blur-md border border-white/10">
-                <ul className="grid w-[200px] p-2 gap-1">
-                  {[
-                    { id: "features", name: "Fonctionnalités" },
-                    { id: "best-practices", name: "Bonnes pratiques" },
-                    { id: "installation", name: "Installation" },
-                    { id: "system-requirements", name: "Prérequis système" },
-                    { id: "guide", name: "Guide" }
-                  ].map((section) => (
-                    <li key={section.id}>
-                      <button
-                        onClick={() => scrollToSection(section.id)}
-                        className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-                      >
-                        {section.name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
-
-        <nav className="hidden md:flex items-center space-x-6">
-          <a 
-            href="#features" 
-            className="text-gray-300 hover:text-white transition-colors"
-            onClick={(e) => {
-              e.preventDefault();
-              scrollToSection('features');
-            }}
-          >
-            Fonctionnalités
-          </a>
-        </nav>
-        
-        <div className="flex items-center space-x-4">
-          <Button 
-            variant="outline" 
-            className="text-white border-white/20 hover:bg-white/10"
-            onClick={onJoinBeta}
-          >
-            Rejoindre la Beta
-          </Button>
-        </div>
-      </div>
-      
-      {/* Menu déroulant mobile */}
-      <div className="md:hidden px-4 py-2 border-t border-white/10">
-        <div className="relative">
-          <button 
-            className="flex items-center justify-between w-full py-2 px-3 text-white bg-white/5 hover:bg-white/10 rounded-md transition-colors"
-            onClick={() => {
-              const mobileMenu = document.getElementById('mobile-menu');
-              if (mobileMenu) {
-                mobileMenu.classList.toggle('hidden');
-              }
-            }}
-          >
-            <span>Sections</span>
-            <ChevronDown className="h-4 w-4 opacity-50" />
-          </button>
+    <nav className={`sticky top-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-black/70 backdrop-blur-md' : 'bg-transparent'}`}>
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center">
+            <div className="flex-shrink-0 flex items-center">
+              <img className="h-8 w-auto" src="/favicon.ico" alt="filechat" />
+              <span className="ml-2 text-white font-bold text-lg">filechat</span>
+            </div>
+          </div>
           
-          <div id="mobile-menu" className="hidden absolute top-full left-0 right-0 mt-1 bg-black/90 backdrop-blur-md border border-white/10 rounded-md overflow-hidden z-50">
-            <ul className="py-1">
-              {[
-                { id: "features", name: "Fonctionnalités" },
-                { id: "best-practices", name: "Bonnes pratiques" },
-                { id: "installation", name: "Installation" },
-                { id: "system-requirements", name: "Prérequis système" },
-                { id: "guide", name: "Guide" }
-              ].map((section) => (
-                <li key={section.id}>
-                  <button
-                    onClick={() => {
-                      scrollToSection(section.id);
-                      const mobileMenu = document.getElementById('mobile-menu');
-                      if (mobileMenu) {
-                        mobileMenu.classList.add('hidden');
-                      }
-                    }}
-                    className="block w-full text-left px-4 py-2 text-gray-300 hover:text-white hover:bg-white/10"
-                  >
-                    {section.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <div className="hidden md:block">
+            <div className="ml-10 flex items-center space-x-4">
+              <Button onClick={() => scrollToSection('features')} variant="ghost" className="text-gray-300 hover:text-white">
+                Fonctionnalités
+              </Button>
+              <Button onClick={() => scrollToSection('roadmap')} variant="ghost" className="text-gray-300 hover:text-white flex items-center gap-1">
+                <MapPin className="h-4 w-4" />
+                Roadmap
+              </Button>
+              <Button onClick={() => scrollToSection('best-practices')} variant="ghost" className="text-gray-300 hover:text-white">
+                Bonnes pratiques
+              </Button>
+              <Button onClick={() => scrollToSection('installation')} variant="ghost" className="text-gray-300 hover:text-white">
+                Installation
+              </Button>
+              <Button onClick={() => scrollToSection('system-requirements')} variant="ghost" className="text-gray-300 hover:text-white">
+                Prérequis
+              </Button>
+              <Button onClick={() => scrollToSection('guide')} variant="ghost" className="text-gray-300 hover:text-white">
+                Guide
+              </Button>
+              <ModeToggle />
+              <Button onClick={onJoinBeta} className="ml-2 bg-blue-600 hover:bg-blue-700">
+                Rejoindre la Beta
+              </Button>
+            </div>
+          </div>
+          
+          <div className="flex md:hidden">
+            <ModeToggle />
+            <Button 
+              onClick={toggleMenu} 
+              variant="ghost" 
+              size="icon" 
+              className="text-white"
+              aria-label="Menu"
+            >
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
           </div>
         </div>
       </div>
-    </header>
+
+      {isMenuOpen && (
+        <div className="md:hidden bg-black/90 backdrop-blur-md">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <Button onClick={() => scrollToSection('features')} variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
+              Fonctionnalités
+            </Button>
+            <Button onClick={() => scrollToSection('roadmap')} variant="ghost" className="w-full justify-start text-gray-300 hover:text-white flex items-center gap-1">
+              <MapPin className="h-4 w-4" />
+              Roadmap
+            </Button>
+            <Button onClick={() => scrollToSection('best-practices')} variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
+              Bonnes pratiques
+            </Button>
+            <Button onClick={() => scrollToSection('installation')} variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
+              Installation
+            </Button>
+            <Button onClick={() => scrollToSection('system-requirements')} variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
+              Prérequis
+            </Button>
+            <Button onClick={() => scrollToSection('guide')} variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
+              Guide
+            </Button>
+            <Button onClick={onJoinBeta} className="w-full bg-blue-600 hover:bg-blue-700">
+              Rejoindre la Beta
+            </Button>
+          </div>
+        </div>
+      )}
+    </nav>
   );
 }
