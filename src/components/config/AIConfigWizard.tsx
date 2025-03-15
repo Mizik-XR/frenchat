@@ -38,9 +38,8 @@ export function AIConfigWizard() {
   const handleDownloadModel = async () => {
     try {
       await startModelDownload({
-        model_id: selectedModel,
-        destination: "local",
-        use_gpu: capabilities.gpu.available
+        model: selectedModel,
+        consent: true
       });
       
       toast({
