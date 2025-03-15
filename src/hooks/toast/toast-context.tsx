@@ -1,12 +1,16 @@
 
 import React, { createContext, useContext, useState, useMemo } from "react";
 import { State } from "./types";
-import { dispatch, memoryState, listeners } from "./toast-utils";
-import * as RadixToast from "@radix-ui/react-toast";
+import { dispatch, memoryState, listeners, createToast } from "./toast-utils";
+import { Toast } from "./types";
 
 type ToastContextType = {
   state: State;
-  toast: (props: any) => { id: string; dismiss: () => void; update: (props: any) => void };
+  toast: (props: Omit<Toast, "id"> & { id?: string }) => { 
+    id: string; 
+    dismiss: () => void; 
+    update: (props: any) => void 
+  };
   dismiss: (toastId?: string) => void;
 };
 
@@ -34,34 +38,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Fonction pour créer un toast
-  const toast = (props: any) => {
-    // Générer un ID unique basé sur le timestamp actuel
-    const id = props.id || String(Date.now());
-    
-    // Dispatcher l'action pour ajouter le toast
-    dispatch({
-      type: "ADD_TOAST",
-      toast: {
-        ...props,
-        id,
-        open: true,
-        onOpenChange: (open: boolean) => {
-          if (!open) dismiss(id);
-        },
-      },
-    });
-
-    // Retourner l'API pour interagir avec ce toast
-    return {
-      id,
-      dismiss: () => dismiss(id),
-      update: (props: any) => {
-        dispatch({
-          type: "UPDATE_TOAST",
-          toast: { ...props, id },
-        });
-      },
-    };
+  const toast = (props: Omit<Toast, "id"> & { id?: string }) => {
+    return createToast(props);
   };
 
   // Fonction pour fermer un toast
@@ -93,15 +71,3 @@ export function useToast() {
     toasts: context.state.toasts,
   };
 }
-
-// Export de la fonction toast pour utilisation sans hook
-export const toast = (props: any) => {
-  if (typeof window === 'undefined') return { id: '', dismiss: () => {}, update: () => {} };
-  
-  // Cette fonction sera utilisée pour les appels hors composants React
-  // Elle lancera une erreur si appelée en dehors d'un contexte React
-  // Les cas d'utilisation réels devraient toujours utiliser le hook useToast()
-  throw new Error(
-    "La fonction toast() ne peut pas être appelée directement en dehors d'un composant React. Utilisez le hook useToast() à la place."
-  );
-};

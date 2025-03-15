@@ -1,113 +1,49 @@
 
-import { Action, State, actionTypes, ToasterToast } from "./types";
+import { Toast } from "../use-toast.tsx";
 
-// Constants
-export const TOAST_LIMIT = 1;
-export const TOAST_REMOVE_DELAY = 1000000;
+// Internal state management
+export type State = { toasts: Toast[] };
 
-// State management
-let count = 0;
-export let memoryState: State = { toasts: [] };
-export let listeners: Array<(state: State) => void> = [];
-export const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+export const listeners: ((state: State) => void)[] = [];
+export const memoryState: State = { toasts: [] };
 
-// Utility functions
-export function genId() {
-  count = (count + 1) % Number.MAX_SAFE_INTEGER;
-  return count.toString();
-}
+// Action handler for toast state management
+type Action =
+  | { type: "ADD_TOAST"; toast: Toast }
+  | { type: "UPDATE_TOAST"; toast: Partial<Toast> & { id: string } }
+  | { type: "DISMISS_TOAST"; toastId?: string };
 
-export const addToRemoveQueue = (toastId: string) => {
-  if (toastTimeouts.has(toastId)) {
-    return;
-  }
-
-  const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId);
-    dispatch({
-      type: "REMOVE_TOAST",
-      toastId: toastId,
-    });
-  }, TOAST_REMOVE_DELAY);
-
-  toastTimeouts.set(toastId, timeout);
-};
-
-// Reducer function
-export const reducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case "ADD_TOAST":
-      return {
-        ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
-      };
-
-    case "UPDATE_TOAST":
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === action.toast.id ? { ...t, ...action.toast } : t
-        ),
-      };
-
-    case "DISMISS_TOAST": {
-      const { toastId } = action;
-
-      // Side effects - This could be extracted into a dismissToast() action,
-      // but keeping it here for simplicity
-      if (toastId) {
-        addToRemoveQueue(toastId);
-      } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id);
-        });
-      }
-
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === toastId || toastId === undefined
-            ? {
-                ...t,
-                open: false,
-              }
-            : t
-        ),
-      };
-    }
-    case "REMOVE_TOAST":
-      if (action.toastId === undefined) {
-        return {
-          ...state,
-          toasts: [],
-        };
-      }
-      return {
-        ...state,
-        toasts: state.toasts.filter((t) => t.id !== action.toastId),
-      };
-  }
-};
-
-// Dispatch function
-export function dispatch(action: Action) {
-  memoryState = reducer(memoryState, action);
+export const dispatch = (action: Action): void => {
+  memoryState.toasts = reducer(memoryState.toasts, action);
   listeners.forEach((listener) => {
     listener(memoryState);
   });
-}
+};
 
-// Toast creator function - Export comme "createToast" et comme "toast" pour compatibilité
-export function createToast(props: Partial<Omit<ToasterToast, "id">>) {
-  const id = genId();
+// Standard reducer for toast actions
+const reducer = (state: Toast[], action: Action): Toast[] => {
+  switch (action.type) {
+    case "ADD_TOAST":
+      return [...state, action.toast];
 
-  const update = (props: Partial<ToasterToast>) =>
-    dispatch({
-      type: "UPDATE_TOAST",
-      toast: { ...props, id },
-    });
-    
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
+    case "UPDATE_TOAST":
+      return state.map((t) =>
+        t.id === action.toast.id ? { ...t, ...action.toast } : t
+      );
+
+    case "DISMISS_TOAST":
+      if (action.toastId) {
+        return state.map((t) =>
+          t.id === action.toastId ? { ...t, open: false } : t
+        );
+      }
+      return state.map((t) => ({ ...t, open: false }));
+  }
+};
+
+// Helper function to create toasts
+export const createToast = (props: Omit<Toast, "id"> & { id?: string }) => {
+  const id = props.id || String(Date.now());
 
   dispatch({
     type: "ADD_TOAST",
@@ -115,18 +51,20 @@ export function createToast(props: Partial<Omit<ToasterToast, "id">>) {
       ...props,
       id,
       open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss();
+      onOpenChange: (open: boolean) => {
+        if (!open) dispatch({ type: "DISMISS_TOAST", toastId: id });
       },
-    } as ToasterToast,
+    },
   });
 
   return {
     id,
-    dismiss,
-    update,
+    dismiss: () => dispatch({ type: "DISMISS_TOAST", toastId: id }),
+    update: (props: Partial<Toast>) => {
+      dispatch({
+        type: "UPDATE_TOAST",
+        toast: { ...props, id },
+      });
+    },
   };
-}
-
-// Export alias pour compatibilité avec les imports existants
-export const toast = createToast;
+};
