@@ -3,10 +3,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config';
-import { APP_STATE, checkOfflineMode } from './appState';
-import { preloadSession } from './sessionManager';
-import { detectLocalAIService } from './aiServiceDetector';
-import { handleProfileQuery, checkSupabaseConnection } from './profileUtils';
 
 // Type helper for Edge Function responses
 export type EdgeFunctionResponse<T> = {
@@ -19,6 +15,41 @@ export type EdgeFunctionResponse<T> = {
   };
 };
 
+// Application state with offline mode capability
+export const APP_STATE = {
+  isOfflineMode: false,
+  supabaseErrors: [] as Error[],
+  
+  setOfflineMode(value: boolean) {
+    this.isOfflineMode = value;
+    localStorage.setItem('OFFLINE_MODE', value ? 'true' : 'false');
+    // Dispatch event for listeners
+    window.dispatchEvent(new CustomEvent('offlinemode-change', { detail: { isOffline: value } }));
+  },
+  
+  logSupabaseError(error: Error) {
+    this.supabaseErrors.push(error);
+    console.error("Supabase error logged:", error);
+  }
+};
+
+// Check if offline mode is enabled in localStorage
+export function checkOfflineMode() {
+  const isPreviewEnvironment = window.location.hostname.includes('lovable');
+  const forceCloud = new URLSearchParams(window.location.search).has('forceCloud');
+  
+  if (isPreviewEnvironment || forceCloud) {
+    // Force online mode in preview or when forceCloud parameter is present
+    localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+    localStorage.setItem('aiServiceType', 'cloud');
+    APP_STATE.isOfflineMode = false;
+    return;
+  }
+  
+  const storedMode = localStorage.getItem('OFFLINE_MODE');
+  APP_STATE.isOfflineMode = storedMode === 'true';
+}
+
 // Create client with error handling
 let supabaseClient: any = null;
 
@@ -28,6 +59,9 @@ try {
   
   if (APP_STATE.isOfflineMode) {
     console.warn("Application en mode hors ligne, client Supabase non initialisé");
+  } else if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+    console.error("Configuration Supabase incomplète, vérifiez vos variables d'environnement");
+    APP_STATE.setOfflineMode(true);
   } else {
     // Create client with optimized options
     supabaseClient = createClient<Database>(
@@ -68,25 +102,43 @@ try {
   APP_STATE.setOfflineMode(true);
 }
 
-// Export Supabase client and utilities
+// Export Supabase client
 export const supabase = supabaseClient;
-export { APP_STATE, checkOfflineMode, preloadSession, detectLocalAIService, handleProfileQuery, checkSupabaseConnection };
 
-// Preload session if we're in a browser
-if (typeof window !== 'undefined') {
-  // Non-blocking preload
-  setTimeout(() => {
-    preloadSession().catch(err => {
-      console.warn("Session preload failed:", err);
-    });
-  }, 0);
+// Fonction utilitaire pour détecter si le service d'IA locale est disponible
+export function detectLocalAIService() {
+  // Implémenter la détection de service local si nécessaire
+  return Promise.resolve({ available: false });
+}
+
+// Fonction utilitaire pour le préchargement de session
+export function preloadSession() {
+  if (!supabase || APP_STATE.isOfflineMode) {
+    return Promise.resolve({ session: null });
+  }
   
-  // Local AI service detection
-  setTimeout(() => {
-    detectLocalAIService().catch(err => {
-      console.warn("Local AI service detection failed:", err);
-    });
-  }, 1000);
+  return supabase.auth.getSession().catch(err => {
+    console.error("Erreur lors du préchargement de session:", err);
+    if (err.message?.includes('Failed to fetch')) {
+      APP_STATE.setOfflineMode(true);
+    }
+    return { session: null };
+  });
+}
+
+// Fonction utilitaire pour vérifier la connexion Supabase
+export function checkSupabaseConnection() {
+  if (!supabase) return Promise.resolve(false);
+  
+  return supabase.auth.getSession()
+    .then(() => true)
+    .catch(() => false);
+}
+
+// Fonction utilitaire pour manipuler les requêtes de profil
+export function handleProfileQuery(error: any) {
+  console.error("Erreur lors de la requête de profil:", error);
+  return null;
 }
 
 // Tester la validation des paramètres Supabase
@@ -103,4 +155,13 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       "font-size: 14px;"
     );
   }
+}
+
+// Initialiser avec une tentative de lecture de session non bloquante
+if (typeof window !== 'undefined' && supabase) {
+  setTimeout(() => {
+    preloadSession().catch(err => {
+      console.warn("Session preload failed:", err);
+    });
+  }, 0);
 }

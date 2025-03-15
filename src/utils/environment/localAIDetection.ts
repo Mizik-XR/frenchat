@@ -16,17 +16,32 @@ export function isLocalAIEnvironmentCompatible(): boolean {
     const isSecureContext = window.isSecureContext;
     const isLocalStorageAvailable = typeof localStorage !== 'undefined';
     
+    // Vérifier si nous sommes sur Lovable ou un autre service de prévisualisation
+    const isPreviewEnvironment = 
+      window.location.hostname.includes('lovable') || 
+      window.location.hostname.includes('preview') ||
+      window.location.hostname.includes('netlify');
+    
     // Les connexions locales sont généralement bloquées dans ces contextes
     const potentiallyRestricted = 
+      isPreviewEnvironment ||
       (isIframe && isSecureContext && window.location.hostname !== 'localhost') ||
       (isSecureContext && window.location.protocol === 'https:' && 
        !window.location.hostname.includes('localhost') && 
        !window.location.hostname.includes('127.0.0.1'));
     
-    // Si nous sommes dans un iframe sécurisé sur un domaine distant, 
+    // Si nous sommes dans un environnement restrictif,
     // les connexions localhost sont probablement bloquées
     if (potentiallyRestricted) {
       console.log("Environnement potentiellement incompatible avec l'IA locale détecté");
+      
+      // Forcer le mode cloud dans les environnements de prévisualisation
+      if (isPreviewEnvironment && isLocalStorageAvailable) {
+        localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+        localStorage.setItem('aiServiceType', 'cloud');
+        console.log("Mode cloud forcé en environnement de prévisualisation");
+      }
+      
       return false;
     }
     
@@ -38,6 +53,11 @@ export function isLocalAIEnvironmentCompatible(): boolean {
 }
 
 export async function isOllamaAvailable(): Promise<boolean> {
+  // Si l'environnement n'est pas compatible, ne pas tenter la connexion
+  if (!isLocalAIEnvironmentCompatible()) {
+    return false;
+  }
+  
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000);
@@ -55,6 +75,11 @@ export async function isOllamaAvailable(): Promise<boolean> {
 }
 
 export async function isPythonServerAvailable(): Promise<boolean> {
+  // Si l'environnement n'est pas compatible, ne pas tenter la connexion
+  if (!isLocalAIEnvironmentCompatible()) {
+    return false;
+  }
+  
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000);
