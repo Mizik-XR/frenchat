@@ -6,4 +6,6 @@ export interface IndexingProgressState {
   total: number;
   error: string | null;
   lastUpdate: number;
+  indexingProgress?: number;
+  startIndexing?: () => void;
 }
