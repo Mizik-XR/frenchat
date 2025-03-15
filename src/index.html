@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frenchat - Votre assistant d'intelligence documentaire</title>
+    <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
+    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+    <!-- Style de base pour l'écran de chargement initial -->
+    <style>
+      #loading-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: linear-gradient(to bottom right, #f0f9ff, #e1e7ff);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+      .loading-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+      }
+      .loading-title {
+        color: #4f46e5;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      .loading-bar {
+        width: 100%;
+        height: 6px;
+        background-color: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 1.5rem 0;
+      }
+      .loading-bar-progress {
+        width: 30%;
+        height: 100%;
+        background-color: #4f46e5;
+        border-radius: 3px;
+        animation: progressAnimation 2s infinite ease-in-out;
+      }
+      @keyframes progressAnimation {
+        0% { width: 10%; }
+        50% { width: 70%; }
+        100% { width: 10%; }
+      }
+      .retry-btn {
+        margin-top: 1rem;
+        background-color: #4f46e5;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      .error-message {
+        color: #dc2626;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Message de secours si le JavaScript est désactivé -->
+    <noscript>
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center;">
+        <h1 style="color: #4f46e5; margin-bottom: 20px;">JavaScript est requis</h1>
+        <p>Cette application nécessite que JavaScript soit activé pour fonctionner.</p>
+        <p>Veuillez l'activer dans les paramètres de votre navigateur.</p>
+      </div>
+    </noscript>
+    
+    <!-- Écran de chargement visible immédiatement -->
+    <div id="root">
+      <div id="loading-screen">
+        <div class="loading-container">
+          <h1 class="loading-title">Frenchat</h1>
+          <p>Chargement de votre assistant d'intelligence documentaire...</p>
+          <div class="loading-bar"><div class="loading-bar-progress"></div></div>
+          <p style="font-size: 0.8rem; color: #6b7280;">Si le chargement échoue, essayez de rafraîchir la page.</p>
+          <div class="error-message" id="loading-error" style="display: none;">Le chargement semble prendre plus de temps que prévu.</div>
+          <button class="retry-btn" id="refresh-btn" onclick="window.location.reload()" style="display: none;">Rafraîchir la page</button>
+          <button class="retry-btn" id="cloud-btn" onclick="localStorage.setItem('FORCE_CLOUD_MODE', 'true'); localStorage.setItem('aiServiceType', 'cloud'); window.location.href = '/?forceCloud=true'" style="display: none; margin-left: 8px; background-color: #6366f1;">Mode cloud</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Script pour détecter les problèmes de chargement -->
+    <script>
+      // Afficher les boutons de récupération après 8 secondes
+      setTimeout(function() {
+        const errorMsg = document.getElementById('loading-error');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const cloudBtn = document.getElementById('cloud-btn');
+        
+        if (errorMsg && refreshBtn && cloudBtn) {
+          errorMsg.style.display = 'block';
+          refreshBtn.style.display = 'inline-block';
+          cloudBtn.style.display = 'inline-block';
+        }
+      }, 8000);
+      
+      // Détecter les erreurs et activer les boutons de récupération
+      window.addEventListener('error', function() {
+        const errorMsg = document.getElementById('loading-error');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const cloudBtn = document.getElementById('cloud-btn');
+        
+        if (errorMsg && refreshBtn && cloudBtn) {
+          errorMsg.style.display = 'block';
+          refreshBtn.style.display = 'inline-block';
+          cloudBtn.style.display = 'inline-block';
+        }
+      });
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

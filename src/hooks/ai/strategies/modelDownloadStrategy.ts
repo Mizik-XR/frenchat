@@ -8,6 +8,13 @@ import { ModelDownloadStatus } from '../types';
 export const fetchModelDownloadProgress = async (localAIUrl: string | null): Promise<ModelDownloadStatus | null> => {
   if (!localAIUrl) return null;
   
+  // Vérifier si nous sommes dans un environnement de prévisualisation
+  if (window.location.hostname.includes('lovable') || 
+      window.location.search.includes('forceCloud') ||
+      localStorage.getItem('FORCE_CLOUD_MODE') === 'true') {
+    return null;
+  }
+  
   try {
     const response = await fetch(`${localAIUrl}/download-progress`);
     if (response.ok) {
@@ -21,6 +28,13 @@ export const fetchModelDownloadProgress = async (localAIUrl: string | null): Pro
 };
 
 export const fetchAvailableModels = async (serviceType: string, localAIUrl: string | null) => {
+  // Ne pas essayer de récupérer les modèles dans un environnement de prévisualisation
+  if (window.location.hostname.includes('lovable') || 
+      window.location.search.includes('forceCloud') ||
+      localStorage.getItem('FORCE_CLOUD_MODE') === 'true') {
+    return [];
+  }
+  
   if (serviceType === 'local' && localAIUrl) {
     try {
       const response = await fetch(`${localAIUrl}/models`);
@@ -36,6 +50,18 @@ export const fetchAvailableModels = async (serviceType: string, localAIUrl: stri
 };
 
 export const downloadModel = async (modelId: string, localAIUrl: string | null, serviceType: string) => {
+  // Vérifier si nous sommes dans un environnement de prévisualisation
+  if (window.location.hostname.includes('lovable') || 
+      window.location.search.includes('forceCloud') ||
+      localStorage.getItem('FORCE_CLOUD_MODE') === 'true') {
+    toast({
+      title: "Mode prévisualisation",
+      description: "Le téléchargement de modèles n'est pas disponible dans cet environnement.",
+      variant: "destructive"
+    });
+    return false;
+  }
+  
   if (serviceType !== 'local' || !localAIUrl) {
     toast({
       title: "Erreur",
