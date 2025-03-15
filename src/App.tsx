@@ -92,9 +92,10 @@ function App() {
     <ErrorBoundary>
       {/* L'ordre des providers est crucial pour le bon fonctionnement */}
       <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
+        {/* Nous mettons ToastProvider avant le BrowserRouter pour éviter les problèmes
+            de contexte avec ToastViewport */}
         <ToastProvider>
           <QueryClientProvider client={queryClient}>
-            {/* Ajout du BrowserRouter autour de AuthProvider et des autres composants */}
             <BrowserRouter>
               <AuthProvider>
                 <SettingsProvider>
