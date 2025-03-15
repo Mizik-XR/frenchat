@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -7,10 +7,22 @@ import { ArrowLeft } from "lucide-react";
 import { DocumentProviderSelector } from "@/components/documents/DocumentProviderSelector";
 import { FolderIndexingSelector } from "@/components/documents/FolderIndexingSelector";
 import { PageHeader } from "@/components/navigation/PageHeader";
+import { useIndexingProgress } from "@/hooks/useIndexingProgress";
 
 export default function Documents() {
   const navigate = useNavigate();
+  const { startIndexing, indexingProgress } = useIndexingProgress();
+  const [isIndexing, setIsIndexing] = useState(false);
 
+  const handleStartIndexing = async (folderId: string, options: Record<string, any> = {}) => {
+    setIsIndexing(true);
+    try {
+      await startIndexing(folderId, options);
+    } finally {
+      setIsIndexing(false);
+    }
+  };
+  
   return (
     <div className="container mx-auto py-4 space-y-6">
       <PageHeader title="Gestionnaire de Documents" />
@@ -34,7 +46,10 @@ export default function Documents() {
           <div className="space-y-6">
             <h2 className="text-lg font-semibold">Sources de documents</h2>
             <DocumentProviderSelector />
-            <FolderIndexingSelector />
+            <FolderIndexingSelector 
+              onStartIndexing={handleStartIndexing}
+              isLoading={isIndexing}
+            />
             
             <div className="flex justify-between mt-6">
               <Button 
