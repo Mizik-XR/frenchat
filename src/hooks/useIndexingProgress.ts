@@ -4,13 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 import { useAuth } from '@/components/AuthProvider';
 
+// Define the interface for indexing progress
+export interface IndexingProgress {
+  total: number;
+  processed: number;
+  status: string;
+  current_folder?: string;
+  error?: string;
+}
+
 export function useIndexingProgress() {
-  const [indexingProgress, setIndexingProgress] = useState<{
-    total: number;
-    processed: number;
-    status: string;
-    current_folder?: string;
-  } | null>(null);
+  const [indexingProgress, setIndexingProgress] = useState<IndexingProgress | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -35,7 +39,8 @@ export function useIndexingProgress() {
           total: data.total_files || 0,
           processed: data.processed_files || 0,
           status: data.status,
-          current_folder: data.current_folder
+          current_folder: data.current_folder,
+          error: data.error
         });
         return data;
       }

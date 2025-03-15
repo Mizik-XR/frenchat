@@ -8,19 +8,21 @@ import { DocumentProviderSelector } from "@/components/documents/DocumentProvide
 import { FolderIndexingSelector } from "@/components/documents/FolderIndexingSelector";
 import { PageHeader } from "@/components/navigation/PageHeader";
 import { useToast } from "@/hooks/use-toast";
+import { useIndexingProgress } from "@/hooks/useIndexingProgress";
 
 export default function Documents() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { startIndexing } = useIndexingProgress();
 
   const handleStartIndexing = async (folderId: string, options = {}) => {
     if (!folderId) return;
     
     setIsLoading(true);
     try {
-      // Simulation d'une indexation (remplacer par l'appel réel à l'API)
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Appel à la fonction d'indexation du hook
+      await startIndexing(folderId, options);
       
       toast({
         title: "Indexation démarrée",

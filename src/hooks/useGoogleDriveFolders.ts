@@ -9,7 +9,8 @@ import { useSharedFolders } from './google-drive/useSharedFolders';
 import { usePersonalFolders } from './google-drive/usePersonalFolders';
 import { useFolderPermissions } from './google-drive/useFolderPermissions';
 
-export { Folder, FolderPermissions };
+// Re-export types for convenience with proper syntax for isolatedModules
+export type { Folder, FolderPermissions };
 
 export const useGoogleDriveFolders = () => {
   const [folders, setFolders] = useState<Folder[]>([]);
