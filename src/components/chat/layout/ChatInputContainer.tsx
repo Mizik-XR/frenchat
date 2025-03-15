@@ -72,7 +72,7 @@ export const ChatInputContainer = ({
           
           <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
             <StatusIndicator 
-              serviceType={modelSource === 'local' ? 'local' : 'cloud'}
+              serviceType="service"
               mode={mode}
               model={model}
               modelSource={modelSource}

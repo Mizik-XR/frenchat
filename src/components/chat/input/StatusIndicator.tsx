@@ -1,151 +1,205 @@
 
-import React, { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { WifiOff, Wifi, Check, AlertTriangle, X, Server, Cloud } from "lucide-react";
-import { APP_STATE } from "@/integrations/supabase/client";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useState } from 'react';
+import { 
+  AlertCircle, 
+  Cpu, 
+  CheckCircle, 
+  WifiOff, 
+  Database,
+  Loader2, 
+  Info
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 interface StatusIndicatorProps {
-  serviceType: string;
-  localAIUrl?: string | null;
+  isAIReady?: boolean;
+  isOnline?: boolean;
+  aiErrors?: string[];
+  isBusy?: boolean;
+  onClick?: () => void;
+  serviceType?: string;
   mode?: "auto" | "manual";
-  model?: string; 
-  modelSource?: 'cloud' | 'local';
+  model?: string;
+  modelSource?: "local" | "cloud";
 }
 
-export const StatusIndicator = ({ serviceType, localAIUrl, mode, model, modelSource }: StatusIndicatorProps) => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [isBackendReachable, setIsBackendReachable] = useState(!APP_STATE.isOfflineMode);
-  const [pingResult, setPingResult] = useState<string | null>(null);
+export function StatusIndicator({ 
+  isAIReady = true, 
+  isOnline = true, 
+  aiErrors = [], 
+  isBusy = false,
+  onClick,
+  serviceType,
+  mode,
+  model,
+  modelSource
+}: StatusIndicatorProps) {
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
 
-  // Vérifier la connexion réseau
-  useEffect(() => {
-    const handleOnlineStatus = () => {
-      setIsOnline(navigator.onLine);
-    };
-
-    window.addEventListener('online', handleOnlineStatus);
-    window.addEventListener('offline', handleOnlineStatus);
-
-    // Vérifier la connectivité au backend
-    const checkBackendConnectivity = async () => {
-      try {
-        if (serviceType === 'local' && localAIUrl) {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 2000);
-          
-          try {
-            const response = await fetch(`${localAIUrl}/health`, {
-              signal: controller.signal
-            });
-            
-            clearTimeout(timeoutId);
-            
-            if (response.ok) {
-              setIsBackendReachable(true);
-              setPingResult("IA locale disponible");
-            } else {
-              setIsBackendReachable(false);
-              setPingResult("Erreur de connexion à l'IA locale");
-            }
-          } catch (error) {
-            clearTimeout(timeoutId);
-            setIsBackendReachable(false);
-            setPingResult(error instanceof Error ? error.message : "Erreur inconnue");
-          }
-        } else {
-          setIsBackendReachable(!APP_STATE.isOfflineMode);
-          setPingResult(APP_STATE.isOfflineMode ? "Mode hors ligne activé" : "Service cloud actif");
-        }
-      } catch (error) {
-        setIsBackendReachable(false);
-        setPingResult(error instanceof Error ? error.message : "Erreur inconnue");
-      }
-    };
-
-    checkBackendConnectivity();
-    const interval = setInterval(checkBackendConnectivity, 30000);
-
-    return () => {
-      window.removeEventListener('online', handleOnlineStatus);
-      window.removeEventListener('offline', handleOnlineStatus);
-      clearInterval(interval);
-    };
-  }, [serviceType, localAIUrl]);
-
-  // Badge pour le statut réseau
-  const getStatusBadge = () => {
-    if (!isOnline) {
-      return (
-        <Badge variant="destructive" className="gap-1">
-          <WifiOff className="h-3 w-3" />
-          <span>Hors ligne</span>
-        </Badge>
-      );
-    }
-
-    if (APP_STATE.isOfflineMode) {
-      return (
-        <Badge variant="outline" className="gap-1 border-yellow-500 text-yellow-700">
-          <AlertTriangle className="h-3 w-3" />
-          <span>Mode hors ligne</span>
-        </Badge>
-      );
-    }
-
-    if (!isBackendReachable) {
-      return (
-        <Badge variant="outline" className="gap-1 border-yellow-500 text-yellow-700">
-          <AlertTriangle className="h-3 w-3" />
-          <span>{serviceType === 'local' ? "IA locale non disponible" : "Cloud non disponible"}</span>
-        </Badge>
-      );
-    }
-
-    if (modelSource === 'local') {
-      return (
-        <Badge variant="default" className="gap-1 bg-green-500 hover:bg-green-600">
-          <Server className="h-3 w-3" />
-          <span>IA locale{mode === 'auto' ? ' (Auto)' : ''}</span>
-        </Badge>
-      );
-    }
-
-    return (
-      <Badge variant="default" className="gap-1">
-        <Cloud className="h-3 w-3" />
-        <span>IA Cloud{mode === 'auto' ? ' (Auto)' : ''}</span>
-      </Badge>
-    );
+  // Import APP_STATE dynamically to avoid circular dependencies
+  const APP_STATE = {
+    isOfflineMode: false,
+    hasSupabaseError: false,
+    lastSupabaseError: null as Error | null
   };
 
+  // Vérifier l'état combiné du système
+  const hasErrors = aiErrors.length > 0 || APP_STATE.hasSupabaseError;
+  const isReady = isAIReady && isOnline && !hasErrors;
+  const isOffline = APP_STATE.isOfflineMode || !isOnline;
+
+  // Déterminer le statut à afficher
+  let status = {
+    icon: isBusy ? Loader2 : CheckCircle,
+    color: 'text-green-500',
+    tooltip: 'Système prêt',
+    spinning: isBusy
+  };
+
+  if (isOffline) {
+    status = {
+      icon: WifiOff,
+      color: 'text-orange-500',
+      tooltip: 'Mode hors ligne',
+      spinning: false
+    };
+  } else if (APP_STATE.hasSupabaseError) {
+    status = {
+      icon: Database,
+      color: 'text-red-500',
+      tooltip: 'Erreur de connexion à la base de données',
+      spinning: false
+    };
+  } else if (aiErrors.length > 0) {
+    status = {
+      icon: AlertCircle,
+      color: 'text-red-500',
+      tooltip: 'Erreur de l\'IA',
+      spinning: false
+    };
+  } else if (!isAIReady) {
+    status = {
+      icon: Cpu,
+      color: 'text-amber-500',
+      tooltip: 'Service IA en cours d\'initialisation',
+      spinning: false
+    };
+  }
+
+  // Afficher les erreurs dans la boîte de dialogue
+  const allErrors = [
+    ...aiErrors,
+    ...(APP_STATE.hasSupabaseError && APP_STATE.lastSupabaseError ? [`Erreur base de données: ${APP_STATE.lastSupabaseError.message}`] : [])
+  ];
+
+  // Simple display for chat input status
+  if (serviceType && model) {
+    return (
+      <div className="flex items-center text-xs text-muted-foreground">
+        <span className="mr-2">{model} ({modelSource})</span>
+        {mode === 'auto' ? (
+          <Badge variant="outline" className="text-xs">AUTO</Badge>
+        ) : (
+          <Badge variant="secondary" className="text-xs">MANUEL</Badge>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="cursor-help">
-            {getStatusBadge()}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          <div className="text-xs">
-            <p>Status: {isOnline ? "Connecté" : "Déconnecté"}</p>
-            <p>Service: {serviceType === 'local' ? "Local" : "Cloud"}</p>
-            {modelSource && <p>Mode: {modelSource === 'local' ? "Local" : "Cloud"}</p>}
-            {mode && <p>Mode opération: {mode === 'auto' ? "Automatique" : "Manuel"}</p>}
-            {model && <p>Modèle: {model}</p>}
-            {pingResult && <p>Diagnostic: {pingResult}</p>}
-            {APP_STATE.isOfflineMode && (
-              <p className="text-orange-600">Mode hors ligne activé</p>
+    <>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className={`${status.color} h-8 w-8 p-0`}
+              onClick={() => {
+                if (hasErrors) {
+                  setShowErrorDialog(true);
+                } else if (onClick) {
+                  onClick();
+                }
+              }}
+            >
+              {status.spinning ? (
+                <status.icon className="h-5 w-5 animate-spin" />
+              ) : (
+                <status.icon className="h-5 w-5" />
+              )}
+              <span className="sr-only">{status.tooltip}</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{status.tooltip}</p>
+            {hasErrors && <p className="text-xs">Cliquez pour voir les détails</p>}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* Dialogue d'erreur */}
+      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Problèmes détectés
+            </DialogTitle>
+            <DialogDescription>
+              Les erreurs suivantes affectent le fonctionnement du système:
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {allErrors.map((error, index) => (
+              <div key={index} className="rounded-md bg-red-50 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="h-5 w-5 text-red-400" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {isOffline && (
+              <div className="rounded-md bg-amber-50 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <Info className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-amber-700">
+                      L'application fonctionne en mode hors ligne ou la connexion Internet est limitée.
+                      Certaines fonctionnalités peuvent être indisponibles.
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
-            {APP_STATE.lastSupabaseError && (
-              <p className="text-red-600 max-w-[200px] truncate">
-                Erreur: {APP_STATE.lastSupabaseError.message}
-              </p>
-            )}
           </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+          
+          <DialogFooter className="flex items-center justify-between">
+            <Badge variant={isOffline ? "outline" : "secondary"}>
+              {isOffline ? "Mode hors ligne" : "Connecté"}
+            </Badge>
+            <Button onClick={() => setShowErrorDialog(false)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
-};
+}
