@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Index from './pages/Index';
@@ -9,6 +8,7 @@ import ConfigPage from './pages/Config';
 import { AuthProvider } from './components/AuthProvider';
 import { DebugPanel } from './components/DebugPanel';
 import SystemStatus from './pages/SystemStatus';
+import LocalAISetup from './pages/LocalAISetup';
 
 export default function App() {
   const [showDebugPanel, setShowDebugPanel] = useState(import.meta.env.DEV);
@@ -28,6 +28,7 @@ export default function App() {
               <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/config" element={<ConfigPage />} />
               <Route path="/system-status" element={<SystemStatus />} />
+              <Route path="/local-ai-setup" element={<LocalAISetup />} />
             </Routes>
           </AuthProvider>
         </BrowserRouter>

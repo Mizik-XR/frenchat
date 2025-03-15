@@ -12,12 +12,13 @@ interface SettingsContextType {
   isLocalAIAvailable: boolean;
 }
 
+// Valeurs par défaut modifiées pour le mode cloud
 const defaultSettings: SettingsContextType = {
   theme: 'system',
   setTheme: () => {},
   localAIUrl: 'http://localhost:11434',
   setLocalAIUrl: () => {},
-  aiServiceType: 'local',
+  aiServiceType: 'cloud', // Changé à 'cloud' par défaut
   setAiServiceType: () => {},
   isLocalAIAvailable: true,
 };
@@ -34,7 +35,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     localStorage.getItem('localAIUrl') || 'http://localhost:11434'
   );
   const [aiServiceType, setAiServiceType] = useState<'local' | 'cloud' | 'hybrid'>(
-    (localStorage.getItem('aiServiceType') as 'local' | 'cloud' | 'hybrid') || 'local'
+    (localStorage.getItem('aiServiceType') as 'local' | 'cloud' | 'hybrid') || 'cloud' // Changé à 'cloud' par défaut
   );
   const [isLocalAIAvailable, setIsLocalAIAvailable] = useState<boolean>(isLocalAIAllowed());
 
@@ -44,9 +45,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       setIsLocalAIAvailable(isLocalAIAllowed());
       
       // Si l'IA locale n'est pas disponible et que l'utilisateur a sélectionné 'local',
-      // basculer automatiquement vers 'cloud'
+      // basculer automatiquement vers 'cloud' mais silencieusement
       if (!isLocalAIAllowed() && aiServiceType === 'local') {
         updateAiServiceType('cloud');
+        console.debug("[IA] Basculement silencieux vers le mode cloud, IA locale non disponible");
       }
     };
     
@@ -70,7 +72,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const updateAiServiceType = (type: 'local' | 'cloud' | 'hybrid') => {
     // Si l'IA locale n'est pas disponible, on ne peut pas basculer en mode local
     if (type === 'local' && !isLocalAIAvailable) {
-      console.warn("L'IA locale n'est pas disponible dans cet environnement.");
+      console.debug("[IA] L'IA locale n'est pas disponible, mode local non activé");
       return;
     }
     

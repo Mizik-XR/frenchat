@@ -1,4 +1,3 @@
-
 import { isNetlifyEnvironment } from './environmentDetection';
 
 /**
@@ -8,6 +7,10 @@ import { isNetlifyEnvironment } from './environmentDetection';
  */
 export async function isOllamaAvailable(): Promise<boolean> {
   try {
+    // Silencer les erreurs dans la console lors de la détection
+    const originalConsoleError = console.error;
+    console.error = () => {}; // Fonction vide pour supprimer les messages
+    
     // Utiliser AbortController pour limiter le temps de la requête
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000); // Plus de temps pour la détection
@@ -23,13 +26,18 @@ export async function isOllamaAvailable(): Promise<boolean> {
     
     clearTimeout(timeoutId);
     
+    // Restaurer la fonction console.error originale
+    console.error = originalConsoleError;
+    
     if (response.ok) {
-      console.log("Ollama détecté avec succès:", await response.text());
+      // Log moins visible et plus informatif
+      console.log("[IA Locale] Ollama détecté et disponible");
       return true;
     }
     return false;
   } catch (e) {
-    console.error("Erreur lors de la détection d'Ollama:", e);
+    // Message d'erreur silencieux
+    console.debug("[IA Locale] Ollama non disponible", e instanceof Error ? e.message : String(e));
     return false;
   }
 }
@@ -88,7 +96,7 @@ export function configureOllama(): void {
   localStorage.setItem('ollamaDetected', 'true');
   localStorage.setItem('ollamaLastDetected', new Date().toISOString());
   
-  console.log("Configuration Ollama enregistrée dans localStorage");
+  console.log("[IA Locale] Configuration Ollama enregistrée dans localStorage");
 }
 
 /**
