@@ -88,23 +88,44 @@ Si vous rencontrez des problèmes lors de l'installation ou du déploiement de F
      scripts\diagnostic.bat
      ```
 
-## Problème 4: Utilisation de mode alternative (sans Python/Rust)
+## Problème 4: Problèmes avec l'intégration Lovable (gptengineer.js)
 
-Si vous continuez à rencontrer des difficultés avec le déploiement complet:
+### Symptômes
+- Messages d'erreur "AI edits didn't result in any changes"
+- Modifications de code qui ne s'appliquent pas
+- Erreur "index.html manquant" lors des scripts de correction
 
-1. Déployez en mode cloud uniquement:
-   - Définissez `VITE_ALLOW_LOCAL_AI=false` dans les variables d'environnement Netlify
-   - Utilisez une API externe pour les fonctionnalités d'IA
+### Solution
+1. Restaurez le fichier index.html manquant:
+   ```
+   fix-missing-index.bat
+   ```
+   ou sur Unix:
+   ```
+   ./fix-missing-index.sh
+   ```
 
-2. Utilisez le déploiement manuel avec préparation optimisée:
+2. Utilisez le diagnostic avancé Lovable:
    ```
-   scripts/unix/prepare-deployment.sh
-   netlify deploy --prod --dir=dist
+   lovable-diagnostic-advanced.bat
    ```
-   ou sous Windows:
+   ou sur Unix:
    ```
-   scripts\prepare-deployment.bat
-   netlify deploy --prod --dir=dist
+   ./scripts/unix/lovable-diagnostic.sh
+   ```
+
+3. Appliquez les corrections avancées:
+   ```
+   fix-lovable-issues-advanced.bat
+   ```
+   ou sur Unix:
+   ```
+   ./fix-lovable-issues-advanced.sh
+   ```
+
+4. En dernier recours, essayez de forcer le mode cloud temporairement en ajoutant à votre URL:
+   ```
+   ?cloud=true&mode=cloud
    ```
 
 ## Besoin d'aide supplémentaire?
