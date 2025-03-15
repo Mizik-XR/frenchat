@@ -1,6 +1,8 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
   server: {
@@ -16,7 +18,7 @@ export default defineConfig(({ mode }) => ({
         plugins: []
       }
     }),
-    // Nous retirons le componentTagger de Lovable
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -55,13 +57,13 @@ export default defineConfig(({ mode }) => ({
   // Configuration pour améliorer le comportement du cache
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
-    exclude: ['gptengineer']
+    exclude: ['gptengineer', 'lovable-tagger']
   },
   // Configuration de la gestion des assets
   assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg'],
   // Modification de la configuration pour le mode développement et production
   define: {
     // On remplace __LOVABLE_MODE__ par une valeur constante pour éviter les erreurs
-    __LOVABLE_MODE__: JSON.stringify("disabled"),
+    __LOVABLE_MODE__: JSON.stringify(mode === 'development' ? "development" : "production"),
   }
 }));

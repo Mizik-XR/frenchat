@@ -25,6 +25,11 @@ export const isDevelopment = (): boolean => {
 export const isLovableEnvironment = (): boolean => {
   if (typeof window === 'undefined') return false;
   
+  // Check if we're in Lovable development mode
+  if (typeof __LOVABLE_MODE__ !== 'undefined') {
+    return true;
+  }
+  
   // Check hostname
   const isLovableDomain = 
     window.location.host.includes('lovable.dev') || 
@@ -76,4 +81,7 @@ declare global {
       debugMode?: boolean;
     };
   }
+  
+  // Add __LOVABLE_MODE__ to global scope
+  const __LOVABLE_MODE__: string | undefined;
 }
