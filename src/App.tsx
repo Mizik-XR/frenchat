@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { ToastProvider } from '@/components/ui/toast';
+import { ToastProvider as RadixToastProvider } from '@radix-ui/react-toast';
 
 // Importation différée des composants pour améliorer les performances de chargement initial
 const Home = lazy(() => import('./pages/Home'));
@@ -90,9 +90,9 @@ function App() {
 
   return (
     <ErrorBoundary>
-      {/* L'ordre des providers est crucial pour le bon fonctionnement */}
-      <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
-        <ToastProvider>
+      {/* Réorganisation des providers - RadixToastProvider au plus haut niveau */}
+      <RadixToastProvider>
+        <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
           <QueryClientProvider client={queryClient}>
             <BrowserRouter>
               <AuthProvider>
@@ -104,8 +104,8 @@ function App() {
               </AuthProvider>
             </BrowserRouter>
           </QueryClientProvider>
-        </ToastProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </RadixToastProvider>
     </ErrorBoundary>
   );
 }

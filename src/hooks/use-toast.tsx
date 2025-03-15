@@ -1,4 +1,3 @@
-
 import * as React from "react"
 
 import type {
@@ -186,11 +185,17 @@ export function toast(props: Toast) {
   }
 }
 
-export interface ToastProviderProps {
-  children: React.ReactNode
+export function useToast() {
+  const context = React.useContext(ToastContext);
+  
+  if (context === undefined) {
+    throw new Error("useToast must be used within a ToastProvider");
+  }
+  
+  return context;
 }
 
-export function ToastProvider({ children }: ToastProviderProps) {
+export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<State>(memoryState);
 
   React.useEffect(() => {
@@ -231,14 +236,4 @@ export function ToastProvider({ children }: ToastProviderProps) {
       {children}
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  const context = React.useContext(ToastContext);
-  
-  if (context === undefined) {
-    throw new Error("useToast must be used within a ToastProvider");
-  }
-  
-  return context;
 }
