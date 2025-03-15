@@ -65,11 +65,31 @@ echo   4. Clear site data or use incognito mode for testing
 echo.
 
 echo [STEP 3/4] Rebuilding application...
-call npm run build --force
-if errorlevel 1 (
+REM Vérifier si npx est disponible
+where npx >nul 2>nul
+if !errorlevel! EQU 0 (
+    if exist "node_modules\.bin\vite.cmd" (
+        echo [INFO] Using local vite installation for build...
+        call npx vite build
+    ) else (
+        echo [INFO] Using npm run build...
+        call npm run build
+    )
+) else (
+    echo [INFO] Using npm run build directly...
+    call npm run build
+)
+
+if !errorlevel! NEQ 0 (
     echo [ERROR] Application rebuild failed.
-    pause
-    exit /b 1
+    echo [ALTERNATIVE] Trying to install dependencies and rebuild...
+    call npm install --no-fund --loglevel=error
+    call npm run build
+    if !errorlevel! NEQ 0 (
+        echo [ERROR] Rebuild attempt failed after installing dependencies.
+        pause
+        exit /b 1
+    )
 ) else (
     echo [OK] Application rebuilt successfully.
 )

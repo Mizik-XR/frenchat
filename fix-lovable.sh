@@ -52,10 +52,27 @@ echo "  4. Clear site data or use incognito mode for testing"
 echo
 
 echo "[STEP 3/4] Rebuilding application..."
-npm run build --force
+# Utiliser npx pour exécuter la commande vite installée localement
+if [ -f "node_modules/.bin/vite" ]; then
+    echo "[INFO] Using local vite installation for build..."
+    npx vite build
+elif [ -f "package.json" ]; then
+    echo "[INFO] Using npm run build..."
+    npm run build
+else
+    echo "[ERROR] Cannot find proper build command."
+    exit 1
+fi
+
 if [ $? -ne 0 ]; then
     echo "[ERROR] Application rebuild failed."
-    exit 1
+    echo "[ALTERNATIVE] Trying to install dependencies and rebuild..."
+    npm install --no-fund --loglevel=error
+    npm run build
+    if [ $? -ne 0 ]; then
+        echo "[ERROR] Rebuild attempt failed after installing dependencies."
+        exit 1
+    fi
 else
     echo "[OK] Application rebuilt successfully."
 fi
