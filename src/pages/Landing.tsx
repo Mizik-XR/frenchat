@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
 import { BestPracticesSection } from "@/components/landing/BestPracticesSection";
-import { PricingSection } from "@/components/landing/PricingSection";
 
 export default function Landing() {
   const location = useLocation();
@@ -90,9 +89,6 @@ export default function Landing() {
         </section>
         <section id="best-practices">
           <BestPracticesSection />
-        </section>
-        <section id="pricing">
-          <PricingSection />
         </section>
         <section id="installation">
           <InstallationGuide />
