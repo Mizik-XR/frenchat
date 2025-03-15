@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { ToastProvider } from './hooks/use-toast';
+import { ToastProvider } from './components/ui/toast';
 
 // Importation différée des composants pour améliorer les performances de chargement initial
 const Home = lazy(() => import('./pages/Home'));
@@ -92,8 +92,6 @@ function App() {
     <ErrorBoundary>
       {/* L'ordre des providers est crucial pour le bon fonctionnement */}
       <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
-        {/* Nous mettons ToastProvider avant le BrowserRouter pour éviter les problèmes
-            de contexte avec ToastViewport */}
         <ToastProvider>
           <QueryClientProvider client={queryClient}>
             <BrowserRouter>
