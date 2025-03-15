@@ -70,15 +70,15 @@ export function AIModeBadge({
     }
   };
   
-  // Définir le texte de l'info-bulle
+  // Définir le texte de l'info-bulle avec des descriptions plus détaillées
   const getTooltipText = () => {
     switch (mode) {
       case 'local':
-        return "Modèle exécuté sur votre ordinateur local";
+        return "Confidentialité totale, fonctionne même hors-ligne. Vos données restent sur votre ordinateur.";
       case 'cloud':
-        return "Modèle exécuté sur des serveurs distants";
+        return "Puissance maximale, idéal pour les tâches complexes et l'analyse approfondie de documents.";
       case 'hybrid':
-        return "Passe automatiquement du local au cloud selon les besoins";
+        return "Utilise l'IA locale pour les tâches simples, bascule vers le cloud pour les tâches complexes. Équilibre optimal entre confidentialité et performances.";
       default:
         return "";
     }

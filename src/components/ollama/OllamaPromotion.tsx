@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Server, Rocket, CheckCircle } from "lucide-react";
+import { Server, Rocket, CheckCircle, Shield, Zap, WifiOff } from "lucide-react";
 
 export const OllamaPromotion = () => {
   const navigate = useNavigate();
@@ -63,37 +63,46 @@ export const OllamaPromotion = () => {
         
         <div className="flex-1">
           <h3 className="font-medium text-lg text-blue-800 mb-1">
-            Propulsez votre IA en local avec Ollama
+            Améliorez votre expérience avec l'IA locale
           </h3>
           
           <p className="text-blue-600 mb-3">
-            Exécutez l'IA directement sur votre ordinateur pour plus de rapidité et de confidentialité
+            Utilisez l'intelligence artificielle directement sur votre ordinateur pour plus de confidentialité et de rapidité
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
             <div className="bg-white bg-opacity-60 p-3 rounded border border-blue-100">
-              <h4 className="font-medium text-blue-800 text-sm mb-1">Rapide</h4>
-              <p className="text-sm text-blue-600">Pas de latence réseau, réponses instantanées</p>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Shield className="h-4 w-4 text-green-600" />
+                <h4 className="font-medium text-blue-800 text-sm">Confidentialité</h4>
+              </div>
+              <p className="text-sm text-blue-600">Vos données restent sur votre ordinateur, idéal pour les documents sensibles</p>
             </div>
             
             <div className="bg-white bg-opacity-60 p-3 rounded border border-blue-100">
-              <h4 className="font-medium text-blue-800 text-sm mb-1">Privé</h4>
-              <p className="text-sm text-blue-600">Vos données restent sur votre ordinateur</p>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Zap className="h-4 w-4 text-amber-500" />
+                <h4 className="font-medium text-blue-800 text-sm">Rapidité</h4>
+              </div>
+              <p className="text-sm text-blue-600">Réponses instantanées sans latence réseau, idéal pour un usage quotidien</p>
             </div>
             
             <div className="bg-white bg-opacity-60 p-3 rounded border border-blue-100">
-              <h4 className="font-medium text-blue-800 text-sm mb-1">Hors-ligne</h4>
-              <p className="text-sm text-blue-600">Fonctionne même sans connexion internet</p>
+              <div className="flex items-center gap-1.5 mb-1">
+                <WifiOff className="h-4 w-4 text-purple-600" />
+                <h4 className="font-medium text-blue-800 text-sm">Hors-ligne</h4>
+              </div>
+              <p className="text-sm text-blue-600">Utilisez l'IA même sans connexion internet, parfait pour vos déplacements</p>
             </div>
           </div>
           
           <div className="flex flex-wrap gap-2">
             <Button 
-              onClick={() => navigate("/ollama-setup")}
+              onClick={() => navigate("/local-ai-setup")}
               className="gap-2"
             >
               <Server className="h-4 w-4" />
-              Installer Ollama
+              Installer l'IA locale
             </Button>
             
             {isOllamaAvailable === false && (
@@ -116,7 +125,7 @@ export const OllamaPromotion = () => {
                   window.location.reload();
                 }}
               >
-                Utiliser Ollama
+                Utiliser l'IA locale
               </Button>
             )}
           </div>

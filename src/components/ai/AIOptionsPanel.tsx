@@ -3,8 +3,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ServerIcon, CloudIcon, Info, Settings, Download } from "lucide-react";
@@ -76,7 +74,7 @@ export const AIOptionsPanel = ({
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs p-3">
                   <p className="font-medium mb-1">Mode Cloud</p>
-                  <p className="text-xs">Modèles IA puissants hébergés sur des serveurs distants. Idéal pour les tâches complexes et l'analyse précise de documents.</p>
+                  <p className="text-xs">Puissance maximale, idéal pour les tâches complexes et l'analyse approfondie de documents. Accès à des modèles avancés.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -94,7 +92,7 @@ export const AIOptionsPanel = ({
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs p-3">
                   <p className="font-medium mb-1">Mode Automatique</p>
-                  <p className="text-xs">Basculement intelligent entre local et cloud selon la complexité de vos requêtes. Optimise performances et coûts.</p>
+                  <p className="text-xs">Utilise l'IA locale pour les tâches simples, bascule vers le cloud pour les tâches complexes. Équilibre optimal entre confidentialité et performances.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -113,7 +111,7 @@ export const AIOptionsPanel = ({
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs p-3">
                   <p className="font-medium mb-1">Mode Local</p>
-                  <p className="text-xs">Exécution des modèles sur votre propre machine. Confidentialité maximale, fonctionnement hors-ligne et aucune dépendance aux services cloud.</p>
+                  <p className="text-xs">Confidentialité totale, fonctionne même hors-ligne. Vos données restent sur votre ordinateur et ne transitent jamais par des serveurs externes.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -126,9 +124,9 @@ export const AIOptionsPanel = ({
           <div className="flex items-start gap-3">
             <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
             <div>
-              <h4 className="text-sm font-medium mb-1">IA locale non détectée</h4>
+              <h4 className="text-sm font-medium mb-1">Améliorez avec l'IA locale</h4>
               <p className="text-xs text-gray-600 mb-3">
-                Installez l'IA locale pour bénéficier de la confidentialité maximale et fonctionner hors-ligne.
+                Installez l'IA locale pour bénéficier d'une confidentialité maximale et fonctionner hors-ligne, idéal pour les documents sensibles.
               </p>
               <Button 
                 size="sm" 
@@ -150,7 +148,7 @@ export const AIOptionsPanel = ({
             <div>
               <h4 className="text-sm font-medium mb-1 text-green-800">IA locale installée</h4>
               <p className="text-xs text-gray-600">
-                Votre système est correctement configuré pour l'IA locale.
+                Profitez d'une confidentialité maximale et du fonctionnement hors-ligne.
                 <Button 
                   variant="link" 
                   size="sm" 

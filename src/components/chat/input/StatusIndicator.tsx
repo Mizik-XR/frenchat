@@ -46,20 +46,20 @@ export const StatusIndicator = ({ serviceType, localAIUrl, mode, model, modelSou
               setPingResult("IA locale disponible");
             } else {
               setIsBackendReachable(false);
-              setPingResult("Erreur de connexion à l'IA locale");
+              setPingResult("Service temporairement indisponible");
             }
           } catch (error) {
             clearTimeout(timeoutId);
             setIsBackendReachable(false);
-            setPingResult(error instanceof Error ? error.message : "Erreur inconnue");
+            setPingResult("Service temporairement indisponible");
           }
         } else {
           setIsBackendReachable(!APP_STATE.isOfflineMode);
-          setPingResult(APP_STATE.isOfflineMode ? "Mode hors ligne activé" : "Service cloud actif");
+          setPingResult(APP_STATE.isOfflineMode ? "Mode hors ligne actif" : "Service cloud actif");
         }
       } catch (error) {
         setIsBackendReachable(false);
-        setPingResult(error instanceof Error ? error.message : "Erreur inconnue");
+        setPingResult("Service temporairement indisponible");
       }
     };
 
@@ -97,7 +97,7 @@ export const StatusIndicator = ({ serviceType, localAIUrl, mode, model, modelSou
       return (
         <Badge variant="outline" className="gap-1 border-yellow-500 text-yellow-700">
           <AlertTriangle className="h-3 w-3" />
-          <span>{serviceType === 'local' ? "IA locale non disponible" : "Cloud non disponible"}</span>
+          <span>{serviceType === 'local' ? "Passage au cloud" : "Service cloud"}</span>
         </Badge>
       );
     }
@@ -119,6 +119,48 @@ export const StatusIndicator = ({ serviceType, localAIUrl, mode, model, modelSou
     );
   };
 
+  // Infobulles plus détaillées selon le type de service
+  const getTooltipContent = () => {
+    const baseInfo = (
+      <>
+        {isOnline ? (
+          <p className="flex items-center gap-1 text-green-600">
+            <Check className="h-3 w-3" /> Connexion internet active
+          </p>
+        ) : (
+          <p className="flex items-center gap-1 text-red-600">
+            <X className="h-3 w-3" /> Pas de connexion internet
+          </p>
+        )}
+      </>
+    );
+
+    // Description selon le mode
+    let modeDescription = "";
+    if (modelSource === 'local') {
+      modeDescription = "Confidentialité maximale : vos données restent sur votre ordinateur";
+    } else if (modelSource === 'cloud') {
+      modeDescription = "Puissance maximale : accès aux modèles les plus performants";
+    }
+    
+    if (mode === 'auto') {
+      modeDescription += ", avec basculement automatique selon vos besoins";
+    }
+
+    return (
+      <div className="space-y-1 text-xs max-w-[220px]">
+        {baseInfo}
+        <p>{modeDescription}</p>
+        {model && <p>Modèle : {model}</p>}
+        {!isBackendReachable && (
+          <p className="italic">
+            Basculement automatique vers le mode le plus adapté
+          </p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -128,22 +170,7 @@ export const StatusIndicator = ({ serviceType, localAIUrl, mode, model, modelSou
           </div>
         </TooltipTrigger>
         <TooltipContent side="top">
-          <div className="text-xs">
-            <p>Status: {isOnline ? "Connecté" : "Déconnecté"}</p>
-            <p>Service: {serviceType === 'local' ? "Local" : "Cloud"}</p>
-            {modelSource && <p>Mode: {modelSource === 'local' ? "Local" : "Cloud"}</p>}
-            {mode && <p>Mode opération: {mode === 'auto' ? "Automatique" : "Manuel"}</p>}
-            {model && <p>Modèle: {model}</p>}
-            {pingResult && <p>Diagnostic: {pingResult}</p>}
-            {APP_STATE.isOfflineMode && (
-              <p className="text-orange-600">Mode hors ligne activé</p>
-            )}
-            {APP_STATE.lastSupabaseError && (
-              <p className="text-red-600 max-w-[200px] truncate">
-                Erreur: {APP_STATE.lastSupabaseError.message}
-              </p>
-            )}
-          </div>
+          {getTooltipContent()}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
