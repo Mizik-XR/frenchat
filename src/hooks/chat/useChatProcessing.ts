@@ -39,7 +39,14 @@ export function useChatProcessing() {
           config
         );
         
-        await messageService.saveMessageToDatabase(userMessage);
+        await messageService.saveMessageToDatabase({
+          id: userMessage.id,
+          role: 'user' as 'user' | 'assistant',
+          content: userMessage.content,
+          conversationId: userMessage.conversationId,
+          metadata: userMessage.metadata,
+          timestamp: userMessage.timestamp
+        });
 
         // Générer la réponse selon le provider choisi
         let generatedText = "";
@@ -51,7 +58,7 @@ export function useChatProcessing() {
         } else if (config.provider === 'anthropic') {
           generatedText = await aiProviderService.generateAnthropicResponse(content, config);
         } else {
-          generatedText = await aiProviderService.generateStandardResponse(content, config.provider, config);
+          generatedText = await aiProviderService.generateStandardResponse(content, config.provider as string, config);
         }
 
         // Créer et sauvegarder le message assistant
@@ -62,7 +69,14 @@ export function useChatProcessing() {
           config
         );
         
-        await messageService.saveMessageToDatabase(assistantMessage);
+        await messageService.saveMessageToDatabase({
+          id: assistantMessage.id,
+          role: 'assistant' as 'user' | 'assistant',
+          content: assistantMessage.content,
+          conversationId: assistantMessage.conversationId,
+          metadata: assistantMessage.metadata,
+          timestamp: assistantMessage.timestamp
+        });
 
         return {
           userMessage,

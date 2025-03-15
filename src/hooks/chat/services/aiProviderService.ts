@@ -1,10 +1,12 @@
-
 import { useAIProviders } from "../useAIProviders";
 import { useHuggingFace } from "../../useHuggingFace";
 import { useSecureApiProxy } from "../../useSecureApiProxy";
 import { useOpenAIAgents } from "../../ai/useOpenAIAgents";
 import { WebUIConfig } from "@/types/chat";
 import { fetchRagContext, extractAnthropicResponse } from "../utils/responseHandlers";
+import { saveMessageToDatabase } from "../utils/responseHandlers";
+import { SendMessageOptions } from "../types";
+import { WebUIConfig, AIProvider } from "@/types/chat";
 
 /**
  * Service for generating AI responses using different providers
