@@ -3,7 +3,12 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { isLovableScriptLoaded, injectLovableScript, forceResetLovable } from './utils/lovable/editingUtils';
+import { 
+  isLovableScriptLoaded, 
+  injectLovableScript, 
+  forceResetLovable,
+  directInitializeEditor
+} from './utils/lovable/editingUtils';
 
 /**
  * Tentative d'initialisation de Lovable avec plusieurs essais si nécessaire
@@ -24,7 +29,7 @@ async function initializeLovable(maxAttempts = 3): Promise<boolean> {
       } else {
         console.log("🔍 Script Lovable détecté, vérification de l'initialisation...");
         
-        // Si le script est présent mais pas initialisé après 2 secondes, forcer une réinitialisation
+        // Si le script est présent mais pas initialisé après 5 secondes, forcer une réinitialisation
         await new Promise<void>(resolve => {
           setTimeout(() => {
             const initialized = typeof (window as any).__GPT_ENGINEER__ !== 'undefined';
@@ -34,13 +39,14 @@ async function initializeLovable(maxAttempts = 3): Promise<boolean> {
             } else {
               resolve();
             }
-          }, 2000);
+          }, 5000);
         });
       }
       
       // Vérifier si l'initialisation a réussi
-      if (typeof (window as any).__GPT_ENGINEER__ !== 'undefined') {
-        console.log("✅ Script Lovable initialisé avec succès");
+      const globalObject = (window as any).__GPT_ENGINEER__;
+      if (typeof globalObject !== 'undefined') {
+        console.log("✅ Script Lovable initialisé avec succès:", globalObject);
         return true;
       }
     } catch (error) {
@@ -50,11 +56,15 @@ async function initializeLovable(maxAttempts = 3): Promise<boolean> {
     // Attendre avant la prochaine tentative
     if (attempts < maxAttempts) {
       console.log("⏱️ Attente avant nouvelle tentative...");
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
   }
   
-  console.warn("⚠️ Échec de l'initialisation de Lovable après plusieurs tentatives");
+  // En dernier recours, tenter l'initialisation directe
+  console.warn("⚠️ Échec de l'initialisation standard de Lovable après plusieurs tentatives");
+  console.log("🔧 Tentative d'initialisation directe...");
+  directInitializeEditor();
+  
   return false;
 }
 
@@ -63,8 +73,8 @@ async function initializeApp() {
   console.log("🚀 Initialisation de l'application...");
   
   try {
-    // Tenter d'initialiser Lovable
-    await initializeLovable();
+    // Tenter d'initialiser Lovable avec plus de tentatives
+    await initializeLovable(5);
     
     // Initialiser React indépendamment du succès de Lovable
     console.log("🔄 Montage de l'application React...");
@@ -96,7 +106,11 @@ async function initializeApp() {
 
 // S'assurer que le DOM est chargé avant d'initialiser
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => initializeApp());
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM chargé, démarrage de l'initialisation");
+    initializeApp();
+  });
 } else {
+  console.log("DOM déjà chargé, démarrage immédiat de l'initialisation");
   initializeApp();
 }

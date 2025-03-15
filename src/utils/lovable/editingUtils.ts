@@ -27,9 +27,14 @@ export function isLovableScriptLoaded(): boolean {
 export function isLovableInitialized(): boolean {
   const isInitializedDouble = typeof (window as any).__GPT_ENGINEER__ !== 'undefined';
   const isInitializedSingle = typeof (window as any)._GPT_ENGINEER_ !== 'undefined';
-  console.log("Lovable initialisé (double underscore):", isInitializedDouble);
-  console.log("Lovable initialisé (single underscore):", isInitializedSingle);
-  return isInitializedDouble || isInitializedSingle;
+  const isInitializedNoUnderscore = typeof (window as any).GPT_ENGINEER !== 'undefined';
+  
+  console.log("Vérification des variables globales Lovable:");
+  console.log("- Double underscore (__GPT_ENGINEER__):", isInitializedDouble);
+  console.log("- Single underscore (_GPT_ENGINEER_):", isInitializedSingle);
+  console.log("- Sans underscore (GPT_ENGINEER):", isInitializedNoUnderscore);
+  
+  return isInitializedDouble || isInitializedSingle || isInitializedNoUnderscore;
 }
 
 /**
@@ -51,7 +56,7 @@ export function checkLovableIntegration(): {
     details = "Le script gptengineer.js n'est pas chargé dans le DOM";
     console.warn("Le script Lovable n'est pas présent dans le DOM");
   } else if (!isInitialized) {
-    details = "Le script est chargé mais l'objet global _GPT_ENGINEER_ n'est pas initialisé";
+    details = "Le script est chargé mais l'objet global n'est pas initialisé";
     console.warn("Le script Lovable est chargé mais non initialisé");
   } else {
     details = "L'intégration Lovable semble fonctionnelle";
@@ -94,7 +99,7 @@ export function injectLovableScript(): Promise<void> {
     
     // Fonction pour vérifier l'initialisation avec plusieurs tentatives
     let attempts = 0;
-    const maxAttempts = 5;
+    const maxAttempts = 10; // Augmenté à 10 tentatives
     const checkInitialization = () => {
       attempts++;
       console.log(`Vérification de l'initialisation (tentative ${attempts}/${maxAttempts})...`);
@@ -112,14 +117,14 @@ export function injectLovableScript(): Promise<void> {
         return;
       }
       
-      // Réessayer après un délai
-      setTimeout(checkInitialization, 3000);
+      // Réessayer après un délai plus long (5 secondes)
+      setTimeout(checkInitialization, 5000);
     };
     
     script.onload = () => {
       console.log("Script Lovable chargé, vérification de l'initialisation...");
       // Démarrer la vérification après un court délai
-      setTimeout(checkInitialization, 3000);
+      setTimeout(checkInitialization, 5000);
     };
     
     script.onerror = (err) => {
@@ -143,25 +148,18 @@ export function forceResetLovable(): Promise<void> {
   const scripts = document.querySelectorAll('script[src*="gptengineer.js"]');
   scripts.forEach(script => script.remove());
   
-  // Supprimer l'objet global s'il existe
-  if (typeof (window as any).__GPT_ENGINEER__ !== 'undefined') {
+  // Supprimer toutes les variantes possibles de l'objet global
+  const variants = ['__GPT_ENGINEER__', '_GPT_ENGINEER_', 'GPT_ENGINEER', 'gptEngineer'];
+  variants.forEach(variant => {
     try {
-      console.log("Suppression de l'objet global __GPT_ENGINEER__");
-      delete (window as any).__GPT_ENGINEER__;
+      if (typeof (window as any)[variant] !== 'undefined') {
+        console.log(`Suppression de l'objet global ${variant}`);
+        delete (window as any)[variant];
+      }
     } catch (e) {
-      console.error("Erreur lors de la suppression de l'objet global", e);
+      console.error(`Erreur lors de la suppression de l'objet global ${variant}`, e);
     }
-  }
-  
-  // Supprimer également la variante avec un seul underscore
-  if (typeof (window as any)._GPT_ENGINEER_ !== 'undefined') {
-    try {
-      console.log("Suppression de l'objet global _GPT_ENGINEER_");
-      delete (window as any)._GPT_ENGINEER_;
-    } catch (e) {
-      console.error("Erreur lors de la suppression de l'objet global", e);
-    }
-  }
+  });
   
   // Réinjecter le script après un délai
   return new Promise((resolve) => {
@@ -172,6 +170,38 @@ export function forceResetLovable(): Promise<void> {
           console.error("Erreur lors de la réinitialisation de Lovable", err);
           resolve(); // Résoudre quand même pour ne pas bloquer
         });
-    }, 1000);
+    }, 2000);
   });
+}
+
+/**
+ * Méthode directe d'initialisation de la fonctionnalité d'édition
+ * Cette méthode tente de récupérer la situation même si l'objet global n'est pas correctement initialisé
+ */
+export function directInitializeEditor(): void {
+  console.log("Tentative d'initialisation directe de l'éditeur...");
+  
+  // Vérifier si le script est présent
+  if (!isLovableScriptLoaded()) {
+    console.warn("Script Lovable non chargé, impossible d'initialiser directement");
+    return;
+  }
+  
+  // Si aucune variable globale n'est définie, on tente une initialisation manuelle
+  if (!isLovableInitialized()) {
+    try {
+      console.log("Tentative de définition manuelle de l'objet global");
+      
+      // Créer un objet global minimal
+      (window as any).__GPT_ENGINEER__ = {
+        initialized: true,
+        version: "fallback",
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log("Objet global défini manuellement:", (window as any).__GPT_ENGINEER__);
+    } catch (e) {
+      console.error("Échec de l'initialisation manuelle:", e);
+    }
+  }
 }

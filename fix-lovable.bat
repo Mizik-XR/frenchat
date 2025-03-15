@@ -11,7 +11,7 @@ echo ===================================================
 echo.
 echo This tool will fix issues with Lovable editing.
 echo.
-echo [STEP 1/3] Checking index.html file...
+echo [STEP 1/4] Checking index.html file...
 if exist "index.html" (
     echo [INFO] Checking for gptengineer.js script...
     findstr "gptengineer.js" "index.html" >nul
@@ -56,8 +56,16 @@ if exist "index.html" (
 )
 echo.
 
-echo [STEP 2/3] Rebuilding application...
-call npm run build
+echo [STEP 2/4] Clearing browser cache instructions...
+echo [INFO] Please perform these steps in your browser:
+echo   1. Open browser developer tools (F12 or right-click ^> Inspect)
+echo   2. Go to Application/Storage tab
+echo   3. Check 'Disable cache' option 
+echo   4. Clear site data or use incognito mode for testing
+echo.
+
+echo [STEP 3/4] Rebuilding application...
+call npm run build --force
 if errorlevel 1 (
     echo [ERROR] Application rebuild failed.
     pause
@@ -67,7 +75,7 @@ if errorlevel 1 (
 )
 echo.
 
-echo [STEP 3/3] Final verification...
+echo [STEP 4/4] Final verification...
 if exist "dist\index.html" (
     echo [INFO] Checking dist\index.html...
     findstr "gptengineer.js" "dist\index.html" >nul
@@ -91,6 +99,7 @@ echo.
 echo To apply changes:
 echo 1. Restart the application
 echo 2. Clear your browser cache or use incognito mode
+echo 3. Try a different browser (Chrome or Edge recommended)
 echo.
 pause
 exit /b 0
