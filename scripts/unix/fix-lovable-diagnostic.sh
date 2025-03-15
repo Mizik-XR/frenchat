@@ -32,13 +32,6 @@ echo
 echo "[TEST 2/5] Vérification du script Lovable..."
 if grep -q "gptengineer.js" "index.html"; then
     echo "[OK] Script Lovable trouvé dans index.html."
-    
-    # Vérifier si le script a l'attribut type="module"
-    if grep -q '<script src="https://cdn.gpteng.co/gptengineer.js" type="module">' "index.html"; then
-        echo "[ATTENTION] Le script Lovable a l'attribut type=\"module\", suppression..."
-        sed -i 's|<script src="https://cdn.gpteng.co/gptengineer.js" type="module">|<script src="https://cdn.gpteng.co/gptengineer.js">|g' "index.html"
-        echo "[OK] Attribut type=\"module\" supprimé."
-    fi
 else
     echo "[ERREUR] Script Lovable manquant dans index.html, ajout..."
     sed -i 's|<head>|<head>\n    <script src="https://cdn.gpteng.co/gptengineer.js"></script>|' "index.html"
