@@ -144,7 +144,13 @@ const GoogleDriveConnection = ({ onFolderSelect }: GoogleDriveConnectionProps) =
               </Button>
             ) : (
               <div className="space-y-2">
-                <GoogleDriveAlert onCancel={() => setShowConfirmation(false)} onConfirm={handleFolderSelect} />
+                <GoogleDriveAlert 
+                  type="warning"
+                  title="Confirmation"
+                  description="Êtes-vous sûr de vouloir indexer ce dossier ?"
+                  onCancel={() => setShowConfirmation(false)} 
+                  onConfirm={handleFolderSelect} 
+                />
               </div>
             )}
           </div>

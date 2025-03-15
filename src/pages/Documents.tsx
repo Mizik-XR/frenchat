@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DocumentProviderSelector } from '@/components/documents/DocumentProviderSelector';
 import { DocumentManager } from '@/components/documents/DocumentManager';
@@ -9,6 +10,13 @@ import { GoogleDriveAdvancedConfig } from '@/components/config/GoogleDrive/Googl
 const Documents: React.FC = () => {
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [generatedDocumentContent, setGeneratedDocumentContent] = useState<string>("");
+  const [isConnectedToDrive, setIsConnectedToDrive] = useState(false);
+
+  useEffect(() => {
+    // Check if user is connected to Google Drive
+    // This is a placeholder, in a real app, you'd check the connection status
+    setIsConnectedToDrive(true);
+  }, []);
 
   const handleStartIndexing = (recursive: boolean) => {
     // Implement the actual start indexing logic
@@ -37,7 +45,7 @@ const Documents: React.FC = () => {
         </Card>
       )}
       <GoogleDriveAdvancedConfig
-        connected={true} // provide the correct value
+        connected={isConnectedToDrive}
         onIndexingRequest={handleStartIndexing}
       />
     </div>

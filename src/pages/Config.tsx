@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -47,16 +48,15 @@ const Config: React.FC = () => {
     });
   };
 
-  const handleFilesSelected = (files: File[]) => {
+  const handleFilesSelected = async (files: File[]) => {
     setIsUploading(true);
     // Simulate file upload
-    setTimeout(() => {
-      setIsUploading(false);
-      toast({
-        title: "Fichiers importés",
-        description: `${files.length} fichier(s) ont été importés avec succès.`
-      });
-    }, 2000);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsUploading(false);
+    toast({
+      title: "Fichiers importés",
+      description: `${files.length} fichier(s) ont été importés avec succès.`
+    });
   };
 
   const handleStartIndexing = (recursive: boolean) => {

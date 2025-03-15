@@ -1,56 +1,116 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
+import { IndexingProgress as IndexingProgressType } from '@/types/google-drive';
 
-// Define the interface for IndexingProgress
 export interface IndexingProgress {
   processed: number;
   total: number;
 }
 
-// Export the state type
-export interface IndexingProgressState {
-  indexingProgress: number;
-  progress: IndexingProgress | null;
-  startIndexing: (folderId?: string, recursive?: boolean) => Promise<void>;
-}
-
-export const useIndexingProgress = (): IndexingProgressState => {
-  const [indexingProgress, setIndexingProgress] = useState<number>(0);
+export function useIndexingProgress() {
+  const [indexingProgress, setIndexingProgress] = useState(0);
   const [progress, setProgress] = useState<IndexingProgress | null>(null);
-  
-  // Function to start the indexing process
-  const startIndexing = useCallback(async (folderId?: string, recursive?: boolean) => {
-    // Reset the progress state
-    setIndexingProgress(0);
-    setProgress(null);
-    
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchIndexingProgress = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('indexing_progress')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) {
+          console.error('Error fetching indexing progress:', error);
+          return;
+        }
+
+        if (data) {
+          const { total_files, processed_files } = data;
+          if (total_files > 0) {
+            const percentage = Math.round((processed_files / total_files) * 100);
+            setIndexingProgress(percentage);
+            setProgress({
+              processed: processed_files,
+              total: total_files
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error in useIndexingProgress:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchIndexingProgress();
+
+    // Set up real-time subscription for progress updates
+    const subscription = supabase
+      .channel('indexing_progress_changes')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'indexing_progress',
+        filter: `user_id=eq.${user.id}`,
+      }, (payload) => {
+        const { total_files, processed_files } = payload.new;
+        if (total_files > 0) {
+          const percentage = Math.round((processed_files / total_files) * 100);
+          setIndexingProgress(percentage);
+          setProgress({
+            processed: processed_files,
+            total: total_files
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user]);
+
+  const startIndexing = async () => {
+    if (!user) return;
+
+    setIsLoading(true);
     try {
-      // Start indexing - this is a stub
-      console.log("Starting indexing process", { folderId, recursive });
-      
-      // In a real implementation, you would call your API here and update progress
-      // For now, we'll simulate progress:
-      setIndexingProgress(5);
-      
-      // Simulate the API response
-      setProgress({
-        processed: 0,
-        total: 100
-      });
-      
-      // This would be replaced by actual API calls and progress tracking
-      
-    } catch (error) {
-      console.error("Error starting indexing:", error);
-      // Reset on error
+      // Initialize indexing progress
+      const { error } = await supabase
+        .from('indexing_progress')
+        .upsert({
+          user_id: user.id,
+          total_files: 0,
+          processed_files: 0,
+          status: 'running',
+        });
+
+      if (error) {
+        throw error;
+      }
+
       setIndexingProgress(0);
-      setProgress(null);
+    } catch (error) {
+      console.error('Error starting indexing:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
-  
+  };
+
   return {
     indexingProgress,
     progress,
+    isLoading,
     startIndexing
   };
-};
+}

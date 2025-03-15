@@ -5,11 +5,11 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { useGoogleDrive } from './useGoogleDrive';
+import { useGoogleDrive } from '@/hooks/useGoogleDrive';
 import { GoogleDriveAlert } from './GoogleDriveAlert';
 import { useIndexingProgress } from '@/hooks/useIndexingProgress';
 
-interface GoogleDriveAdvancedConfigProps {
+export interface GoogleDriveAdvancedConfigProps {
   connected: boolean;
   onIndexingRequest: (recursive: boolean) => void;
 }
@@ -17,12 +17,11 @@ interface GoogleDriveAdvancedConfigProps {
 export function GoogleDriveAdvancedConfig({ connected, onIndexingRequest }: GoogleDriveAdvancedConfigProps) {
   const [recursive, setRecursive] = useState(false);
   const { isConnecting, isConnected, initiateGoogleAuth } = useGoogleDrive();
-  const { indexingProgress, startIndexing } = useIndexingProgress();
+  const { indexingProgress, isLoading } = useIndexingProgress();
   
   const [error, setError] = useState<string | null>(null);
-  const [permissions, setPermissions] = useState<{hasDriveScope: boolean} | null>(null);
+  const [hasPermissions, setHasPermissions] = useState(false);
   
-  const hasPermissions = permissions && permissions.hasDriveScope;
   const isIndexing = indexingProgress > 0 && indexingProgress < 100;
   
   const handleIndexDrive = () => {
@@ -83,7 +82,7 @@ export function GoogleDriveAdvancedConfig({ connected, onIndexingRequest }: Goog
           <GoogleDriveAlert 
             type="error" 
             title="Erreur" 
-            description="Une erreur est survenue lors de la connexion à Google Drive" 
+            description={error} 
           />
         )}
         

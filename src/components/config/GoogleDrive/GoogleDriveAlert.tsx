@@ -1,25 +1,27 @@
 
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { ExclamationTriangleIcon, CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
+import { ExclamationTriangleIcon, CheckIcon, InfoIcon } from 'lucide-react';
 
 export interface GoogleDriveAlertProps {
   type: 'error' | 'success' | 'info' | 'warning';
   title: string;
   description: string;
+  onCancel?: () => void;
+  onConfirm?: () => void;
 }
 
-export function GoogleDriveAlert({ type, title, description }: GoogleDriveAlertProps) {
+export function GoogleDriveAlert({ type, title, description, onCancel, onConfirm }: GoogleDriveAlertProps) {
   const getIcon = () => {
     switch (type) {
       case 'error':
       case 'warning':
         return <ExclamationTriangleIcon className="h-4 w-4" />;
       case 'success':
-        return <CheckCircledIcon className="h-4 w-4" />;
+        return <CheckIcon className="h-4 w-4" />;
       case 'info':
       default:
-        return <InfoCircledIcon className="h-4 w-4" />;
+        return <InfoIcon className="h-4 w-4" />;
     }
   };
 
@@ -40,6 +42,27 @@ export function GoogleDriveAlert({ type, title, description }: GoogleDriveAlertP
         <AlertTitle>{title}</AlertTitle>
       </div>
       <AlertDescription>{description}</AlertDescription>
+      
+      {(onCancel || onConfirm) && (
+        <div className="flex justify-end gap-2 mt-2">
+          {onCancel && (
+            <button 
+              onClick={onCancel}
+              className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded"
+            >
+              Annuler
+            </button>
+          )}
+          {onConfirm && (
+            <button 
+              onClick={onConfirm}
+              className="px-2 py-1 text-sm bg-primary text-white hover:bg-primary/90 rounded"
+            >
+              Confirmer
+            </button>
+          )}
+        </div>
+      )}
     </Alert>
   );
 }
