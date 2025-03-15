@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy } from 'react';
 import { Route, Routes, Navigate, BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
@@ -9,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ToastProvider } from '@/hooks/toast';
 import { ToastProvider as RadixToastProvider } from '@radix-ui/react-toast';
 
 // Importation différée des composants pour améliorer les performances de chargement initial
@@ -92,19 +92,21 @@ function App() {
     <ErrorBoundary>
       {/* Réorganisation des providers - RadixToastProvider au plus haut niveau */}
       <RadixToastProvider>
-        <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
-          <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
-              <AuthProvider>
-                <SettingsProvider>
-                  <ReactErrorMonitor />
-                  <AppRouter />
-                  <Toaster />
-                </SettingsProvider>
-              </AuthProvider>
-            </BrowserRouter>
-          </QueryClientProvider>
-        </ThemeProvider>
+        <ToastProvider>
+          <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
+            <QueryClientProvider client={queryClient}>
+              <BrowserRouter>
+                <AuthProvider>
+                  <SettingsProvider>
+                    <ReactErrorMonitor />
+                    <AppRouter />
+                    <Toaster />
+                  </SettingsProvider>
+                </AuthProvider>
+              </BrowserRouter>
+            </QueryClientProvider>
+          </ThemeProvider>
+        </ToastProvider>
       </RadixToastProvider>
     </ErrorBoundary>
   );
