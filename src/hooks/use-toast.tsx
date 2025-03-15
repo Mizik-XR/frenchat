@@ -153,10 +153,11 @@ function dispatch(action: Action) {
   })
 }
 
-// Define Toast type without removing the id field
+// Define Toast type as Partial<ToasterToast> to allow optional id
 export type Toast = Partial<ToasterToast>
 
 export function toast(props: Toast) {
+  // Generate id if not provided
   const id = props.id || genId()
 
   const update = (props: Partial<ToasterToast>) =>
