@@ -11,6 +11,8 @@ type ToastContextType = {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
+// Note: Ce provider est maintenant utilisé uniquement pour la gestion d'état interne
+// et non pour le rendu des toasts UI. Le ToastProvider de Radix est utilisé dans App.tsx
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<State>(memoryState);
 

@@ -4,9 +4,8 @@ import {
   Toast,
   ToastClose,
   ToastDescription,
-  ToastProvider,
-  ToastTitle,
   ToastViewport,
+  ToastTitle,
 } from "@/components/ui/toast"
 
 export function Toaster() {

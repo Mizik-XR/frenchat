@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { ToastProvider } from './hooks/toast';
+import { ToastProvider } from '@radix-ui/react-toast';
 
 const Home = lazy(() => import('./pages/Home'));
 const Auth = lazy(() => import('./pages/Auth').then(module => ({ default: module.Auth })));
