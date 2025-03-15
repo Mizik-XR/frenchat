@@ -6,6 +6,7 @@
 
 # Proper MIME type for all files
 AddType application/javascript .js
+AddType application/javascript .mjs
 AddType text/css .css
 AddType image/svg+xml .svg
 AddType application/font-woff .woff

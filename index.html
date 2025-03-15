@@ -79,36 +79,58 @@
         window.location.href = '/?forceCloud=true&mode=cloud&client=true';
       }
       
+      // Function to enable recovery UI
+      function showRecoveryUI(errorMsg) {
+        var loadingEl = document.getElementById('loading-screen');
+        var retryBtn = document.querySelector('.retry-btn');
+        var errorMsg = document.querySelector('.error-message');
+        
+        if (loadingEl && errorMsg && retryBtn) {
+          errorMsg.style.display = 'block';
+          errorMsg.textContent = errorMsg || "Error during initialization. Please try again.";
+          retryBtn.style.display = 'inline-block';
+        }
+      }
+      
       // Error detection and recovery - specifically for React initialization errors
       window.addEventListener('error', function(event) {
-        console.log("Erreur détectée:", event.message);
+        console.log("Error detected:", event.message);
         
         if (event.message && (
             event.message.includes('useLayoutEffect') || 
             event.message.includes('MIME type') || 
             event.message.includes('createContext') ||
-            event.message.includes('Cannot read properties of undefined')
+            event.message.includes('Cannot read properties of undefined') ||
+            event.message.includes('React')
         )) {
-          console.warn('Erreur critique détectée, tentative de récupération...');
+          console.warn('Critical error detected, attempting recovery...');
           
           // Show recovery button immediately for React initialization errors
-          var loadingEl = document.getElementById('loading-screen');
-          var retryBtn = document.querySelector('.retry-btn');
-          var errorMsg = document.querySelector('.error-message');
+          showRecoveryUI("React initialization error detected. Please try again.");
           
-          if (loadingEl && errorMsg && retryBtn) {
-            errorMsg.style.display = 'block';
-            errorMsg.textContent = "Erreur d'initialisation React détectée. Veuillez réessayer.";
-            retryBtn.style.display = 'inline-block';
-          }
-          
-          // Auto-recovery for severe errors - try cloud mode after 2 seconds
+          // Auto-recovery for severe errors - try cloud mode after 1.5 seconds
           setTimeout(function() {
-            console.log("Tentative de récupération automatique...");
+            console.log("Attempting automatic recovery...");
             forceHomepageInCloudMode();
-          }, 2000);
+          }, 1500);
         }
       }, true);
+      
+      // Create .env.local with cloud mode if needed
+      if (window.location.search.includes('createEnv=true')) {
+        console.log("Attempting to create .env.local file for cloud mode");
+        fetch('/api/create-env-file', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: 'VITE_CLOUD_MODE=true\nVITE_ALLOW_LOCAL_AI=false'
+          })
+        }).catch(function(err) {
+          console.warn("Failed to create .env.local file", err);
+        });
+      }
     </script>
   </head>
   <body>

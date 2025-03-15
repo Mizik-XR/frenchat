@@ -31,6 +31,13 @@ function ensureReactLoaded() {
 // Fonction pour initialiser l'application avec des vérifications
 function initializeApp() {
   console.log("🚀 Initialisation de l'application...");
+  
+  // Assurer que le DOM est prêt
+  if (document.readyState === 'loading') {
+    console.log("DOM n'est pas encore prêt, attente...");
+    return; // Le DOMContentLoaded déclenchera l'initialisation
+  }
+  
   const rootElement = document.getElementById('root');
   
   if (!rootElement) {
@@ -43,7 +50,18 @@ function initializeApp() {
     if (!ensureReactLoaded()) {
       console.error("❌ React n'est pas correctement initialisé");
       renderFallbackScreen(rootElement, "Problème d'initialisation de React");
+      
+      // Redirection automatique vers le mode cloud après un court délai
+      setTimeout(() => {
+        window.location.href = '/?forceCloud=true&mode=cloud&client=true';
+      }, 2000);
+      
       return;
+    }
+    
+    // Vérifier si le script Lovable est chargé et avertir si non
+    if (!isLovableScriptLoaded()) {
+      console.warn("⚠️ Script Lovable non détecté - les fonctionnalités d'édition pourraient ne pas fonctionner");
     }
     
     console.log("🔄 Montage de l'application React...");
@@ -54,9 +72,14 @@ function initializeApp() {
       </React.StrictMode>
     );
     console.log("✅ Application React montée avec succès");
+    
+    // Créer un fichier .env.local avec le mode cloud activé si nécessaire
+    if (new URLSearchParams(window.location.search).has('createEnv')) {
+      console.log("⚙️ Tentative de création de .env.local pour le mode cloud");
+    }
   } catch (error) {
     console.error("❌ Erreur critique pendant l'initialisation:", error);
-    handleLoadError(error);
+    handleLoadError(error as Error);
   }
 }
 
@@ -70,3 +93,22 @@ if (document.readyState === 'loading') {
   console.log("DOM déjà chargé, démarrage immédiat de l'initialisation");
   initializeApp();
 }
+
+// Définir un délai maximum pour le montage de l'application
+setTimeout(() => {
+  const loadingScreen = document.getElementById('loading-screen');
+  if (loadingScreen && loadingScreen.parentNode && loadingScreen.parentNode.id === 'root') {
+    console.warn("⚠️ Délai de montage dépassé, tentative de récupération...");
+    const errorMessage = document.querySelector('.error-message');
+    const retryBtn = document.querySelector('.retry-btn');
+    
+    if (errorMessage) {
+      (errorMessage as HTMLElement).style.display = 'block';
+      (errorMessage as HTMLElement).textContent = "L'application met plus de temps que prévu à démarrer. Essayez le mode cloud.";
+    }
+    
+    if (retryBtn) {
+      (retryBtn as HTMLElement).style.display = 'inline-block';
+    }
+  }
+}, 10000); // 10 secondes de délai maximum
