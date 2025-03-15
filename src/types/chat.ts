@@ -1,5 +1,14 @@
-
-export type AIProvider = 'auto' | 'huggingface' | 'internet-search' | 'deepseek' | 'stable-diffusion' | 'mistral' | 'ollama';
+export type AIProvider = 
+  | 'huggingface' 
+  | 'mistral' 
+  | 'ollama'
+  | 'ollama-gemma'
+  | 'deepseek'
+  | 'deepseek-v2'
+  | 'internet-search'
+  | 'gemma-3'
+  | 'google'
+  | 'openai';
 
 export type MessageType = 'text' | 'document' | 'image' | 'chart';
 
@@ -23,17 +32,13 @@ export type MessageMetadata = {
   };
 };
 
-export type WebUIConfig = {
-  mode: 'auto' | 'manual';
-  model: AIProvider;
-  maxTokens: number;
+export interface WebUIConfig {
+  model: string;
+  provider: AIProvider;
   temperature: number;
-  streamResponse: boolean;
+  maxTokens: number;
   analysisMode: AnalysisMode;
-  useMemory: boolean;
-  autoMode: boolean;
-  modelSource: 'local' | 'cloud';
-};
+}
 
 export type Message = {
   id: string;

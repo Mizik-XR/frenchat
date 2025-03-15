@@ -10,7 +10,7 @@ export interface AIModel {
   apiKey?: string;
   temperature?: number;
   apiKeyRequired?: boolean;
-  apiType?: "openai" | "huggingface" | "other";
+  apiType?: "openai" | "huggingface" | "other" | "google";
   configFields?: {
     apiKey?: boolean;
     modelName?: boolean;
@@ -41,6 +41,13 @@ export const LOCAL_MODELS: AIModel[] = [
     description: "Version locale de Qwen, rapide et efficace",
     isOpenSource: true,
     pricingInfo: "Gratuit, exécution locale"
+  },
+  {
+    id: "gemma-3-local",
+    name: "Gemma 3 (Local)",
+    description: "Modèle Gemma 3 de Google optimisé pour exécution locale",
+    isOpenSource: true,
+    pricingInfo: "Gratuit, exécution locale via Ollama"
   },
   {
     id: "ollama-local",
@@ -89,6 +96,26 @@ export const CLOUD_MODELS: AIModel[] = [
     apiType: "huggingface",
     isOpenSource: true,
     pricingInfo: "Gratuit via l'API Hugging Face"
+  },
+  {
+    id: "huggingface/gemma-3",
+    name: "Gemma 3 (Google)",
+    description: "Nouveau modèle ultra-performant de Google",
+    requiresKey: false,
+    modelId: "google/gemma-3-8b-it",
+    apiType: "huggingface",
+    isOpenSource: true,
+    pricingInfo: "Gratuit via l'API Hugging Face"
+  },
+  {
+    id: "deepseek/deepseek-coder-v2",
+    name: "DeepSeek Coder V2",
+    description: "Dernière version du modèle spécialisé pour le code",
+    requiresKey: true,
+    modelId: "deepseek-ai/deepseek-coder-v2-instruct",
+    apiType: "huggingface",
+    isOpenSource: true,
+    pricingInfo: "Via API Hugging Face (clé requise)"
   },
   {
     id: "huggingface/bert",
@@ -162,6 +189,19 @@ export const CLOUD_MODELS: AIModel[] = [
     },
     isOpenSource: false,
     pricingInfo: "Service payant (~$15/million de tokens)"
+  },
+  {
+    id: "google/gemini-pro",
+    name: "Gemini Pro (Google)",
+    description: "Modèle avancé de Google AI",
+    requiresKey: true,
+    docsUrl: "https://aistudio.google.com/app/apikey",
+    apiType: "google",
+    configFields: {
+      apiKey: true
+    },
+    isOpenSource: false,
+    pricingInfo: "Service payant (tarification variable)"
   },
   {
     id: "perplexity/pplx",

@@ -73,9 +73,48 @@ export function useAIProviders() {
     }, user?.id);
   };
 
+  const generateWithGemma = async (prompt: string, webUIConfig: WebUIConfig) => {
+    return await textGeneration({
+      model: "google/gemma-3-8b-it",
+      inputs: `<start_of_turn>user\n${prompt}<end_of_turn>\n<start_of_turn>model`,
+      parameters: {
+        max_length: webUIConfig.maxTokens,
+        temperature: webUIConfig.temperature,
+        top_p: 0.95
+      }
+    }, user?.id);
+  };
+
+  const generateWithDeepseekV2 = async (prompt: string, webUIConfig: WebUIConfig) => {
+    const { data, error } = await supabase.functions.invoke('text-generation', {
+      body: { 
+        model: "deepseek-ai/deepseek-coder-v2-instruct", 
+        prompt: `${getSystemPrompt(webUIConfig.analysisMode)}\n\n${prompt}`,
+        max_tokens: webUIConfig.maxTokens,
+        temperature: webUIConfig.temperature,
+        userId: user?.id
+      }
+    });
+    
+    if (error) throw error;
+    return [{ generated_text: data.text }];
+  };
+
   const generateWithOllama = async (prompt: string, webUIConfig: WebUIConfig) => {
     return await textGeneration({
       model: "ollama/mistral",
+      inputs: prompt,
+      parameters: {
+        max_length: webUIConfig.maxTokens,
+        temperature: webUIConfig.temperature
+      },
+      forceLocal: true
+    }, user?.id);
+  };
+
+  const generateWithOllamaGemma = async (prompt: string, webUIConfig: WebUIConfig) => {
+    return await textGeneration({
+      model: "ollama/gemma:3",
       inputs: prompt,
       parameters: {
         max_length: webUIConfig.maxTokens,
@@ -96,12 +135,18 @@ export function useAIProviders() {
         return await generateWithHuggingFace(prompt, webUIConfig);
       case 'deepseek':
         return await generateWithDeepseek(prompt, webUIConfig);
+      case 'deepseek-v2':
+        return await generateWithDeepseekV2(prompt, webUIConfig);
       case 'internet-search':
         return await generateWithInternetSearch(message);
       case 'mistral':
         return await generateWithMistral(prompt, webUIConfig);
+      case 'gemma-3':
+        return await generateWithGemma(prompt, webUIConfig);  
       case 'ollama':
         return await generateWithOllama(prompt, webUIConfig);
+      case 'ollama-gemma':
+        return await generateWithOllamaGemma(prompt, webUIConfig);
       default:
         return await generateWithHuggingFace(prompt, webUIConfig);
     }

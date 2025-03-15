@@ -1,3 +1,4 @@
+
 import { Json } from './database';
 
 export type ServiceType = 
@@ -10,7 +11,8 @@ export type ServiceType =
   | 'llm'
   | 'stable_diffusion'
   | 'microsoft_teams'
-  | 'huggingface';
+  | 'huggingface'
+  | 'google';
 
 // Chaîne de caractères pour le provider
 export type LLMProviderType =
@@ -23,7 +25,9 @@ export type LLMProviderType =
   | 'cohere'
   | 'mistral'
   | 'ollama'
-  | 'qwen';
+  | 'qwen'
+  | 'gemma'
+  | 'google';
 
 export interface LLMProvider {
   id: string;
