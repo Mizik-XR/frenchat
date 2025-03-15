@@ -7,6 +7,7 @@ import { ChatHeader } from '../ChatHeader';
 import { useParams, useNavigate } from 'react-router-dom';
 import { WebUIConfig, AnalysisMode, AIProvider } from '@/types/chat';
 import { useChatState } from '@/hooks/useChatState';
+import { useAIMode, AIMode } from '@/hooks/useAIMode';
 
 interface ChatContainerProps {
   config: WebUIConfig;
@@ -23,6 +24,9 @@ export const ChatContainer = ({ config, setConfig }: ChatContainerProps) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showUploader, setShowUploader] = useState(false);
   const [modelSource, setModelSource] = useState<'cloud' | 'local'>('cloud');
+  
+  // Utiliser le hook useAIMode pour accéder aux fonctionnalités de mode IA
+  const { currentMode, isLocalAvailable, changeMode } = useAIMode();
 
   useEffect(() => {
     // Si un ID est fourni dans l'URL mais qu'il n'y a pas de conversation active
@@ -91,6 +95,11 @@ export const ChatContainer = ({ config, setConfig }: ChatContainerProps) => {
   const handleModelSourceChange = (source: 'cloud' | 'local') => {
     setModelSource(source);
   };
+  
+  // Gérer le changement de mode AI via le hook useAIMode
+  const handleAIModeChange = (mode: AIMode) => {
+    changeMode(mode);
+  };
 
   const handleResetConversation = () => {
     // Reset conversation logic here
@@ -110,6 +119,9 @@ export const ChatContainer = ({ config, setConfig }: ChatContainerProps) => {
             setShowUploader={setShowUploader}
             modelSource={modelSource}
             onModelSourceChange={handleModelSourceChange}
+            currentAIMode={currentMode}
+            isLocalAvailable={isLocalAvailable}
+            onAIModeChange={handleAIModeChange}
           />
           <MainChatContainer 
             conversation={activeConversation}
