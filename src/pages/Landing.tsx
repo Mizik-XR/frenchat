@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
@@ -10,6 +11,8 @@ import { SparklesCore } from "@/components/landing/SparklesCore";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
+import { BestPracticesSection } from "@/components/landing/BestPracticesSection";
+import { PricingSection } from "@/components/landing/PricingSection";
 
 export default function Landing() {
   const location = useLocation();
@@ -84,6 +87,12 @@ export default function Landing() {
         <Hero onJoinBeta={handleJoinBeta} onSeeExamples={handleSeeExamples} />
         <section id="features">
           <FeaturesSection />
+        </section>
+        <section id="best-practices">
+          <BestPracticesSection />
+        </section>
+        <section id="pricing">
+          <PricingSection />
         </section>
         <section id="installation">
           <InstallationGuide />
