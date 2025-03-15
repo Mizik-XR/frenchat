@@ -9,8 +9,6 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>FileChat - Your Document Intelligence Assistant</title>
     <meta name="description" content="FileChat automatically indexes all your documents from Google Drive and Microsoft Teams, allowing you to interact with your entire document knowledge base." />
-    <!-- Script required for Lovable functioning -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <!-- Base style for initial loading screen -->
     <style>
       #loading-screen {
@@ -124,6 +122,8 @@
         </div>
       </div>
     </div>
+    <!-- Script requis pour Lovable (PLACÉ AVANT LE SCRIPT PRINCIPAL) -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

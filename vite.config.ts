@@ -11,9 +11,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
-      // Configurer React pour éviter les conflits potentiels
       jsxRuntime: 'automatic',
-      // La propriété fastRefresh n'est pas reconnue, supprimons-la
       babel: {
         plugins: []
       }
@@ -25,45 +23,60 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Configuration améliorée pour la production
   build: {
-    // Utilisation d'esbuild au lieu de terser pour la minification
-    minify: 'esbuild',
-    // Configuration d'esbuild pour la minification
+    // Optimisations
+    minify: mode === 'production' ? 'esbuild' : false,
     target: 'es2015',
+    sourcemap: mode === 'development',
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
-        // Séparation du code en chunks pour un meilleur chargement
+        // Amélioration de la distribution des chunks
         manualChunks: (id) => {
-          // On crée un chunk pour chaque lib importante
+          // Éviter le problème d'ordre d'initialisation des modules
           if (id.includes('node_modules')) {
+            // Créer des chunks plus spécifiques pour les bibliothèques volumineuses
             if (id.includes('@supabase')) return 'vendor-supabase';
-            if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
+            if (id.includes('react-dom')) return 'vendor-react-dom';
+            if (id.includes('react')) return 'vendor-react';
+            if (id.includes('@radix-ui/react-toast')) return 'vendor-radix-toast';
             if (id.includes('@radix-ui')) return 'vendor-radix';
             if (id.includes('lucide')) return 'vendor-lucide';
+            if (id.includes('@tanstack')) return 'vendor-tanstack';
             return 'vendor'; // autres libs
           }
         },
+        // Format de sortie avec entryFileNames et chunkFileNames pour mieux contrôler le nommage
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       },
-      external: [
-        // Exclure le script gptengineer.js du processus de bundling
-        'https://cdn.gpteng.co/gptengineer.js'
-      ]
+      // Exclure le script gptengineer.js du bundling
+      external: ['https://cdn.gpteng.co/gptengineer.js']
     },
-    // Activer la compression
-    reportCompressedSize: true,
-    chunkSizeWarningLimit: 1000, // Augmenter la limite d'avertissement
+    chunkSizeWarningLimit: 1000,
   },
-  // Configuration pour améliorer le comportement du cache
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
+    include: [
+      'react', 
+      'react-dom', 
+      'react-router-dom',
+      '@radix-ui/react-toast',
+      'lucide-react'
+    ],
     exclude: ['gptengineer', 'lovable-tagger']
   },
-  // Configuration de la gestion des assets
-  assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg'],
-  // Modification de la configuration pour le mode développement et production
   define: {
-    // On remplace __LOVABLE_MODE__ par une valeur constante pour éviter les erreurs
+    // Définir des constantes globales
     __LOVABLE_MODE__: JSON.stringify(mode === 'development' ? "development" : "production"),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
+  // Améliorer les performances et l'expérience de développement
+  esbuild: {
+    // Désactiver JSX auto pour éviter les erreurs de build
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment',
+    // Optimisations pour les navigateurs plus récents
+    target: ['es2020', 'chrome80', 'edge79', 'firefox72', 'safari13']
   }
 }));

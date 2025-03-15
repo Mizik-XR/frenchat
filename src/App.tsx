@@ -12,6 +12,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from '@/hooks/toast/toast-context';
 import * as RadixToast from '@radix-ui/react-toast';
 
+// Lazy-loaded components
 const Home = lazy(() => import('./pages/Home'));
 const Auth = lazy(() => import('./pages/Auth').then(module => ({ default: module.Auth })));
 const Config = lazy(() => import('./pages/Config'));
@@ -26,6 +27,7 @@ const OllamaSetup = lazy(() => import('./pages/OllamaSetup'));
 const Index = lazy(() => import('./pages/Index'));
 const Landing = lazy(() => import('./pages/Landing'));
 
+// Configurer le client de requête
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -72,9 +74,17 @@ function App() {
     return <div>Chargement de l'application...</div>;
   }
 
+  // Enregistrer une détection d'erreur globale
+  window.addEventListener('error', (event) => {
+    console.error('Global error detected:', event.message);
+    if (event.message.includes('vendor-')) {
+      console.warn('Vendor script error detected. This might be related to a known issue with module initialization order.');
+    }
+  });
+
   return (
     <ErrorBoundary>
-      <RadixToast.Provider>
+      <RadixToast.Provider swipeDirection="right">
         <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
           <QueryClientProvider client={queryClient}>
             <BrowserRouter>
@@ -84,13 +94,13 @@ function App() {
                     <ReactErrorMonitor />
                     <AppRouter />
                     <Toaster />
+                    <RadixToast.Viewport className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]" />
                   </ToastProvider>
                 </SettingsProvider>
               </AuthProvider>
             </BrowserRouter>
           </QueryClientProvider>
         </ThemeProvider>
-        <RadixToast.Viewport className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]" />
       </RadixToast.Provider>
     </ErrorBoundary>
   );

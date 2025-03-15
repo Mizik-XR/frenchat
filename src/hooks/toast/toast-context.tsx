@@ -10,13 +10,14 @@ type ToastContextType = {
   dismiss: (toastId?: string) => void;
 };
 
+// Contexte interne pour la gestion des toasts
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-// Note: Ce provider est maintenant utilisé uniquement pour la gestion d'état interne
-// et utilise le RadixToastProvider depuis App.tsx pour le rendu des toasts UI
+// Provider pour la gestion d'état des toasts (n'utilise pas le Radix Provider)
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<State>(memoryState);
 
+  // Gérer la synchronisation avec le système de mémorisation
   useMemo(() => {
     const unsubscribe = (listener: (state: State) => void) => {
       listeners.splice(listeners.indexOf(listener), 1);
@@ -32,9 +33,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Fonction pour créer un toast
   const toast = (props: any) => {
+    // Générer un ID unique basé sur le timestamp actuel
     const id = props.id || String(Date.now());
     
+    // Dispatcher l'action pour ajouter le toast
     dispatch({
       type: "ADD_TOAST",
       toast: {
@@ -47,6 +51,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       },
     });
 
+    // Retourner l'API pour interagir avec ce toast
     return {
       id,
       dismiss: () => dismiss(id),
@@ -59,10 +64,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
+  // Fonction pour fermer un toast
   const dismiss = (toastId?: string) => {
     dispatch({ type: "DISMISS_TOAST", toastId });
   };
 
+  // Valeur du contexte
   const value = {
     state,
     toast,
@@ -72,6 +79,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
 }
 
+// Hook pour utiliser le système de toast
 export function useToast() {
   const context = useContext(ToastContext);
   
