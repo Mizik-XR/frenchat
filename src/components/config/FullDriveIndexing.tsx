@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database, HardDrive, Server } from 'lucide-react';
 import { FolderIndexingSelector } from '@/components/documents/folder-indexing/FolderIndexingSelector';
@@ -10,8 +10,10 @@ import { useGoogleDriveFolders } from '@/hooks/useGoogleDriveFolders';
 export function FullDriveIndexing() {
   const { startIndexing, indexingProgress, isLoading } = useIndexingProgress();
   const { rootFolder } = useGoogleDriveFolders();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleStartIndexing = async (folderId: string, options: Record<string, any> = {}) => {
+    setIsProcessing(true);
     try {
       // On s'assure que fullDriveIndexing est à true pour l'indexation complète
       await startIndexing(folderId, {
@@ -20,6 +22,8 @@ export function FullDriveIndexing() {
       });
     } catch (error) {
       console.error("Erreur lors de l'indexation complète:", error);
+    } finally {
+      setIsProcessing(false);
     }
   };
   
@@ -62,7 +66,7 @@ export function FullDriveIndexing() {
           
           <FolderIndexingSelector 
             onStartIndexing={handleStartIndexing}
-            isLoading={isLoading}
+            isLoading={isProcessing || isLoading}
             fullDriveMode={true}
           />
           

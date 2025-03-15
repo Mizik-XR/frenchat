@@ -9,6 +9,8 @@ export interface SystemCapabilities {
   recommendedModels: string[];
   localAIReady: boolean;
   os: 'windows' | 'macos' | 'linux' | 'other';
+  isHighEndSystem?: boolean;
+  isMidEndSystem?: boolean;
 }
 
 /**
@@ -21,45 +23,55 @@ export function useSystemCapabilities() {
     localAIReady: false,
     os: 'other'
   });
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  const analyzeSystem = async () => {
+    setIsAnalyzing(true);
+    try {
+      // Détection du système d'exploitation
+      const os = detectOperatingSystem();
+      
+      // Détection de la mémoire disponible
+      const memoryGB = detectMemory();
+      
+      // Détection du nombre de cœurs de processeur
+      const cpuCores = detectCpuCores();
+      
+      // Détection de la disponibilité du GPU
+      const gpuAvailable = await detectGpu();
+      
+      // Déterminer les modèles recommandés en fonction des ressources
+      const recommendedModels = getRecommendedModels(memoryGB, cpuCores, gpuAvailable);
+      
+      // Déterminer si le système est prêt pour l'IA locale
+      const localAIReady = determineLocalAIReadiness(memoryGB, cpuCores);
+      
+      // Déterminer le niveau du système
+      const isHighEndSystem = memoryGB !== undefined && memoryGB >= 16 && cpuCores !== undefined && cpuCores >= 8;
+      const isMidEndSystem = !isHighEndSystem && (memoryGB !== undefined && memoryGB >= 8 && cpuCores !== undefined && cpuCores >= 4);
+      
+      setCapabilities({
+        memoryGB,
+        cpuCores,
+        gpuAvailable,
+        recommendedModels,
+        localAIReady,
+        os,
+        isHighEndSystem,
+        isMidEndSystem
+      });
+    } catch (error) {
+      console.error("Erreur lors de la détection des capacités système:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
   
   useEffect(() => {
-    async function detectCapabilities() {
-      try {
-        // Détection du système d'exploitation
-        const os = detectOperatingSystem();
-        
-        // Détection de la mémoire disponible
-        const memoryGB = detectMemory();
-        
-        // Détection du nombre de cœurs de processeur
-        const cpuCores = detectCpuCores();
-        
-        // Détection de la disponibilité du GPU
-        const gpuAvailable = await detectGpu();
-        
-        // Déterminer les modèles recommandés en fonction des ressources
-        const recommendedModels = getRecommendedModels(memoryGB, cpuCores, gpuAvailable);
-        
-        // Déterminer si le système est prêt pour l'IA locale
-        const localAIReady = determineLocalAIReadiness(memoryGB, cpuCores);
-        
-        setCapabilities({
-          memoryGB,
-          cpuCores,
-          gpuAvailable,
-          recommendedModels,
-          localAIReady,
-          os
-        });
-      } catch (error) {
-        console.error("Erreur lors de la détection des capacités système:", error);
-      }
-    }
-    
-    detectCapabilities();
+    analyzeSystem();
   }, []);
   
-  return { capabilities };
+  return { capabilities, isAnalyzing, analyzeSystem };
 }
 
 /**
@@ -67,16 +79,18 @@ export function useSystemCapabilities() {
  */
 function detectMemory(): number | undefined {
   try {
-    if (navigator.deviceMemory) {
-      // API DeviceMemory est disponible (Chrome)
-      return navigator.deviceMemory;
+    // Utiliser l'API Navigator pour tenter de détecter la mémoire
+    // Note: deviceMemory n'est pas standard et peut ne pas être disponible sur tous les navigateurs
+    const nav = navigator as any;
+    if (nav.deviceMemory) {
+      return nav.deviceMemory;
     }
     
     // Estimation approximative basée sur les limites de performance JavaScript
-    const heapLimit = performance?.memory?.jsHeapSizeLimit;
-    if (heapLimit) {
+    const perf = performance as any;
+    if (perf?.memory?.jsHeapSizeLimit) {
       // Convertir les octets en GB et multiplier pour obtenir une estimation
-      return Math.round((heapLimit / 1073741824) * 2);
+      return Math.round((perf.memory.jsHeapSizeLimit / 1073741824) * 2);
     }
     
     // Valeur par défaut si la détection échoue
@@ -112,12 +126,14 @@ async function detectGpu(): Promise<boolean> {
       return false;
     }
     
-    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    // Vérifier si gl.getExtension et gl.getParameter sont disponibles
+    const webgl = gl as WebGLRenderingContext;
+    const debugInfo = webgl.getExtension('WEBGL_debug_renderer_info');
     if (!debugInfo) {
       return false;
     }
     
-    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+    const renderer = webgl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
     
     // Vérifier si le renderer contient des noms communs de GPU
     const gpuKeywords = ['nvidia', 'amd', 'radeon', 'intel', 'iris', 'mali', 'apple gpu'];
