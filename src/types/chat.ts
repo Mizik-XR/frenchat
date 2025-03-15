@@ -9,7 +9,9 @@ export type AIProvider =
   | 'internet-search'
   | 'gemma-3'
   | 'google'
-  | 'openai';
+  | 'openai'
+  | 'openai-agent'  // Ajout du type pour les agents OpenAI
+  | 'anthropic';    // Ajout du type pour Anthropic
 
 export type MessageType = 'text' | 'document' | 'image' | 'chart';
 
@@ -40,6 +42,7 @@ export interface WebUIConfig {
   maxTokens: number;
   analysisMode: AnalysisMode;
   useMemory?: boolean;
+  useRag?: boolean;  // Ajout de la propriété useRag
 }
 
 export type Message = {

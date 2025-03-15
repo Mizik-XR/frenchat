@@ -35,13 +35,7 @@ export function useChatProcessing() {
   const [error, setError] = useState<Error | null>(null);
 
   // Mutation pour envoyer un message et obtenir une réponse
-  const {
-    mutate: sendMessage,
-    isLoading: isProcessing,
-    isSuccess,
-    data,
-    reset
-  } = useMutation({
+  const mutation = useMutation({
     mutationFn: async ({
       content,
       conversationId,
@@ -88,7 +82,7 @@ export function useChatProcessing() {
         let generatedText = "";
 
         // Vérifier si on utilise les agents OpenAI pour RAG
-        if (config.provider === "openai-agent" && config.useRag) {
+        if (config.provider === 'openai-agent' && config.useRag) {
           // Récupérer le contexte RAG pour la conversation
           const { data: ragContext } = await supabase
             .from('rag_contexts')
@@ -112,7 +106,7 @@ export function useChatProcessing() {
               generatedText = response;
             }
           }
-        } else if (config.provider === "openai") {
+        } else if (config.provider === 'openai') {
           // Utiliser l'API OpenAI via le proxy sécurisé
           generatedText = await generateText(content, {
             model: config.model || "gpt-4o-mini",
@@ -121,7 +115,7 @@ export function useChatProcessing() {
             system_prompt: `Tu es un assistant d'IA qui répond aux questions de manière concise et précise. 
             Mode d'analyse: ${config.analysisMode}`
           });
-        } else if (config.provider === "anthropic") {
+        } else if (config.provider === 'anthropic') {
           // Utiliser l'API Anthropic via le proxy sécurisé
           const response = await callApi('anthropic', 'messages', {
             model: config.model || "claude-3-haiku-20240307",
@@ -133,7 +127,9 @@ export function useChatProcessing() {
             ]
           });
           
-          generatedText = response.content?.[0]?.text || "";
+          if (response && response.content && Array.isArray(response.content) && response.content.length > 0) {
+            generatedText = response.content[0]?.text || "";
+          }
         } else {
           // Utiliser la génération standard via les fournisseurs configurés
           const results = await generateResponse(
@@ -186,12 +182,13 @@ export function useChatProcessing() {
   });
 
   return {
-    sendMessage,
-    isProcessing,
-    isSuccess,
+    sendMessage: mutation.mutate,
+    isProcessing: mutation.isPending,
+    isLoading: mutation.isPending,
+    isSuccess: mutation.isSuccess,
     isError,
     error,
-    data,
-    reset
+    data: mutation.data,
+    reset: mutation.reset
   };
 }

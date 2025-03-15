@@ -13,6 +13,7 @@ import { ArrowLeft, Info, AlertCircle, Check, Lock } from "lucide-react";
 import { useOpenAIAgents } from "@/hooks/ai/useOpenAIAgents";
 import { APIKeyField } from "./cloudai/APIKeyField";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const OpenAIAgentsConfig = () => {
   const navigate = useNavigate();
@@ -142,7 +143,7 @@ export const OpenAIAgentsConfig = () => {
               </div>
 
               {isConfigured && (
-                <Alert className="bg-green-50 border-green-200">
+                <Alert variant="default" className="bg-green-50 border-green-200">
                   <Check className="h-4 w-4 text-green-600" />
                   <AlertTitle className="text-green-800">Configuration validée</AlertTitle>
                   <AlertDescription className="text-green-600">
@@ -153,7 +154,7 @@ export const OpenAIAgentsConfig = () => {
             </TabsContent>
             
             <TabsContent value="pricing" className="space-y-4">
-              <Alert variant="outline" className="border-amber-200 bg-amber-50">
+              <Alert variant="default" className="border-amber-200 bg-amber-50">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
                 <AlertTitle className="text-amber-800">Tarification OpenAI</AlertTitle>
                 <AlertDescription className="text-amber-700">
