@@ -5,6 +5,22 @@ import App from './App';
 import './index.css';
 import { handleLoadError, renderFallbackScreen } from '@/utils/startup/errorHandlingUtils';
 
+// Import custom detection utils
+import { initializeLovable } from '@/utils/lovable/lovableIntegration';
+
+// Create .env.local file for cloud mode
+// Try to create the file to force cloud mode for development
+function createEnvLocalFile() {
+  if (typeof window !== 'undefined' && window.location.search.includes('forceCloud=true')) {
+    console.log("Force cloud mode activated - attempting to set up environment");
+    try {
+      localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+    } catch (e) {
+      console.warn("Failed to set localStorage", e);
+    }
+  }
+}
+
 // Fonction pour vérifier si le script Lovable est chargé
 function isLovableScriptLoaded() {
   const scripts = document.querySelectorAll('script');
@@ -20,7 +36,7 @@ function isLovableScriptLoaded() {
 function ensureReactLoaded() {
   try {
     // Test simple pour vérifier que React est disponible et fonctionne
-    React.createContext({});
+    React.createElement('div');
     return true;
   } catch (error) {
     console.error("React n'est pas correctement initialisé:", error);
@@ -31,6 +47,9 @@ function ensureReactLoaded() {
 // Fonction pour initialiser l'application avec des vérifications
 function initializeApp() {
   console.log("🚀 Initialisation de l'application...");
+  
+  // Create cloud mode env file if needed
+  createEnvLocalFile();
   
   // Assurer que le DOM est prêt
   if (document.readyState === 'loading') {
@@ -59,9 +78,11 @@ function initializeApp() {
       return;
     }
     
-    // Vérifier si le script Lovable est chargé et avertir si non
+    // Vérifier si le script Lovable est chargé
     if (!isLovableScriptLoaded()) {
       console.warn("⚠️ Script Lovable non détecté - les fonctionnalités d'édition pourraient ne pas fonctionner");
+      // Tentative d'injection du script Lovable si nécessaire (développement)
+      initializeLovable();
     }
     
     console.log("🔄 Montage de l'application React...");
@@ -73,10 +94,11 @@ function initializeApp() {
     );
     console.log("✅ Application React montée avec succès");
     
-    // Créer un fichier .env.local avec le mode cloud activé si nécessaire
-    if (new URLSearchParams(window.location.search).has('createEnv')) {
-      console.log("⚙️ Tentative de création de .env.local pour le mode cloud");
+    // Mettre à jour le statut d'initialisation React
+    if (window.__REACT_INIT_STATUS__) {
+      window.__REACT_INIT_STATUS__.initialized = true;
     }
+    
   } catch (error) {
     console.error("❌ Erreur critique pendant l'initialisation:", error);
     handleLoadError(error as Error);

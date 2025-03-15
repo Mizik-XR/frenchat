@@ -1,31 +1,47 @@
 
 {
+  "version": 2,
+  "public": true,
+  "builds": [
+    { "src": "package.json", "use": "@vercel/static-build" }
+  ],
   "routes": [
-    { "handle": "filesystem" },
-    { "src": "/auth/google/callback", "dest": "/index.html" },
-    { "src": "/auth/microsoft/callback", "dest": "/index.html" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "src": "/assets/(.*)\\.js",
+      "headers": { "Content-Type": "application/javascript; charset=utf-8" },
+      "continue": true
+    },
+    {
+      "src": "/(.*)\\.js",
+      "headers": { "Content-Type": "application/javascript; charset=utf-8" },
+      "continue": true
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ],
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/(.*)\\.js$",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
       ]
     },
     {
-      "source": "/(.*)\\.js",
+      "source": "/(.*)\\.css$",
       "headers": [
-        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
-      ]
-    },
-    {
-      "source": "/(.*)\\.html",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache" }
+        {
+          "key": "Content-Type",
+          "value": "text/css; charset=utf-8"
+        }
       ]
     }
   ]

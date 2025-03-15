@@ -24,10 +24,31 @@ export const createQueryClient = (): QueryClient => {
 };
 
 /**
+ * Fonction pour tester si React est correctement initialisé
+ */
+const testReactInit = (): boolean => {
+  try {
+    // Essayer de créer un élément React pour tester l'initialisation
+    React.createElement('div', null, 'Test');
+    return true;
+  } catch (error) {
+    console.error("Échec du test d'initialisation React:", error);
+    return false;
+  }
+};
+
+/**
  * Rend l'application React dans le DOM
  */
 export const renderApp = (rootElement: HTMLElement, queryClient: QueryClient): void => {
   try {
+    // Tester si React est initialisé avant de tenter le rendu
+    if (!testReactInit()) {
+      console.error("React n'est pas correctement initialisé, impossible de continuer");
+      renderFallbackScreen(rootElement, "Erreur d'initialisation React");
+      return;
+    }
+    
     // S'assurer que createRoot est accessible
     if (typeof createRoot !== 'function') {
       console.error("react-dom/client createRoot n'est pas disponible, tentative de contournement...");
@@ -62,9 +83,7 @@ export const renderApp = (rootElement: HTMLElement, queryClient: QueryClient): v
     // Fallback à une méthode alternative si createRoot échoue
     try {
       console.warn("Tentative de contournement avec méthode alternative...");
-      const element = document.createElement('div');
-      element.innerHTML = '<div class="p-4 text-center"><h2>Mode de secours activé</h2><p>Chargement avec méthode alternative...</p></div>';
-      rootElement.appendChild(element);
+      renderFallbackScreen(rootElement, "Erreur critique de l'application");
       
       setTimeout(() => {
         window.location.href = window.location.href + (window.location.href.includes('?') ? '&' : '?') + 'mode=fallback';

@@ -33,7 +33,6 @@ export function injectLovableScript(): Promise<void> {
     console.log("Tentative d'injection du script Lovable");
     const script = document.createElement('script');
     script.src = 'https://cdn.gpteng.co/gptengineer.js';
-    script.type = 'module';
     script.async = true;
     script.onload = () => {
       console.log("Script Lovable injecté avec succès");
@@ -44,7 +43,8 @@ export function injectLovableScript(): Promise<void> {
       reject(err);
     };
 
-    document.head.appendChild(script);
+    // Insérer en premier dans le head pour assurer qu'il est chargé avant tout autre script
+    document.head.insertBefore(script, document.head.firstChild);
   });
 }
 
@@ -92,6 +92,48 @@ export function initializeLovable(): void {
   }
 }
 
+// Créer un fichier .env.local pour le mode cloud si nécessaire
+export function createCloudModeEnvFile(): void {
+  if (typeof window !== 'undefined' && window.location.search.includes('forceCloud=true')) {
+    console.log("Tentative de création d'un fichier .env.local pour le mode cloud...");
+    
+    // Stocker en localStorage pour les prochains chargements
+    try {
+      localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+      localStorage.setItem('ENV_CLOUD_MODE', 'true');
+      console.log("Paramètres de mode cloud sauvegardés en localStorage");
+    } catch (e) {
+      console.warn("Impossible de stocker le mode cloud en localStorage:", e);
+    }
+    
+    // Si en développement, tenter de créer un fichier .env.local via API
+    try {
+      if (import.meta.env.MODE === 'development') {
+        const endpoint = '/api/create-env-file';
+        fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: 'VITE_CLOUD_MODE=true\nVITE_ALLOW_LOCAL_AI=false'
+          })
+        }).then(response => {
+          if (response.ok) {
+            console.log("Fichier .env.local créé avec succès pour le mode cloud");
+          } else {
+            console.warn("Échec de la création du fichier .env.local:", response.statusText);
+          }
+        }).catch(err => {
+          console.error("Erreur lors de la création du fichier .env.local:", err);
+        });
+      }
+    } catch (e) {
+      console.warn("Erreur lors de la tentative de création du fichier .env.local:", e);
+    }
+  }
+}
+
 // Ajouter un diagnostic au démarrage du module
 console.log("Module d'intégration Lovable chargé");
 if (typeof window !== 'undefined') {
@@ -99,5 +141,8 @@ if (typeof window !== 'undefined') {
   setTimeout(() => {
     const diagnostic = getLovableDiagnostic();
     console.log("Diagnostic Lovable:", diagnostic);
+    
+    // Activer le mode cloud si nécessaire
+    createCloudModeEnvFile();
   }, 1000);
 }

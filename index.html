@@ -133,17 +133,23 @@
         });
       }
 
+      // Create Recovery .env.local file locally
+      // This will only work in development mode but provides a fallback
+      try {
+        if (window.location.search.includes('forceCloud=true')) {
+          localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+          console.log("Force cloud mode activated via localStorage");
+        }
+      } catch (e) {
+        console.warn("Failed to set localStorage", e);
+      }
+      
       // Définir une variable globale pour surveiller si React est correctement initialisé
       window.__REACT_INIT_STATUS__ = {
         initialized: false,
         attempts: 0,
         errors: []
       };
-      
-      // Créer un fichier .env.local si le paramètre forceCloud est présent
-      if (window.location.search.includes('forceCloud=true')) {
-        localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-      }
     </script>
   </head>
   <body>
