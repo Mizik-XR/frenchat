@@ -1,8 +1,11 @@
 
 import { useState, useEffect } from 'react';
-import { Menu, X, MapPin } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "../ThemeToggle";
+import { NavbarLogo } from './NavbarLogo';
+import { DesktopMenu } from './DesktopMenu';
+import { MobileMenu } from './MobileMenu';
 
 interface NavbarProps {
   onJoinBeta: () => void;
@@ -42,39 +45,10 @@ export default function Navbar({ onJoinBeta }: NavbarProps) {
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
-              <img className="h-8 w-auto" src="/favicon.ico" alt="filechat" />
-              <span className="ml-2 text-white font-bold text-lg">filechat</span>
-            </div>
+            <NavbarLogo />
           </div>
           
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-center space-x-4">
-              <Button onClick={() => scrollToSection('features')} variant="ghost" className="text-gray-300 hover:text-white">
-                Fonctionnalités
-              </Button>
-              <Button onClick={() => scrollToSection('roadmap')} variant="ghost" className="text-gray-300 hover:text-white flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                Roadmap
-              </Button>
-              <Button onClick={() => scrollToSection('best-practices')} variant="ghost" className="text-gray-300 hover:text-white">
-                Bonnes pratiques
-              </Button>
-              <Button onClick={() => scrollToSection('installation')} variant="ghost" className="text-gray-300 hover:text-white">
-                Installation
-              </Button>
-              <Button onClick={() => scrollToSection('system-requirements')} variant="ghost" className="text-gray-300 hover:text-white">
-                Prérequis
-              </Button>
-              <Button onClick={() => scrollToSection('guide')} variant="ghost" className="text-gray-300 hover:text-white">
-                Guide
-              </Button>
-              <ModeToggle />
-              <Button onClick={onJoinBeta} className="ml-2 bg-blue-600 hover:bg-blue-700">
-                Rejoindre la Beta
-              </Button>
-            </div>
-          </div>
+          <DesktopMenu scrollToSection={scrollToSection} onJoinBeta={onJoinBeta} />
           
           <div className="flex md:hidden">
             <ModeToggle />
@@ -91,34 +65,11 @@ export default function Navbar({ onJoinBeta }: NavbarProps) {
         </div>
       </div>
 
-      {isMenuOpen && (
-        <div className="md:hidden bg-black/90 backdrop-blur-md">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Button onClick={() => scrollToSection('features')} variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
-              Fonctionnalités
-            </Button>
-            <Button onClick={() => scrollToSection('roadmap')} variant="ghost" className="w-full justify-start text-gray-300 hover:text-white flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              Roadmap
-            </Button>
-            <Button onClick={() => scrollToSection('best-practices')} variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
-              Bonnes pratiques
-            </Button>
-            <Button onClick={() => scrollToSection('installation')} variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
-              Installation
-            </Button>
-            <Button onClick={() => scrollToSection('system-requirements')} variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
-              Prérequis
-            </Button>
-            <Button onClick={() => scrollToSection('guide')} variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
-              Guide
-            </Button>
-            <Button onClick={onJoinBeta} className="w-full bg-blue-600 hover:bg-blue-700">
-              Rejoindre la Beta
-            </Button>
-          </div>
-        </div>
-      )}
+      <MobileMenu 
+        isOpen={isMenuOpen} 
+        scrollToSection={scrollToSection} 
+        onJoinBeta={onJoinBeta} 
+      />
     </nav>
   );
 }
