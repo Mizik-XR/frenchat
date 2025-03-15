@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
-import { IndexingProgress } from '@/hooks/useIndexingProgress';
+import { IndexingProgress } from '@/types/indexing';
 
 interface IndexingProgressBarProps {
   progress: IndexingProgress;

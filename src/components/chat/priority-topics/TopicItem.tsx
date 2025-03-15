@@ -1,137 +1,125 @@
 
-import { Badge } from "@/components/ui/badge";
+// Updating the TopicItem component to use number for timestamp instead of Date
+import React from 'react';
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  MessageSquare,
-  Archive,
-  Trash2 
-} from "lucide-react";
+import { Archive, CheckSquare, MessageSquare, Trash, Quote } from "lucide-react";
+import { formatMessageTimestamp } from "./utils";
+
+interface Topic {
+  id: string;
+  title: string;
+  timestamp: number;
+  isCompleted: boolean;
+  isArchived: boolean;
+  priority: 'high' | 'medium' | 'low';
+  messageId: string;
+  content: string;
+}
 
 interface TopicItemProps {
-  topic: {
-    id: string;
-    title: string;
-    content: string;
-    timestamp: Date;
-    isCompleted: boolean;
-    isArchived: boolean;
-    priority: 'high' | 'medium' | 'low';
-    messageId: string;
-  };
+  topic: Topic;
   onSelect: (messageId: string) => void;
-  onQuote: (content: string) => void;
-  onArchive: (id: string) => void;
-  onComplete: (id: string) => void;
-  onDelete: (id: string) => void;
+  onArchive: (topicId: string) => void;
+  onComplete: (topicId: string) => void;
+  onDelete: (topicId: string) => void;
+  onQuote?: (content: string) => void;
 }
 
 export function TopicItem({
   topic,
   onSelect,
-  onQuote,
   onArchive,
   onComplete,
-  onDelete
+  onDelete,
+  onQuote,
 }: TopicItemProps) {
-  return (
-    <div
-      className={`p-4 rounded-lg border transition-all duration-200 ease-in-out hover:bg-gray-50 hover:shadow-sm 
-        ${topic.isArchived 
-          ? 'bg-gray-50/80 border-gray-200' 
-          : topic.isCompleted
-            ? 'bg-green-50/80 border-green-100'
-            : 'bg-white border-gray-100'
-        }
-        animate-fade-in`}
-    >
-      <div 
-        className="flex items-start gap-3 mb-3 cursor-pointer group"
-        onClick={() => onSelect(topic.messageId)}
-      >
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            {topic.isCompleted ? (
-              <CheckCircle className="h-4 w-4 text-green-500 transition-colors" />
-            ) : topic.isArchived ? (
-              <Archive className="h-4 w-4 text-gray-400 transition-colors" />
-            ) : (
-              <AlertTriangle className={`h-4 w-4 transition-colors ${getPriorityColor(topic.priority)}`} />
-            )}
-            <h3 className="font-medium line-clamp-1 group-hover:text-blue-600 transition-colors">
-              {topic.title}
-            </h3>
-          </div>
-          <p className="text-sm text-gray-600 line-clamp-2 group-hover:text-gray-900 transition-colors">
-            {topic.content}
-          </p>
-        </div>
-      </div>
+  const priorityColors = {
+    high: 'bg-red-50 border-red-200',
+    medium: 'bg-amber-50 border-amber-200',
+    low: 'bg-gray-50 border-gray-200'
+  };
 
-      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-        <Badge 
-          variant="secondary" 
-          className="text-xs bg-gray-100/80 hover:bg-gray-200 transition-colors"
-        >
-          {formatTimestamp(topic.timestamp)}
-        </Badge>
-        <div className="flex gap-1 opacity-80 hover:opacity-100 transition-opacity">
-          {!topic.isArchived && !topic.isCompleted && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onQuote(topic.content)}
-                className="hover:bg-blue-50 hover:text-blue-600 transition-colors"
-              >
-                <MessageSquare className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onArchive(topic.id)}
-                className="hover:bg-gray-100 hover:text-gray-600 transition-colors"
-              >
-                <Archive className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onComplete(topic.id)}
-                className="hover:bg-green-50 hover:text-green-600 transition-colors"
-              >
-                <CheckCircle className="h-4 w-4" />
-              </Button>
-            </>
+  const priorityTextColors = {
+    high: 'text-red-600',
+    medium: 'text-amber-600',
+    low: 'text-gray-600'
+  };
+
+  const priorityBadgeColors = {
+    high: 'bg-red-100 text-red-800',
+    medium: 'bg-amber-100 text-amber-800',
+    low: 'bg-gray-100 text-gray-800'
+  };
+
+  return (
+    <Card 
+      className={`${priorityColors[topic.priority]} shadow-sm transition-shadow hover:shadow-md cursor-pointer`}
+      onClick={() => onSelect(topic.messageId)}
+    >
+      <CardContent className="p-3">
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex-1">
+            <div className="font-medium line-clamp-2">{topic.title}</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {formatMessageTimestamp(topic.timestamp)}
+            </div>
+          </div>
+          
+          <div className={`${priorityBadgeColors[topic.priority]} text-xs px-2 py-1 rounded-full`}>
+            {topic.priority === 'high' ? 'Urgent' : topic.priority === 'medium' ? 'Important' : 'Normal'}
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-2 space-x-1">
+          {onQuote && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                onQuote(topic.content);
+              }}
+            >
+              <Quote className="h-4 w-4" />
+            </Button>
           )}
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onDelete(topic.id)}
-            className="hover:bg-red-50 hover:text-red-600 transition-all"
+            className="h-8 w-8 rounded-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              onComplete(topic.id);
+            }}
           >
-            <Trash2 className="h-4 w-4" />
+            <CheckSquare className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              onArchive(topic.id);
+            }}
+          >
+            <Archive className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full text-red-500 hover:text-red-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(topic.id);
+            }}
+          >
+            <Trash className="h-4 w-4" />
           </Button>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
-}
-
-function getPriorityColor(priority: 'high' | 'medium' | 'low'): string {
-  switch (priority) {
-    case 'high': return 'text-red-500';
-    case 'medium': return 'text-orange-500';
-    case 'low': return 'text-blue-500';
-  }
-}
-
-function formatTimestamp(date: Date): string {
-  return new Intl.DateTimeFormat('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    day: '2-digit',
-    month: '2-digit'
-  }).format(date);
 }
