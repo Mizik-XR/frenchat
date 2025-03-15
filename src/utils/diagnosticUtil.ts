@@ -18,7 +18,8 @@ export const diagnoseSupabaseConfig = async () => {
     const configStatus = {
       supabaseUrl: supabaseUrl ? "OK" : "Manquant",
       supabaseKey: supabaseKey ? "OK" : "Manquant",
-      envFilesFound: [] as string[]
+      envFilesFound: [] as string[],
+      linkStatus: "Non testé"
     };
     
     // Vérifier si la clé est vide ou incorrecte
@@ -56,18 +57,37 @@ export const diagnoseSupabaseConfig = async () => {
       }
     }
     
+    // Tester le lien Supabase
+    let linkTest = { success: false, error: null as string | null };
+    if (windowAvailable) {
+      try {
+        const testUrl = "https://supabase.com/dashboard/project/dbdueopvtlanxgumenpu";
+        // Effectuer une vérification ping sans ouvrir la page
+        const pingRequest = new Request(testUrl, { method: 'HEAD', mode: 'no-cors' });
+        await fetch(pingRequest);
+        linkTest.success = true;
+        configStatus.linkStatus = "Accessible";
+      } catch (error: any) {
+        linkTest.success = false;
+        linkTest.error = error?.message || "Erreur de connexion au lien Supabase";
+        configStatus.linkStatus = "Inaccessible";
+      }
+    }
+    
     return {
       timestamp: new Date().toISOString(),
       configStatus,
       windowAvailable,
       clientTest,
       requestTest,
+      linkTest,
       browserInfo: windowAvailable ? {
         userAgent: window.navigator.userAgent,
         platform: window.navigator.platform,
         language: window.navigator.language,
         cookiesEnabled: window.navigator.cookieEnabled,
-        localStorage: !!window.localStorage
+        localStorage: !!window.localStorage,
+        serviceWorker: !!navigator.serviceWorker
       } : null
     };
   } catch (error: any) {
@@ -97,6 +117,7 @@ export const runFullDiagnostic = async () => {
       },
       supabaseCheck: await diagnoseSupabaseConfig(),
       networkTest: { success: false, error: null as string | null },
+      navigationTest: { routes: {}, redirects: {} },
       components: {
         rootElement: typeof document !== 'undefined' ? !!document.getElementById('root') : false,
       }
@@ -111,6 +132,27 @@ export const runFullDiagnostic = async () => {
         diagnostics.networkTest.success = false;
         diagnostics.networkTest.error = error?.message || "Erreur de connexion réseau";
       }
+      
+      // Vérifier les routes principales
+      const routesToCheck = ['/', '/auth', '/config', '/chat', '/documents'];
+      for (const route of routesToCheck) {
+        try {
+          const response = await fetch(window.location.origin + route, { 
+            method: 'HEAD',
+            cache: 'no-store',
+            redirect: 'manual'
+          });
+          diagnostics.navigationTest.routes[route] = {
+            status: response.status,
+            ok: response.ok
+          };
+        } catch (error: any) {
+          diagnostics.navigationTest.routes[route] = {
+            status: 'error',
+            error: error?.message
+          };
+        }
+      }
     }
     
     console.log("Résultat du diagnostic complet:", diagnostics);
@@ -122,4 +164,53 @@ export const runFullDiagnostic = async () => {
       error: error?.message || "Erreur inconnue lors du diagnostic"
     };
   }
+};
+
+/**
+ * Vérifier spécifiquement les liens externes
+ */
+export const checkExternalLinks = async (links: string[]) => {
+  if (typeof window === 'undefined') return {};
+  
+  const results: Record<string, any> = {};
+  
+  for (const link of links) {
+    try {
+      const pingRequest = new Request(link, { method: 'HEAD', mode: 'no-cors' });
+      const startTime = performance.now();
+      await fetch(pingRequest);
+      const endTime = performance.now();
+      
+      results[link] = {
+        status: 'accessible',
+        responseTime: Math.round(endTime - startTime)
+      };
+    } catch (error: any) {
+      results[link] = {
+        status: 'inaccessible',
+        error: error?.message
+      };
+    }
+  }
+  
+  return results;
+};
+
+/**
+ * Diagnostique les problèmes de navigation dans l'application
+ */
+export const diagnoseNavigation = () => {
+  if (typeof window === 'undefined') return { success: false, message: "Exécution côté serveur" };
+  
+  return {
+    success: true,
+    currentUrl: window.location.href,
+    origin: window.location.origin,
+    pathname: window.location.pathname,
+    hash: window.location.hash,
+    search: window.location.search,
+    historyState: history.state,
+    referrer: document.referrer,
+    userAgent: navigator.userAgent
+  };
 };

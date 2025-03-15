@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { buildSupabaseConsoleUrl } from "@/utils/environment/urlUtils";
 
 interface SidebarProps {
   className?: string;
@@ -71,13 +72,16 @@ export function SupabaseConsoleLink() {
     return null;
   }
 
+  // Utiliser la fonction utilitaire pour construire l'URL
+  const supabaseUrl = buildSupabaseConsoleUrl("dbdueopvtlanxgumenpu");
+
   return (
     <div className="px-4 py-2">
       <p className="text-sm text-muted-foreground mb-2">
         Accédez à la console Supabase pour gérer directement votre base de données.
       </p>
       <a 
-        href="https://supabase.com/dashboard/project/dbdueopvtlanxgumenpu"
+        href={supabaseUrl}
         target="_blank" 
         rel="noopener noreferrer"
         className={cn(

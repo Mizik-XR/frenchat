@@ -13,6 +13,7 @@ export const DatabaseConfig = () => {
 
   const handleOpenConsole = () => {
     if (isLocalDevelopment()) {
+      // Utilisez une URL absolue avec https:// pour éviter les problèmes de navigation
       window.open("https://supabase.com/dashboard/project/dbdueopvtlanxgumenpu", "_blank");
     } else {
       toast({
@@ -39,23 +40,15 @@ export const DatabaseConfig = () => {
       
       {expanded && (
         <CardContent className="px-6 pb-4 pt-0">
-          {isLocalDevelopment() ? (
-            <>
-              <p className="text-sm text-muted-foreground mb-4">
-                Accédez à la console Supabase pour gérer directement votre base de données.
-              </p>
-              <Button variant="outline" className="w-full" onClick={handleOpenConsole}>
-                Ouvrir la console Supabase
-              </Button>
-              <div className="text-xs text-muted-foreground mt-2 text-center">
-                (Mode développement uniquement)
-              </div>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              L'accès direct à la base de données est désactivé en environnement de production pour des raisons de sécurité.
-            </p>
-          )}
+          <p className="text-sm text-muted-foreground mb-4">
+            Accédez à la console Supabase pour gérer directement votre base de données.
+          </p>
+          <Button variant="outline" className="w-full" onClick={handleOpenConsole}>
+            Ouvrir la console Supabase
+          </Button>
+          <div className="text-xs text-muted-foreground mt-2 text-center">
+            {isLocalDevelopment() ? "(Mode développement uniquement)" : "(Accès restreint en production)"}
+          </div>
         </CardContent>
       )}
     </Card>

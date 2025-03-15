@@ -12,5 +12,16 @@
     "VITE_CLOUD_MODE": "true",
     "VITE_ALLOW_LOCAL_AI": "false",
     "VITE_SKIP_PYTHON_INSTALLATION": "true"
-  }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ]
 }

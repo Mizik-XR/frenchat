@@ -99,7 +99,7 @@ export const getAllUrlParams = (): Record<string, string> => {
 /**
  * Génère une URL complète avec tous les paramètres normalisés pour le mode cloud
  * Utile pour les redirections OAuth et les liens de documentation
- * @param baseUrl URL de base (par défaut: URL actuelle)
+ * @param path URL de base (par défaut: URL actuelle)
  * @returns URL complète avec les paramètres normalisés
  */
 export const getNormalizedCloudModeUrl = (path?: string, baseUrl?: string): string => {
@@ -124,4 +124,50 @@ export const getNormalizedCloudModeUrl = (path?: string, baseUrl?: string): stri
   const pathSegment = path ? `/${path.startsWith('/') ? path.substring(1) : path}` : '';
   
   return `${base}${pathSegment}?${searchParams.toString()}`;
+};
+
+/**
+ * Vérifie si une URL est accessible
+ * @param url L'URL à vérifier
+ * @returns Une promesse qui résout à true si l'URL est accessible, false sinon
+ */
+export const isUrlAccessible = async (url: string): Promise<boolean> => {
+  try {
+    if (typeof window === 'undefined') return false;
+    
+    // Pour les URLs externes, utiliser un ping no-cors
+    const isExternal = !url.startsWith(window.location.origin);
+    
+    if (isExternal) {
+      const pingRequest = new Request(url, { 
+        method: 'HEAD',
+        mode: 'no-cors',
+        cache: 'no-store'
+      });
+      await fetch(pingRequest);
+      return true;
+    } else {
+      // Pour les URLs internes, vérifier qu'elles sont accessibles
+      const response = await fetch(url, { 
+        method: 'HEAD',
+        cache: 'no-store'
+      });
+      return response.ok;
+    }
+  } catch (error) {
+    console.warn(`L'URL ${url} n'est pas accessible:`, error);
+    return false;
+  }
+};
+
+/**
+ * Construit un lien Supabase valide et sécurisé
+ * @param projectId ID du projet Supabase
+ * @param path Chemin supplémentaire dans la console Supabase
+ * @returns URL complète vers la console Supabase
+ */
+export const buildSupabaseConsoleUrl = (projectId: string, path?: string): string => {
+  const baseUrl = 'https://supabase.com/dashboard/project/';
+  const safePath = path ? `/${path.startsWith('/') ? path.substring(1) : path}` : '';
+  return `${baseUrl}${projectId}${safePath}`;
 };

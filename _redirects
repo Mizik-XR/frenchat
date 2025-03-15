@@ -16,6 +16,13 @@
 /auth/* /index.html 200
 /config /index.html 200
 /config/* /index.html 200
+/documents /index.html 200
+/documents/* /index.html 200
+/home /index.html 200
+/system-status /index.html 200
+/profile /index.html 200
+/monitoring /index.html 200
+/ai-config /index.html 200
 
 # Redirections avec paramètres d'URL importants
 /?mode=cloud /index.html?mode=cloud 200
