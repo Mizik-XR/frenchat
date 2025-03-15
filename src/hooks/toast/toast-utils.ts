@@ -66,3 +66,6 @@ export const createToast = (props: Omit<Toast, "id"> & { id?: string }) => {
     },
   };
 };
+
+// Export the toast function directly for easier imports
+export const toast = createToast;
