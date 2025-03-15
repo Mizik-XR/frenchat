@@ -125,26 +125,26 @@ export const Auth = () => {
 
         {mode === 'signin' ? (
           <SignInForm 
+            loading={isSubmitting}
             email={email}
             setEmail={setEmail}
             password={password}
             setPassword={setPassword}
-            error={error}
-            isSubmitting={isSubmitting}
             onSubmit={handleSubmit}
             switchToSignUp={() => setMode('signup')}
             switchToPasswordReset={() => setMode('password-reset')}
+            error={error}
           />
         ) : mode === 'signup' ? (
           <SignUpForm 
+            loading={isSubmitting}
             email={email}
             setEmail={setEmail}
             password={password}
             setPassword={setPassword}
-            error={error}
-            isSubmitting={isSubmitting}
             onSubmit={handleSubmit}
             switchToSignIn={() => setMode('signin')}
+            error={error}
           />
         ) : (
           <div className="mt-8 space-y-6">
@@ -206,3 +206,6 @@ export const Auth = () => {
     </div>
   );
 };
+
+// Export default for lazy loading
+export default Auth;

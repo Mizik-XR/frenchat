@@ -12,7 +12,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Importation différée des composants pour améliorer les performances de chargement initial
 const Home = lazy(() => import('./pages/Home'));
-const Auth = lazy(() => import('./pages/Auth'));
+const Auth = lazy(() => import('./pages/Auth').then(module => ({ default: module.Auth })));
 const Config = lazy(() => import('./pages/Config'));
 const AdvancedConfig = lazy(() => import('./pages/AdvancedConfig'));
 const Chat = lazy(() => import('./pages/Chat'));

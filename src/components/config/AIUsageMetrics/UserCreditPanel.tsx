@@ -10,6 +10,8 @@ export interface UserCreditPanelProps {
   isLoading?: boolean;
   onAddCredits?: () => void;
   onRefresh?: () => void;
+  totalUsage?: number;
+  isOfflineMode?: boolean;
 }
 
 export const UserCreditPanel = ({ 
@@ -17,7 +19,9 @@ export const UserCreditPanel = ({
   remainingQuota = 1000, 
   isLoading = false,
   onAddCredits,
-  onRefresh
+  onRefresh,
+  totalUsage = 0,
+  isOfflineMode = false
 }: UserCreditPanelProps) => {
   return (
     <Card>

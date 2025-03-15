@@ -10,17 +10,18 @@ import { UserCreditPanel } from './UserCreditPanel';
 import { useUserCreditUsage } from "@/hooks/user/useUserCreditUsage";
 import { APP_STATE } from "@/integrations/supabase/client";
 import { useAuthSession } from "@/hooks/useAuthSession";
+import { useAuth } from "@/components/AuthProvider";
 
 export const AIUsageMetrics = () => {
-  const { session } = useAuthSession();
+  const { user } = useAuth();
   const { usageStats, isLoading, error, refreshUsageData } = useUserCreditUsage();
   const [activeTab, setActiveTab] = useState<string>("overview");
 
   // En mode hors ligne, afficher des données simulées
-  const isOfflineOrError = APP_STATE.isOfflineMode || error || !session;
+  const isOfflineOrError = APP_STATE.isOfflineMode || error || !user;
 
   // Ne rien afficher sans session
-  if (!session && !APP_STATE.isOfflineMode) {
+  if (!user && !APP_STATE.isOfflineMode) {
     return (
       <Card>
         <CardHeader>
@@ -81,7 +82,11 @@ export const AIUsageMetrics = () => {
             
             <TabsContent value="credits" className="py-4">
               <UserCreditPanel 
-                totalUsage={usageStats.totalCostEstimated}
+                credits={1000}
+                remainingQuota={5000}
+                isLoading={isLoading}
+                onAddCredits={() => alert("Cette fonctionnalité sera disponible prochainement")}
+                onRefresh={refreshUsageData}
                 isOfflineMode={isOfflineOrError}
               />
             </TabsContent>

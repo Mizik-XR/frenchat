@@ -1,68 +1,71 @@
 
-import { APP_STATE } from '@/integrations/supabase/client';
-import { cacheService, CachedResponse } from '@/services/cacheService';
+import { supabase } from '@/integrations/supabase/client';
 
-/**
- * Cache manager for text generation to avoid duplicate API calls
- */
-export class AIResponseCache {
-  private userId: string | null = null;
-  
-  constructor() {
-    console.log("Initializing AI response cache");
-  }
-
-  setUserId(userId: string | null) {
-    this.userId = userId;
-  }
-
-  /**
-   * Check if a response is available in the cache
-   */
-  async getResponse(prompt: string, provider: string): Promise<string | null> {
-    if (APP_STATE.isOfflineMode) {
-      console.log("Offline mode active, using cache if available");
-    }
-    
-    try {
-      const cachedResponse = await cacheService.getResponse(prompt, provider);
-      return cachedResponse ? cachedResponse.response : null;
-    } catch (error) {
-      console.error("Cache retrieval error:", error);
-      return null;
-    }
-  }
-
-  /**
-   * Save a response to the cache
-   */
-  async saveResponse(prompt: string, response: string, provider: string, tokensUsed: number): Promise<void> {
-    try {
-      const cacheItem: CachedResponse = {
-        prompt,
-        response,
-        provider,
-        tokens_used: tokensUsed,
-        user_id: this.userId || undefined
-      };
-      
-      await cacheService.saveResponse(cacheItem);
-    } catch (error) {
-      console.error("Cache save error:", error);
-    }
-  }
-
-  /**
-   * Clear cached responses older than a specified number of days
-   */
-  async clearOldCaches(days: number = 7): Promise<void> {
-    try {
-      await cacheService.clearOldCaches(days);
-    } catch (error) {
-      console.error("Cache clear error:", error);
-    }
-  }
+// Interface for cached responses
+export interface CachedResponse {
+  prompt: string;
+  system_prompt?: string;
+  response: string;
+  provider: string;
+  user_id?: string;
+  tokens_used: number;
+  created_at?: string;
 }
 
-// Export a singleton instance
-export const aiResponseCache = new AIResponseCache();
+// Find a cached response based on prompt and provider
+export const findCachedResponse = async (
+  prompt: string, 
+  systemPrompt: string, 
+  provider: string,
+  userId?: string
+): Promise<CachedResponse | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('response_cache')
+      .select('*')
+      .eq('prompt', prompt)
+      .eq('provider', provider)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error retrieving cached response:', error);
+      return null;
+    }
+
+    return data as CachedResponse;
+  } catch (err) {
+    console.error('Exception retrieving cached response:', err);
+    return null;
+  }
+};
+
+// Cache a response
+export const cacheResponse = async (
+  prompt: string, 
+  systemPrompt: string, 
+  response: string, 
+  provider: string, 
+  tokensUsed: number,
+  userId?: string
+): Promise<void> => {
+  try {
+    const cacheItem: CachedResponse = {
+      prompt,
+      system_prompt: systemPrompt,
+      response,
+      provider,
+      tokens_used: tokensUsed,
+      user_id: userId
+    };
+
+    const { error } = await supabase
+      .from('response_cache')
+      .insert(cacheItem);
+
+    if (error) {
+      console.error('Error caching response:', error);
+    }
+  } catch (err) {
+    console.error('Exception caching response:', err);
+  }
+};

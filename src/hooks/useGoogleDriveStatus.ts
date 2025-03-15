@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../components/AuthProvider';
 import { DateTime } from 'luxon';
-import { getRedirectUrl } from '@/utils/environment/urlUtils';
+import { getRedirectUrl as environmentGetRedirectUrl } from '@/utils/environment/urlUtils';
 
 export type GoogleDriveConnectionData = {
   email?: string;
@@ -144,7 +144,7 @@ export const useGoogleDriveStatus = () => {
   const reconnectGoogleDrive = useCallback(async () => {
     setIsChecking(true);
     try {
-      const redirectUri = getRedirectUrl('auth/google/callback');
+      const redirectUri = environmentGetRedirectUrl('auth/google/callback');
       const { data, error } = await supabase.functions.invoke('unified-oauth-proxy', {
         body: { 
           provider: 'google',
@@ -222,8 +222,7 @@ export const useGoogleDriveStatus = () => {
   };
 };
 
-// Export the utility for getting redirect URL for other components
-export const getRedirectUrl = (path: string): string => {
-  const baseUrl = window.location.origin;
-  return `${baseUrl}/${path}`;
+// Utility function for getting redirect URL
+export const getGoogleDriveRedirectUrl = (path: string): string => {
+  return environmentGetRedirectUrl(path);
 };

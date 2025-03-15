@@ -3,7 +3,7 @@
  * Utilities for environment detection and configuration
  */
 
-import { isDevelopment, isProduction, isLovableEnvironment } from './environmentDetection';
+import { isDevelopment, isProduction, isLovableEnvironment, isNetlifyEnvironment, getAllUrlParams, getFormattedUrlParams } from './environmentDetection';
 import { 
   getBaseUrl, 
   getRedirectUrl, 
@@ -17,6 +17,9 @@ export {
   isDevelopment,
   isProduction,
   isLovableEnvironment,
+  isNetlifyEnvironment,
+  getAllUrlParams,
+  getFormattedUrlParams,
   getBaseUrl,
   getRedirectUrl,
   getNormalizedCloudModeUrl,

@@ -1,87 +1,55 @@
 
 /**
- * Utilities for environment detection
+ * Environment detection utilities
  */
 
-/**
- * Detects if the application is running in a production environment
- * @returns true if the application is in production
- */
+// Check if the application is running in production mode
 export const isProduction = (): boolean => {
-  return import.meta.env.PROD || import.meta.env.MODE === 'production';
+  return import.meta.env.PROD === true;
 };
 
-/**
- * Detects if the application is running in a development environment
- * @returns true if the application is in development
- */
+// Check if the application is running in development mode
 export const isDevelopment = (): boolean => {
-  return import.meta.env.DEV || import.meta.env.MODE === 'development';
+  return import.meta.env.DEV === true;
 };
 
-/**
- * Detects if the application is running on Lovable
- */
+// Check if running in Lovable's platform
 export const isLovableEnvironment = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  
-  // Check if we're in Lovable development mode
-  if (typeof __LOVABLE_MODE__ !== 'undefined') {
-    return true;
-  }
-  
-  // Check hostname
-  const isLovableDomain = 
-    window.location.host.includes('lovable.dev') || 
-    window.location.host.includes('lovable.app') ||
-    window.location.host.includes('lovableproject.com');
-  
-  // Check if we're in an iframe
-  const isInIframe = window !== window.parent;
-  
-  // Check if a Lovable parameter is present
-  const hasLovableParam = 
-    new URLSearchParams(window.location.search).get('lovable') === 'true' ||
-    window.location.search.includes('forceHideBadge=true');
-  
-  // Check if the gptengineer.js script is loaded
-  const isLovableScriptLoaded = 
-    typeof window.gptengineer !== 'undefined' || 
-    document.querySelector('script[src*="gptengineer.js"]') !== null;
-  
-  return isLovableDomain || (isInIframe && hasLovableParam) || isLovableScriptLoaded;
+  return typeof window !== 'undefined' && 
+    (window.location.hostname.includes('lovable.ai') || 
+     window.location.hostname.includes('lovableai.dev'));
 };
 
-/**
- * Detects if the application is running on Netlify
- * @returns true if the application is on Netlify
- */
+// Check if running in Netlify's platform
 export const isNetlifyEnvironment = (): boolean => {
-  // Check for Netlify environment variables
-  if (typeof process !== 'undefined' && process.env) {
-    if (process.env.NETLIFY === 'true' || process.env.NETLIFY_SITE_ID) {
-      return true;
-    }
-  }
-  
-  // Check for Netlify domain
-  if (typeof window !== 'undefined') {
-    return window.location.hostname.includes('netlify.app');
-  }
-  
-  return false;
+  return typeof window !== 'undefined' && 
+    window.location.hostname.includes('netlify.app');
 };
 
-// Type declaration to add the gptengineer property to the Window object
-declare global {
-  interface Window {
-    gptengineer: any;
-    APP_CONFIG?: {
-      forceCloudMode?: boolean;
-      debugMode?: boolean;
-    };
+// Get all URL parameters as an object
+export const getAllUrlParams = (): Record<string, string> => {
+  if (typeof window === 'undefined') return {};
+  
+  const params: Record<string, string> = {};
+  const queryString = window.location.search.substring(1);
+  
+  if (!queryString) return params;
+  
+  const pairs = queryString.split('&');
+  for (const pair of pairs) {
+    const [key, value] = pair.split('=');
+    params[decodeURIComponent(key)] = decodeURIComponent(value || '');
   }
   
-  // Add __LOVABLE_MODE__ to global scope
-  const __LOVABLE_MODE__: string | undefined;
-}
+  return params;
+};
+
+// Get formatted URL parameters string
+export const getFormattedUrlParams = (): string => {
+  const params = getAllUrlParams();
+  if (Object.keys(params).length === 0) return '';
+  
+  return '?' + Object.entries(params)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('&');
+};

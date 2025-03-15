@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthSession } from '../useAuthSession';
+import { useAuth } from '@/components/AuthProvider';
 
 // Type pour les statistiques d'utilisation
 export type UsageStatistics = {
@@ -24,7 +24,7 @@ export type UsageStatistics = {
 };
 
 export const useUserCreditUsage = () => {
-  const { session } = useAuthSession();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [usageStats, setUsageStats] = useState<UsageStatistics>({
@@ -37,7 +37,7 @@ export const useUserCreditUsage = () => {
   
   // Chargement des données d'utilisation
   const loadUsageData = async () => {
-    if (!session?.user?.id) return;
+    if (!user?.id) return;
     
     setIsLoading(true);
     setError(null);
@@ -45,7 +45,7 @@ export const useUserCreditUsage = () => {
     try {
       // Appeler la fonction Edge pour obtenir les métriques d'utilisation
       const { data, error } = await supabase.functions.invoke('get-usage-metrics', {
-        body: { userId: session.user.id }
+        body: { userId: user.id }
       });
       
       if (error) throw error;
@@ -112,13 +112,13 @@ export const useUserCreditUsage = () => {
           providers.forEach(provider => {
             const input = Math.floor(Math.random() * 5000) + 1000;
             const output = Math.floor(input * 0.7);
-            const cost = parseFloat((input + output) * 0.00002).toFixed(4);
+            const cost = parseFloat((input + output) * 0.00002);
             
             usageByProvider[provider] = {
               count: Math.floor(Math.random() * 20) + 5,
               tokensInput: input,
               tokensOutput: output,
-              costEstimated: parseFloat(cost)
+              costEstimated: cost
             };
           });
           
@@ -130,13 +130,13 @@ export const useUserCreditUsage = () => {
             const provider = providers[Math.floor(Math.random() * providers.length)];
             const tokensInput = Math.floor(Math.random() * 1000) + 500;
             const tokensOutput = Math.floor(tokensInput * 0.7);
-            const costEstimated = parseFloat((tokensInput + tokensOutput) * 0.00002).toFixed(4);
+            const costEstimated = parseFloat((tokensInput + tokensOutput) * 0.00002);
             
             recentUsage.push({
               date,
               tokensInput,
               tokensOutput,
-              costEstimated: parseFloat(costEstimated),
+              costEstimated,
               provider
             });
           }
@@ -159,10 +159,10 @@ export const useUserCreditUsage = () => {
   };
   
   useEffect(() => {
-    if (session?.user?.id) {
+    if (user?.id) {
       loadUsageData();
     }
-  }, [session?.user?.id]);
+  }, [user?.id]);
   
   return {
     isLoading,
