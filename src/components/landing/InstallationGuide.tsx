@@ -1,114 +1,93 @@
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Cpu, Server, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { 
+  TerminalSquare, 
+  Server, 
+  GitBranch, 
+  Download, 
+  ArrowRight, 
+  CheckCircle 
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function InstallationGuide() {
-  return (
-    <div className="py-16 bg-black/95">
-      <div className="container px-4 mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-white mb-4">Installation Simplifiée</h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            Choisissez le mode d'installation qui vous convient le mieux
-          </p>
-        </div>
-        
-        <div className="grid gap-8 md:grid-cols-2">
-          <Card className="bg-gray-900/60 border-gray-800 text-white hover:bg-gray-900/80 transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Server className="h-5 w-5 text-blue-400" />
-                Version Cloud
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Accédez à FileChat directement depuis votre navigateur
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p>
-                La version cloud ne nécessite aucune installation. Créez simplement un compte
-                et commencez à utiliser toutes les fonctionnalités immédiatement.
-              </p>
-              <ul className="list-disc list-inside text-sm space-y-1 text-gray-300 mt-4">
-                <li>Aucune configuration technique requise</li>
-                <li>Mises à jour automatiques</li>
-                <li>Accessible depuis n'importe quel appareil</li>
-                <li>Utilise par défaut des modèles IA en cloud</li>
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Link to="/auth" className="w-full">
-                <Button variant="default" className="w-full">
-                  Commencer gratuitement
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
+  const navigate = useNavigate();
+  
+  const handleInstallOllama = () => {
+    navigate("/ollama-setup");
+  };
 
-          <Card className="bg-gray-900/60 border-gray-800 text-white hover:bg-gray-900/80 transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Cpu className="h-5 w-5 text-green-400" />
-                Version Locale
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Installez FileChat sur votre ordinateur pour un contrôle total
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p>
-                La version locale vous permet d'utiliser vos propres ressources matérielles
-                pour exécuter les modèles d'IA, offrant une meilleure confidentialité.
-              </p>
-              <ul className="list-disc list-inside text-sm space-y-1 text-gray-300 mt-4">
-                <li>Confidentialité totale - données traitées localement</li>
-                <li>Installation automatique d'Ollama et des modèles</li>
-                <li>Détection du matériel pour une configuration optimale</li>
-                <li>Bascule intelligente local/cloud si nécessaire</li>
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full gap-2" onClick={() => window.location.href = "https://github.com/yourusername/filechat/releases/latest/download/start-universal.bat"}>
-                <Download className="h-4 w-4" />
-                Télécharger l'installateur
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-        
-        <div className="mt-12 p-6 bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-xl border border-blue-800/50">
-          <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-            <ArrowRight className="h-5 w-5 text-blue-400" />
-            Installation automatique
-          </h3>
-          
-          <p className="text-gray-300 mb-4">
-            Notre script d'installation intelligent détecte automatiquement votre matériel et installe la configuration optimale :
+  return (
+    <div className="bg-gradient-to-b from-black to-gray-900 py-20">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-white mb-3">Installation simplifiée</h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Installez FileChat sur votre machine en quelques étapes simples pour commencer à utiliser l'IA locale.
           </p>
-          
-          <ol className="list-decimal list-inside space-y-3 text-gray-300">
-            <li>
-              <span className="font-medium text-white">Détection du matériel</span> - Le script analyse votre CPU, GPU et mémoire disponible
-            </li>
-            <li>
-              <span className="font-medium text-white">Installation d'Ollama</span> - Mise en place du moteur d'IA locale optimisé pour votre matériel
-            </li>
-            <li>
-              <span className="font-medium text-white">Configuration de Mistral</span> - Téléchargement et configuration du modèle d'IA adapté
-            </li>
-            <li>
-              <span className="font-medium text-white">Paramétrage optimisé</span> - Configuration automatique pour des performances optimales
-            </li>
-          </ol>
-          
-          <div className="mt-5 flex justify-center">
-            <Button variant="default" className="gap-2" onClick={() => window.location.href = "https://github.com/yourusername/filechat/releases/latest/download/start-universal.bat"}>
+        </div>
+
+        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-blue-500/30 transition-all duration-300">
+            <div className="rounded-lg bg-blue-500/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
+              <Server className="h-6 w-6 text-blue-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-3">1. Installer Ollama</h3>
+            <p className="text-gray-400 mb-4">
+              Ollama permet d'exécuter des modèles d'IA en local sur votre ordinateur, sans envoyer vos données à des serveurs externes.
+            </p>
+            <div className="space-y-2 mb-6">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-gray-400">Installation automatique et adaptée à votre système</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-gray-400">Configuration optimisée selon votre matériel</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-gray-400">Intégration transparente avec FileChat</span>
+              </div>
+            </div>
+            <Button onClick={handleInstallOllama} className="gap-2">
               <Download className="h-4 w-4" />
-              Télécharger l'installateur universel
+              Installer Ollama
             </Button>
           </div>
+
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-purple-500/30 transition-all duration-300">
+            <div className="rounded-lg bg-purple-500/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
+              <TerminalSquare className="h-6 w-6 text-purple-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-3">2. Script d'installation automatique</h3>
+            <p className="text-gray-400 mb-4">
+              Notre script effectue automatiquement toutes les étapes d'installation et de configuration pour vous.
+            </p>
+            <div className="bg-gray-950 rounded p-3 mb-6 font-mono text-sm text-gray-300 overflow-x-auto">
+              <pre><code># Windows (Exécuter en tant qu'administrateur)
+curl -o setup.bat https://filechat.app/setup.bat && setup.bat
+
+# Mac/Linux
+curl -fsSL https://filechat.app/setup.sh | bash</code></pre>
+            </div>
+            <Button variant="outline" onClick={() => window.open('/start-ollama.bat', '_blank')} className="gap-2">
+              <GitBranch className="h-4 w-4" />
+              Télécharger le script
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-12 text-center">
+          <Button 
+            size="lg" 
+            variant="ghost" 
+            className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+            onClick={() => navigate("/config")}
+          >
+            Aller directement à la configuration
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
         </div>
       </div>
     </div>

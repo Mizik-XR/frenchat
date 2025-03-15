@@ -1,87 +1,84 @@
 
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import { Users, Sparkles } from "lucide-react";
-import { FloatingPaper } from "@/components/landing/FloatingPaper";
-import { FrenchAnimation } from "@/components/landing/FrenchAnimation";
+import { MoveRight, Download, Bot, Database } from "lucide-react";
+import { TypewriterEffect } from "./TypewriterEffect";
 
 interface HeroProps {
-  onJoinBeta?: () => void;
-  onSeeExamples?: () => void;
+  onJoinBeta: () => void;
+  onSeeExamples: () => void;
 }
 
 export default function Hero({ onJoinBeta, onSeeExamples }: HeroProps) {
+  const words = [
+    { text: "Interrogez" },
+    { text: "vos" },
+    { text: "documents" },
+    { text: "avec" },
+    { text: "FileChat." },
+    { text: "🚀", className: "text-blue-500" },
+  ];
+
   return (
-    <div className="relative min-h-[calc(100vh-76px)] flex items-center">
-      {/* Floating papers background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <FloatingPaper count={6} />
-      </div>
-
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6">
-              Révolutionnez vos données avec
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-white to-red-600">
-                {" "}
-                Frenchat
-              </span>
-            </h1>
-          </motion.div>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-gray-400 text-xl mb-8 max-w-2xl mx-auto"
-          >
-            La première plateforme qui indexe et interroge l'ensemble de vos bases de données (Google Drive, Microsoft
-            Teams, Dropbox) pour créer de nouveaux documents intelligents.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="text-gray-400 text-lg mb-8 max-w-3xl mx-auto"
-          >
-            <p>
-              Notre passerelle intelligente utilise l'IA open source en local ou en cloud selon vos besoins,
-              privilégiant la sécurité de vos données tout en offrant la flexibilité des API configurables.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
+    <div className="relative overflow-hidden py-20 md:py-32 flex flex-col items-center text-center">
+      <div className="absolute inset-0 bg-grid-small-white/[0.05] z-0" />
+      <div className="container relative z-10 mx-auto px-4">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+            <TypewriterEffect words={words} />
+          </h1>
+          
+          <p className="text-lg md:text-xl text-gray-300 md:leading-relaxed max-w-2xl mx-auto">
+            FileChat vous permet d'indexer vos documents, d'y connecter l'intelligence artificielle, 
+            et d'obtenir des réponses pertinentes issues directement de vos données.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            <div className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-xl p-6 text-left">
+              <Bot className="h-8 w-8 mb-4 text-blue-400" />
+              <h3 className="text-xl font-semibold text-white mb-2">IA locale ou cloud</h3>
+              <p className="text-gray-300 text-sm">
+                Utilisez Mistral en local pour une confidentialité totale ou des modèles cloud pour plus de puissance.
+              </p>
+            </div>
+            <div className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-xl p-6 text-left">
+              <Database className="h-8 w-8 mb-4 text-purple-400" />
+              <h3 className="text-xl font-semibold text-white mb-2">Intégrations multiples</h3>
+              <p className="text-gray-300 text-sm">
+                Connectez Google Drive, Microsoft Teams, ou importez vos propres fichiers en quelques clics.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex flex-col md:flex-row gap-4 justify-center mt-8">
             <Button 
-              size="lg" 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8"
               onClick={onJoinBeta}
+              size="lg" 
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
             >
-              <Users className="mr-2 h-5 w-5" />
-              Rejoindre la Beta
+              Commencer gratuitement
+              <MoveRight className="ml-2 h-4 w-4" />
             </Button>
             <Button 
-              size="lg" 
-              variant="outline" 
-              className="text-white border-red-500 hover:bg-red-500/20"
               onClick={onSeeExamples}
+              variant="outline" 
+              size="lg"
+              className="border-white/20 text-white hover:bg-white/10"
             >
-              <Sparkles className="mr-2 h-5 w-5" />
-              Voir les Exemples
+              Voir les fonctionnalités
             </Button>
-          </motion.div>
+          </div>
+          
+          <div className="pt-6">
+            <a 
+              href="/ollama-setup" 
+              className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              Installer l'IA locale avec Ollama
+            </a>
+          </div>
         </div>
-      </div>
-
-      {/* Animated French flag */}
-      <div className="absolute bottom-0 right-0 w-96 h-96">
-        <FrenchAnimation />
       </div>
     </div>
   );
