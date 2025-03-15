@@ -17,7 +17,7 @@ export interface GoogleDriveAdvancedConfigProps {
 export function GoogleDriveAdvancedConfig({ connected, onIndexingRequest }: GoogleDriveAdvancedConfigProps) {
   const [recursive, setRecursive] = useState(false);
   const { isConnecting, isConnected, initiateGoogleAuth } = useGoogleDrive();
-  const { indexingProgress, isLoading } = useIndexingProgress();
+  const { indexingProgress, isLoading, updateProgress } = useIndexingProgress();
   
   const [error, setError] = useState<string | null>(null);
   const [hasPermissions, setHasPermissions] = useState(false);
