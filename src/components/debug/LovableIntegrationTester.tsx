@@ -4,13 +4,23 @@ import { Button } from '../ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { CheckCircle, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
-import { checkLovableIntegration, ensureLovableIntegration, getLovableHealthStatus } from '@/utils/lovable/lovableIntegrationCheck';
+import { 
+  checkLovableIntegration, 
+  isLovableScriptLoaded, 
+  isLovableInitialized, 
+  injectLovableScript 
+} from '@/utils/lovable/editingUtils';
 import { toast } from '@/hooks/use-toast';
 import { Badge } from '../ui/badge';
 
 export function LovableIntegrationTester() {
   const [isChecking, setIsChecking] = useState(false);
-  const [healthStatus, setHealthStatus] = useState<ReturnType<typeof getLovableHealthStatus> | null>(null);
+  const [healthStatus, setHealthStatus] = useState<{
+    isScriptLoaded: boolean;
+    isInitialized: boolean;
+    isFunctional: boolean;
+    details: string;
+  } | null>(null);
 
   useEffect(() => {
     checkIntegration();
@@ -19,8 +29,26 @@ export function LovableIntegrationTester() {
   const checkIntegration = () => {
     setIsChecking(true);
     setTimeout(() => {
-      const status = getLovableHealthStatus();
-      setHealthStatus(status);
+      const isScriptLoaded = isLovableScriptLoaded();
+      const isInitialized = isLovableInitialized();
+      const isFunctional = isScriptLoaded && isInitialized;
+      
+      let details = "";
+      if (!isScriptLoaded) {
+        details = "Le script gptengineer.js n'est pas chargé dans le DOM";
+      } else if (!isInitialized) {
+        details = "Le script est chargé mais l'objet global __GPT_ENGINEER__ n'est pas initialisé";
+      } else {
+        details = "L'intégration Lovable semble fonctionnelle";
+      }
+      
+      setHealthStatus({
+        isScriptLoaded,
+        isInitialized,
+        isFunctional,
+        details
+      });
+      
       setIsChecking(false);
     }, 1000);
   };
@@ -33,23 +61,49 @@ export function LovableIntegrationTester() {
       variant: "default"
     });
     
-    const result = await ensureLovableIntegration();
-    
-    if (result) {
-      toast({
-        title: "Réparation réussie",
-        description: "L'intégration Lovable a été réparée avec succès.",
-        variant: "success"
-      });
-    } else {
+    try {
+      await injectLovableScript();
+      
+      // Vérifier à nouveau après l'injection
+      setTimeout(() => {
+        const isScriptLoaded = isLovableScriptLoaded();
+        const isInitialized = isLovableInitialized();
+        const isFunctional = isScriptLoaded && isInitialized;
+        
+        setHealthStatus({
+          isScriptLoaded,
+          isInitialized,
+          isFunctional,
+          details: isFunctional 
+            ? "L'intégration Lovable semble fonctionnelle" 
+            : "L'intégration n'est toujours pas complètement fonctionnelle"
+        });
+        
+        if (isFunctional) {
+          toast({
+            title: "Réparation réussie",
+            description: "L'intégration Lovable a été réparée avec succès.",
+            variant: "success"
+          });
+        } else {
+          toast({
+            title: "Réparation partielle",
+            description: "Le script a été chargé mais n'est pas complètement initialisé. Essayez de rafraîchir la page.",
+            variant: "warning"
+          });
+        }
+        
+        setIsChecking(false);
+      }, 1500);
+    } catch (error) {
+      console.error("Erreur lors de la réparation:", error);
       toast({
         title: "Échec de la réparation",
         description: "La réparation automatique a échoué. Essayez de rafraîchir la page ou utilisez le script fix-lovable.sh/bat.",
         variant: "destructive"
       });
+      setIsChecking(false);
     }
-    
-    checkIntegration();
   };
 
   const getBadgeVariant = (status: boolean) => {

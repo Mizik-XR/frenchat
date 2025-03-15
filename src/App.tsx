@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy } from 'react';
 import { Route, Routes, Navigate, BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
@@ -74,22 +75,22 @@ function App() {
   return (
     <ErrorBoundary>
       <RadixToast.Provider>
-        <ToastProvider>
-          <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
-            <QueryClientProvider client={queryClient}>
-              <BrowserRouter>
-                <AuthProvider>
-                  <SettingsProvider>
+        <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <AuthProvider>
+                <SettingsProvider>
+                  <ToastProvider>
                     <ReactErrorMonitor />
                     <AppRouter />
                     <Toaster />
-                  </SettingsProvider>
-                </AuthProvider>
-              </BrowserRouter>
-            </QueryClientProvider>
-          </ThemeProvider>
-        </ToastProvider>
-        <RadixToast.Viewport />
+                  </ToastProvider>
+                </SettingsProvider>
+              </AuthProvider>
+            </BrowserRouter>
+          </QueryClientProvider>
+        </ThemeProvider>
+        <RadixToast.Viewport className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]" />
       </RadixToast.Provider>
     </ErrorBoundary>
   );

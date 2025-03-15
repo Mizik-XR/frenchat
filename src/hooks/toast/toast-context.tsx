@@ -13,7 +13,7 @@ type ToastContextType = {
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 // Note: Ce provider est maintenant utilisé uniquement pour la gestion d'état interne
-// et utilise le RadixToastProvider pour le rendu des toasts UI
+// et utilise le RadixToastProvider depuis App.tsx pour le rendu des toasts UI
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<State>(memoryState);
 
@@ -73,10 +73,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useToast() {
-  // First, check if we are within the Radix UI ToastProvider
-  const radixContext = RadixToast.useToastViewport ? RadixToast.useToast() : null;
-  
-  // Then check our internal context
   const context = useContext(ToastContext);
   
   if (!context) {

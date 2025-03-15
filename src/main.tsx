@@ -3,7 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { checkLovableIntegration, ensureLovableIntegration } from './utils/lovable/lovableIntegrationCheck';
+import { isLovableScriptLoaded, injectLovableScript } from './utils/lovable/editingUtils';
 
 // Fonction pour initialiser l'application
 async function initializeApp() {
@@ -12,13 +12,13 @@ async function initializeApp() {
   // Vérifier et assurer l'intégration de Lovable
   try {
     // Vérifier l'intégration de Lovable
-    const isIntegrated = checkLovableIntegration();
+    const isLoaded = isLovableScriptLoaded();
     
-    if (!isIntegrated) {
-      console.warn("Intégration Lovable non détectée, tentative de réparation...");
-      await ensureLovableIntegration();
+    if (!isLoaded && import.meta.env.DEV) {
+      console.warn("Script Lovable non détecté, tentative d'injection...");
+      await injectLovableScript();
     } else {
-      console.log("Intégration Lovable vérifiée avec succès.");
+      console.log("Script Lovable vérifié:", isLoaded ? "présent" : "non présent");
     }
   } catch (error) {
     console.error("Erreur lors de la vérification de l'intégration Lovable:", error);
