@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, Cpu, Server, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 
 export function InstallationGuide() {
   return (
@@ -39,7 +39,7 @@ export function InstallationGuide() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Link href="/auth" className="w-full">
+              <Link to="/auth" className="w-full">
                 <Button variant="default" className="w-full">
                   Commencer gratuitement
                 </Button>

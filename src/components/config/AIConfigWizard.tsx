@@ -10,7 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Cpu, Cloud, Zap, Key, CreditCard, Shield } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useAIModelDownload } from "@/hooks/useAIModelDownload";
+import { useModelDownload } from "@/hooks/useModelDownload";
 import { useSystemCapabilities } from "@/hooks/useSystemCapabilities";
 import { cn } from "@/lib/utils";
 
@@ -23,8 +23,8 @@ export function AIConfigWizard() {
   const [apiProvider, setApiProvider] = useState("openai");
   const [credits, setCredits] = useState(100); // Crédits factices pour la démonstration
   
-  const { downloadStatus, startModelDownload } = useAIModelDownload();
-  const { gpu } = useSystemCapabilities();
+  const { downloadStatus, startModelDownload } = useModelDownload();
+  const { capabilities } = useSystemCapabilities();
   
   const handleSaveConfig = async () => {
     toast({
@@ -40,7 +40,7 @@ export function AIConfigWizard() {
       await startModelDownload({
         model_id: selectedModel,
         destination: "local",
-        use_gpu: gpu.available
+        use_gpu: capabilities.gpu.available
       });
       
       toast({
