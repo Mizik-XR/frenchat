@@ -16,8 +16,11 @@ interface GoogleDriveAdvancedConfigProps {
 
 export function GoogleDriveAdvancedConfig({ connected, onIndexingRequest }: GoogleDriveAdvancedConfigProps) {
   const [recursive, setRecursive] = useState(false);
-  const { loading, error, permissions } = useGoogleDrive();
+  const { isConnecting, isConnected, initiateGoogleAuth } = useGoogleDrive();
   const { indexingProgress, startIndexing } = useIndexingProgress();
+  
+  const [error, setError] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<{hasDriveScope: boolean} | null>(null);
   
   const hasPermissions = permissions && permissions.hasDriveScope;
   const isIndexing = indexingProgress > 0 && indexingProgress < 100;
@@ -77,9 +80,10 @@ export function GoogleDriveAdvancedConfig({ connected, onIndexingRequest }: Goog
       
       <CardContent className="space-y-4">
         {error && (
-          <GoogleDriveAlert
-            message="Une erreur est survenue lors de la connexion à Google Drive"
-            type="error"
+          <GoogleDriveAlert 
+            type="error" 
+            title="Erreur" 
+            description="Une erreur est survenue lors de la connexion à Google Drive" 
           />
         )}
         

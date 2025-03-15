@@ -1,5 +1,5 @@
 
-# Roadmap et Nouvelles Fonctionnalités
+# Roadmap Frenchat
 
 ## Vision globale
 
@@ -12,141 +12,43 @@ FileChat poursuit une vision d'évolution qui s'articule autour de quatre axes p
 
 ## Roadmap 2024-2025
 
-### Phase 1: Enrichissement de l'interface (Q3 2024)
+### Phase 1: Fondations et Corrections (Q1-Q3 2024)
 
-| Fonctionnalité                           | Priorité | Statut     | Description                                                 |
-|-----------------------------------------|----------|------------|-------------------------------------------------------------|
-| Mode sombre                             | Moyenne  | Planifié   | Option de thème sombre pour réduire la fatigue oculaire     |
-| UI responsive améliorée                 | Haute    | En cours   | Optimisation pour mobiles et tablettes                      |
-| Onboarding interactif                   | Haute    | Planifié   | Guide pas à pas pour les nouveaux utilisateurs              |
-| Tableaux de bord personnalisables       | Moyenne  | Idée       | Widgets configurables pour la page d'accueil                |
-| Notifications améliorées                | Basse    | Idée       | Système d'alertes pour les tâches longues et événements     |
+| Fonctionnalité                   | Priorité  | Statut       | Timeline   | Description                                                |
+|---------------------------------|-----------|--------------|------------|------------------------------------------------------------|
+| Corrections de Sécurité         | Critique  | En cours     | Q2 2024    | Politiques RLS, chiffrement des API keys, correction des erreurs TypeScript |
+| Installation Simplifiée         | Critique  | Terminé      | Q1 2024    | Script unifié pour Ollama, Python et Mistral, assistant de première connexion |
+| Optimisations Essentielles      | Critique  | En cours     | Q2 2024    | Indexation par lots, système de cache, bascule automatique local/cloud |
+| Bot IA d'assistance             | Critique  | Planifié     | Q3 2024    | Assistant intégré formé sur la documentation technique et juridique |
 
-### Phase 2: Extension des sources et formats (Q4 2024)
+### Phase 2: Fonctionnalités Clés (Q2-Q4 2024)
 
-| Fonctionnalité                           | Priorité | Statut     | Description                                                 |
-|-----------------------------------------|----------|------------|-------------------------------------------------------------|
-| Support Sharepoint                       | Haute    | Planifié   | Indexation des documents Sharepoint                         |
-| Support OneDrive                         | Moyenne  | Idée       | Indexation des documents OneDrive personnels                |
-| Intégration Slack                        | Moyenne  | Idée       | Analyse des conversations et fichiers Slack                 |
-| Support des e-mails                      | Haute    | Recherche  | Analyse des boîtes mail (Outlook, Gmail)                    |
-| Support audio/vidéo                      | Basse    | Recherche  | Transcription et analyse de fichiers multimédias            |
+| Fonctionnalité                   | Priorité  | Statut       | Timeline   | Description                                                |
+|---------------------------------|-----------|--------------|------------|------------------------------------------------------------|
+| Intégration LangChain           | Haute     | Planifié     | Q3 2024    | Abstraction pour LLMs, modèles Mistral, gestion de mémoire conversationnelle |
+| Amélioration de l'Interface     | Haute     | En cours     | Q2-Q3 2024 | Interface inspirée des meilleures pratiques, éditeur riche, export avancé |
+| Sécurité Avancée                | Haute     | Planifié     | Q3 2024    | Rotation des clés, révocation automatique des tokens, journalisation détaillée |
 
-### Phase 3: Intelligence artificielle avancée (Q1 2025)
+### Phase 3: Expansion (Q4 2024)
 
-| Fonctionnalité                           | Priorité | Statut     | Description                                                 |
-|-----------------------------------------|----------|------------|-------------------------------------------------------------|
-| Agents spécialisés                       | Haute    | Recherche  | IA spécialisées par domaine (juridique, financier, etc.)    |
-| Génération d'images natives              | Moyenne  | Planifié   | Création d'images sans services externes                    |
-| Analyse de sentiment                     | Basse    | Idée       | Détection du ton et des émotions dans les documents         |
-| RAG multi-langues                        | Haute    | Recherche  | Support amélioré pour documents en plusieurs langues        |
-| Fine-tuning personnalisé                 | Moyenne  | Idée       | Adaptation des modèles aux données spécifiques              |
+| Fonctionnalité                   | Priorité  | Statut       | Timeline   | Description                                                |
+|---------------------------------|-----------|--------------|------------|------------------------------------------------------------|
+| Intégration Multi-modèles        | Moyenne   | Planifié     | Q4 2024    | Support pour Guidance, Transformers Agents, système de crédits |
+| Fonctionnalités Collaboratives   | Moyenne   | Planifié     | Q4 2024    | Collaboration en temps réel, partage de conversations, commentaires |
 
-### Phase 4: Performance et Enterprise (Q2-Q3 2025)
+### Phase 4: Raffinement (Q1-Q2 2025)
 
-| Fonctionnalité                           | Priorité | Statut     | Description                                                 |
-|-----------------------------------------|----------|------------|-------------------------------------------------------------|
-| Indexation distribuée                    | Haute    | Recherche  | Traitement parallèle pour grandes collections               |
-| SSO Enterprise                           | Haute    | Planifié   | Authentification unique pour entreprises                    |
-| Chiffrement de bout en bout              | Moyenne  | Idée       | Sécurisation renforcée des données sensibles               |
-| Déploiement on-premise                   | Haute    | Planifié   | Installation dans l'infrastructure du client                |
-| Outils d'administration avancés          | Moyenne  | Idée       | Console d'administration pour grandes organisations         |
+| Fonctionnalité                   | Priorité  | Statut       | Timeline   | Description                                                |
+|---------------------------------|-----------|--------------|------------|------------------------------------------------------------|
+| Expérience Utilisateur Avancée   | Basse     | Planifié     | Q1 2025    | Templates de documents, tableau de bord personnalisé, personnalisation |
+| Intégrations Supplémentaires     | Basse     | Planifié     | Q1-Q2 2025 | Support pour Microsoft Teams/OneDrive, stockage cloud, gestion de projet |
 
-## Propositions de mini-tâches
+## Légende des statuts
 
-Voici quelques exemples de mini-tâches qui pourraient être implémentées dans le cadre de la roadmap:
-
-### UI/UX
-
-1. **Ajout du mode sombre**
-   ```
-   Mini-tâche: Implémentation du mode sombre
-
-   Objectif: Ajouter un switch de thème et créer les styles dark pour tous les composants
-
-   Fichiers à modifier:
-   - src/ThemeProvider.tsx
-   - src/styles/theme.css
-   - src/components/ui/ThemeToggle.tsx
-
-   Tests à effectuer:
-   - Vérifier la transition entre thèmes
-   - Tester sur différents navigateurs
-   - Valider l'accessibilité (contrastes)
-
-   Critères de validation:
-   - Transition fluide sans flashs
-   - Persistance du choix utilisateur
-   - Respect des contrastes WCAG
-   ```
-
-2. **Amélioration de l'onboarding**
-   ```
-   Mini-tâche: Tour guidé pour nouveaux utilisateurs
-
-   Objectif: Créer un tutoriel interactif pour les nouveaux utilisateurs
-
-   Fichiers à créer/modifier:
-   - src/components/onboarding/OnboardingTour.tsx
-   - src/context/OnboardingContext.tsx
-   - src/hooks/useOnboarding.ts
-
-   Tests à effectuer:
-   - Parcours complet de l'onboarding
-   - Test avec différents profils utilisateurs
-   - Vérification du marquage "déjà vu"
-
-   Critères de validation:
-   - Étapes claires et informatives
-   - Possibilité de sauter ou reprendre
-   - Non-intrusif pour utilisateurs existants
-   ```
-
-### Fonctionnalités techniques
-
-3. **Support de formats supplémentaires**
-   ```
-   Mini-tâche: Support de fichiers audio (MP3, WAV)
-
-   Objectif: Permettre l'indexation et l'analyse de fichiers audio
-
-   Fichiers à modifier:
-   - supabase/functions/process-uploaded-files/index.ts
-   - src/utils/fileProcessing.ts
-   - src/components/config/ImportMethod/FileUploader.tsx
-
-   Tests à effectuer:
-   - Upload et traitement de fichiers audio
-   - Vérification de la transcription
-   - Recherche dans le contenu transcrit
-
-   Critères de validation:
-   - Transcription précise (taux d'erreur <10%)
-   - Indexation correcte du contenu
-   - UI adaptée pour les fichiers audio
-   ```
-
-4. **Amélioration de la recherche**
-   ```
-   Mini-tâche: Recherche structurée avec filtres
-
-   Objectif: Ajouter des filtres avancés à la recherche (date, type, source)
-
-   Fichiers à modifier:
-   - src/components/chat/SearchPanel.tsx
-   - src/hooks/useSearch.ts
-   - supabase/functions/rag-generation/index.ts
-
-   Tests à effectuer:
-   - Recherche avec combinaisons de filtres
-   - Vérification des performances
-   - Test avec large volume de documents
-
-   Critères de validation:
-   - UI intuitive pour les filtres
-   - Résultats pertinents
-   - Performances acceptables (<2s)
-   ```
+- **Terminé** ✅ : Fonctionnalité implémentée et disponible
+- **En cours** 🚧 : Fonctionnalité en cours de développement
+- **Planifié** 📅 : Fonctionnalité planifiée pour développement futur
+- **Critique** ⚠️ : Fonctionnalité prioritaire à implémenter rapidement
 
 ## Processus de proposition de fonctionnalités
 
@@ -223,3 +125,9 @@ Alternatives considérées:
 5. **Sécuriser par défaut**
    - Analyse de sécurité pour chaque nouvelle fonction
    - Respect des principes de privacy by design
+
+## Suivi de l'avancement
+
+Nous mettons à jour cette roadmap régulièrement pour refléter l'état d'avancement du projet. N'hésitez pas à consulter ce document périodiquement pour suivre notre progression et connaître les prochaines fonctionnalités à venir.
+
+Dernière mise à jour: **Juin 2024**

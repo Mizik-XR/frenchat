@@ -1,36 +1,45 @@
 
-import React from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React from 'react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { ExclamationTriangleIcon, CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 
-interface GoogleDriveAlertProps {
-  onCancel: () => void;
-  onConfirm: () => void;
+export interface GoogleDriveAlertProps {
+  type: 'error' | 'success' | 'info' | 'warning';
+  title: string;
+  description: string;
 }
 
-export const GoogleDriveAlert = ({ onCancel, onConfirm }: GoogleDriveAlertProps) => {
+export function GoogleDriveAlert({ type, title, description }: GoogleDriveAlertProps) {
+  const getIcon = () => {
+    switch (type) {
+      case 'error':
+      case 'warning':
+        return <ExclamationTriangleIcon className="h-4 w-4" />;
+      case 'success':
+        return <CheckCircledIcon className="h-4 w-4" />;
+      case 'info':
+      default:
+        return <InfoCircledIcon className="h-4 w-4" />;
+    }
+  };
+
+  const alertClasses = `${
+    type === 'error'
+      ? 'bg-red-50 border-red-200 text-red-800'
+      : type === 'warning'
+      ? 'bg-amber-50 border-amber-200 text-amber-800'
+      : type === 'success'
+      ? 'bg-green-50 border-green-200 text-green-800'
+      : 'bg-blue-50 border-blue-200 text-blue-800'
+  }`;
+
   return (
-    <Alert className="bg-amber-50 border-amber-200">
-      <AlertCircle className="h-4 w-4 text-amber-600" />
-      <AlertTitle className="text-amber-800">Confirmation d'indexation</AlertTitle>
-      <AlertDescription className="text-amber-700 mt-2">
-        <p className="mb-3">
-          L'indexation va scanner et analyser tous les fichiers du dossier sélectionné.
-          Cette opération peut prendre plusieurs minutes selon le nombre de fichiers.
-        </p>
-        <p className="mb-4">
-          Les fichiers seront accessibles uniquement par vous et utilisés pour la recherche IA.
-        </p>
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" size="sm" onClick={onCancel}>
-            Annuler
-          </Button>
-          <Button size="sm" onClick={onConfirm}>
-            Démarrer l'indexation
-          </Button>
-        </div>
-      </AlertDescription>
+    <Alert className={alertClasses}>
+      <div className="flex items-center gap-2">
+        {getIcon()}
+        <AlertTitle>{title}</AlertTitle>
+      </div>
+      <AlertDescription>{description}</AlertDescription>
     </Alert>
   );
-};
+}
