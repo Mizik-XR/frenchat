@@ -1,3 +1,4 @@
+
 import { Action, State, actionTypes, ToasterToast } from "./types";
 
 // Constants
@@ -7,7 +8,7 @@ export const TOAST_REMOVE_DELAY = 1000000;
 // State management
 let count = 0;
 export let memoryState: State = { toasts: [] };
-export const listeners: Array<(state: State) => void> = [];
+export let listeners: Array<(state: State) => void> = [];
 export const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
 // Utility functions
@@ -96,7 +97,7 @@ export function dispatch(action: Action) {
   });
 }
 
-// Toast creator function
+// Toast creator function - Export comme "createToast" et comme "toast" pour compatibilité
 export function createToast(props: Partial<Omit<ToasterToast, "id">>) {
   const id = genId();
 
@@ -126,3 +127,6 @@ export function createToast(props: Partial<Omit<ToasterToast, "id">>) {
     update,
   };
 }
+
+// Export alias pour compatibilité avec les imports existants
+export const toast = createToast;

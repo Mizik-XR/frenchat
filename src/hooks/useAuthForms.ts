@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/toast';
+import { toast } from '@/hooks/use-toast';
 
 // Définir l'URL du site pour les redirections
 export const SITE_URL = typeof window !== 'undefined' 
@@ -22,7 +22,7 @@ export function useAuthForms() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      console.log("Attempting to sign in with:", email);
+      console.log("Tentative de connexion avec:", email);
       const { error, data } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -30,7 +30,7 @@ export function useAuthForms() {
       
       if (error) throw error;
       
-      console.log("Sign in successful:", data.user?.id);
+      console.log("Connexion réussie:", data.user?.id);
       toast({
         title: "Connexion réussie",
         description: "Vous êtes maintenant connecté",
@@ -40,7 +40,7 @@ export function useAuthForms() {
       // Redirection vers la page d'accueil après connexion
       navigate('/home');
     } catch (error: any) {
-      console.error("Sign in error:", error);
+      console.error("Erreur de connexion:", error);
       toast({
         title: "Erreur de connexion",
         description: error.message,
@@ -64,7 +64,7 @@ export function useAuthForms() {
     
     setIsLoading(true);
     try {
-      console.log("Attempting to sign up with:", email);
+      console.log("Tentative d'inscription avec:", email, "Nom complet:", fullName);
       const { error, data } = await supabase.auth.signUp({
         email,
         password,
@@ -77,7 +77,7 @@ export function useAuthForms() {
       
       if (error) throw error;
       
-      console.log("Sign up response:", data);
+      console.log("Réponse d'inscription:", data);
       
       if (data.user && !data.session) {
         toast({
@@ -92,11 +92,11 @@ export function useAuthForms() {
           description: "Votre compte a été créé avec succès",
           variant: "success"
         });
-        // Contourner les erreurs de profil en redirigeant directement vers home
+        // Redirection vers home
         navigate('/home');
       }
     } catch (error: any) {
-      console.error("Sign up error:", error);
+      console.error("Erreur d'inscription:", error);
       toast({
         title: "Erreur d'inscription",
         description: error.message,
@@ -120,8 +120,8 @@ export function useAuthForms() {
     
     setIsLoading(true);
     try {
-      console.log("Sending magic link to:", email);
-      console.log("Redirect URL:", `${SITE_URL}/auth/callback`);
+      console.log("Envoi d'un lien magique à:", email);
+      console.log("URL de redirection:", `${SITE_URL}/auth/callback`);
       
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -138,7 +138,7 @@ export function useAuthForms() {
         variant: "success"
       });
     } catch (error: any) {
-      console.error("Magic link error:", error);
+      console.error("Erreur de lien magique:", error);
       toast({
         title: "Erreur",
         description: error.message,

@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { ToastProvider } from '@/hooks/toast/toast-context';
+import { ToastProvider } from '@/hooks/use-toast';
 
 // Importation différée des composants pour améliorer les performances de chargement initial
 const Home = lazy(() => import('./pages/Home'));
@@ -43,8 +43,6 @@ const AppRouter = () => {
       <Routes>
         {/* Route racine - affiche Index qui décidera de rediriger ou d'afficher Landing */}
         <Route path="/" element={<Index />} />
-        
-        {/* Landing est maintenant rendu via Index quand nécessaire, pas besoin d'une route séparée */}
         
         {/* Routes importantes */}
         <Route path="/home" element={<Home />} />
@@ -90,7 +88,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      {/* ToastProvider au plus haut niveau */}
+      {/* ToastProvider au plus haut niveau pour éviter les erreurs */}
       <ToastProvider>
         <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
           <QueryClientProvider client={queryClient}>
