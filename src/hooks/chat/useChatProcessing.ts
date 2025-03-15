@@ -1,193 +1,197 @@
 
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { AIProvider, AnalysisMode, Message, MessageMetadata, WebUIConfig } from '@/types/chat';
-import { toast } from '@/hooks/use-toast';
-import { useSecureApiProxy } from '@/hooks/useSecureApiProxy';
-import { useAuth } from '@/components/AuthProvider';
-import { v4 as uuidv4 } from 'uuid';
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAIProviders } from "./useAIProviders";
+import { useHuggingFace } from "../useHuggingFace";
+import { WebUIConfig, AIProvider } from "@/types/chat";
+import { useSecureApiProxy } from "../useSecureApiProxy";
+import { useAuth } from "@/components/AuthProvider";
+import { useOpenAIAgents } from "../ai/useOpenAIAgents";
 
-interface SendMessageOptions {
+// Type pour les options d'envoi de message
+export interface SendMessageOptions {
   content: string;
   conversationId: string;
   files?: File[];
   fileUrls?: string[];
-  replyTo?: { id: string; content: string; role: 'user' | 'assistant' };
+  replyTo?: {
+    id: string;
+    content: string;
+    role: 'user' | 'assistant';
+  };
   config: WebUIConfig;
 }
 
-export const useChatProcessing = () => {
+// Hook pour gérer le traitement des messages de chat
+export function useChatProcessing() {
+  const { generateResponse } = useAIProviders();
+  const { textGeneration } = useHuggingFace();
   const { user } = useAuth();
-  const secureApiProxy = useSecureApiProxy();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { callApi, generateText } = useSecureApiProxy();
+  const { askAgentWithContext } = useOpenAIAgents();
+  
+  const [isError, setIsError] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  const sendMessageMutation = useMutation({
-    mutationFn: async ({ content, conversationId, files = [], fileUrls = [], replyTo, config }: SendMessageOptions) => {
-      if (!user) throw new Error('User not authenticated');
-      
-      setIsProcessing(true);
-      
+  // Mutation pour envoyer un message et obtenir une réponse
+  const {
+    mutate: sendMessage,
+    isLoading: isProcessing,
+    isSuccess,
+    data,
+    reset
+  } = useMutation({
+    mutationFn: async ({
+      content,
+      conversationId,
+      files = [],
+      fileUrls = [],
+      replyTo,
+      config
+    }: SendMessageOptions) => {
       try {
-        // Créer le message utilisateur
-        const userMessageId = uuidv4();
-        const timestamp = new Date();
+        setIsError(false);
+        setError(null);
+
+        // Créer un ID temporaire pour le message utilisateur
+        const userMessageId = crypto.randomUUID();
         
-        const userMessageMetadata: MessageMetadata = {};
-        
-        if (replyTo) {
-          userMessageMetadata.replyTo = replyTo;
-        }
-        
-        // Upload des fichiers si nécessaire
-        const processedFileUrls = [...fileUrls];
-        
-        if (files.length > 0) {
-          for (const file of files) {
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            const { data, error } = await supabase.functions.invoke('process-upload', {
-              body: formData,
-              headers: {
-                Accept: 'multipart/form-data',
-              },
-            });
-            
-            if (error) throw error;
-            if (data?.url) {
-              processedFileUrls.push(data.url);
-            }
-          }
-        }
-        
-        // Si des fichiers sont attachés, ajoutez-les aux métadonnées
-        if (processedFileUrls.length > 0) {
-          userMessageMetadata.documentId = processedFileUrls.join(',');
-        }
-        
-        // Enregistrer le message utilisateur
-        const { error: insertError } = await supabase
-          .from('chat_messages')
-          .insert({
-            id: userMessageId,
-            role: 'user',
-            content,
-            conversation_id: conversationId,
-            user_id: user.id,
-            metadata: userMessageMetadata,
-          });
-        
-        if (insertError) throw insertError;
-        
-        // Construire le message IA
-        const aiMessageId = uuidv4();
-        const aiMessageMetadata: MessageMetadata = {
-          provider: config.provider,
-          analysisMode: config.analysisMode,
-          aiService: {
-            type: 'hybrid',
-            endpoint: 'auto',
-            actualServiceUsed: 'cloud'
-          }
+        // Préparer les métadonnées
+        const messageMetadata = {
+          replyToId: replyTo?.id,
+          replyToContent: replyTo?.content,
+          replyToRole: replyTo?.role,
+          fileIds: [],
+          fileUrls: fileUrls || [],
+          model: config.model || "huggingface",
+          provider: config.provider || "huggingface",
         };
-        
-        // Préparer la requête pour l'API
-        let response;
-        const provider = config.provider as string;
-        
-        switch (provider) {
-          case 'openai':
-          case 'mistral':
-          case 'anthropic':
-          case 'google':
-          case 'deepseek':
-          case 'deepseek-v2':
-          case 'gemma-3':
-          case 'huggingface':
-            // Use secureApiProxy for text generation
-            response = await secureApiProxy.callApi(
-              'ai', 
-              'generate-text', 
+
+        // Créer le message utilisateur
+        const userMessage = {
+          id: userMessageId,
+          role: 'user',
+          content,
+          conversationId,
+          metadata: messageMetadata,
+          timestamp: new Date()
+        };
+
+        // Sauvegarder le message dans la base de données
+        const { error: saveError } = await supabase
+          .from('conversation_messages')
+          .insert(userMessage);
+
+        if (saveError) throw saveError;
+
+        let generatedText = "";
+
+        // Vérifier si on utilise les agents OpenAI pour RAG
+        if (config.provider === "openai-agent" && config.useRag) {
+          // Récupérer le contexte RAG pour la conversation
+          const { data: ragContext } = await supabase
+            .from('rag_contexts')
+            .select('context')
+            .eq('conversation_id', conversationId)
+            .maybeSingle();
+          
+          if (ragContext?.context) {
+            // Utiliser l'agent OpenAI avec le contexte RAG
+            const response = await askAgentWithContext(
+              ragContext.context,
+              content,
               {
-                provider: config.provider,
-                prompt: content,
-                conversationId,
-                messageId: aiMessageId,
-                options: {
-                  temperature: config.temperature,
-                  max_tokens: config.maxTokens,
-                  useMemory: config.useMemory || false,
-                  analysisMode: config.analysisMode
-                }
+                modelName: config.model || "gpt-4o",
+                instructions: `Tu es un assistant qui répond aux questions en utilisant uniquement le contexte fourni. 
+                Si la réponse ne peut pas être déterminée à partir du contexte, dis-le clairement.`
               }
             );
-            break;
-          default:
-            // Fallback to local service
-            const { data } = await supabase.functions.invoke('text-generation', {
-              body: {
-                prompt: content,
-                model: config.model,
-                temperature: config.temperature,
-                max_tokens: config.maxTokens
-              }
-            });
-            response = data?.generated_text || "Je n'ai pas pu générer de réponse.";
-        }
-        
-        // Enregistrer la réponse de l'IA
-        const { error: aiInsertError } = await supabase
-          .from('chat_messages')
-          .insert({
-            id: aiMessageId,
-            role: 'assistant',
-            content: response,
-            conversation_id: conversationId,
-            user_id: user.id,
-            metadata: aiMessageMetadata,
-          });
-        
-        if (aiInsertError) throw aiInsertError;
-        
-        return {
-          userMessage: {
-            id: userMessageId,
-            role: 'user',
-            content,
-            conversationId,
-            metadata: userMessageMetadata,
-            timestamp
-          },
-          assistantMessage: {
-            id: aiMessageId,
-            role: 'assistant',
-            content: response,
-            conversationId,
-            metadata: aiMessageMetadata,
-            timestamp: new Date()
+            
+            if (response) {
+              generatedText = response;
+            }
           }
+        } else if (config.provider === "openai") {
+          // Utiliser l'API OpenAI via le proxy sécurisé
+          generatedText = await generateText(content, {
+            model: config.model || "gpt-4o-mini",
+            temperature: config.temperature,
+            max_tokens: config.maxTokens,
+            system_prompt: `Tu es un assistant d'IA qui répond aux questions de manière concise et précise. 
+            Mode d'analyse: ${config.analysisMode}`
+          });
+        } else if (config.provider === "anthropic") {
+          // Utiliser l'API Anthropic via le proxy sécurisé
+          const response = await callApi('anthropic', 'messages', {
+            model: config.model || "claude-3-haiku-20240307",
+            max_tokens: config.maxTokens || 1000,
+            temperature: config.temperature || 0.7,
+            system: `Tu es un assistant d'IA qui répond aux questions de manière utile, précise et honnête. Mode d'analyse: ${config.analysisMode}`,
+            messages: [
+              { role: "user", content: content }
+            ]
+          });
+          
+          generatedText = response.content?.[0]?.text || "";
+        } else {
+          // Utiliser la génération standard via les fournisseurs configurés
+          const results = await generateResponse(
+            content,
+            content,
+            config.provider || "huggingface",
+            config
+          );
+          
+          if (results && results.length > 0) {
+            generatedText = results[0].generated_text || "";
+          }
+        }
+
+        // Créer un ID pour le message assistant
+        const assistantMessageId = crypto.randomUUID();
+
+        // Créer le message assistant
+        const assistantMessage = {
+          id: assistantMessageId,
+          role: 'assistant',
+          content: generatedText,
+          conversationId,
+          metadata: {
+            replyToId: userMessageId,
+            model: config.model || "huggingface",
+            provider: config.provider || "huggingface",
+          },
+          timestamp: new Date()
         };
-      } catch (error) {
-        console.error('Error processing chat:', error);
-        toast({
-          title: 'Erreur',
-          description: 'Une erreur est survenue lors du traitement du message.',
-          variant: 'destructive',
-        });
-        throw error;
-      } finally {
-        setIsProcessing(false);
+
+        // Sauvegarder le message assistant dans la base de données
+        const { error: assistantSaveError } = await supabase
+          .from('conversation_messages')
+          .insert(assistantMessage);
+
+        if (assistantSaveError) throw assistantSaveError;
+
+        return {
+          userMessage,
+          assistantMessage
+        };
+      } catch (err) {
+        console.error("Error processing message:", err);
+        setIsError(true);
+        setError(err as Error);
+        throw err;
       }
-    },
+    }
   });
 
   return {
-    sendMessage: sendMessageMutation.mutate,
+    sendMessage,
     isProcessing,
-    isSuccess: sendMessageMutation.isSuccess,
-    isError: sendMessageMutation.isError,
-    error: sendMessageMutation.error,
-    reset: sendMessageMutation.reset,
+    isSuccess,
+    isError,
+    error,
+    data,
+    reset
   };
-};
+}

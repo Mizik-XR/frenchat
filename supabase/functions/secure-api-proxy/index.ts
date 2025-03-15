@@ -89,6 +89,10 @@ serve(async (req) => {
     switch (service) {
       case 'openai':
         headers['Authorization'] = `Bearer ${apiKey}`;
+        // Ajout de l'en-tête beta pour les endpoints des assistants OpenAI
+        if (endpoint.startsWith('assistants') || endpoint.startsWith('threads')) {
+          headers['OpenAI-Beta'] = 'assistants=v1';
+        }
         break;
       case 'anthropic':
         headers['x-api-key'] = apiKey;
@@ -107,11 +111,37 @@ serve(async (req) => {
     
     console.log(`Appel API ${service} vers ${endpoint}`);
     
+    // Gestion spéciale pour les fichiers (upload de fichiers pour OpenAI Assistants)
+    let requestBody;
+    if (service === 'openai' && endpoint === 'files' && payload?.file) {
+      headers['Content-Type'] = 'multipart/form-data';
+      
+      // Créer un formdata pour l'upload
+      const formData = new FormData();
+      
+      // Décoder le contenu Base64 en Blob
+      const binaryString = atob(payload.file);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes.buffer]);
+      
+      formData.append('file', blob, payload.filename);
+      formData.append('purpose', payload.purpose || 'assistants');
+      
+      requestBody = formData;
+      delete headers['Content-Type']; // Laisser le navigateur définir Content-Type avec la boundary
+    } else {
+      // Cas standard: JSON
+      requestBody = payload ? JSON.stringify(payload) : undefined;
+    }
+    
     // Exécution de la requête API
     const apiResponse = await fetch(url, {
       method: method || 'POST',
       headers,
-      body: payload ? JSON.stringify(payload) : undefined,
+      body: requestBody,
     });
     
     // Gestion des erreurs de l'API
