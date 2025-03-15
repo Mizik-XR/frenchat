@@ -127,8 +127,15 @@ export function useChatProcessing() {
             ]
           });
           
-          if (response && response.content && Array.isArray(response.content) && response.content.length > 0) {
-            generatedText = response.content[0]?.text || "";
+          // Vérification du type de réponse et extraction sécuritaire du contenu
+          if (response && 
+              typeof response === 'object' && 
+              'content' in response && 
+              Array.isArray(response.content) && 
+              response.content.length > 0 && 
+              typeof response.content[0] === 'object' && 
+              'text' in response.content[0]) {
+            generatedText = response.content[0].text || "";
           }
         } else {
           // Utiliser la génération standard via les fournisseurs configurés
