@@ -9,6 +9,8 @@ import { AIUsageMetrics } from "@/components/config/AIUsageMetrics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { AIConfigWizard } from "@/components/config/AIConfigWizard";
+import { GoogleDriveAdvancedConfig } from "@/components/config/GoogleDrive/GoogleDriveAdvancedConfig";
 
 export default function Config() {
   const navigate = useNavigate();
@@ -52,11 +54,21 @@ export default function Config() {
       <Tabs defaultValue="config" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="config">Configuration</TabsTrigger>
+          <TabsTrigger value="sources">Sources de données</TabsTrigger>
+          <TabsTrigger value="ai">Intelligence Artificielle</TabsTrigger>
           <TabsTrigger value="usage">Utilisation & Coûts</TabsTrigger>
         </TabsList>
         
         <TabsContent value="config" className="space-y-6">
           <ConfigWizard />
+        </TabsContent>
+        
+        <TabsContent value="sources" className="space-y-6">
+          <GoogleDriveAdvancedConfig />
+        </TabsContent>
+        
+        <TabsContent value="ai" className="space-y-6">
+          <AIConfigWizard />
         </TabsContent>
         
         <TabsContent value="usage" className="space-y-6">
