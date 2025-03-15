@@ -5,6 +5,7 @@ import { useAIProviderService } from "./services/aiProviderService";
 import { useMessageService } from "./services/messageService";
 import { SendMessageOptions, MessageResult } from "./types";
 import { useAuth } from "@/components/AuthProvider";
+import { AIProvider } from "@/types/chat";
 
 // Hook pour gérer le traitement des messages de chat
 export function useChatProcessing() {
@@ -58,7 +59,11 @@ export function useChatProcessing() {
         } else if (config.provider === 'anthropic') {
           generatedText = await aiProviderService.generateAnthropicResponse(content, config);
         } else {
-          generatedText = await aiProviderService.generateStandardResponse(content, config.provider as string, config);
+          generatedText = await aiProviderService.generateStandardResponse(
+            content, 
+            config.provider as AIProvider, 
+            config
+          );
         }
 
         // Créer et sauvegarder le message assistant
