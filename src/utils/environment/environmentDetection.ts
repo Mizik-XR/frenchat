@@ -45,7 +45,8 @@ export const isLovableEnvironment = (): boolean => {
   const isLovableDomain = 
     window.location.host.includes('lovable.dev') || 
     window.location.host.includes('lovable.app') ||
-    window.location.host.includes('lovableproject.com');
+    window.location.host.includes('lovableproject.com') ||
+    window.location.host.includes('localhost');
   
   // Vérifier si nous sommes dans un iframe
   const isInIframe = window !== window.parent;
