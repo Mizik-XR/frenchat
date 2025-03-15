@@ -10,6 +10,25 @@ export type EdgeFunctionResponse<T = any> = {
   error: Error | null;
 };
 
+// Type for message metadata
+export interface MessageMetadata {
+  provider?: string;
+  documentId?: string;
+  imageUrl?: string;
+  confidence?: number;
+  analysisMode?: string;
+  aiService?: {
+    type: 'local' | 'cloud' | 'hybrid';
+    endpoint: string;
+    actualServiceUsed?: 'local' | 'cloud';
+  };
+  replyTo?: {
+    id: string;
+    content: string;
+    role: 'user' | 'assistant';
+  };
+}
+
 // Variables d'état de l'application
 export const APP_STATE = {
   isOfflineMode: false,
@@ -54,9 +73,6 @@ const options = {
       'x-app-version': import.meta.env.VITE_LOVABLE_VERSION || 'dev',
     },
   },
-  db: {
-    schema: 'public',
-  },
   realtime: {
     timeout: 20000, // Timeout plus long pour les connexions en temps réel
   },
@@ -70,8 +86,8 @@ console.log('Initialisation de Supabase avec:', {
 });
 
 // Créer et exporter le client Supabase
-export const supabase: SupabaseClient<Database> = supabaseUrl && supabaseAnonKey
-  ? createClient<Database>(supabaseUrl, supabaseAnonKey, options)
+export const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey, options)
   : null;
 
 // Initialiser l'écouteur d'événements d'authentification
@@ -119,13 +135,36 @@ export const handleProfileQuery = async (userId: string) => {
   if (!supabase || !userId) return { data: null, error: new Error('Client Supabase non initialisé ou ID utilisateur manquant') };
   
   try {
-    const { data, error } = await supabase.rpc('get_minimal_profile', { user_id: userId });
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
     
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
     console.error('Erreur lors de la récupération du profil:', error);
     return { data: null, error: error instanceof Error ? error : new Error('Erreur inconnue') };
+  }
+};
+
+// Fonction pour détecter le service IA local
+export const detectLocalAIService = async (): Promise<boolean> => {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000);
+    
+    const response = await fetch('http://localhost:8000/health', {
+      method: 'GET',
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeout);
+    return response.ok;
+  } catch (e) {
+    console.log("Service IA local non disponible");
+    return false;
   }
 };
 

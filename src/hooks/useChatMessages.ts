@@ -1,199 +1,170 @@
 
-import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuthSession } from './useAuthSession';
-import { APP_STATE } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
+import { toast } from "sonner";
+import { MessageMetadata } from "@/types/chat";
 
-// Types pour les messages
-export type MessageRole = 'user' | 'assistant' | 'system';
-export type MessageType = 'text' | 'image' | 'file' | 'audio' | 'video';
+type MessageRole = "user" | "assistant" | "system";
+type MessageType = "text" | "document" | "image" | "chart";
 
-export interface MessageMetadata {
-  fileId?: string;
-  fileName?: string;
-  fileSize?: number;
-  mimeType?: string;
-  imagePath?: string;
-  quotedMessageId?: string;
-  processingStatus?: 'pending' | 'processing' | 'completed' | 'error';
-  processingError?: string;
-  sourceDocuments?: Array<{
-    title: string;
-    content: string;
-    url?: string;
-    similarity?: number;
-  }>;
-  [key: string]: any;
-}
-
-export interface ChatMessage {
+interface ChatMessage {
   id: string;
   role: MessageRole;
   content: string;
   type: MessageType;
   createdAt: Date;
   metadata?: MessageMetadata;
-  quotedMessage?: ChatMessage;
-}
-
-export interface MessageInput {
-  conversation_id: string;
-  role: MessageRole;
-  content: string;
-  type: string;
-  quoted_message_id?: string;
+  conversationId?: string;
+  timestamp?: Date;
+  replyTo?: string;
+  quotedMessageId?: string;
 }
 
 export const useChatMessages = (conversationId: string | null) => {
-  const { session } = useAuthSession();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth();
 
-  // Charger les messages
-  const loadMessages = useCallback(async () => {
-    if (!conversationId || !session?.user?.id) {
-      setMessages([]);
+  // Fetch messages for the conversation
+  useEffect(() => {
+    if (!conversationId || !user) return;
+
+    const fetchMessages = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const { data, error } = await supabase
+          .from("chat_messages")
+          .select("*")
+          .eq("conversation_id", conversationId)
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+
+        // Transform the data to match the ChatMessage type
+        const formattedMessages = data.map((message) => ({
+          id: message.id,
+          role: message.role as MessageRole,
+          content: message.content,
+          type: message.message_type as MessageType,
+          createdAt: new Date(message.created_at),
+          metadata: message.metadata as MessageMetadata,
+          conversationId: message.conversation_id,
+          timestamp: new Date(message.created_at),
+          replyTo: message.quoted_message_id || undefined,
+          quotedMessageId: message.quoted_message_id || undefined
+        }));
+
+        setMessages(formattedMessages);
+      } catch (err) {
+        console.error("Error fetching messages:", err);
+        setError(err instanceof Error ? err : new Error("Failed to fetch messages"));
+        toast.error("Erreur lors du chargement des messages");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMessages();
+
+    // Set up real-time subscription
+    const messageSubscription = supabase
+      .channel(`chat_messages:conversation_id=eq.${conversationId}`)
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "chat_messages",
+        filter: `conversation_id=eq.${conversationId}`
+      }, (payload) => {
+        if (payload.eventType === "INSERT") {
+          const newMessage = payload.new;
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: newMessage.id,
+              role: newMessage.role as MessageRole,
+              content: newMessage.content,
+              type: newMessage.message_type as MessageType,
+              createdAt: new Date(newMessage.created_at),
+              metadata: newMessage.metadata as MessageMetadata,
+              conversationId: newMessage.conversation_id,
+              timestamp: new Date(newMessage.created_at),
+              replyTo: newMessage.quoted_message_id || undefined,
+              quotedMessageId: newMessage.quoted_message_id || undefined
+            },
+          ]);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(messageSubscription);
+    };
+  }, [conversationId, user]);
+
+  // Send a message
+  const sendMessage = useCallback(async (content: string, quotedMessageId?: string) => {
+    if (!conversationId || !user) {
+      toast.error("Impossible d'envoyer le message");
       return;
     }
 
     setIsLoading(true);
-    setError(null);
 
     try {
-      // Si nous sommes en mode hors ligne, utiliser des données fictives
-      if (APP_STATE.isOfflineMode) {
-        console.log('Mode hors ligne: utilisation de données simulées pour les messages');
-        const sampleMessages: ChatMessage[] = [
-          {
-            id: '1',
-            role: 'user',
-            content: 'Bonjour, comment puis-je vous aider aujourd\'hui?',
-            type: 'text',
-            createdAt: new Date(Date.now() - 3600000)
-          },
-          {
-            id: '2',
-            role: 'assistant',
-            content: 'Bonjour! Je suis votre assistant IA prêt à répondre à vos questions. Comment puis-je vous aider aujourd\'hui?',
-            type: 'text',
-            createdAt: new Date(Date.now() - 3500000)
-          }
-        ];
-        setMessages(sampleMessages);
-        setIsLoading(false);
-        return;
-      }
-
-      // Récupérer les messages de la conversation depuis Supabase
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      // Transformer les données
-      const transformedMessages: ChatMessage[] = (data || []).map(msg => ({
-        id: msg.id,
-        role: msg.role as MessageRole,
-        content: msg.content,
-        type: msg.message_type as MessageType,
-        createdAt: new Date(msg.created_at),
-        metadata: msg.metadata || {}
-      }));
-
-      // Ajouter les références aux messages cités
-      const messagesMap = new Map<string, ChatMessage>();
-      transformedMessages.forEach(msg => messagesMap.set(msg.id, msg));
-
-      transformedMessages.forEach(msg => {
-        const quotedId = msg.metadata?.quotedMessageId;
-        if (quotedId && messagesMap.has(quotedId)) {
-          msg.quotedMessage = messagesMap.get(quotedId);
-        }
+      // Insert the message into the database
+      const { error: insertError } = await supabase.from("chat_messages").insert({
+        conversation_id: conversationId,
+        role: "user",
+        content,
+        message_type: "text",
+        user_id: user.id,
+        quoted_message_id: quotedMessageId || null
       });
 
-      setMessages(transformedMessages);
+      if (insertError) throw insertError;
+
+      // You can add AI response logic here
+      // This is a placeholder for demonstration
+      setTimeout(async () => {
+        const aiResponse = "This is a placeholder AI response. You would typically call your AI service here.";
+        
+        const { error: aiInsertError } = await supabase.from("chat_messages").insert({
+          conversation_id: conversationId,
+          role: "assistant",
+          content: aiResponse,
+          message_type: "text",
+          user_id: user.id,
+          metadata: {
+            provider: "placeholder",
+            aiService: {
+              type: "local",
+              endpoint: "localhost",
+              actualServiceUsed: "local"
+            }
+          } as MessageMetadata
+        });
+
+        if (aiInsertError) {
+          console.error("Error inserting AI response:", aiInsertError);
+        }
+      }, 1000);
     } catch (err) {
-      console.error('Erreur lors du chargement des messages:', err);
-      setError(err instanceof Error ? err : new Error('Erreur inconnue'));
+      console.error("Error sending message:", err);
+      setError(err instanceof Error ? err : new Error("Failed to send message"));
+      toast.error("Erreur lors de l'envoi du message");
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId, session?.user?.id]);
-
-  // Envoyer un message
-  const sendMessage = useCallback(async (input: MessageInput): Promise<ChatMessage | null> => {
-    if (!session?.user?.id || !conversationId) {
-      setError(new Error('Utilisateur non authentifié ou conversation non spécifiée'));
-      return null;
-    }
-
-    try {
-      // Préparer les données à insérer
-      const messageData = {
-        conversation_id: input.conversation_id,
-        role: input.role,
-        content: input.content,
-        message_type: input.type,
-        user_id: session.user.id,
-        metadata: input.quoted_message_id 
-          ? { quotedMessageId: input.quoted_message_id }
-          : {}
-      };
-
-      // Insérer le message dans la base de données
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .insert(messageData)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Transformer le message inséré
-      const newMessage: ChatMessage = {
-        id: data.id,
-        role: data.role as MessageRole,
-        content: data.content,
-        type: data.message_type as MessageType,
-        createdAt: new Date(data.created_at),
-        metadata: data.metadata || {}
-      };
-
-      // Si le message cite un autre message, ajouter la référence
-      if (input.quoted_message_id) {
-        const quotedMessage = messages.find(msg => msg.id === input.quoted_message_id);
-        if (quotedMessage) {
-          newMessage.quotedMessage = quotedMessage;
-        }
-      }
-
-      // Mettre à jour l'état des messages
-      setMessages(prevMessages => [...prevMessages, newMessage]);
-
-      return newMessage;
-    } catch (err) {
-      console.error('Erreur lors de l\'envoi du message:', err);
-      setError(err instanceof Error ? err : new Error('Erreur inconnue'));
-      return null;
-    }
-  }, [conversationId, session?.user?.id, messages]);
-
-  // Charger les messages au montage du composant
-  useEffect(() => {
-    if (conversationId && session?.user?.id) {
-      loadMessages();
-    }
-  }, [conversationId, session?.user?.id, loadMessages]);
+  }, [conversationId, user]);
 
   return {
     messages,
     isLoading,
     error,
-    refreshMessages: loadMessages,
-    sendMessage
+    sendMessage,
   };
 };

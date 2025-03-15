@@ -23,7 +23,7 @@ export const GoogleDriveConnectionStatus = () => {
     checkGoogleDriveConnection();
   }, [checkGoogleDriveConnection]);
 
-  const getTimeAgo = (date: Date | null): string => {
+  const getTimeAgo = (date: Date | null | undefined): string => {
     if (!date) return '';
     return formatDistanceToNow(date, { addSuffix: true, locale: fr });
   };

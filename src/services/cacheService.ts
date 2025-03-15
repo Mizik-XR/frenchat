@@ -1,225 +1,221 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 
-// Type pour les réponses mises en cache
-export type CachedResponse = {
-  key: string;
+// Interface for the cached response
+export interface CachedResponse {
+  id?: string;
   prompt: string;
   response: string;
   provider: string;
   tokens_used: number;
-  estimated_cost: number;
-  expires_at: Date;
-  access_count: number;
-  metadata?: Record<string, any>;
-};
+  user_id?: string;
+  created_at?: string;
+  expires_at?: string;
+}
 
-// Clé pour le stockage local du cache en mode hors ligne
-const LOCAL_CACHE_KEY = 'filechat_response_cache';
-
-// Durée par défaut de validité du cache (24 heures)
-const DEFAULT_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 heures en millisecondes
-
-/**
- * Gère le cache des réponses de l'IA
- */
+// Cache service implementation
 export class CacheService {
-  // Récupère une réponse mise en cache
-  static async get(key: string): Promise<CachedResponse | null> {
+  private LOCAL_STORAGE_KEY = 'filechat_response_cache';
+  
+  // Get a cached response for a prompt
+  async getResponse(prompt: string, provider: string): Promise<CachedResponse | null> {
     try {
-      // Essayer d'abord dans Supabase
+      // Try local storage first for offline mode
+      const localCache = this.getLocalCache();
+      const localMatch = localCache.find(item => 
+        item.prompt === prompt && item.provider === provider);
+      
+      if (localMatch) {
+        console.log("Found response in local cache");
+        return localMatch;
+      }
+      
+      // If online, try database
       if (supabase) {
-        const { data, error } = await supabase
-          .from('response_cache')
-          .select('*')
-          .eq('key', key)
-          .single();
+        console.log("Checking database cache for:", { prompt: prompt.substring(0, 30) + "...", provider });
         
-        if (error) {
-          console.warn('Erreur lors de la récupération du cache Supabase:', error);
+        // Use try/catch to handle potential database errors
+        try {
+          const { data, error } = await supabase
+            .from('response_cache')
+            .select('*')
+            .eq('prompt_hash', this.hashString(prompt))
+            .eq('provider', provider)
+            .limit(1)
+            .maybeSingle();
+            
+          if (error) {
+            console.error("Database cache query error:", error);
+            return null;
+          }
+          
+          if (data) {
+            console.log("Found response in database cache");
+            // Save to local cache for future use
+            this.saveToLocalCache({
+              prompt,
+              response: data.response,
+              provider,
+              tokens_used: data.tokens_used
+            });
+            
+            return {
+              id: data.id,
+              prompt,
+              response: data.response,
+              provider,
+              tokens_used: data.tokens_used,
+              user_id: data.user_id,
+              created_at: data.created_at,
+              expires_at: data.expires_at
+            };
+          }
+        } catch (err) {
+          console.error("Error accessing database cache:", err);
         }
-        
-        if (data) {
-          // Incrémenter le compteur d'accès
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Cache retrieval error:", error);
+      return null;
+    }
+  }
+  
+  // Save a response to the cache
+  async saveResponse(cachedResponse: CachedResponse): Promise<void> {
+    try {
+      // Save to local cache first
+      this.saveToLocalCache(cachedResponse);
+      
+      // If online, save to database
+      if (supabase && cachedResponse.user_id) {
+        try {
+          const { error } = await supabase
+            .from('response_cache')
+            .insert({
+              prompt_hash: this.hashString(cachedResponse.prompt),
+              prompt: cachedResponse.prompt.substring(0, 1000), // Truncate if too long
+              response: cachedResponse.response,
+              provider: cachedResponse.provider,
+              tokens_used: cachedResponse.tokens_used,
+              user_id: cachedResponse.user_id,
+              expires_at: this.getExpiryDate()
+            });
+            
+          if (error) {
+            console.error("Database cache save error:", error);
+          }
+        } catch (err) {
+          console.error("Error saving to database cache:", err);
+        }
+      }
+    } catch (error) {
+      console.error("Cache save error:", error);
+    }
+  }
+  
+  // Clear cached responses older than specified days
+  async clearOldCaches(days: number = 7): Promise<void> {
+    try {
+      // Clear local storage old items
+      const localCache = this.getLocalCache();
+      const now = new Date();
+      const filtered = localCache.filter(item => {
+        if (!item.created_at) return true;
+        const created = new Date(item.created_at);
+        const diffTime = Math.abs(now.getTime() - created.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays <= days;
+      });
+      
+      localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(filtered));
+      
+      // If online, clear database old items
+      if (supabase) {
+        try {
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - days);
+          
           await supabase
             .from('response_cache')
-            .update({ access_count: (data.access_count || 0) + 1 })
-            .eq('id', data.id);
-          
-          return data as unknown as CachedResponse;
+            .delete()
+            .lt('created_at', cutoffDate.toISOString());
+        } catch (err) {
+          console.error("Error clearing old database caches:", err);
         }
       }
-      
-      // Essayer ensuite dans le stockage local
-      const localCache = this.getLocalCache();
-      const cachedItem = localCache.find(item => item.key === key);
-      
-      if (cachedItem) {
-        // Vérifier si le cache n'est pas expiré
-        if (new Date(cachedItem.expires_at) > new Date()) {
-          cachedItem.access_count += 1;
-          this.setLocalCache(localCache);
-          return cachedItem;
-        } else {
-          // Supprimer le cache expiré
-          this.removeLocalCacheItem(key);
-        }
-      }
-      
-      return null;
     } catch (error) {
-      console.error('Erreur lors de la récupération du cache:', error);
-      return null;
+      console.error("Cache clear error:", error);
     }
   }
   
-  // Stocke une réponse dans le cache
-  static async set(item: Omit<CachedResponse, 'access_count' | 'expires_at'> & { 
-    ttl?: number, 
-    expires_at?: Date 
-  }): Promise<boolean> {
+  // Get responses from local storage
+  private getLocalCache(): CachedResponse[] {
     try {
-      const expiresAt = item.expires_at || new Date(Date.now() + (item.ttl || DEFAULT_CACHE_DURATION));
-      const cacheItem: CachedResponse = {
-        ...item,
-        access_count: 0,
-        expires_at: expiresAt
-      };
-      
-      // Essayer d'abord dans Supabase
-      if (supabase) {
-        const { error } = await supabase
-          .from('response_cache')
-          .upsert({
-            key: cacheItem.key,
-            prompt: cacheItem.prompt,
-            response: cacheItem.response,
-            provider: cacheItem.provider,
-            tokens_used: cacheItem.tokens_used,
-            estimated_cost: cacheItem.estimated_cost,
-            expires_at: expiresAt.toISOString(),
-            metadata: cacheItem.metadata || {},
-            access_count: 0
-          });
-        
-        if (error) {
-          console.warn('Erreur lors du stockage dans le cache Supabase:', error);
-        } else {
-          return true;
-        }
-      }
-      
-      // En cas d'échec ou en mode hors ligne, utiliser le stockage local
-      const localCache = this.getLocalCache();
-      const existingIndex = localCache.findIndex(i => i.key === cacheItem.key);
-      
-      if (existingIndex >= 0) {
-        localCache[existingIndex] = cacheItem;
-      } else {
-        localCache.push(cacheItem);
-      }
-      
-      this.setLocalCache(localCache);
-      return true;
+      const cached = localStorage.getItem(this.LOCAL_STORAGE_KEY);
+      return cached ? JSON.parse(cached) : [];
     } catch (error) {
-      console.error('Erreur lors du stockage dans le cache:', error);
-      return false;
-    }
-  }
-  
-  // Supprime une entrée du cache
-  static async remove(key: string): Promise<boolean> {
-    try {
-      let success = true;
-      
-      // Essayer d'abord dans Supabase
-      if (supabase) {
-        const { error } = await supabase
-          .from('response_cache')
-          .delete()
-          .eq('key', key);
-        
-        if (error) {
-          console.warn('Erreur lors de la suppression du cache Supabase:', error);
-          success = false;
-        }
-      }
-      
-      // Supprimer également du stockage local
-      this.removeLocalCacheItem(key);
-      
-      return success;
-    } catch (error) {
-      console.error('Erreur lors de la suppression du cache:', error);
-      return false;
-    }
-  }
-  
-  // Récupère le cache local depuis le stockage local
-  private static getLocalCache(): CachedResponse[] {
-    try {
-      const cache = localStorage.getItem(LOCAL_CACHE_KEY);
-      return cache ? JSON.parse(cache) : [];
-    } catch (error) {
-      console.error('Erreur lors de la récupération du cache local:', error);
+      console.error("Local cache read error:", error);
       return [];
     }
   }
   
-  // Stocke le cache local
-  private static setLocalCache(cache: CachedResponse[]): void {
+  // Save a response to local storage
+  private saveToLocalCache(cachedResponse: CachedResponse): void {
     try {
-      // Limiter la taille du cache local à 100 éléments
-      const trimmedCache = cache.slice(0, 100);
-      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(trimmedCache));
-    } catch (error) {
-      console.error('Erreur lors du stockage du cache local:', error);
-    }
-  }
-  
-  // Supprime un élément du cache local
-  private static removeLocalCacheItem(key: string): void {
-    try {
-      const localCache = this.getLocalCache();
-      const filteredCache = localCache.filter(item => item.key !== key);
-      this.setLocalCache(filteredCache);
-    } catch (error) {
-      console.error('Erreur lors de la suppression du cache local:', error);
-    }
-  }
-  
-  // Nettoie les entrées expirées du cache
-  static async cleanup(): Promise<number> {
-    try {
-      let countRemoved = 0;
+      const cache = this.getLocalCache();
       
-      // Nettoyer le cache Supabase
-      if (supabase) {
-        const { data, error } = await supabase
-          .from('response_cache')
-          .delete()
-          .lt('expires_at', new Date().toISOString())
-          .select();
-        
-        if (error) {
-          console.warn('Erreur lors du nettoyage du cache Supabase:', error);
-        } else {
-          countRemoved += data?.length || 0;
-        }
+      // Add timestamp if not present
+      if (!cachedResponse.created_at) {
+        cachedResponse.created_at = new Date().toISOString();
       }
       
-      // Nettoyer le cache local
-      const localCache = this.getLocalCache();
-      const now = new Date();
-      const validCache = localCache.filter(item => new Date(item.expires_at) > now);
+      // Find if this prompt already exists
+      const index = cache.findIndex(item => 
+        item.prompt === cachedResponse.prompt && 
+        item.provider === cachedResponse.provider);
       
-      countRemoved += localCache.length - validCache.length;
-      this.setLocalCache(validCache);
+      if (index >= 0) {
+        // Update existing entry
+        cache[index] = cachedResponse;
+      } else {
+        // Add new entry
+        cache.push(cachedResponse);
+      }
       
-      return countRemoved;
+      // Limit cache size to prevent storage issues
+      if (cache.length > 100) {
+        cache.shift(); // Remove oldest entry
+      }
+      
+      localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(cache));
     } catch (error) {
-      console.error('Erreur lors du nettoyage du cache:', error);
-      return 0;
+      console.error("Local cache save error:", error);
     }
   }
+  
+  // Simple string hash function
+  private hashString(str: string): string {
+    let hash = 0;
+    if (str.length === 0) return hash.toString();
+    
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    return hash.toString();
+  }
+  
+  // Get expiry date (7 days from now)
+  private getExpiryDate(): string {
+    const date = new Date();
+    date.setDate(date.getDate() + 7);
+    return date.toISOString();
+  }
 }
+
+// Export a singleton instance
+export const cacheService = new CacheService();

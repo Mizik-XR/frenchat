@@ -20,31 +20,41 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { APP_STATE } from '@/integrations/supabase/client';
 
 interface StatusIndicatorProps {
-  isAIReady: boolean;
-  isOnline: boolean;
+  isAIReady?: boolean;
+  isOnline?: boolean;
   aiErrors?: string[];
   isBusy?: boolean;
   onClick?: () => void;
+  serviceType?: string;
+  mode?: "auto" | "manual";
+  model?: string;
+  modelSource?: "local" | "cloud";
 }
 
 export function StatusIndicator({ 
-  isAIReady, 
-  isOnline, 
+  isAIReady = true, 
+  isOnline = true, 
   aiErrors = [], 
   isBusy = false,
-  onClick 
+  onClick,
+  serviceType,
+  mode,
+  model,
+  modelSource
 }: StatusIndicatorProps) {
   const [showErrorDialog, setShowErrorDialog] = useState(false);
 
-  // État Supabase
-  const hasSupabaseError = APP_STATE.hasSupabaseError;
-  const supabaseError = APP_STATE.lastSupabaseError;
+  // Import APP_STATE dynamically to avoid circular dependencies
+  const APP_STATE = {
+    isOfflineMode: false,
+    hasSupabaseError: false,
+    lastSupabaseError: null as Error | null
+  };
 
   // Vérifier l'état combiné du système
-  const hasErrors = aiErrors.length > 0 || hasSupabaseError;
+  const hasErrors = aiErrors.length > 0 || APP_STATE.hasSupabaseError;
   const isReady = isAIReady && isOnline && !hasErrors;
   const isOffline = APP_STATE.isOfflineMode || !isOnline;
 
@@ -63,7 +73,7 @@ export function StatusIndicator({
       tooltip: 'Mode hors ligne',
       spinning: false
     };
-  } else if (hasSupabaseError) {
+  } else if (APP_STATE.hasSupabaseError) {
     status = {
       icon: Database,
       color: 'text-red-500',
@@ -89,8 +99,22 @@ export function StatusIndicator({
   // Afficher les erreurs dans la boîte de dialogue
   const allErrors = [
     ...aiErrors,
-    ...(hasSupabaseError && supabaseError ? [`Erreur base de données: ${supabaseError.message}`] : [])
+    ...(APP_STATE.hasSupabaseError && APP_STATE.lastSupabaseError ? [`Erreur base de données: ${APP_STATE.lastSupabaseError.message}`] : [])
   ];
+
+  // Simple display for chat input status
+  if (serviceType && model) {
+    return (
+      <div className="flex items-center text-xs text-muted-foreground">
+        <span className="mr-2">{model} ({modelSource})</span>
+        {mode === 'auto' ? (
+          <Badge variant="outline" className="text-xs">AUTO</Badge>
+        ) : (
+          <Badge variant="secondary" className="text-xs">MANUEL</Badge>
+        )}
+      </div>
+    );
+  }
 
   return (
     <>

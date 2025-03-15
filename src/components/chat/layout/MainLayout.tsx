@@ -66,7 +66,7 @@ export function MainLayout() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() !== "" && currentConversationId) {
-      sendMessage(input, currentConversationId, replyToMessage?.id);
+      sendMessage(input, replyToMessage?.id);
       setInput("");
       setReplyToMessage(null);
     }
