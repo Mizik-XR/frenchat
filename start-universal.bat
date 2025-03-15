@@ -29,6 +29,7 @@ set "OLLAMA_DETECTED=0"
 set "PYTHON_DETECTED=0"
 set "PYTHON_VER="
 set "TRANSFORMERS_AVAILABLE=0"
+set "AI_MODE=cloud"
 
 REM Vérification de la présence d'Ollama (prioritaire)
 echo [VÉRIFICATION] Recherche d'Ollama...
@@ -60,7 +61,13 @@ if %ERRORLEVEL% EQU 0 (
         set "TRANSFORMERS_AVAILABLE=1"
         echo [OK] La bibliothèque Transformers est installée.
     ) else (
-        echo [INFO] La bibliothèque Transformers n'est pas installée.
+        python -c "import huggingface_hub" >nul 2>nul
+        if %ERRORLEVEL% EQU 0 (
+            set "TRANSFORMERS_AVAILABLE=1"
+            echo [OK] La bibliothèque Hugging Face Hub est installée (compatible).
+        ) else {
+            echo [INFO] Les bibliothèques Transformers/Hugging Face ne sont pas installées.
+        }
     )
 ) else (
     echo [INFO] Python n'est pas installé ou n'est pas dans le PATH.
@@ -69,17 +76,21 @@ if %ERRORLEVEL% EQU 0 (
 REM Configuration du mode d'exécution optimal
 if %OLLAMA_DETECTED% EQU 1 (
     set "USE_OLLAMA=1"
+    set "AI_MODE=local"
     echo [DÉCISION] Mode IA locale via Ollama sélectionné comme prioritaire.
 ) else if %PYTHON_DETECTED% EQU 1 (
     if %TRANSFORMERS_AVAILABLE% EQU 1 (
         set "USE_PYTHON=1"
+        set "AI_MODE=local"
         echo [DÉCISION] Mode IA locale via Python sélectionné.
     ) else (
         set "USE_CLOUD=1"
+        set "AI_MODE=cloud"
         echo [DÉCISION] Mode cloud sélectionné (Python détecté sans Transformers).
     )
 ) else (
     set "USE_CLOUD=1"
+    set "AI_MODE=cloud"
     echo [DÉCISION] Mode cloud sélectionné (aucune IA locale disponible).
 )
 
@@ -94,7 +105,7 @@ if %OLLAMA_DETECTED% EQU 0 (
     echo [QUESTION] Souhaitez-vous installer Ollama pour utiliser l'IA en local ?
     echo           Cela offre une meilleure confidentialité et performance.
     echo           1. Oui, installer Ollama
-    echo           2. Non, utiliser le mode cloud
+    echo           2. Utiliser Python ^(si disponible^) ou le mode cloud
     set /p "INSTALL_OLLAMA=Votre choix (1/2): "
     
     if "!INSTALL_OLLAMA!"=="1" (
@@ -105,9 +116,31 @@ if %OLLAMA_DETECTED% EQU 0 (
         pause >nul
         exit /b 0
     ) else (
-        echo [INFO] Installation d'Ollama ignorée, utilisation du mode cloud.
+        if %TRANSFORMERS_AVAILABLE% EQU 1 (
+            echo [INFO] Utilisation de Python avec Transformers pour l'IA locale.
+            set "USE_PYTHON=1"
+            set "USE_CLOUD=0"
+            set "AI_MODE=local"
+        ) else (
+            echo [INFO] Mode cloud sélectionné.
+        )
     )
     echo.
+)
+
+REM Installation de Python et Transformers si sélectionné mais manquant
+if %USE_PYTHON% EQU 1 (
+    if %TRANSFORMERS_AVAILABLE% EQU 0 (
+        echo [ACTION] Installation des bibliothèques Python nécessaires...
+        if not exist "venv\" (
+            echo [ACTION] Création de l'environnement virtuel Python...
+            python -m venv venv
+            call venv\Scripts\activate
+            pip install -U pip
+            echo [ACTION] Installation de transformers et dépendances...
+            pip install transformers torch accelerate safetensors
+        )
+    )
 )
 
 REM Vérification/Construction de l'application si nécessaire
@@ -195,8 +228,16 @@ if %USE_PYTHON% EQU 1 (
         call venv\Scripts\activate
         pip install -r requirements.txt
     )
-    start "Serveur IA Python" /min cmd /c "venv\Scripts\python.exe serve_model.py"
-    timeout /t 2 /nobreak > nul
+    
+    REM Vérification du processus Python existant
+    tasklist | findstr "python" | findstr "serve_model" >nul 2>nul
+    if %ERRORLEVEL% NEQ 0 (
+        start "Serveur IA Python" /min cmd /c "venv\Scripts\python.exe serve_model.py"
+        echo [INFO] Serveur Python démarré sur le port 8000.
+        timeout /t 2 /nobreak > nul
+    ) else (
+        echo [OK] Serveur IA Python déjà en cours d'exécution.
+    )
 )
 
 REM Démarrage du serveur web

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { WifiOff, Wifi, Check, AlertTriangle, X, Server, Cloud } from "lucide-react";
+import { WifiOff, Wifi, Check, AlertTriangle, X, Server, Cloud, Cpu } from "lucide-react";
 import { APP_STATE } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -11,9 +11,17 @@ interface StatusIndicatorProps {
   mode?: "auto" | "manual";
   model?: string; 
   modelSource?: 'cloud' | 'local';
+  localProvider?: string;
 }
 
-export const StatusIndicator = ({ serviceType, localAIUrl, mode, model, modelSource }: StatusIndicatorProps) => {
+export const StatusIndicator = ({ 
+  serviceType, 
+  localAIUrl, 
+  mode, 
+  model, 
+  modelSource,
+  localProvider 
+}: StatusIndicatorProps) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isBackendReachable, setIsBackendReachable] = useState(!APP_STATE.isOfflineMode);
   const [pingResult, setPingResult] = useState<string | null>(null);
@@ -73,6 +81,28 @@ export const StatusIndicator = ({ serviceType, localAIUrl, mode, model, modelSou
     };
   }, [serviceType, localAIUrl]);
 
+  // Récupérer la couleur selon le provider
+  const getProviderColor = () => {
+    if (localProvider === 'ollama') return 'bg-green-500 hover:bg-green-600';
+    if (localProvider === 'transformers' || localProvider === 'huggingface') return 'bg-blue-500 hover:bg-blue-600';
+    return 'bg-green-500 hover:bg-green-600';
+  };
+  
+  // Récupérer l'icône selon le provider
+  const getProviderIcon = () => {
+    if (localProvider === 'ollama') return <Server className="h-3 w-3" />;
+    if (localProvider === 'transformers' || localProvider === 'huggingface') return <Cpu className="h-3 w-3" />;
+    return <Server className="h-3 w-3" />;
+  };
+  
+  // Récupérer le label selon le provider
+  const getProviderLabel = () => {
+    if (localProvider === 'ollama') return 'Ollama';
+    if (localProvider === 'transformers') return 'Transformers';
+    if (localProvider === 'huggingface') return 'HF';
+    return 'Local';
+  };
+
   // Badge pour le statut réseau
   const getStatusBadge = () => {
     if (!isOnline) {
@@ -104,9 +134,9 @@ export const StatusIndicator = ({ serviceType, localAIUrl, mode, model, modelSou
 
     if (modelSource === 'local') {
       return (
-        <Badge variant="default" className="gap-1 bg-green-500 hover:bg-green-600">
-          <Server className="h-3 w-3" />
-          <span>IA locale{mode === 'auto' ? ' (Auto)' : ''}</span>
+        <Badge variant="default" className={`gap-1 ${getProviderColor()}`}>
+          {getProviderIcon()}
+          <span>{getProviderLabel()}{mode === 'auto' ? ' (Auto)' : ''}</span>
         </Badge>
       );
     }
@@ -135,10 +165,16 @@ export const StatusIndicator = ({ serviceType, localAIUrl, mode, model, modelSou
       </>
     );
 
-    // Description selon le mode
+    // Description selon le mode et le provider
     let modeDescription = "";
     if (modelSource === 'local') {
-      modeDescription = "Confidentialité maximale : vos données restent sur votre ordinateur";
+      if (localProvider === 'ollama') {
+        modeDescription = "IA locale via Ollama : performances optimales, idéal pour les conversations longues";
+      } else if (localProvider === 'transformers' || localProvider === 'huggingface') {
+        modeDescription = "IA locale via Python/Transformers : large bibliothèque de modèles, idéal pour l'analyse";
+      } else {
+        modeDescription = "Confidentialité maximale : vos données restent sur votre ordinateur";
+      }
     } else if (modelSource === 'cloud') {
       modeDescription = "Puissance maximale : accès aux modèles les plus performants";
     }
