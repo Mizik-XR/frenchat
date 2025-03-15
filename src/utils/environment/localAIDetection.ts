@@ -1,4 +1,3 @@
-
 import { LLMProviderType } from "@/types/config";
 
 const OLLAMA_DEFAULT_URL = "http://localhost:11434";
@@ -16,11 +15,29 @@ export function isLocalAIEnvironmentCompatible(): boolean {
     const isSecureContext = window.isSecureContext;
     const isLocalStorageAvailable = typeof localStorage !== 'undefined';
     
-    // Vérifier si nous sommes sur Lovable ou un autre service de prévisualisation
+    // Détection plus précise des environnements de prévisualisation
     const isPreviewEnvironment = 
       window.location.hostname.includes('lovable') || 
       window.location.hostname.includes('preview') ||
-      window.location.hostname.includes('netlify');
+      window.location.hostname.includes('netlify') ||
+      window.location.hostname.includes('stackblitz') ||
+      window.location.hostname.includes('codesandbox');
+    
+    // Détection d'un "reset mode" dans l'URL pour forcer le mode cloud
+    const resetMode = window.location.search.includes('reset=true');
+    
+    // Un paramètre dans l'URL pour forcer le mode cloud
+    const forceCloudParam = window.location.search.includes('forceCloud=true');
+    
+    // Si nous sommes en mode reset ou force cloud, configurer immédiatement
+    if (resetMode || forceCloudParam) {
+      if (isLocalStorageAvailable) {
+        localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+        localStorage.setItem('aiServiceType', 'cloud');
+        console.log("Mode cloud forcé par paramètre URL");
+      }
+      return false;
+    }
     
     // Les connexions locales sont généralement bloquées dans ces contextes
     const potentiallyRestricted = 
@@ -30,16 +47,19 @@ export function isLocalAIEnvironmentCompatible(): boolean {
        !window.location.hostname.includes('localhost') && 
        !window.location.hostname.includes('127.0.0.1'));
     
-    // Si nous sommes dans un environnement restrictif,
-    // les connexions localhost sont probablement bloquées
-    if (potentiallyRestricted) {
+    // Vérifier les fonctionnalités qui pourraient indiquer des conflits avec d'autres projets
+    const hasVRFeatures = 'xr' in navigator || 'getVRDisplays' in navigator;
+    
+    // Si nous sommes dans un environnement restrictif ou avec des fonctionnalités VR,
+    // les connexions localhost sont probablement bloquées ou il y a des conflits
+    if (potentiallyRestricted || hasVRFeatures) {
       console.log("Environnement potentiellement incompatible avec l'IA locale détecté");
       
-      // Forcer le mode cloud dans les environnements de prévisualisation
-      if (isPreviewEnvironment && isLocalStorageAvailable) {
+      // Forcer le mode cloud dans les environnements de prévisualisation ou avec des conflits VR
+      if ((isPreviewEnvironment || hasVRFeatures) && isLocalStorageAvailable) {
         localStorage.setItem('FORCE_CLOUD_MODE', 'true');
         localStorage.setItem('aiServiceType', 'cloud');
-        console.log("Mode cloud forcé en environnement de prévisualisation");
+        console.log("Mode cloud forcé en environnement de prévisualisation ou avec conflits VR");
       }
       
       return false;
@@ -48,6 +68,11 @@ export function isLocalAIEnvironmentCompatible(): boolean {
     return true;
   } catch (error) {
     console.error("Erreur lors de la vérification de compatibilité:", error);
+    // En cas d'erreur, forcer le mode cloud pour éviter d'autres problèmes
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+      localStorage.setItem('aiServiceType', 'cloud');
+    }
     return false;
   }
 }

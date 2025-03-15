@@ -20,6 +20,15 @@ export const APP_STATE = {
   isOfflineMode: false,
   supabaseErrors: [] as Error[],
   
+  // Getters pour les propriétés manquantes
+  get hasSupabaseError() {
+    return this.supabaseErrors.length > 0;
+  },
+  
+  get lastSupabaseError() {
+    return this.supabaseErrors.length > 0 ? this.supabaseErrors[this.supabaseErrors.length - 1] : null;
+  },
+  
   setOfflineMode(value: boolean) {
     this.isOfflineMode = value;
     localStorage.setItem('OFFLINE_MODE', value ? 'true' : 'false');

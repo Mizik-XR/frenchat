@@ -15,6 +15,33 @@ const renderApp = () => {
       return;
     }
 
+    // Éviter les conflits avec d'autres environnements et bibliothèques
+    // Nettoyer les détections de fonctionnalités qui pourraient venir d'autres projets
+    if (window.navigator && 'permissions' in window.navigator) {
+      try {
+        // Désactiver les requêtes pour les fonctionnalités non utilisées par notre application
+        // qui pourraient venir d'autres projets VR en arrière-plan
+        const unusedFeatures = ['vr', 'ambient-light-sensor', 'battery', 'accelerometer', 'gyroscope'];
+        unusedFeatures.forEach(feature => {
+          // Remplacer toute requête existante par une promesse vide
+          if (window.navigator.permissions && window.navigator.permissions.query) {
+            const originalQuery = window.navigator.permissions.query;
+            window.navigator.permissions.query = function(opts) {
+              if (opts && unusedFeatures.includes(opts.name as string)) {
+                // Retourner une promesse résolue avec un état fictif pour éviter les erreurs
+                return Promise.resolve({ state: 'denied', addEventListener: () => {}, removeEventListener: () => {} });
+              }
+              // Sinon, utiliser la fonction d'origine
+              return originalQuery.apply(this, [opts]);
+            };
+          }
+        });
+      } catch (permError) {
+        // Ignorer les erreurs de permission, ne pas bloquer le démarrage
+        console.warn('Impossible de modifier les permissions du navigateur:', permError);
+      }
+    }
+
     // Vérifier si nous sommes dans un environnement de prévisualisation
     const isPreviewEnvironment = window.location.hostname.includes('lovable');
     if (isPreviewEnvironment) {
