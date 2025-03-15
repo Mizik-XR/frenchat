@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
@@ -39,7 +38,7 @@ export const SystemDiagnostics = () => {
         toast({
           title: `${warnings} avertissement(s)`,
           description: "Le système fonctionne mais nécessite votre attention",
-          variant: "warning"
+          variant: "default"
         });
       } else {
         toast({

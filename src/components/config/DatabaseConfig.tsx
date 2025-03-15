@@ -82,7 +82,7 @@ export const DatabaseConfig = () => {
           </p>
           
           {isUrlWorking === false && (
-            <Alert variant="warning" className="mb-4">
+            <Alert variant="default" className="mb-4">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 L'URL de la console Supabase semble inaccessible. Vérifiez votre connexion Internet.

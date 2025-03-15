@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Index from './pages/Index';
@@ -6,7 +7,7 @@ import ChatPage from './pages/Chat';
 import DocumentsPage from './pages/Documents';
 import ConfigPage from './pages/Config';
 import { AuthProvider } from './components/AuthProvider';
-import { DebugPanel } from './components/debug/DebugPanel';
+import { DebugPanel } from './components/DebugPanel';
 import SystemStatus from './pages/SystemStatus';
 
 export default function App() {
