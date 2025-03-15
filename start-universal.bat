@@ -14,6 +14,9 @@ echo      ASSISTANT FILECHAT - INSTALLATION ET DÉMARRAGE
 echo ===================================================
 echo.
 
+REM Ajout d'une pause en cas d'erreur pour voir les messages
+set "ERROR_PAUSE=pause"
+
 REM Vérification des prérequis
 echo [ÉTAPE 1/4] Analyse du système et des dépendances...
 echo.
@@ -118,7 +121,7 @@ if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] Node.js n'est pas installé ou n'est pas dans le PATH.
     echo [INFO] Veuillez installer Node.js depuis https://nodejs.org/
     echo [INFO] Appuyez sur une touche pour quitter...
-    pause >nul
+    %ERROR_PAUSE%
     exit /b 1
 )
 
@@ -132,8 +135,10 @@ if not exist "dist\" (
         call npm install
         if %ERRORLEVEL% NEQ 0 (
             echo [ERREUR] Installation des dépendances échouée
-            echo [INFO] Appuyez sur une touche pour quitter...
-            pause >nul
+            echo [INFO] Vérifiez votre connexion Internet et réessayez
+            echo.
+            echo Appuyez sur une touche pour quitter...
+            %ERROR_PAUSE%
             exit /b 1
         )
     )
@@ -141,8 +146,10 @@ if not exist "dist\" (
     call npm run build
     if %ERRORLEVEL% NEQ 0 (
         echo [ERREUR] Construction de l'application échouée
-        echo [INFO] Appuyez sur une touche pour quitter...
-        pause >nul
+        echo [INFO] Vérifiez les erreurs ci-dessus et réessayez
+        echo.
+        echo Appuyez sur une touche pour quitter...
+        %ERROR_PAUSE%
         exit /b 1
     )
     echo [OK] Application construite avec succès.
@@ -197,16 +204,19 @@ echo [ACTION] Démarrage du serveur web...
 where http-server >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo [ACTION] Installation du serveur web...
-    call npm install -g http-server >nul 2>nul
+    call npm install -g http-server
     if %ERRORLEVEL% NEQ 0 (
-        echo [INFO] Utilisation de npx comme alternative...
-        start "Serveur Web FileChat" /min cmd /c "npx http-server dist -p 8080 -c-1 --cors"
+        echo [INFO] Installation globale échouée, tentative avec npx...
+        set "HTTP_SERVER_CMD=npx http-server dist -p 8080 -c-1 --cors"
     ) else (
-        start "Serveur Web FileChat" /min cmd /c "http-server dist -p 8080 -c-1 --cors"
+        set "HTTP_SERVER_CMD=http-server dist -p 8080 -c-1 --cors"
     )
 ) else (
-    start "Serveur Web FileChat" /min cmd /c "http-server dist -p 8080 -c-1 --cors"
+    set "HTTP_SERVER_CMD=http-server dist -p 8080 -c-1 --cors"
 )
+
+REM Démarrage du serveur avec une nouvelle fenêtre CMD
+start "Serveur Web FileChat" /min cmd /c "%HTTP_SERVER_CMD%"
 timeout /t 2 /nobreak > nul
 
 REM Construction de l'URL avec les paramètres appropriés
@@ -249,8 +259,23 @@ echo Pour quitter, fermez cette fenêtre.
 echo ===================================================
 echo.
 
+REM Message en cas d'erreur pour faciliter le diagnostic
+if errorlevel 1 (
+    echo [ERREUR] Une erreur s'est produite lors de l'exécution du script.
+    echo [INFO] Code d'erreur: %errorlevel%
+    echo.
+    echo Veuillez signaler cette erreur en incluant:
+    echo - Le message d'erreur ci-dessus
+    echo - Votre système d'exploitation
+    echo - Les étapes qui ont mené à cette erreur
+    echo.
+    echo Appuyez sur une touche pour quitter...
+    %ERROR_PAUSE%
+    exit /b %errorlevel%
+)
+
 REM Boucle infinie pour garder la fenêtre ouverte
 echo Appuyez sur Ctrl+C pour quitter...
 :boucle
-timeout /t 3600 /nobreak > nul
+timeout /t 60 /nobreak > nul
 goto boucle
