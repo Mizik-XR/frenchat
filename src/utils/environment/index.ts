@@ -45,4 +45,3 @@ export const isDebugMode = () => {
          (typeof window !== 'undefined' && 
           window.localStorage.getItem('DEBUG_MODE') === 'true');
 };
-
