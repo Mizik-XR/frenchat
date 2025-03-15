@@ -1,178 +1,175 @@
 
 import { useState, useEffect } from 'react';
+import { SystemCapabilities } from '@/types/system';
+import { getPlatform } from '@/utils/platformUtils';
 
-export type ServiceStatus = 'online' | 'offline' | 'checking' | 'error';
-
-export type SystemCapabilities = {
-  cuda: boolean;
-  gpu: {
-    available: boolean;
-    name: string | null;
-    memory: number | null;
-  };
-  ram: {
-    total: number;
-    available: number;
-  };
-  cpu: {
-    cores: number;
-    model: string | null;
-  };
-  os: string;
-  diskSpace: {
-    total: number;
-    available: number;
-  };
-  network: {
-    online: boolean;
-    latency: number | null;
-  };
-  browser: {
-    name: string;
-    version: string;
-  };
-  // Propriétés nécessaires pour les composants
-  gpuAvailable: boolean;
-  memoryGB: number;
-  cpuCores: number;
-  isHighEndSystem: boolean;
-  isMidEndSystem: boolean;
-  isLowEndSystem: boolean;
-  recommendedModels: string[];
-  // Ajout des propriétés manquantes
-  hasGpu: boolean;
-  memoryInGB: number;
-  cpuInfo: string;
-  gpuInfo: string;
-  browserInfo: string;
-  recommendedMode: string;
-};
-
+/**
+ * Hook pour détecter les capacités du système
+ * @returns Informations sur les capacités du système
+ */
 export function useSystemCapabilities() {
-  const [capabilities, setCapabilities] = useState<SystemCapabilities>({
-    cuda: false,
-    gpu: { available: false, name: null, memory: null },
-    ram: { total: 0, available: 0 },
-    cpu: { cores: 0, model: null },
-    os: 'unknown',
-    diskSpace: { total: 0, available: 0 },
-    network: { online: navigator?.onLine || false, latency: null },
-    browser: { name: 'unknown', version: 'unknown' },
-    // Initialisation des propriétés
-    gpuAvailable: false,
-    memoryGB: 0,
-    cpuCores: 0,
-    isHighEndSystem: false,
-    isMidEndSystem: false,
-    isLowEndSystem: true,
-    recommendedModels: ['mistral-7b', 'llama-2-7b', 'phi-2'],
-    // Initialisation des propriétés manquantes
-    hasGpu: false,
-    memoryInGB: 0,
-    cpuInfo: 'Non détecté',
-    gpuInfo: 'Non détecté',
-    browserInfo: 'Non détecté',
-    recommendedMode: 'hybrid'
-  });
+  const [capabilities, setCapabilities] = useState<SystemCapabilities | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [llmStatus, setLlmStatus] = useState<ServiceStatus>('checking');
-  // Ajout de la propriété isLoading manquante
-  const [isLoading, setIsLoading] = useState(true);
-
-  const analyzeSystem = async () => {
-    try {
-      setIsAnalyzing(true);
-      setIsLoading(true);
-      
-      setTimeout(() => {
-        try {
-          // Vérification sécurisée des capacités WebGPU
-          const hasWebGPU = typeof window !== 'undefined' && 'gpu' in navigator;
-          
-          // Vérification sécurisée de la mémoire du navigateur
-          const navigatorWithMemory = navigator as NavigatorWithMemory;
-          const memoryEstimate = navigatorWithMemory.deviceMemory || 16;
-          
-          const cpuCores = navigator?.hardwareConcurrency || 4;
-          
-          // Mise à jour des capacités du système
-          setCapabilities({
-            ...capabilities,
-            gpuAvailable: hasWebGPU,
-            memoryGB: memoryEstimate,
-            cpuCores: cpuCores,
-            isHighEndSystem: cpuCores > 8,
-            isMidEndSystem: cpuCores >= 4 && cpuCores <= 8,
-            isLowEndSystem: cpuCores < 4,
-            network: { ...capabilities.network, online: navigator?.onLine || false },
-            // Mise à jour des propriétés manquantes
-            hasGpu: hasWebGPU,
-            memoryInGB: memoryEstimate,
-            cpuInfo: `${cpuCores} cœurs (${cpuCores > 6 ? "Performant" : "Standard"})`,
-            gpuInfo: hasWebGPU ? "GPU compatible WebGPU" : "Aucun GPU détecté",
-            browserInfo: navigator.userAgent,
-            recommendedMode: hasWebGPU && memoryEstimate > 8 ? 'local' : 'hybrid'
-          });
-          
-          setLlmStatus(navigator?.onLine ? 'online' : 'offline');
-        } catch (error) {
-          console.error("Erreur lors de l'analyse du système:", error);
-          setLlmStatus('error');
-        } finally {
-          setIsAnalyzing(false);
-          setIsLoading(false);
-        }
-      }, 1000);
-    } catch (error) {
-      console.error("Erreur lors de l'initialisation de l'analyse:", error);
-      setIsAnalyzing(false);
-      setIsLoading(false);
-      setLlmStatus('error');
-    }
-  };
-
   useEffect(() => {
-    try {
+    const detectCapabilities = async () => {
       setIsLoading(true);
-      analyzeSystem();
       
-      const handleOnlineStatusChange = () => {
-        setCapabilities(prev => ({
-          ...prev,
-          network: { ...prev.network, online: navigator?.onLine || false },
-        }));
-        setLlmStatus(navigator?.onLine ? 'online' : 'offline');
-      };
-      
-      // Ajout d'écouteurs d'événements avec gestion des erreurs
-      if (typeof window !== 'undefined') {
-        window.addEventListener('online', handleOnlineStatusChange);
-        window.addEventListener('offline', handleOnlineStatusChange);
+      try {
+        // Détection du système d'exploitation
+        const osType = getPlatform();
         
-        return () => {
-          window.removeEventListener('online', handleOnlineStatusChange);
-          window.removeEventListener('offline', handleOnlineStatusChange);
-        };
+        // Détection de base du navigateur
+        const browserInfo = getBrowserInfo();
+        
+        // Estimation de la mémoire disponible (si possible)
+        const memoryInGB = estimateAvailableMemory();
+        
+        // Détection basique du GPU via WebGL
+        const gpuInfo = await detectGPU();
+        const hasGpu = !!gpuInfo;
+        
+        // Estimation des cœurs CPU
+        const cpuCores = await estimateCPUCores();
+        
+        // Estimation du stockage disponible (si disponible)
+        const diskSpaceGB = await estimateDiskSpace();
+        
+        // Mode recommandé en fonction des capacités détectées
+        const recommendedMode = determineRecommendedMode(hasGpu, memoryInGB, cpuCores);
+        
+        setCapabilities({
+          memoryInGB,
+          cpuCores,
+          hasGpu,
+          gpuInfo,
+          diskSpaceGB,
+          browserInfo,
+          recommendedMode,
+          osType
+        });
+      } catch (error) {
+        console.error("Erreur lors de la détection des capacités système:", error);
+        
+        // Définir des valeurs par défaut conservatrices
+        setCapabilities({
+          hasGpu: false,
+          recommendedMode: 'cloud'
+        });
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Erreur lors de la configuration des écouteurs d'événements:", error);
-      setIsLoading(false);
-    }
+    };
     
-    return () => {};
+    detectCapabilities();
   }, []);
-
-  return {
-    capabilities,
-    isAnalyzing,
-    analyzeSystem,
-    llmStatus,
-    isLoading
-  };
+  
+  return { capabilities, isLoading };
 }
 
-// Extend Navigator interface to include deviceMemory
-interface NavigatorWithMemory extends Navigator {
-  deviceMemory?: number;
+/**
+ * Obtient des informations sur le navigateur
+ */
+function getBrowserInfo(): string {
+  const userAgent = navigator.userAgent;
+  
+  if (userAgent.includes('Chrome')) {
+    return `Chrome ${userAgent.match(/Chrome\/(\d+)/)?.[1] || ''}`;
+  } else if (userAgent.includes('Firefox')) {
+    return `Firefox ${userAgent.match(/Firefox\/(\d+)/)?.[1] || ''}`;
+  } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+    return `Safari ${userAgent.match(/Version\/(\d+)/)?.[1] || ''}`;
+  } else if (userAgent.includes('Edge')) {
+    return `Edge ${userAgent.match(/Edge\/(\d+)/)?.[1] || ''}`;
+  } else {
+    return 'Navigateur inconnu';
+  }
+}
+
+/**
+ * Estime la mémoire disponible
+ */
+function estimateAvailableMemory(): number | undefined {
+  // Utiliser navigator.deviceMemory si disponible
+  if ('deviceMemory' in navigator) {
+    return (navigator as any).deviceMemory;
+  }
+  
+  // Sinon, renvoyer une estimation
+  return undefined;
+}
+
+/**
+ * Détecte les informations GPU via WebGL
+ */
+async function detectGPU(): Promise<string | undefined> {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    
+    if (!gl) {
+      return undefined;
+    }
+    
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    if (debugInfo) {
+      const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+      return renderer;
+    }
+    
+    return undefined;
+  } catch (e) {
+    console.error("Erreur lors de la détection du GPU:", e);
+    return undefined;
+  }
+}
+
+/**
+ * Estime le nombre de cœurs CPU
+ */
+async function estimateCPUCores(): Promise<number | undefined> {
+  if (navigator.hardwareConcurrency) {
+    return navigator.hardwareConcurrency;
+  }
+  return undefined;
+}
+
+/**
+ * Estime l'espace disque disponible
+ */
+async function estimateDiskSpace(): Promise<number | undefined> {
+  try {
+    if ('storage' in navigator && 'estimate' in (navigator as any).storage) {
+      const estimate = await (navigator as any).storage.estimate();
+      if (estimate && estimate.quota) {
+        return Math.round(estimate.quota / (1024 * 1024 * 1024)); // En Go
+      }
+    }
+    return undefined;
+  } catch (e) {
+    console.error("Erreur lors de l'estimation de l'espace disque:", e);
+    return undefined;
+  }
+}
+
+/**
+ * Détermine le mode d'IA recommandé en fonction des capacités
+ */
+function determineRecommendedMode(
+  hasGpu: boolean,
+  memoryInGB?: number,
+  cpuCores?: number
+): 'local' | 'cloud' | 'hybrid' {
+  // Si le GPU est disponible et qu'il y a suffisamment de mémoire, local
+  if (hasGpu && memoryInGB && memoryInGB >= 8) {
+    return 'local';
+  }
+  
+  // Si beaucoup de cœurs CPU et mémoire décente, hybride
+  if (cpuCores && cpuCores >= 4 && memoryInGB && memoryInGB >= 8) {
+    return 'hybrid';
+  }
+  
+  // Sinon, cloud
+  return 'cloud';
 }
