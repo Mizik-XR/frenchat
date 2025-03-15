@@ -66,10 +66,12 @@ export function checkLovableIntegration(): {
 
 /**
  * Tente d'injecter le script Lovable s'il n'est pas déjà présent
- * @returns Une promesse résolue quand le script est injecté
+ * et attend son initialisation avec plusieurs tentatives
+ * @returns Une promesse résolue quand le script est injecté et initialisé
  */
 export function injectLovableScript(): Promise<void> {
   return new Promise((resolve, reject) => {
+    // Si déjà chargé et initialisé, résoudre immédiatement
     if (isLovableScriptLoaded() && isLovableInitialized()) {
       console.log("Script Lovable déjà chargé et initialisé");
       resolve();
@@ -87,34 +89,78 @@ export function injectLovableScript(): Promise<void> {
     const script = document.createElement('script');
     script.src = 'https://cdn.gpteng.co/gptengineer.js';
     script.type = 'module';
-    script.async = true;
+    script.async = false; // Forcer le chargement synchrone
+    
+    // Fonction pour vérifier l'initialisation avec plusieurs tentatives
+    let attempts = 0;
+    const maxAttempts = 5;
+    const checkInitialization = () => {
+      attempts++;
+      console.log(`Vérification de l'initialisation (tentative ${attempts}/${maxAttempts})...`);
+      
+      if (isLovableInitialized()) {
+        console.log("Script Lovable initialisé avec succès après " + attempts + " tentatives");
+        resolve();
+        return;
+      }
+      
+      if (attempts >= maxAttempts) {
+        console.warn("Script Lovable non initialisé après plusieurs tentatives");
+        // On résout quand même pour ne pas bloquer l'application
+        resolve();
+        return;
+      }
+      
+      // Réessayer après un délai
+      setTimeout(checkInitialization, 1000);
+    };
     
     script.onload = () => {
-      console.log("Script Lovable injecté avec succès");
-      // Attendre un court délai pour l'initialisation
-      setTimeout(() => {
-        const isInitialized = isLovableInitialized();
-        if (isInitialized) {
-          console.log("Script Lovable initialisé avec succès");
-          resolve();
-        } else {
-          console.warn("Script Lovable chargé mais non initialisé après délai");
-          // Résoudre quand même pour éviter de bloquer
-          resolve();
-        }
-      }, 1000);
+      console.log("Script Lovable chargé, vérification de l'initialisation...");
+      // Démarrer la vérification après un court délai
+      setTimeout(checkInitialization, 500);
     };
     
     script.onerror = (err) => {
-      console.error("Erreur lors de l'injection du script Lovable", err);
+      console.error("Erreur lors du chargement du script Lovable", err);
       reject(err);
     };
 
     // Insérer au début du head pour s'assurer qu'il est chargé avant les autres scripts
-    if (document.head.firstChild) {
-      document.head.insertBefore(script, document.head.firstChild);
-    } else {
-      document.head.appendChild(script);
+    document.head.insertBefore(script, document.head.firstChild);
+  });
+}
+
+/**
+ * Force la réinitialisation complète de Lovable
+ * Utile en cas de problème persistant
+ */
+export function forceResetLovable(): Promise<void> {
+  console.log("Réinitialisation forcée de Lovable...");
+  
+  // Supprimer tous les scripts Lovable
+  const scripts = document.querySelectorAll('script[src*="gptengineer.js"]');
+  scripts.forEach(script => script.remove());
+  
+  // Supprimer l'objet global s'il existe
+  if (typeof (window as any).__GPT_ENGINEER__ !== 'undefined') {
+    try {
+      console.log("Suppression de l'objet global __GPT_ENGINEER__");
+      delete (window as any).__GPT_ENGINEER__;
+    } catch (e) {
+      console.error("Erreur lors de la suppression de l'objet global", e);
     }
+  }
+  
+  // Réinjecter le script après un délai
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      injectLovableScript()
+        .then(resolve)
+        .catch(err => {
+          console.error("Erreur lors de la réinitialisation de Lovable", err);
+          resolve(); // Résoudre quand même pour ne pas bloquer
+        });
+    }, 1000);
   });
 }

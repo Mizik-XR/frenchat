@@ -32,32 +32,42 @@ export default defineConfig(({ mode }) => ({
     cssCodeSplit: true,
     rollupOptions: {
       output: {
-        // Amélioration de la distribution des chunks
+        // Distribution optimisée des chunks pour éviter les erreurs "Cannot access X before initialization"
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
             // Empêcher les problèmes d'initialisation de React
-            if (id.includes('react') || id.includes('react-dom')) {
+            if (id.includes('react/') || id.includes('react-dom/')) {
               return 'vendor-react';
             }
-            // Séparation fine des modules Radix et Toast
+            
+            // Séparation des modules de toast pour éviter toute dépendance circulaire
             if (id.includes('@radix-ui/react-toast')) {
-              return 'vendor-radix-toast';
+              return 'vendor-toast-radix';
             }
-            if (id.includes('@radix-ui')) {
-              return 'vendor-radix';
-            }
-            // Séparation du système de toast pour éviter les dépendances circulaires
             if (id.includes('sonner') || id.includes('toast')) {
               return 'vendor-toast-system';
             }
-            // Autres librairies communes
+            
+            // Autres séparations
             if (id.includes('lucide')) return 'vendor-lucide';
             if (id.includes('@tanstack')) return 'vendor-tanstack';
             if (id.includes('@supabase')) return 'vendor-supabase';
-            return 'vendor'; // autres libs
+            if (id.includes('@radix-ui')) return 'vendor-radix';
+            
+            return 'vendor';
+          }
+          
+          // Isoler les hooks et utils pour éviter les dépendances circulaires
+          if (id.includes('/hooks/toast/')) {
+            return 'app-toast-system';
+          }
+          if (id.includes('/hooks/')) {
+            return 'app-hooks';
+          }
+          if (id.includes('/utils/')) {
+            return 'app-utils';
           }
         },
-        // Format de sortie avec entryFileNames et chunkFileNames pour mieux contrôler le nommage
         entryFileNames: 'assets/js/[name].[hash].js',
         chunkFileNames: 'assets/js/[name].[hash].js',
         assetFileNames: 'assets/[ext]/[name].[hash].[ext]'
@@ -83,12 +93,14 @@ export default defineConfig(({ mode }) => ({
     __LOVABLE_MODE__: JSON.stringify(mode === 'development' ? "development" : "production"),
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
-  // Améliorer les performances et l'expérience de développement
   esbuild: {
-    // Configuration optimisée
+    // Optimisations avancées
     jsxFactory: 'React.createElement',
     jsxFragment: 'React.Fragment',
-    // Optimisations pour les navigateurs plus récents
-    target: ['es2020', 'chrome80', 'edge79', 'firefox72', 'safari13']
+    target: ['es2020', 'chrome80', 'edge79', 'firefox72', 'safari13'],
+    // Désactiver certaines options qui pourraient causer des problèmes
+    keepNames: true,
+    treeShaking: true,
+    legalComments: 'none'
   }
 }));

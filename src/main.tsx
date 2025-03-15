@@ -3,28 +3,71 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { isLovableScriptLoaded, injectLovableScript } from './utils/lovable/editingUtils';
+import { isLovableScriptLoaded, injectLovableScript, forceResetLovable } from './utils/lovable/editingUtils';
+
+/**
+ * Tentative d'initialisation de Lovable avec plusieurs essais si nécessaire
+ * @returns Promise résolue quand l'initialisation est terminée
+ */
+async function initializeLovable(maxAttempts = 3): Promise<boolean> {
+  console.log("🔄 Initialisation de Lovable...");
+  let attempts = 0;
+  
+  while (attempts < maxAttempts) {
+    attempts++;
+    console.log(`⚙️ Tentative d'initialisation ${attempts}/${maxAttempts}`);
+    
+    try {
+      if (!isLovableScriptLoaded()) {
+        console.log("💉 Script Lovable non détecté, injection en cours...");
+        await injectLovableScript();
+      } else {
+        console.log("🔍 Script Lovable détecté, vérification de l'initialisation...");
+        
+        // Si le script est présent mais pas initialisé après 2 secondes, forcer une réinitialisation
+        await new Promise<void>(resolve => {
+          setTimeout(() => {
+            const initialized = typeof (window as any).__GPT_ENGINEER__ !== 'undefined';
+            if (!initialized && attempts < maxAttempts) {
+              console.warn("⚠️ Script Lovable présent mais non initialisé, tentative de réinitialisation...");
+              forceResetLovable().then(resolve);
+            } else {
+              resolve();
+            }
+          }, 2000);
+        });
+      }
+      
+      // Vérifier si l'initialisation a réussi
+      if (typeof (window as any).__GPT_ENGINEER__ !== 'undefined') {
+        console.log("✅ Script Lovable initialisé avec succès");
+        return true;
+      }
+    } catch (error) {
+      console.error("❌ Erreur pendant l'initialisation de Lovable:", error);
+    }
+    
+    // Attendre avant la prochaine tentative
+    if (attempts < maxAttempts) {
+      console.log("⏱️ Attente avant nouvelle tentative...");
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+  
+  console.warn("⚠️ Échec de l'initialisation de Lovable après plusieurs tentatives");
+  return false;
+}
 
 // Fonction pour initialiser l'application
 async function initializeApp() {
-  console.log("🔄 Initialisation de l'application...");
+  console.log("🚀 Initialisation de l'application...");
   
   try {
-    // Vérifier et injecter le script Lovable si nécessaire
-    if (!isLovableScriptLoaded()) {
-      console.log("💉 Script Lovable non détecté, injection en cours...");
-      try {
-        await injectLovableScript();
-        console.log("✅ Script Lovable injecté avec succès");
-      } catch (error) {
-        console.error("❌ Erreur lors de l'injection du script Lovable:", error);
-      }
-    } else {
-      console.log("✅ Script Lovable déjà présent dans le DOM");
-    }
+    // Tenter d'initialiser Lovable
+    await initializeLovable();
     
-    // Initialiser React
-    console.log("🚀 Montage de l'application React...");
+    // Initialiser React indépendamment du succès de Lovable
+    console.log("🔄 Montage de l'application React...");
     const root = createRoot(document.getElementById('root') as HTMLElement);
     root.render(
       <React.StrictMode>
