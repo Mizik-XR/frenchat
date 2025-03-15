@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { Progress } from '@/components/ui/progress';
-import { useIndexingProgress, IndexingProgress } from '@/hooks/useIndexingProgress';
+import { useIndexingProgress } from '@/hooks/useIndexingProgress';
 
 export function IndexingProgressBar() {
-  const { indexingProgress, progress } = useIndexingProgress();
+  const { indexingProgress, isLoading } = useIndexingProgress();
   
   if (!indexingProgress || indexingProgress === 0) {
     return null;
@@ -13,9 +13,7 @@ export function IndexingProgressBar() {
   return (
     <div className="w-full space-y-2">
       <div className="flex justify-between text-sm">
-        <span>
-          {progress ? `${progress.processed} / ${progress.total} documents` : `${indexingProgress}%`}
-        </span>
+        <span>{`${indexingProgress}% complete`}</span>
         <span>{indexingProgress}%</span>
       </div>
       <Progress 
