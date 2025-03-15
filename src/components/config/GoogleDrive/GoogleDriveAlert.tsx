@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { ExclamationTriangleIcon, CheckIcon, InfoIcon } from 'lucide-react';
+import { AlertTriangle, Check, Info } from 'lucide-react';
 
 export interface GoogleDriveAlertProps {
   type: 'error' | 'success' | 'info' | 'warning';
@@ -16,12 +16,12 @@ export function GoogleDriveAlert({ type, title, description, onCancel, onConfirm
     switch (type) {
       case 'error':
       case 'warning':
-        return <ExclamationTriangleIcon className="h-4 w-4" />;
+        return <AlertTriangle className="h-4 w-4" />;
       case 'success':
-        return <CheckIcon className="h-4 w-4" />;
+        return <Check className="h-4 w-4" />;
       case 'info':
       default:
-        return <InfoIcon className="h-4 w-4" />;
+        return <Info className="h-4 w-4" />;
     }
   };
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DocumentProviderSelector } from '@/components/documents/DocumentProviderSelector';
 import { DocumentManager } from '@/components/documents/DocumentManager';
