@@ -84,16 +84,19 @@ function App() {
 
   return (
     <ErrorBoundary>
+      {/* Utiliser RadixToast.Provider pour gérer le viewport et le swipe */}
       <RadixToast.Provider swipeDirection="right">
         <ThemeProvider defaultTheme="system" storageKey="vite-react-theme">
           <QueryClientProvider client={queryClient}>
             <BrowserRouter>
               <AuthProvider>
                 <SettingsProvider>
+                  {/* Notre ToastProvider pour la gestion d'état */}
                   <ToastProvider>
                     <ReactErrorMonitor />
                     <AppRouter />
                     <Toaster />
+                    {/* Viewport pour les toasts */}
                     <RadixToast.Viewport className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]" />
                   </ToastProvider>
                 </SettingsProvider>

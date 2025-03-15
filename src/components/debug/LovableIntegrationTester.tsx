@@ -5,12 +5,11 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { CheckCircle, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import { 
-  checkLovableIntegration, 
   isLovableScriptLoaded, 
   isLovableInitialized, 
-  injectLovableScript 
+  injectLovableScript,
+  checkLovableIntegration 
 } from '@/utils/lovable/editingUtils';
-import { toast } from '@/hooks/use-toast';
 import { Badge } from '../ui/badge';
 
 export function LovableIntegrationTester() {
@@ -25,6 +24,12 @@ export function LovableIntegrationTester() {
   useEffect(() => {
     checkIntegration();
   }, []);
+
+  // Fonction sécurisée pour afficher des toasts
+  const showMessage = (message: string, type: string) => {
+    console.log(`[${type}] ${message}`);
+    // Les toasts sont désactivés pour éviter les erreurs de hooks
+  };
 
   const checkIntegration = () => {
     setIsChecking(true);
@@ -50,16 +55,15 @@ export function LovableIntegrationTester() {
       });
       
       setIsChecking(false);
+      
+      // Log complet pour le diagnostic
+      checkLovableIntegration();
     }, 1000);
   };
 
   const fixIntegration = async () => {
     setIsChecking(true);
-    toast({
-      title: "Tentative de réparation",
-      description: "Réparation de l'intégration Lovable en cours...",
-      variant: "default"
-    });
+    showMessage("Réparation de l'intégration Lovable en cours...", "info");
     
     try {
       await injectLovableScript();
@@ -80,28 +84,16 @@ export function LovableIntegrationTester() {
         });
         
         if (isFunctional) {
-          toast({
-            title: "Réparation réussie",
-            description: "L'intégration Lovable a été réparée avec succès.",
-            variant: "success"
-          });
+          showMessage("L'intégration Lovable a été réparée avec succès.", "success");
         } else {
-          toast({
-            title: "Réparation partielle",
-            description: "Le script a été chargé mais n'est pas complètement initialisé. Essayez de rafraîchir la page.",
-            variant: "warning"
-          });
+          showMessage("Le script a été chargé mais n'est pas complètement initialisé. Essayez de rafraîchir la page.", "warning");
         }
         
         setIsChecking(false);
       }, 1500);
     } catch (error) {
       console.error("Erreur lors de la réparation:", error);
-      toast({
-        title: "Échec de la réparation",
-        description: "La réparation automatique a échoué. Essayez de rafraîchir la page ou utilisez le script fix-lovable.sh/bat.",
-        variant: "destructive"
-      });
+      showMessage("La réparation automatique a échoué. Essayez de rafraîchir la page ou utilisez le script fix-lovable.sh/bat.", "error");
       setIsChecking(false);
     }
   };

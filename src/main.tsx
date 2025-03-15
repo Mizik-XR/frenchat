@@ -5,7 +5,7 @@ import App from './App';
 import './index.css';
 
 // Fonction pour vérifier l'intégration du script Lovable
-function checkLovableScript() {
+function checkLovableScript(): boolean {
   const isLoaded = document.querySelector('script[src*="gptengineer.js"]') !== null;
   console.log("Lovable script loaded:", isLoaded);
   
@@ -14,16 +14,27 @@ function checkLovableScript() {
   console.log("Lovable initialized:", isInitialized);
   
   if (!isLoaded) {
-    console.warn("Lovable script not detected in DOM. Editing might not work correctly.");
+    console.warn("Lovable script not detected in DOM. Loading it dynamically now...");
+    try {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.gpteng.co/gptengineer.js';
+      script.type = 'module';
+      document.head.appendChild(script);
+      return false; // Will need to check again later
+    } catch (error) {
+      console.error("Failed to load Lovable script:", error);
+      return false;
+    }
   } else if (!isInitialized) {
-    console.warn("Lovable script detected but not initialized. This might cause editing issues.");
+    console.warn("Lovable script detected but not initialized. Waiting for initialization...");
+    return false;
   }
   
   return isLoaded && isInitialized;
 }
 
 // Fonction pour attendre l'initialisation de Lovable
-function waitForLovableInit(maxRetries = 3): Promise<boolean> {
+function waitForLovableInit(maxRetries = 5): Promise<boolean> {
   return new Promise((resolve) => {
     let retries = 0;
     
@@ -42,10 +53,39 @@ function waitForLovableInit(maxRetries = 3): Promise<boolean> {
       }
       
       console.log(`Waiting for Lovable initialization (attempt ${retries}/${maxRetries})...`);
-      setTimeout(check, 500);
+      setTimeout(check, 1000); // Longer timeout between attempts
     };
     
     check();
+  });
+}
+
+// Fonction pour injecter le script Lovable si nécessaire
+function injectLovableScript(): Promise<void> {
+  return new Promise((resolve) => {
+    // Vérifie si le script existe déjà
+    if (document.querySelector('script[src*="gptengineer.js"]')) {
+      console.log("Lovable script already exists in DOM");
+      resolve();
+      return;
+    }
+    
+    console.log("Injecting Lovable script");
+    const script = document.createElement('script');
+    script.src = 'https://cdn.gpteng.co/gptengineer.js';
+    script.type = 'module';
+    
+    script.onload = () => {
+      console.log("Lovable script injected successfully");
+      resolve();
+    };
+    
+    script.onerror = () => {
+      console.error("Failed to load Lovable script");
+      resolve(); // Resolve anyway to continue app initialization
+    };
+    
+    document.head.appendChild(script);
   });
 }
 
@@ -53,11 +93,18 @@ function waitForLovableInit(maxRetries = 3): Promise<boolean> {
 async function initializeApp() {
   console.log("Initializing application...");
   
+  // Injecter le script Lovable si nécessaire (backup)
+  if (!document.querySelector('script[src*="gptengineer.js"]')) {
+    console.log("Lovable script not found, injecting...");
+    await injectLovableScript();
+  }
+  
   // Vérifier l'intégration Lovable
   const isScriptPresent = checkLovableScript();
   
   // Si en mode développement, attendre l'initialisation de Lovable
-  if (isScriptPresent && import.meta.env.DEV) {
+  if (!isScriptPresent && import.meta.env.DEV) {
+    console.log("Running in development mode, waiting for Lovable initialization...");
     await waitForLovableInit();
   }
   

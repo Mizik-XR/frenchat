@@ -16,11 +16,12 @@ export type Toast = {
   variant?: ToastVariant;
 };
 
-// On exporte simplement le hook useToast sans créer de nouveau provider
+// On exporte le hook useToast depuis le contexte
 export const useToast = useInternalToast;
 
-// Fonction d'aide pour créer un toast
+// Fonction d'aide pour créer un toast - uniquement pour usage dans des composants React
 export const toast = (props: Omit<Toast, "id"> & { id?: string }) => {
+  // Cette fonction est juste un wrapper, l'implémentation réelle est dans useInternalToast
   const { toast: internalToast } = useInternalToast();
   return internalToast(props);
 };

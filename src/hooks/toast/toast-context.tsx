@@ -93,3 +93,15 @@ export function useToast() {
     toasts: context.state.toasts,
   };
 }
+
+// Export de la fonction toast pour utilisation sans hook
+export const toast = (props: any) => {
+  if (typeof window === 'undefined') return { id: '', dismiss: () => {}, update: () => {} };
+  
+  // Cette fonction sera utilisée pour les appels hors composants React
+  // Elle lancera une erreur si appelée en dehors d'un contexte React
+  // Les cas d'utilisation réels devraient toujours utiliser le hook useToast()
+  throw new Error(
+    "La fonction toast() ne peut pas être appelée directement en dehors d'un composant React. Utilisez le hook useToast() à la place."
+  );
+};

@@ -1,5 +1,12 @@
 
 // Ce fichier réexporte le hook useToast et la fonction toast
-import { useToast, toast, type Toast, type ToastVariant } from "./use-toast.tsx";
+// Correction importante : nous n'exportons pas directement de la fonction toast 
+// qui crée une erreur d'initialisation - tout passe par le hook useToast
 
-export { useToast, toast, type Toast, type ToastVariant };
+import { useToast } from "./toast/toast-context";
+
+export { useToast };
+export type { Toast, ToastVariant } from "./use-toast.tsx";
+
+// Nous ne réexportons PAS la fonction toast directement
+// car cela cause l'erreur d'initialisation cyclique

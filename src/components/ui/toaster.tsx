@@ -1,5 +1,5 @@
 
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/toast/toast-context";
 import * as React from "react";
 import * as RadixToast from "@radix-ui/react-toast";
 

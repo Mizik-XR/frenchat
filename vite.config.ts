@@ -33,16 +33,23 @@ export default defineConfig(({ mode }) => ({
       output: {
         // Amélioration de la distribution des chunks
         manualChunks: (id) => {
-          // Éviter le problème d'ordre d'initialisation des modules
+          // Bloquer l'ordre d'initialisation circulaire
           if (id.includes('node_modules')) {
-            // Créer des chunks plus spécifiques pour les bibliothèques volumineuses
-            if (id.includes('@supabase')) return 'vendor-supabase';
-            if (id.includes('react-dom')) return 'vendor-react-dom';
-            if (id.includes('react')) return 'vendor-react';
-            if (id.includes('@radix-ui/react-toast')) return 'vendor-radix-toast';
-            if (id.includes('@radix-ui')) return 'vendor-radix';
+            // Empêcher les problèmes d'initialisation de React
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            // Séparation plus fine des modules Radix
+            if (id.includes('@radix-ui/react-toast')) {
+              return 'vendor-radix-toast';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'vendor-radix';
+            }
+            // Autres librairies communes
             if (id.includes('lucide')) return 'vendor-lucide';
             if (id.includes('@tanstack')) return 'vendor-tanstack';
+            if (id.includes('@supabase')) return 'vendor-supabase';
             return 'vendor'; // autres libs
           }
         },
