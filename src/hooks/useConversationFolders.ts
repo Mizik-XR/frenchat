@@ -31,8 +31,8 @@ export function useConversationFolders() {
         id: folder.id,
         name: folder.name,
         userId: folder.user_id,
-        createdAt: new Date(folder.created_at),
-        updatedAt: new Date(folder.updated_at)
+        createdAt: new Date(folder.created_at).getTime(),
+        updatedAt: new Date(folder.updated_at).getTime()
       }));
     }
   });

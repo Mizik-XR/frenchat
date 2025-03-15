@@ -77,10 +77,18 @@ export function useIndexingProgress() {
       const requestBody = { 
         folderId, 
         options,
-        // Utiliser les propriétés conditionnellement
-        parent_folder: options.parentFolder || null,
-        depth: options.depth !== undefined ? options.depth : 2
       };
+      
+      // Ajouter les propriétés conditionnellement
+      if (options.parentFolder) {
+        requestBody.parent_folder = options.parentFolder;
+      }
+      
+      if (options.depth !== undefined) {
+        requestBody.depth = options.depth;
+      } else {
+        requestBody.depth = 2; // Valeur par défaut
+      }
       
       // Appel à la fonction Edge d'indexation
       const { data, error } = await supabase.functions.invoke('index-google-drive', {

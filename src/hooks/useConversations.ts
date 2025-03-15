@@ -23,8 +23,8 @@ export function useConversations() {
       return data.map((conv: any): Conversation => ({
         id: conv.id,
         title: conv.title,
-        created_at: conv.created_at,
-        updated_at: conv.updated_at,
+        createdAt: new Date(conv.created_at).getTime(),
+        updatedAt: new Date(conv.updated_at).getTime(),
         folderId: conv.folder_id,
         isPinned: conv.is_pinned,
         isArchived: conv.is_archived,
@@ -45,7 +45,7 @@ export function useConversations() {
       provider: 'huggingface',
       temperature: 0.7,
       maxTokens: 500,
-      analysisMode: 'default',
+      analysisMode: 'standard',
       useMemory: false
     };
 

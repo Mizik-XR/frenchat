@@ -17,7 +17,7 @@ export function useChatMessages(conversationId: string | null) {
       content: msg.content,
       type: msg.type || 'text',
       conversationId: msg.conversation_id,
-      timestamp: new Date(msg.created_at),
+      timestamp: new Date(msg.created_at).getTime(),
       replyTo: msg.reply_to,
       quotedMessageId: msg.quoted_message_id,
       metadata: msg.metadata
@@ -71,7 +71,7 @@ export function useChatMessages(conversationId: string | null) {
       content: content,
       type: 'text',
       conversationId: conversationId || 'default',
-      timestamp: new Date(),
+      timestamp: Date.now(),
       quotedMessageId: replyToId
     };
     
@@ -103,7 +103,7 @@ export function useChatMessages(conversationId: string | null) {
       context: context,
       metadata: metadata,
       conversationId: conversationId || 'default',
-      timestamp: new Date(),
+      timestamp: Date.now(),
     };
     
     setMessages((prev) => [...prev, newMessage]);

@@ -16,7 +16,6 @@ export interface WebUIConfig {
   useMemory?: boolean;
 }
 
-// Types manquants qui sont référencés dans d'autres composants
 export interface Message {
   id: string;
   content: string;
@@ -25,6 +24,9 @@ export interface Message {
   conversationId: string;
   replyTo?: string;
   metadata?: MessageMetadata;
+  quotedMessageId?: string;
+  type?: string;
+  context?: string;
 }
 
 export interface MessageMetadata {
@@ -43,6 +45,10 @@ export interface Conversation {
   messages?: Message[];
   folderId?: string;
   metadata?: Record<string, any>;
+  isPinned?: boolean;
+  isArchived?: boolean;
+  archiveDate?: Date;
+  settings?: WebUIConfig;
 }
 
 export interface ConversationFolder {
@@ -50,8 +56,10 @@ export interface ConversationFolder {
   name: string;
   createdAt: number;
   parentId?: string;
+  userId?: string;
+  updatedAt?: number;
 }
 
-export type MessageType = 'text' | 'file' | 'image' | 'audio' | 'video';
+export type MessageType = 'text' | 'file' | 'image' | 'audio' | 'video' | 'document';
 
-export type AnalysisMode = 'standard' | 'detailed' | 'summary' | 'extraction';
+export type AnalysisMode = 'standard' | 'detailed' | 'summary' | 'extraction' | 'default';
