@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import type {
@@ -57,10 +58,10 @@ interface State {
 }
 
 interface ToastContextType extends State {
-  toast: (props: ToasterToast) => {
+  toast: (props: Partial<ToasterToast>) => {
     id: string;
     dismiss: () => void;
-    update: (props: ToasterToast) => void;
+    update: (props: Partial<ToasterToast>) => void;
   };
   dismiss: (toastId?: string) => void;
 }
@@ -152,12 +153,12 @@ function dispatch(action: Action) {
   })
 }
 
-export type Toast = Omit<ToasterToast, "id">
+export type Toast = Partial<Omit<ToasterToast, "id">>
 
 export function toast(props: Toast) {
-  const id = genId()
+  const id = props.id || genId()
 
-  const update = (props: ToasterToast) =>
+  const update = (props: Partial<ToasterToast>) =>
     dispatch({
       type: "UPDATE_TOAST",
       toast: { ...props, id },
@@ -173,7 +174,7 @@ export function toast(props: Toast) {
       onOpenChange: (open) => {
         if (!open) dismiss()
       },
-    },
+    } as ToasterToast,
   })
 
   return {
@@ -203,9 +204,9 @@ export function ToastProvider({ children }: ToastProviderProps) {
   return (
     <ToastContext.Provider value={{ 
       toasts: state.toasts, 
-      toast: (props: ToasterToast) => {
-        const id = genId();
-        const update = (newProps: ToasterToast) => 
+      toast: (props: Partial<ToasterToast>) => {
+        const id = props.id || genId();
+        const update = (newProps: Partial<ToasterToast>) => 
           dispatch({ type: "UPDATE_TOAST", toast: { ...newProps, id } });
         const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
         
@@ -218,7 +219,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
             onOpenChange: (open) => {
               if (!open) dismiss();
             },
-          },
+          } as ToasterToast,
         });
         
         return { id, dismiss, update };
