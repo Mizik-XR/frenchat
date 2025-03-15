@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+
+import React, { useEffect, Suspense } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Auth from './pages/Auth';
 import Documents from './pages/Documents';
@@ -11,7 +12,10 @@ import Pricing from './pages/Pricing';
 import { useSupabaseUser } from '@/hooks/useSupabaseUser';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
-import { getFormattedUrlParams, getAllUrlParams } from '@/utils/environment/urlUtils';
+import { getAllUrlParams } from '@/utils/environment/urlUtils';
+
+// Lazy-loaded component for installation docs
+const InstallationDocs = React.lazy(() => import('./pages/InstallationDocs'));
 
 function App() {
   const { user, isLoading } = useSupabaseUser();
@@ -32,11 +36,18 @@ function App() {
   }, [location.search, toast]);
 
   return (
-    <Router>
+    <>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/docs/installation" element={React.lazy(() => import('./pages/InstallationDocs'))} />
+        <Route 
+          path="/docs/installation" 
+          element={
+            <Suspense fallback={<div>Chargement...</div>}>
+              <InstallationDocs />
+            </Suspense>
+          } 
+        />
         <Route path="/documents" element={<Documents />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/settings" element={<Settings />} />
@@ -45,7 +56,7 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
-    </Router>
+    </>
   );
 }
 
