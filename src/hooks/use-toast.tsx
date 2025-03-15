@@ -58,7 +58,7 @@ interface State {
 }
 
 interface ToastContextType extends State {
-  toast: (props: Partial<ToasterToast>) => {
+  toast: (props: Partial<Omit<ToasterToast, "id">>) => {
     id: string;
     dismiss: () => void;
     update: (props: Partial<ToasterToast>) => void;
@@ -153,12 +153,12 @@ function dispatch(action: Action) {
   })
 }
 
-// Define Toast type as Partial<ToasterToast> to allow optional id
-export type Toast = Partial<ToasterToast>
+// Define Toast type as Partial<Omit<ToasterToast, "id">> to make all props optional except id
+export type Toast = Partial<Omit<ToasterToast, "id">>;
 
 export function toast(props: Toast) {
   // Generate id if not provided
-  const id = props.id || genId()
+  const id = genId()
 
   const update = (props: Partial<ToasterToast>) =>
     dispatch({
@@ -206,8 +206,8 @@ export function ToastProvider({ children }: ToastProviderProps) {
   return (
     <ToastContext.Provider value={{ 
       toasts: state.toasts, 
-      toast: (props: Partial<ToasterToast>) => {
-        const id = props.id || genId();
+      toast: (props: Partial<Omit<ToasterToast, "id">>) => {
+        const id = genId();
         const update = (newProps: Partial<ToasterToast>) => 
           dispatch({ type: "UPDATE_TOAST", toast: { ...newProps, id } });
         const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
