@@ -3,21 +3,15 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   server: {
     host: "::",
     port: 8080,
   },
   plugins: [
     react({
-      // Configurer React pour éviter les conflits
+      // Configuration la plus simple possible
       jsxRuntime: 'automatic',
-      babel: {
-        plugins: [],
-        // Configuration simplifiée pour éviter les problèmes
-        babelrc: false,
-        configFile: false
-      }
     }),
   ],
   resolve: {
@@ -25,17 +19,15 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Configuration optimisée pour la production
+  // Configuration simplifiée
   build: {
-    // Utilisation d'esbuild pour la minification
-    minify: mode === 'production' ? 'esbuild' : false,
+    minify: 'esbuild',
     target: 'es2015',
-    sourcemap: mode !== 'production',
-    // Séparer le vendor bundle pour un meilleur caching
     rollupOptions: {
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
+            // Séparer React dans son propre chunk
             if (id.includes('react') || id.includes('react-dom')) {
               return 'vendor-react';
             }
@@ -46,13 +38,14 @@ export default defineConfig(({ mode }) => ({
     },
     outDir: 'dist',
   },
-  // Configuration optimisée pour le développement
+  // Éviter les conflits de build
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
+    force: true, // Forcer la précompilation
   },
-  // Définitions pour éviter les conflits
+  // Définitions globales simplifiées
   define: {
     'process.env': {},
     'global': 'window',
   }
-}));
+});

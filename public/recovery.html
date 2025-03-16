@@ -4,245 +4,141 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FileChat - Mode de Récupération</title>
+  <title>Récupération FileChat</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: linear-gradient(to bottom right, #f0f9ff, #e1e7ff);
-      height: 100vh;
-      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(to bottom, #f0f9ff, #e0eafc);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 1rem;
+      color: #333;
     }
-    .container {
+    
+    .recovery-container {
       background: white;
-      border-radius: 1rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
       padding: 2rem;
-      max-width: 600px;
       width: 100%;
+      max-width: 500px;
       text-align: center;
     }
+    
     h1 {
       color: #4f46e5;
-      font-size: 1.5rem;
       margin-bottom: 1rem;
+      font-size: 1.5rem;
     }
+    
     p {
-      color: #4b5563;
       margin-bottom: 1.5rem;
       line-height: 1.5;
     }
-    .button-container {
+    
+    .buttons {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
     }
+    
     button {
       padding: 0.75rem 1rem;
       border-radius: 0.375rem;
       font-weight: 500;
       cursor: pointer;
-      border: none;
       transition: all 0.2s;
+      border: none;
     }
-    .primary {
-      background-color: #4f46e5;
+    
+    .btn-primary {
+      background: #4f46e5;
       color: white;
     }
-    .primary:hover {
-      background-color: #4338ca;
-    }
-    .secondary {
-      background-color: white;
+    
+    .btn-secondary {
+      background: white;
       color: #4f46e5;
       border: 1px solid #4f46e5;
     }
-    .secondary:hover {
-      background-color: #f5f7ff;
-    }
-    .danger {
-      background-color: white;
-      color: #ef4444;
-      border: 1px solid #ef4444;
-      margin-top: 0.5rem;
-    }
-    .danger:hover {
-      background-color: #fef2f2;
-    }
-    .log-container {
-      background-color: #f9fafb;
-      border-radius: 0.5rem;
-      padding: 1rem;
-      margin-top: 1.5rem;
-      text-align: left;
-      max-height: 200px;
-      overflow-y: auto;
-      font-family: monospace;
-      font-size: 0.8rem;
-      color: #4b5563;
-    }
-    .success {
-      color: #047857;
-      font-weight: bold;
-    }
-    .error {
+    
+    .btn-danger {
+      background: white;
       color: #dc2626;
-      font-weight: bold;
+      border: 1px solid #dc2626;
+      margin-top: 0.5rem;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Mode de Récupération FileChat</h1>
+  <div class="recovery-container">
+    <h1>Mode de récupération FileChat</h1>
+    
     <p>
-      Cette page vous permet de récupérer l'application lorsqu'elle rencontre des problèmes de démarrage.
-      Choisissez l'une des options ci-dessous pour résoudre le problème.
+      Cette page s'affiche car l'application a rencontré un problème critique au démarrage.
+      Veuillez choisir l'une des options ci-dessous pour tenter de résoudre le problème.
     </p>
     
-    <div class="button-container">
-      <button class="primary" onclick="startSafeMode()">
-        Démarrer en mode sécurisé (Recommandé)
+    <div class="buttons">
+      <button class="btn-primary" onclick="startSafeMode()">
+        Mode de secours (recommandé)
       </button>
       
-      <button class="secondary" onclick="resetSettings()">
+      <button class="btn-secondary" onclick="resetSettings()">
         Réinitialiser les paramètres
       </button>
       
-      <button class="secondary" onclick="clearCache()">
-        Vider le cache du navigateur
-      </button>
-      
-      <button class="danger" onclick="fullReset()">
+      <button class="btn-danger" onclick="fullReset()">
         Réinitialisation complète
       </button>
-    </div>
-    
-    <div id="log" class="log-container">
-      <div>Prêt à effectuer la récupération...</div>
     </div>
   </div>
   
   <script>
-    const logContainer = document.getElementById('log');
-    
-    function log(message, type = 'info') {
-      const logEntry = document.createElement('div');
-      logEntry.className = type;
-      logEntry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
-      logContainer.appendChild(logEntry);
-      logContainer.scrollTop = logContainer.scrollHeight;
-    }
-    
     function startSafeMode() {
-      log('Démarrage en mode sécurisé...', 'info');
       localStorage.setItem('FORCE_CLOUD_MODE', 'true');
       localStorage.setItem('aiServiceType', 'cloud');
       localStorage.setItem('mode', 'safe');
-      
-      // Supprimer les paramètres problématiques
-      const problematicSettings = [
-        'useLocalAI', 
-        'aiProviderSelection',
-        'localAIUrl',
-        'localProvider'
-      ];
-      
-      problematicSettings.forEach(key => {
-        localStorage.removeItem(key);
-      });
-      
-      log('Mode sécurisé activé avec succès', 'success');
-      setTimeout(() => {
-        log('Redirection vers l\'application...', 'info');
-        window.location.href = '/?mode=safe&forceCloud=true&client=true';
-      }, 1500);
+      window.location.href = '/?forceCloud=true&mode=safe&reset=partial';
     }
     
     function resetSettings() {
-      log('Réinitialisation des paramètres...', 'info');
+      // Nettoyage sélectif des paramètres problématiques
+      const keysToReset = [
+        'useLocalAI', 
+        'aiProviderSelection',
+        'last_route',
+        'lastView',
+        'requestedModel',
+        'selectedModel',
+        'modelConfig',
+        'localAIUrl'
+      ];
       
-      // Liste des paramètres à conserver
-      const keysToKeep = ['user', 'auth_session', 'supabase-auth-token'];
+      keysToReset.forEach(key => localStorage.removeItem(key));
       
-      // Sauvegarder les paramètres à conserver
-      const savedSettings = {};
-      keysToKeep.forEach(key => {
-        savedSettings[key] = localStorage.getItem(key);
-      });
-      
-      // Effacer tout le localStorage
-      localStorage.clear();
-      
-      // Restaurer les paramètres à conserver
-      Object.keys(savedSettings).forEach(key => {
-        if (savedSettings[key]) {
-          localStorage.setItem(key, savedSettings[key]);
-        }
-      });
-      
-      // Configurer le mode cloud
+      // Activer le mode cloud
       localStorage.setItem('FORCE_CLOUD_MODE', 'true');
       localStorage.setItem('aiServiceType', 'cloud');
       
-      log('Paramètres réinitialisés avec succès', 'success');
-      setTimeout(() => {
-        log('Redirection vers l\'application...', 'info');
-        window.location.href = '/?reset=partial&forceCloud=true';
-      }, 1500);
-    }
-    
-    function clearCache() {
-      log('Tentative de nettoyage du cache...', 'info');
-      
-      // Essayer de nettoyer le cache si le navigateur le supporte
-      if ('caches' in window) {
-        caches.keys().then(cacheNames => {
-          cacheNames.forEach(cacheName => {
-            caches.delete(cacheName);
-          });
-          log('Cache du navigateur nettoyé', 'success');
-        }).catch(err => {
-          log(`Erreur lors du nettoyage du cache: ${err}`, 'error');
-        });
-      } else {
-        log('Votre navigateur ne supporte pas l\'API Cache', 'error');
-      }
-      
-      // Redirection après un délai pour permettre au cache de se nettoyer
-      setTimeout(() => {
-        log('Redirection vers l\'application...', 'info');
-        window.location.href = '/?fresh=true';
-      }, 2000);
+      window.location.href = '/?reset=partial&mode=safe';
     }
     
     function fullReset() {
-      if (confirm('Attention: Ceci va effacer toutes vos préférences et vous déconnecter. Continuer?')) {
-        log('Réinitialisation complète en cours...', 'info');
-        localStorage.clear();
-        
-        // Nettoyer les cookies liés à l'application
-        document.cookie.split(';').forEach(function(c) {
-          document.cookie = c.trim().split('=')[0] + '=;' + 'expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';
-        });
-        
-        log('Réinitialisation terminée', 'success');
-        setTimeout(() => {
-          log('Redirection vers la page d\'accueil...', 'info');
-          window.location.href = '/?reset=true';
-        }, 1500);
-      }
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/?reset=true';
     }
     
-    // Vérifier si l'utilisateur a été redirigé après une erreur
-    window.addEventListener('load', function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('error')) {
-        log(`Erreur détectée: ${urlParams.get('error')}`, 'error');
-        log('Utilisez les options ci-dessus pour résoudre le problème', 'info');
-      }
-    });
+    // Rediriger automatiquement après 1 minute
+    setTimeout(() => {
+      document.body.innerHTML += '<p style="margin-top: 1rem; color: #6b7280;">Redirection automatique en mode de secours...</p>';
+      setTimeout(startSafeMode, 3000);
+    }, 60000);
   </script>
 </body>
 </html>

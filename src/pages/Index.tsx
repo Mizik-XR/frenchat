@@ -1,112 +1,108 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Landing from './Landing';
-import { useAuth } from "@/components/AuthProvider";
-import { LoadingScreen } from '@/components/auth/LoadingScreen';
+import { initializeSafeMode, setupEnvironment } from '@/utils/startup/simplifiedStartup';
 
-// Fonction séparée pour simplifier le composant principal
-const initSafeMode = (): boolean => {
-  const urlParams = new URLSearchParams(window.location.search);
-  
-  if (urlParams.get('mode') === 'safe') {
-    console.log('Mode de démarrage sécurisé activé');
-    
-    // Forcer le mode cloud qui est plus stable
-    localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-    localStorage.setItem('aiServiceType', 'cloud');
-    localStorage.setItem('mode', 'safe');
-    
-    return true;
-  }
-  
-  return false;
-};
+// Page d'attente simplifiée
+const SimpleLoading = () => (
+  <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 p-4">
+    <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+      <h2 className="text-xl font-medium text-gray-800 mb-2">Chargement de Frenchat</h2>
+      <p className="text-gray-600">Préparation de votre expérience...</p>
+    </div>
+  </div>
+);
+
+// Page d'erreur simplifiée
+const SimpleError = ({ message, onRetry }: { message: string, onRetry: () => void }) => (
+  <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-red-50 p-4">
+    <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+      <h2 className="text-xl font-medium text-red-600 mb-4 text-center">Une erreur est survenue</h2>
+      <p className="text-gray-700 mb-6">{message}</p>
+      <div className="space-y-3">
+        <button
+          onClick={onRetry}
+          className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+        >
+          Réessayer
+        </button>
+        <button
+          onClick={() => window.location.href = '/?mode=safe&forceCloud=true'}
+          className="w-full py-2 px-4 bg-white text-blue-600 border border-blue-600 rounded hover:bg-blue-50 transition-colors"
+        >
+          Mode de secours
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 export default function Index() {
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
-  const [showLanding, setShowLanding] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [safeModeActive, setSafeModeActive] = useState(false);
   
   useEffect(() => {
-    try {
-      console.log("Index page loaded, user:", user ? "Authenticated" : "Not authenticated", "isLoading:", isLoading);
-      
-      // Activer le mode de secours si demandé par l'URL
-      const isSafeMode = initSafeMode();
-      setSafeModeActive(isSafeMode);
-      
-      // Stocker la route pour la gestion de session
-      localStorage.setItem('last_route', '/');
-      
-      // Vérifier si nous sommes dans un environnement de prévisualisation
-      const isPreviewEnvironment = 
-        window.location.hostname.includes('lovable') || 
-        window.location.hostname.includes('preview') ||
-        window.location.hostname.includes('netlify');
+    const loadApplication = async () => {
+      try {
+        console.log("Initialisation de l'application...");
         
-      if (isPreviewEnvironment) {
-        console.log("Environnement de prévisualisation détecté, activation du mode cloud");
-        localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-        localStorage.setItem('aiServiceType', 'cloud');
-      }
-      
-      // Gestion simplifiée du routing basé sur l'authentification
-      if (!isLoading) {
-        if (user) {
-          console.log("Redirecting authenticated user to /chat");
+        // Initialiser le mode de secours si demandé
+        initializeSafeMode();
+        
+        // Configurer l'environnement
+        setupEnvironment();
+        
+        // Stocker la route pour la gestion de session
+        localStorage.setItem('last_route', '/');
+        
+        // Vérifier si l'utilisateur est connecté
+        const userString = localStorage.getItem('supabase.auth.token');
+        const isAuthenticated = !!userString;
+        
+        // Redirection basée sur l'authentification
+        if (isAuthenticated) {
+          console.log("Utilisateur authentifié, redirection vers /chat");
           navigate('/chat');
         } else {
-          console.log("User not authenticated, showing landing page");
-          setShowLanding(true);
+          console.log("Utilisateur non authentifié, chargement de la landing page");
+          const LandingPage = (await import('./Landing')).default;
+          
+          // Créer un élément pour charger la landing page
+          const container = document.getElementById('root');
+          if (container) {
+            const root = ReactDOM.createRoot(container);
+            root.render(<LandingPage />);
+          }
         }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Erreur lors du chargement:", err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Erreur dans Index.tsx:", err);
-      setError(err instanceof Error ? err : new Error(String(err)));
-      setShowLanding(true); // Afficher la page d'accueil en cas d'erreur
-    }
-  }, [navigate, user, isLoading]);
+    };
+    
+    loadApplication();
+  }, [navigate]);
 
-  // Afficher un message d'erreur s'il y a eu un problème
+  // Afficher un message d'erreur si nécessaire
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-red-50">
-        <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold text-red-600 mb-4">Une erreur est survenue</h2>
-          <p className="text-gray-700 mb-4">{error.message}</p>
-          <div className="space-y-3">
-            <button 
-              onClick={() => window.location.reload()}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Rafraîchir la page
-            </button>
-            
-            <button 
-              onClick={() => window.location.href = '/?mode=safe&forceCloud=true'}
-              className="w-full py-2 px-4 bg-white text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
-            >
-              Mode de secours
-            </button>
-          </div>
-        </div>
-      </div>
+      <SimpleError 
+        message={error.message} 
+        onRetry={() => window.location.reload()} 
+      />
     );
   }
   
-  // Afficher un écran de chargement pendant la vérification de l'authentification
-  if (isLoading) {
-    return <LoadingScreen message="Chargement de l'application..." />;
+  // Afficher un écran de chargement pendant l'initialisation
+  if (loading) {
+    return <SimpleLoading />;
   }
   
-  // Rendre la page d'accueil (Landing) si l'utilisateur n'est pas connecté et que le chargement est terminé
-  if (showLanding) {
-    return <Landing />;
-  }
-  
-  // Écran de chargement par défaut pendant les transitions
-  return <LoadingScreen message="Préparation de votre expérience..." />;
+  // Cette partie ne devrait pas être atteinte normalement à cause des redirections
+  return <SimpleLoading />;
 }

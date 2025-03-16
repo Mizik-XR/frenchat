@@ -1,51 +1,57 @@
 
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Index from './pages/Index';
-import AuthPage from './pages/Auth';
-import ChatPage from './pages/Chat';
-import DocumentsPage from './pages/Documents';
-import ConfigPage from './pages/Config';
-import { AuthProvider } from './components/AuthProvider';
-import { DebugPanel } from './components/DebugPanel';
-import SystemStatus from './pages/SystemStatus';
-import LocalAISetup from './pages/LocalAISetup';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+// Pages principales avec imports différés pour éviter les dépendances circulaires
+const Landing = React.lazy(() => import('./pages/Landing'));
+const AuthPage = React.lazy(() => import('./pages/Auth'));
+const ChatPage = React.lazy(() => import('./pages/Chat'));
+const DocumentsPage = React.lazy(() => import('./pages/Documents'));
+const ConfigPage = React.lazy(() => import('./pages/Config'));
+const SystemStatus = React.lazy(() => import('./pages/SystemStatus'));
+const LocalAISetup = React.lazy(() => import('./pages/LocalAISetup'));
+
+// Composant de chargement simple
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50">
+    <div className="p-6 bg-white rounded-lg shadow-lg text-center">
+      <div className="animate-spin w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+      <h2 className="text-xl font-semibold text-gray-700">Chargement...</h2>
+    </div>
+  </div>
+);
 
 export default function App() {
-  const [showDebugPanel, setShowDebugPanel] = useState(false);
-
-  // Vérifier si nous sommes en mode développement
+  const [isReady, setIsReady] = useState(false);
+  
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      setShowDebugPanel(true);
-    }
+    // Activer le mode cloud par défaut pour éviter les problèmes
+    localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+    localStorage.setItem('aiServiceType', 'cloud');
     
-    // Vérifier si le mode debug est activé
-    if (localStorage.getItem('DEBUG_MODE') === 'true') {
-      setShowDebugPanel(true);
-    }
+    // Marquer l'application comme prête
+    setIsReady(true);
   }, []);
 
+  if (!isReady) {
+    return <LoadingFallback />;
+  }
+
   return (
-    <div className="flex flex-col min-h-screen">
-      {showDebugPanel && <div className="absolute top-0 right-0 z-50"><DebugPanel /></div>}
-      
-      <div className="flex-1">
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/chat" element={<ChatPage />} />
-              <Route path="/chat/:conversationId" element={<ChatPage />} />
-              <Route path="/documents" element={<DocumentsPage />} />
-              <Route path="/config" element={<ConfigPage />} />
-              <Route path="/system-status" element={<SystemStatus />} />
-              <Route path="/local-ai-setup" element={<LocalAISetup />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </div>
-    </div>
+    <React.Suspense fallback={<LoadingFallback />}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/chat/:conversationId" element={<ChatPage />} />
+          <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/config" element={<ConfigPage />} />
+          <Route path="/system-status" element={<SystemStatus />} />
+          <Route path="/local-ai-setup" element={<LocalAISetup />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </React.Suspense>
   );
 }

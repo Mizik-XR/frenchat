@@ -3,17 +3,17 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-title Démarrage simplifié FileChat
+title Démarrage minimal FileChat
 
 echo ===================================================
-echo      DÉMARRAGE SIMPLIFIÉ DE FILECHAT
+echo      DÉMARRAGE MINIMAL DE FILECHAT
 echo ===================================================
 echo.
-echo Ce script va démarrer FileChat en mode cloud uniquement
-echo (aucune installation locale requise)
+echo Ce script va démarrer FileChat en mode minimal
+echo sans aucune fonctionnalité locale
 echo.
 
-REM Forcer le mode cloud
+REM Forcer le mode cloud et sécurisé
 set "FORCE_CLOUD=1"
 set "CLIENT_MODE=1"
 set "SAFE_MODE=1"
@@ -33,20 +33,25 @@ if not exist "dist\" (
         exit /b 1
     )
 
-    REM Installer les dépendances si nécessaire
-    if not exist "node_modules\" (
-        echo [ACTION] Installation des dépendances...
-        call npm install --force
-        if %ERRORLEVEL% NEQ 0 (
-            echo [ERREUR] Installation échouée.
-            echo.
-            pause
-            exit /b 1
-        )
+    REM Nettoyer l'installation
+    if exist "node_modules\" (
+        echo [ACTION] Nettoyage des dépendances...
+        rmdir /s /q node_modules
     )
-
-    REM Construire l'application
-    call npm run build
+    
+    echo [ACTION] Installation des dépendances...
+    call npm install --force
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ERREUR] Installation échouée.
+        echo.
+        pause
+        exit /b 1
+    )
+    
+    REM Construction spécifique
+    echo [ACTION] Construction de l'application en mode minimal...
+    set "NODE_ENV=production"
+    call npm run build -- --mode production
     if %ERRORLEVEL% NEQ 0 (
         echo [ERREUR] Construction échouée.
         echo.
@@ -55,21 +60,21 @@ if not exist "dist\" (
     )
 )
 
-REM Démarrer le serveur web
+REM Démarrer le serveur web avec options simplifiées
 echo [ACTION] Démarrage du serveur web...
 start "Serveur FileChat" /min cmd /c "npx http-server dist -p 8080 -c-1 --cors"
 timeout /t 2 /nobreak > nul
 
-REM Ouvrir le navigateur avec options sécurisées
+REM Ouvrir le navigateur avec options de sécurité maximale
 echo [ACTION] Ouverture de l'application...
-start "" "http://localhost:8080/?client=true&forceCloud=true&mode=safe&noLocalServices=true"
+start "" "http://localhost:8080/?client=true&forceCloud=true&mode=safe&reset=partial"
 
 echo.
 echo ===================================================
-echo       FILECHAT DÉMARRÉ EN MODE SIMPLIFIÉ
+echo       FILECHAT DÉMARRÉ EN MODE MINIMAL
 echo ===================================================
 echo.
-echo L'application est maintenant accessible à l'adresse:
+echo L'application est accessible à l'adresse:
 echo http://localhost:8080/?client=true^&forceCloud=true^&mode=safe
 echo.
 echo Cette fenêtre doit rester ouverte pendant l'utilisation de FileChat.

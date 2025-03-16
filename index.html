@@ -5,128 +5,153 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Frenchat - Votre assistant d'intelligence documentaire</title>
-    <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
-    <!-- Script de Lovable -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
-    <!-- Style de base pour l'écran de chargement initial -->
+    <title>Frenchat - Assistant d'intelligence documentaire</title>
+    <meta name="description" content="Assistant d'intelligence documentaire qui indexe vos fichiers Google Drive et Microsoft Teams." />
+    
+    <!-- Style pour l'écran de chargement initial -->
     <style>
-      #loading-screen {
+      #initial-loading {
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
         height: 100vh;
-        background: linear-gradient(to bottom right, #f0f9ff, #e1e7ff);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background: linear-gradient(to bottom, #f0f9ff, #e0eafc);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
       .loading-container {
         background: white;
         padding: 2rem;
-        border-radius: 1rem;
+        border-radius: 0.75rem;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        max-width: 500px;
-        width: 100%;
+        max-width: 400px;
+        width: 90%;
         text-align: center;
       }
-      .loading-title {
+      .spinner {
+        width: 40px;
+        height: 40px;
+        margin: 0 auto 1.5rem;
+        border: 3px solid #e5e7eb;
+        border-radius: 50%;
+        border-top-color: #4f46e5;
+        animation: spin 1s ease-in-out infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .loading-text {
         color: #4f46e5;
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
       }
-      .loading-bar {
-        width: 100%;
-        height: 6px;
-        background-color: #e5e7eb;
-        border-radius: 3px;
-        overflow: hidden;
-        margin: 1.5rem 0;
+      .loading-subtext {
+        color: #6b7280;
+        font-size: 0.875rem;
       }
-      .loading-bar-progress {
-        width: 30%;
-        height: 100%;
-        background-color: #4f46e5;
-        border-radius: 3px;
-        animation: progressAnimation 2s infinite ease-in-out;
-      }
-      @keyframes progressAnimation {
-        0% { width: 10%; }
-        50% { width: 70%; }
-        100% { width: 10%; }
-      }
-      .retry-btn {
-        margin-top: 1rem;
-        background-color: #4f46e5;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 0.25rem;
-        cursor: pointer;
-        font-weight: 500;
+      .error-buttons {
         display: none;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
       }
       .error-message {
         color: #dc2626;
-        margin-top: 1rem;
+        margin: 1rem 0;
         display: none;
       }
+      .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-primary {
+        background: #4f46e5;
+        color: white;
+        border: none;
+      }
+      .btn-secondary {
+        background: white;
+        color: #4f46e5;
+        border: 1px solid #4f46e5;
+      }
+      .btn-danger {
+        background: white;
+        color: #dc2626;
+        border: 1px solid #dc2626;
+        margin-top: 0.5rem;
+      }
     </style>
+    
     <!-- Script de récupération minimal -->
     <script>
-      // Fonction pour démarrer en mode cloud
-      function startCloudMode() {
-        console.log("Démarrage en mode cloud");
+      // Fonction pour activer le mode de secours
+      function activateCloudMode() {
         localStorage.setItem('FORCE_CLOUD_MODE', 'true');
         localStorage.setItem('aiServiceType', 'cloud');
         window.location.href = '/?forceCloud=true&mode=safe';
       }
       
       // Fonction pour réinitialiser l'application
-      function resetApp() {
-        console.log("Réinitialisation de l'application");
+      function resetApplication() {
         localStorage.clear();
+        sessionStorage.clear();
         window.location.href = '/?reset=true';
       }
       
-      // Détection du timeout
+      // Détecter le timeout de chargement
       setTimeout(function() {
-        const errorMsg = document.getElementById('loading-error');
-        const refreshBtn = document.getElementById('refresh-btn');
-        const cloudBtn = document.getElementById('cloud-btn');
-        const resetBtn = document.getElementById('reset-btn');
+        var errorMsg = document.getElementById('error-message');
+        var errorButtons = document.getElementById('error-buttons');
         
-        if (errorMsg && refreshBtn && cloudBtn && resetBtn) {
+        if (errorMsg && errorButtons) {
           errorMsg.style.display = 'block';
-          refreshBtn.style.display = 'inline-block';
-          cloudBtn.style.display = 'inline-block';
-          resetBtn.style.display = 'inline-block';
+          errorButtons.style.display = 'flex';
         }
-      }, 8000);
+      }, 7000);
+      
+      // Vérifier si nous sommes dans un mode de secours
+      window.addEventListener('DOMContentLoaded', function() {
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('mode') === 'safe' || urlParams.get('forceCloud') === 'true') {
+          activateCloudMode();
+        }
+      });
     </script>
   </head>
   <body>
-    <!-- Message de secours si le JavaScript est désactivé -->
+    <!-- Message si JavaScript est désactivé -->
     <noscript>
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center;">
-        <h1 style="color: #4f46e5; margin-bottom: 20px;">JavaScript est requis</h1>
-        <p>Cette application nécessite que JavaScript soit activé pour fonctionner.</p>
-        <p>Veuillez l'activer dans les paramètres de votre navigateur.</p>
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 2rem; text-align: center;">
+        <h1 style="color: #4f46e5; margin-bottom: 1rem;">JavaScript est nécessaire</h1>
+        <p>Cette application requiert que JavaScript soit activé pour fonctionner.</p>
       </div>
     </noscript>
     
-    <!-- Écran de chargement visible immédiatement -->
+    <!-- Écran de chargement initial -->
     <div id="root">
-      <div id="loading-screen">
+      <div id="initial-loading">
         <div class="loading-container">
-          <h1 class="loading-title">Frenchat</h1>
-          <p>Chargement de votre assistant d'intelligence documentaire...</p>
-          <div class="loading-bar"><div class="loading-bar-progress"></div></div>
-          <p style="font-size: 0.8rem; color: #6b7280;">Si le chargement échoue, essayez de rafraîchir la page.</p>
-          <div id="loading-error" class="error-message">Le chargement semble prendre plus de temps que prévu.</div>
-          <div>
-            <button id="refresh-btn" class="retry-btn" onclick="window.location.reload()">Rafraîchir la page</button>
-            <button id="cloud-btn" class="retry-btn" onclick="startCloudMode()" style="margin-left: 8px; background-color: #6366f1;">Mode cloud</button>
-            <button id="reset-btn" class="retry-btn" onclick="resetApp()" style="margin-left: 8px; background-color: #ef4444;">Réinitialiser</button>
+          <div class="spinner"></div>
+          <div class="loading-text">Frenchat</div>
+          <p class="loading-subtext">Chargement de votre assistant d'intelligence documentaire...</p>
+          
+          <div id="error-message" class="error-message">
+            Le chargement semble prendre plus de temps que prévu
+          </div>
+          
+          <div id="error-buttons" class="error-buttons">
+            <button class="btn btn-primary" onclick="window.location.reload()">
+              Rafraîchir la page
+            </button>
+            <button class="btn btn-secondary" onclick="activateCloudMode()">
+              Mode de secours (Cloud)
+            </button>
+            <button class="btn btn-danger" onclick="resetApplication()">
+              Réinitialisation complète
+            </button>
           </div>
         </div>
       </div>
