@@ -57,6 +57,14 @@ if not exist "dist\" (
 
 REM Copier le fichier de récupération si nécessaire
 if not exist "dist\recovery.html" (
+    echo [INFO] Copie du fichier de récupération...
+    if not exist "public\recovery.html" (
+        echo [ERREUR] Le fichier recovery.html est manquant dans le dossier public.
+        echo Veuillez vérifier l'installation ou télécharger à nouveau le projet.
+        echo.
+        pause
+        exit /b 1
+    )
     copy "public\recovery.html" "dist\recovery.html" >nul
     echo [INFO] Fichier de récupération copié
 )
@@ -68,7 +76,7 @@ timeout /t 2 /nobreak > nul
 
 REM Ouvrir le navigateur avec options sécurisées
 echo [ACTION] Ouverture de l'application...
-start "" "http://localhost:8080/?client=true&forceCloud=true&mode=safe"
+start "" "http://localhost:8080/?client=true&forceCloud=true&mode=safe&noLocalServices=true"
 
 echo.
 echo ===================================================

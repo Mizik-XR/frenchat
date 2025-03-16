@@ -4,26 +4,42 @@ import { useNavigate } from 'react-router-dom';
 import Landing from './Landing';
 import { useAuth } from "@/components/AuthProvider";
 import { LoadingScreen } from '@/components/auth/LoadingScreen';
+import { initializeSafeMode } from '@/utils/startup/simplifiedStartup';
 
 export default function Index() {
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
   const [showLanding, setShowLanding] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [safeModeActive, setSafeModeActive] = useState(false);
   
   useEffect(() => {
     console.log("Index page loaded, user:", user ? "Authenticated" : "Not authenticated", "isLoading:", isLoading);
     
     try {
+      // Activer le mode de secours si demandé par l'URL
+      const isSafeMode = initializeSafeMode();
+      setSafeModeActive(isSafeMode);
+      
       // Stocker la route pour la gestion de session
       localStorage.setItem('last_route', '/');
       
       // Vérifier si nous sommes dans un environnement de prévisualisation
-      const isPreviewEnvironment = window.location.hostname.includes('lovable');
+      const isPreviewEnvironment = 
+        window.location.hostname.includes('lovable') || 
+        window.location.hostname.includes('preview') ||
+        window.location.hostname.includes('netlify');
+        
       if (isPreviewEnvironment) {
         console.log("Environnement de prévisualisation détecté, activation du mode cloud");
         localStorage.setItem('FORCE_CLOUD_MODE', 'true');
         localStorage.setItem('aiServiceType', 'cloud');
+      }
+      
+      // Vérifier les paramètres d'URL pour diagnostic
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('reset') === 'true') {
+        console.log("Réinitialisation complète demandée par l'URL");
       }
       
       // Seulement rediriger après que le statut d'authentification soit confirmé
@@ -50,12 +66,21 @@ export default function Index() {
         <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg">
           <h2 className="text-xl font-bold text-red-600 mb-4">Une erreur est survenue</h2>
           <p className="text-gray-700 mb-4">{error.message}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Rafraîchir la page
-          </button>
+          <div className="space-y-3">
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Rafraîchir la page
+            </button>
+            
+            <button 
+              onClick={() => window.location.href = '/recovery.html'}
+              className="w-full py-2 px-4 bg-white text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
+            >
+              Mode de récupération
+            </button>
+          </div>
         </div>
       </div>
     );

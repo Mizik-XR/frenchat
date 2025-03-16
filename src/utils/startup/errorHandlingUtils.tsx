@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { LoadingScreen } from '@/components/auth/LoadingScreen';
@@ -12,34 +11,74 @@ export const handleLoadError = (error: Error) => {
   // Afficher un message d'erreur utilisateur avec des options de récupération
   const rootElement = document.getElementById("root");
   if (rootElement) {
-    rootElement.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; background: linear-gradient(to bottom right, #f0f9ff, #e1e7ff);">
-        <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 500px; width: 100%;">
-          <h1 style="color: #4f46e5; font-size: 1.5rem; margin-bottom: 1rem; text-align: center;">FileChat - Erreur de chargement</h1>
-          <p style="margin-bottom: 1.5rem; color: #4b5563; text-align: center;">
-            Une erreur est survenue lors du chargement de l'application.
-          </p>
-          <div style="background-color: #f3f4f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; font-family: monospace; font-size: 0.8rem; color: #6b7280; overflow-x: auto;">
-            ${error?.message || 'Erreur inconnue lors du chargement'}
-            <br/>
-            URL: ${window.location.href}
-            <br/>
-            Date: ${new Date().toLocaleString()}
-          </div>
-          <div style="text-align: center; display: flex; flex-direction: column; gap: 0.5rem;">
-            <button onclick="window.location.reload()" style="background-color: #4f46e5; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500; margin-bottom: 0.5rem;">
-              Rafraîchir la page
-            </button>
-            <button onclick="window.location.href = '/?mode=cloud&forceCloud=true'" style="background-color: #fff; color: #4f46e5; border: 1px solid #4f46e5; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
-              Mode cloud
-            </button>
-            <button onclick="localStorage.clear(); window.location.reload()" style="background-color: #fff; color: #6b7280; border: 1px solid #d1d5db; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500; margin-top: 0.5rem;">
-              Réinitialiser et redémarrer
-            </button>
+    try {
+      // Essayer d'utiliser React si possible
+      const root = createRoot(rootElement);
+      root.render(
+        <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white/90 p-8 shadow-lg backdrop-blur-sm">
+            <h1 className="mb-4 text-xl font-semibold text-red-600">Erreur de chargement</h1>
+            <p className="mb-4 text-gray-700">
+              Une erreur critique s'est produite: {error.message}
+            </p>
+            <div className="flex flex-col gap-2">
+              <button 
+                onClick={() => window.location.reload()} 
+                className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+              >
+                Rafraîchir la page
+              </button>
+              <button 
+                onClick={() => window.location.href = '/?mode=safe&forceCloud=true'} 
+                className="rounded border border-blue-500 px-4 py-2 text-blue-500 hover:bg-blue-50"
+              >
+                Mode sécurisé
+              </button>
+              <button 
+                onClick={() => {
+                  localStorage.clear();
+                  window.location.href = '/?reset=true';
+                }} 
+                className="mt-2 rounded border border-red-500 px-4 py-2 text-red-500 hover:bg-red-50"
+              >
+                Réinitialisation complète
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    `;
+      );
+    } catch (renderError) {
+      console.error("Erreur lors du rendu React:", renderError);
+      // Fallback HTML pur en cas d'échec complet de React
+      rootElement.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; background: linear-gradient(to bottom right, #f0f9ff, #e1e7ff);">
+          <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 500px; width: 100%;">
+            <h1 style="color: #4f46e5; font-size: 1.5rem; margin-bottom: 1rem; text-align: center;">FileChat - Erreur critique</h1>
+            <p style="margin-bottom: 1.5rem; color: #4b5563; text-align: center;">
+              Une erreur critique est survenue lors du chargement de l'application.
+            </p>
+            <div style="background-color: #f3f4f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; font-family: monospace; font-size: 0.8rem; color: #6b7280; overflow-x: auto;">
+              ${error?.message || 'Erreur inconnue lors du chargement'}
+              <br/>
+              URL: ${window.location.href}
+              <br/>
+              Date: ${new Date().toLocaleString()}
+            </div>
+            <div style="text-align: center; display: flex; flex-direction: column; gap: 0.5rem;">
+              <button onclick="window.location.reload()" style="background-color: #4f46e5; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500; margin-bottom: 0.5rem;">
+                Rafraîchir la page
+              </button>
+              <button onclick="window.location.href = '/?mode=safe&forceCloud=true'" style="background-color: #fff; color: #4f46e5; border: 1px solid #4f46e5; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+                Mode sécurisé
+              </button>
+              <button onclick="localStorage.clear(); window.location.reload()" style="background-color: #fff; color: #ef4444; border: 1px solid #ef4444; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500; margin-top: 0.5rem;">
+                Réinitialisation complète
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
   }
 };
 
@@ -88,8 +127,8 @@ const getHTMLFallbackContent = (message: string): string => {
         <button onclick="window.location.reload()" style="background-color: #4f46e5; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
           Réessayer
         </button>
-        <button onclick="window.location.href = '/?mode=cloud&forceCloud=true'" style="background-color: white; color: #4f46e5; border: 1px solid #4f46e5; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
-          Mode cloud
+        <button onclick="window.location.href = '/?mode=safe&forceCloud=true'" style="background-color: white; color: #4f46e5; border: 1px solid #4f46e5; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+          Mode sécurisé
         </button>
         <button onclick="localStorage.clear(); window.location.href = '/?reset=true'" style="background-color: white; color: #ef4444; border: 1px solid #ef4444; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500; margin-top: 0.5rem;">
           Réinitialisation complète
