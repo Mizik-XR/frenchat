@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { createRoot } from 'react-dom/client';
 import { LoadingScreen } from '@/components/auth/LoadingScreen';
 
 /**
@@ -62,32 +63,42 @@ export const renderFallbackScreen = (rootElement: HTMLElement, message = "Erreur
       throw new Error('React is not defined');
     }
     
-    if (typeof ReactDOM === 'undefined' || !ReactDOM || !ReactDOM.createRoot) {
-      throw new Error('ReactDOM.createRoot is not available');
+    // Utiliser le bon import de react-dom/client
+    try {
+      const root = createRoot(rootElement);
+      root.render(<LoadingScreen showRetry={true} message={message} />);
+    } catch (error) {
+      console.error("Erreur lors du rendu de l'écran de secours avec createRoot:", error);
+      // Fallback HTML pur en cas d'échec complet
+      rootElement.innerHTML = getHTMLFallbackContent(message);
     }
-    
-    const { createRoot } = ReactDOM;
-    createRoot(rootElement).render(<LoadingScreen showRetry={true} message={message} />);
   } catch (error) {
     console.error("Erreur lors du rendu de l'écran de secours:", error);
-    rootElement.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 2rem;">
-        <h2 style="color: #4f46e5; font-size: 1.5rem; margin-bottom: 1rem;">Problème de chargement</h2>
-        <p style="margin-bottom: 1.5rem; color: #4b5563;">
-          L'application prend plus de temps que prévu à démarrer ou a rencontré une erreur.
-        </p>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <button onclick="window.location.reload()" style="background-color: #4f46e5; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
-            Réessayer
-          </button>
-          <button onclick="window.location.href = '/?mode=cloud&forceCloud=true'" style="background-color: white; color: #4f46e5; border: 1px solid #4f46e5; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
-            Mode cloud
-          </button>
-          <button onclick="localStorage.clear(); window.location.href = '/?reset=true'" style="background-color: white; color: #ef4444; border: 1px solid #ef4444; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500; margin-top: 0.5rem;">
-            Réinitialisation complète
-          </button>
-        </div>
-      </div>
-    `;
+    rootElement.innerHTML = getHTMLFallbackContent(message);
   }
+};
+
+/**
+ * Contenu HTML de secours pour les cas où React ne fonctionne pas du tout
+ */
+const getHTMLFallbackContent = (message: string): string => {
+  return `
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 2rem;">
+      <h2 style="color: #4f46e5; font-size: 1.5rem; margin-bottom: 1rem;">Problème de chargement</h2>
+      <p style="margin-bottom: 1.5rem; color: #4b5563;">
+        ${message || "L'application prend plus de temps que prévu à démarrer ou a rencontré une erreur."}
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <button onclick="window.location.reload()" style="background-color: #4f46e5; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+          Réessayer
+        </button>
+        <button onclick="window.location.href = '/?mode=cloud&forceCloud=true'" style="background-color: white; color: #4f46e5; border: 1px solid #4f46e5; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+          Mode cloud
+        </button>
+        <button onclick="localStorage.clear(); window.location.href = '/?reset=true'" style="background-color: white; color: #ef4444; border: 1px solid #ef4444; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500; margin-top: 0.5rem;">
+          Réinitialisation complète
+        </button>
+      </div>
+    </div>
+  `;
 };
