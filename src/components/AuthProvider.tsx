@@ -1,9 +1,8 @@
 
-import { useContext } from "react";
+import { createContext, useContext } from "react";
 import { User } from "@supabase/supabase-js";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
-import { safeCreateContext } from "@/utils/react/reactInitializer";
 
 interface AuthContextType {
   user: User | null;
@@ -11,8 +10,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-// Utiliser la méthode sécurisée pour créer le contexte d'authentification
-const AuthContext = safeCreateContext<AuthContextType>({
+const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
   signOut: async () => {},

@@ -1,6 +1,5 @@
-
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
@@ -55,6 +54,7 @@
         100% { width: 10%; }
       }
       .retry-btn {
+        display: none;
         margin-top: 1rem;
         background-color: #4f46e5;
         color: white;
@@ -63,122 +63,38 @@
         border-radius: 0.25rem;
         cursor: pointer;
         font-weight: 500;
-        display: none;
       }
       .error-message {
+        display: none;
         color: #dc2626;
         margin-top: 1rem;
-        display: none;
-      }
-      .debug-info {
-        margin-top: 1rem;
-        font-size: 0.7rem;
-        color: #6b7280;
-        text-align: left;
-        background: #f8f9fa;
-        padding: 0.5rem;
-        border-radius: 0.25rem;
-        max-height: 100px;
-        overflow-y: auto;
-        display: none;
       }
     </style>
-    <!-- Script de gestion d'erreur et de récupération amélioré -->
+    <!-- Script de gestion d'erreur et de récupération -->
     <script>
-      // Configuration du débogage
-      const DEBUG_MODE = localStorage.getItem('DEBUG_MODE') === 'true';
-      let errorCount = 0;
-      let errorLog = [];
-      
-      // Fonction pour forcer le mode cloud
-      function forceCloudMode() {
-        localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-        localStorage.setItem('aiServiceType', 'cloud');
-        window.location.href = '/?forceCloud=true&client=true';
+      // Fonction pour rediriger vers la page d'accueil avec des paramètres forcés de mode cloud
+      function forceHomepageInCloudMode() {
+        window.location.href = '/?forceCloud=true&mode=cloud&client=true';
       }
       
-      // Fonction pour activer le mode debug
-      function toggleDebugMode() {
-        const currentMode = localStorage.getItem('DEBUG_MODE') === 'true';
-        localStorage.setItem('DEBUG_MODE', (!currentMode).toString());
-        const debugInfo = document.getElementById('debug-info');
-        if (debugInfo) {
-          debugInfo.style.display = !currentMode ? 'block' : 'none';
-        }
-        return !currentMode;
-      }
-      
-      // Fonction pour loguer les erreurs
-      function logError(message, error) {
-        errorCount++;
-        const errorDetails = {
-          timestamp: new Date().toISOString(),
-          message: message,
-          error: error ? (error.message || String(error)) : 'No error details'
-        };
-        errorLog.push(errorDetails);
-        
-        // Afficher dans la console
-        console.error(`[ERROR LOG] ${errorDetails.timestamp}: ${message}`, error);
-        
-        // Mettre à jour l'interface si elle est disponible
-        updateDebugInfo();
-        
-        // Afficher les boutons de récupération après 2 erreurs
-        if (errorCount >= 2) {
-          showRecoveryOptions();
-        }
-      }
-      
-      // Fonction pour mettre à jour les informations de débogage
-      function updateDebugInfo() {
-        const debugInfo = document.getElementById('debug-info');
-        if (debugInfo) {
-          debugInfo.innerHTML = errorLog.map(err => 
-            `<div>${err.timestamp}: ${err.message} - ${err.error}</div>`
-          ).join('');
-          
-          if (DEBUG_MODE) {
-            debugInfo.style.display = 'block';
-          }
-        }
-      }
-      
-      // Fonction pour afficher les options de récupération
-      function showRecoveryOptions() {
-        const errorMsg = document.getElementById('loading-error');
-        const refreshBtn = document.getElementById('refresh-btn');
-        const cloudBtn = document.getElementById('cloud-btn');
-        const debugBtn = document.getElementById('debug-btn');
-        
-        if (errorMsg) errorMsg.style.display = 'block';
-        if (refreshBtn) refreshBtn.style.display = 'inline-block';
-        if (cloudBtn) cloudBtn.style.display = 'inline-block';
-        if (debugBtn) debugBtn.style.display = 'inline-block';
-      }
-      
-      // Détection des erreurs JavaScript
+      // Détection et récupération en cas d'erreur de chargement
       window.addEventListener('error', function(event) {
-        logError(`Erreur JavaScript: ${event.message}`, event.error);
-        return false;
-      });
-      
-      // Détection des rejets de promesses non gérés
-      window.addEventListener('unhandledrejection', function(event) {
-        logError(`Promesse rejetée non gérée: ${event.reason}`, event.reason);
-        return false;
-      });
-      
-      // Détecter les problèmes de chargement
-      document.addEventListener('DOMContentLoaded', function() {
-        // Vérifier après 5 secondes si l'application est chargée
-        setTimeout(function() {
-          const loadingScreen = document.getElementById('loading-screen');
-          if (loadingScreen && loadingScreen.parentNode === document.getElementById('root')) {
-            logError("Application non chargée après 5 secondes", new Error("Timeout"));
-          }
-        }, 5000);
-      });
+        if (event.message && event.message.includes('useLayoutEffect')) {
+          console.warn('Erreur useLayoutEffect détectée, tentative de récupération...');
+          
+          // Afficher le bouton de récupération après 5 secondes sans chargement
+          setTimeout(function() {
+            var loadingEl = document.getElementById('loading-screen');
+            var retryBtn = document.querySelector('.retry-btn');
+            var errorMsg = document.querySelector('.error-message');
+            
+            if (loadingEl && errorMsg && retryBtn) {
+              errorMsg.style.display = 'block';
+              retryBtn.style.display = 'inline-block';
+            }
+          }, 5000);
+        }
+      }, true);
     </script>
   </head>
   <body>
@@ -199,34 +115,12 @@
           <p>Chargement de votre assistant d'intelligence documentaire...</p>
           <div class="loading-bar"><div class="loading-bar-progress"></div></div>
           <p style="font-size: 0.8rem; color: #6b7280;">Si le chargement échoue, essayez de rafraîchir la page.</p>
-          <div id="loading-error" class="error-message">Le chargement semble prendre plus de temps que prévu.</div>
-          <div>
-            <button id="refresh-btn" class="retry-btn" onclick="window.location.reload()">Rafraîchir la page</button>
-            <button id="cloud-btn" class="retry-btn" onclick="forceCloudMode()" style="margin-left: 8px; background-color: #6366f1;">Mode cloud</button>
-            <button id="debug-btn" class="retry-btn" onclick="toggleDebugMode()" style="margin-left: 8px; background-color: #64748b;">Mode debug</button>
-          </div>
-          <div id="debug-info" class="debug-info"></div>
+          <div class="error-message">Le chargement semble prendre plus de temps que prévu.</div>
+          <button class="retry-btn" onclick="window.location.reload()">Rafraîchir la page</button>
+          <button class="retry-btn" onclick="forceHomepageInCloudMode()" style="margin-left: 8px; background-color: #6366f1;">Mode cloud</button>
         </div>
       </div>
     </div>
-    
-    <!-- Script pour détecter les problèmes de chargement -->
-    <script>
-      // Afficher les boutons de récupération après 8 secondes
-      setTimeout(function() {
-        const errorMsg = document.getElementById('loading-error');
-        const refreshBtn = document.getElementById('refresh-btn');
-        const cloudBtn = document.getElementById('cloud-btn');
-        const debugBtn = document.getElementById('debug-btn');
-        
-        if (errorMsg && refreshBtn && cloudBtn && debugBtn) {
-          errorMsg.style.display = 'block';
-          refreshBtn.style.display = 'inline-block';
-          cloudBtn.style.display = 'inline-block';
-          debugBtn.style.display = 'inline-block';
-        }
-      }, 8000);
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

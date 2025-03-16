@@ -59,10 +59,10 @@ export default defineConfig(({ mode }) => ({
     include: ['react', 'react-dom', 'react-router-dom'],
     exclude: ['gptengineer']
   },
+  // Configuration de la gestion des assets
+  assetsInclude: ['**/*.gif', '**/*.png', '**/*.jpg', '**/*.svg'],
   // Configuration script pour le mode développement et production
   define: {
     __LOVABLE_MODE__: JSON.stringify(mode),
-    // Forcer la définition globale de React pour éviter les problèmes d'initialisation
-    'global.React': 'React',
   }
 }));
