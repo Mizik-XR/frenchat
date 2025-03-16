@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import './styles/message-styles.css';
 import App from './App';
+import { initializeLovable } from './utils/lovable/lovableIntegration';
 
 // S'assurer que le DOM est complètement chargé avant d'initialiser React
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   try {
+    // Initialiser Lovable si nécessaire
+    initializeLovable();
+    
     // Initialisation de React avec une méthode simple et directe
     const root = createRoot(rootElement);
     root.render(
