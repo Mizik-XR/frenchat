@@ -1,15 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-
-// Pages principales avec imports différés pour éviter les dépendances circulaires
-const Landing = React.lazy(() => import('./pages/Landing'));
-const AuthPage = React.lazy(() => import('./pages/Auth'));
-const ChatPage = React.lazy(() => import('./pages/Chat'));
-const DocumentsPage = React.lazy(() => import('./pages/Documents'));
-const ConfigPage = React.lazy(() => import('./pages/Config'));
-const SystemStatus = React.lazy(() => import('./pages/SystemStatus'));
-const LocalAISetup = React.lazy(() => import('./pages/LocalAISetup'));
 
 // Composant de chargement simple
 const LoadingFallback = () => (
@@ -21,15 +12,24 @@ const LoadingFallback = () => (
   </div>
 );
 
+// Import différé des pages pour éviter les dépendances circulaires
+const Landing = React.lazy(() => import('./pages/Landing'));
+const AuthPage = React.lazy(() => import('./pages/Auth'));
+const ChatPage = React.lazy(() => import('./pages/Chat'));
+const DocumentsPage = React.lazy(() => import('./pages/Documents'));
+const ConfigPage = React.lazy(() => import('./pages/Config'));
+const SystemStatus = React.lazy(() => import('./pages/SystemStatus'));
+const LocalAISetup = React.lazy(() => import('./pages/LocalAISetup'));
+
 export default function App() {
   const [isReady, setIsReady] = useState(false);
   
   useEffect(() => {
-    // Activer le mode cloud par défaut pour éviter les problèmes
+    // Configuration de base et activation du mode cloud par défaut
     localStorage.setItem('FORCE_CLOUD_MODE', 'true');
     localStorage.setItem('aiServiceType', 'cloud');
     
-    // Marquer l'application comme prête
+    // Indiquer que l'application est prête
     setIsReady(true);
   }, []);
 
@@ -37,8 +37,9 @@ export default function App() {
     return <LoadingFallback />;
   }
 
+  // Utilisation de Suspense pour gérer le chargement des composants
   return (
-    <React.Suspense fallback={<LoadingFallback />}>
+    <Suspense fallback={<LoadingFallback />}>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -52,6 +53,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
-    </React.Suspense>
+    </Suspense>
   );
 }

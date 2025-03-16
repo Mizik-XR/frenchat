@@ -18,6 +18,9 @@ set "FORCE_CLOUD=1"
 set "CLIENT_MODE=1"
 set "SAFE_MODE=1"
 
+REM Activer le mode de développement pour obtenir de meilleurs messages d'erreur
+set "NODE_ENV=development"
+
 REM Vérifier si dist existe
 if not exist "dist\" (
     echo [ACTION] Construction de l'application...
@@ -33,10 +36,12 @@ if not exist "dist\" (
         exit /b 1
     )
 
-    REM Nettoyer l'installation
-    if exist "node_modules\" (
-        echo [ACTION] Nettoyage des dépendances...
-        rmdir /s /q node_modules
+    REM Nettoyer l'installation si demandé
+    if "%1"=="--clean" (
+        echo [ACTION] Nettoyage complet des dépendances...
+        if exist "node_modules\" rmdir /s /q node_modules
+        if exist "dist\" rmdir /s /q dist
+        del package-lock.json 2>nul
     )
     
     echo [ACTION] Installation des dépendances...
@@ -50,7 +55,6 @@ if not exist "dist\" (
     
     REM Construction spécifique
     echo [ACTION] Construction de l'application en mode minimal...
-    set "NODE_ENV=production"
     call npm run build -- --mode production
     if %ERRORLEVEL% NEQ 0 (
         echo [ERREUR] Construction échouée.
@@ -76,6 +80,10 @@ echo ===================================================
 echo.
 echo L'application est accessible à l'adresse:
 echo http://localhost:8080/?client=true^&forceCloud=true^&mode=safe
+echo.
+echo Commandes spéciales:
+echo --clean  : Réinstallation complète (supprime node_modules et package-lock)
+echo --debug  : Affiche les journaux détaillés pour le débogage
 echo.
 echo Cette fenêtre doit rester ouverte pendant l'utilisation de FileChat.
 echo.

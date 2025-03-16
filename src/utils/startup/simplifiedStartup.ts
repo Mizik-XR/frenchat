@@ -1,28 +1,26 @@
 
 /**
- * Utilitaires pour un démarrage en mode minimal
- * Conçu pour fonctionner même en cas d'erreur critique d'initialisation
+ * Module de démarrage simplifié
+ * Conçu pour fonctionner même en cas d'erreur critique
  */
 
-// Fonction pour activer le mode de secours
+// Activation du mode de secours
 export function activateSafeMode(): void {
   try {
-    // Définir les paramètres de sécurité
     localStorage.setItem('FORCE_CLOUD_MODE', 'true');
     localStorage.setItem('aiServiceType', 'cloud');
     localStorage.setItem('mode', 'safe');
-    
+    localStorage.setItem('useLocalAI', 'false');
     console.log('Mode de secours activé');
   } catch (error) {
-    // En cas d'erreur d'accès au localStorage
     console.error('Erreur lors de l\'activation du mode de secours:', error);
     
-    // Tenter une redirection vers la page de récupération
+    // En cas d'erreur d'accès au localStorage, redirection vers la page de récupération
     window.location.href = '/recovery.html';
   }
 }
 
-// Fonction pour réinitialiser uniquement les paramètres problématiques
+// Réinitialisation des paramètres problématiques
 export function resetProblemSettings(): void {
   try {
     // Liste des paramètres connus pour causer des problèmes
@@ -39,7 +37,6 @@ export function resetProblemSettings(): void {
       'aiProvider'
     ];
     
-    // Supprimer sélectivement
     problematicSettings.forEach(key => {
       localStorage.removeItem(key);
     });
@@ -53,7 +50,7 @@ export function resetProblemSettings(): void {
   }
 }
 
-// Fonction pour initialiser le mode de démarrage sécurisé
+// Initialiser le mode de démarrage sécurisé
 export function initializeSafeMode(): boolean {
   // Vérifier les paramètres d'URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -82,16 +79,25 @@ export function initializeSafeMode(): boolean {
   return false;
 }
 
-// Fonction pour vérifier l'environnement et appliquer les paramètres appropriés
+// Vérifier l'environnement et appliquer les paramètres appropriés
 export function setupEnvironment(): void {
   // Vérifier si nous sommes dans un environnement de prévisualisation
   const isPreviewEnvironment = 
     window.location.hostname.includes('lovable') || 
     window.location.hostname.includes('preview') ||
-    window.location.hostname.includes('netlify');
+    window.location.hostname.includes('netlify') ||
+    window.location.hostname.includes('lovable.app');
     
   if (isPreviewEnvironment) {
     console.log('Environnement de prévisualisation détecté');
     activateSafeMode();
+  }
+
+  // Stocker les informations sur le navigateur pour le debugging
+  try {
+    localStorage.setItem('browser_info', navigator.userAgent);
+    localStorage.setItem('app_load_time', new Date().toISOString());
+  } catch (e) {
+    console.error('Erreur lors du stockage des informations de débogage:', e);
   }
 }

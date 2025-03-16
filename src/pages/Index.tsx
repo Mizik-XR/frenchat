@@ -66,15 +66,8 @@ export default function Index() {
           console.log("Utilisateur authentifié, redirection vers /chat");
           navigate('/chat');
         } else {
-          console.log("Utilisateur non authentifié, chargement de la landing page");
-          const LandingPage = (await import('./Landing')).default;
-          
-          // Créer un élément pour charger la landing page
-          const container = document.getElementById('root');
-          if (container) {
-            const root = ReactDOM.createRoot(container);
-            root.render(<LandingPage />);
-          }
+          console.log("Utilisateur non authentifié, redirection vers la landing page");
+          navigate('/');
         }
         
         setLoading(false);

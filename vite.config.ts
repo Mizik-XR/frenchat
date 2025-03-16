@@ -10,8 +10,9 @@ export default defineConfig({
   },
   plugins: [
     react({
-      // Configuration la plus simple possible
+      // Configuration simple
       jsxRuntime: 'automatic',
+      fastRefresh: true,
     }),
   ],
   resolve: {
@@ -19,15 +20,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Configuration simplifiée
   build: {
     minify: 'esbuild',
     target: 'es2015',
+    outDir: 'dist',
+    // Assurer que les chunks sont divisés proprement
     rollupOptions: {
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            // Séparer React dans son propre chunk
             if (id.includes('react') || id.includes('react-dom')) {
               return 'vendor-react';
             }
@@ -36,16 +37,14 @@ export default defineConfig({
         },
       },
     },
-    outDir: 'dist',
   },
-  // Éviter les conflits de build
+  // Éviter les problèmes de compilation
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
-    force: true, // Forcer la précompilation
+    force: true,
   },
-  // Définitions globales simplifiées
+  // Variables globales simplifiées
   define: {
     'process.env': {},
-    'global': 'window',
   }
 });

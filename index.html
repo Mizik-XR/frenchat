@@ -85,40 +85,40 @@
       }
     </style>
     
-    <!-- Script de récupération minimal -->
+    <!-- Script de surveillance pour détecter les problèmes de chargement de React -->
     <script>
-      // Fonction pour activer le mode de secours
+      window.addEventListener('DOMContentLoaded', function() {
+        // Détecter si l'application ne se charge pas dans un délai raisonnable
+        setTimeout(function() {
+          var root = document.getElementById('root');
+          var initialLoading = document.getElementById('initial-loading');
+          
+          if (initialLoading && (!root || root.childElementCount <= 1)) {
+            console.error("L'application n'a pas pu se charger correctement");
+            
+            var errorMsg = document.getElementById('error-message');
+            var errorButtons = document.getElementById('error-buttons');
+            
+            if (errorMsg && errorButtons) {
+              errorMsg.style.display = 'block';
+              errorButtons.style.display = 'flex';
+            }
+          }
+        }, 5000);
+      });
+      
+      // Fonctions de récupération
       function activateCloudMode() {
         localStorage.setItem('FORCE_CLOUD_MODE', 'true');
         localStorage.setItem('aiServiceType', 'cloud');
         window.location.href = '/?forceCloud=true&mode=safe';
       }
       
-      // Fonction pour réinitialiser l'application
       function resetApplication() {
         localStorage.clear();
         sessionStorage.clear();
         window.location.href = '/?reset=true';
       }
-      
-      // Détecter le timeout de chargement
-      setTimeout(function() {
-        var errorMsg = document.getElementById('error-message');
-        var errorButtons = document.getElementById('error-buttons');
-        
-        if (errorMsg && errorButtons) {
-          errorMsg.style.display = 'block';
-          errorButtons.style.display = 'flex';
-        }
-      }, 7000);
-      
-      // Vérifier si nous sommes dans un mode de secours
-      window.addEventListener('DOMContentLoaded', function() {
-        var urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('mode') === 'safe' || urlParams.get('forceCloud') === 'true') {
-          activateCloudMode();
-        }
-      });
     </script>
   </head>
   <body>
@@ -130,7 +130,7 @@
       </div>
     </noscript>
     
-    <!-- Écran de chargement initial -->
+    <!-- Écran de chargement initial qui sera remplacé par React -->
     <div id="root">
       <div id="initial-loading">
         <div class="loading-container">

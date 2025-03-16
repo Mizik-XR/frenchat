@@ -72,6 +72,35 @@
       border: 1px solid #dc2626;
       margin-top: 0.5rem;
     }
+
+    .error-log {
+      margin-top: 1.5rem;
+      background-color: #f7fafc;
+      border-radius: 0.375rem;
+      padding: 1rem;
+      text-align: left;
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: #4a5568;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .options {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .toggle-logs {
+      background: none;
+      border: none;
+      color: #4f46e5;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
   </style>
 </head>
 <body>
@@ -79,44 +108,86 @@
     <h1>Mode de récupération FileChat</h1>
     
     <p>
-      Cette page s'affiche car l'application a rencontré un problème critique au démarrage.
-      Veuillez choisir l'une des options ci-dessous pour tenter de résoudre le problème.
+      Cette page apparaît car FileChat a rencontré un problème critique.
+      Veuillez choisir l'une des options suivantes pour résoudre le problème:
     </p>
     
     <div class="buttons">
-      <button class="btn-primary" onclick="startSafeMode()">
-        Mode de secours (recommandé)
+      <button class="btn-primary" onclick="startWithoutLocalAI()">
+        Mode sans IA locale (recommandé)
       </button>
       
       <button class="btn-secondary" onclick="resetSettings()">
-        Réinitialiser les paramètres
+        Réinitialiser les paramètres d'IA
       </button>
       
       <button class="btn-danger" onclick="fullReset()">
         Réinitialisation complète
       </button>
     </div>
+
+    <div class="error-log" id="errorLog">
+      Chargement des journaux d'erreur...
+    </div>
+
+    <div class="options">
+      <button class="toggle-logs" id="toggleLogs">Afficher les journaux</button>
+    </div>
   </div>
   
   <script>
-    function startSafeMode() {
+    // Récupérer et afficher les erreurs du localStorage
+    function loadErrorLogs() {
+      const errorLog = document.getElementById('errorLog');
+      let logs = '';
+      try {
+        const appError = localStorage.getItem('app_error_log');
+        const lastError = localStorage.getItem('last_error');
+        const reactError = localStorage.getItem('react_error');
+
+        if (appError) logs += 'App Error: ' + appError + '\n\n';
+        if (lastError) logs += 'Last Error: ' + lastError + '\n\n';
+        if (reactError) logs += 'React Error: ' + reactError + '\n\n';
+        
+        if (!logs) logs = 'Aucun journal d\'erreur disponible';
+        
+        errorLog.textContent = logs;
+      } catch (e) {
+        errorLog.textContent = 'Impossible de charger les journaux d\'erreur: ' + e.message;
+      }
+    }
+
+    // Afficher/masquer les journaux
+    document.getElementById('toggleLogs').addEventListener('click', function() {
+      const errorLog = document.getElementById('errorLog');
+      const isVisible = errorLog.style.display === 'block';
+      errorLog.style.display = isVisible ? 'none' : 'block';
+      this.textContent = isVisible ? 'Afficher les journaux' : 'Masquer les journaux';
+      
+      if (!isVisible) loadErrorLogs();
+    });
+
+    // Mode sans IA locale (cloud uniquement)
+    function startWithoutLocalAI() {
       localStorage.setItem('FORCE_CLOUD_MODE', 'true');
       localStorage.setItem('aiServiceType', 'cloud');
-      localStorage.setItem('mode', 'safe');
+      localStorage.setItem('useLocalAI', 'false');
+      
+      // Rediriger vers l'application avec le mode cloud forcé
       window.location.href = '/?forceCloud=true&mode=safe&reset=partial';
     }
     
+    // Réinitialiser les paramètres liés à l'IA
     function resetSettings() {
-      // Nettoyage sélectif des paramètres problématiques
       const keysToReset = [
         'useLocalAI', 
         'aiProviderSelection',
-        'last_route',
-        'lastView',
         'requestedModel',
         'selectedModel',
         'modelConfig',
-        'localAIUrl'
+        'localAIUrl',
+        'ollamaModels',
+        'aiProvider'
       ];
       
       keysToReset.forEach(key => localStorage.removeItem(key));
@@ -128,16 +199,21 @@
       window.location.href = '/?reset=partial&mode=safe';
     }
     
+    // Réinitialisation complète
     function fullReset() {
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.href = '/?reset=true';
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '/?reset=true';
+      } catch (e) {
+        alert('Erreur lors de la réinitialisation: ' + e.message);
+      }
     }
     
     // Rediriger automatiquement après 1 minute
     setTimeout(() => {
-      document.body.innerHTML += '<p style="margin-top: 1rem; color: #6b7280;">Redirection automatique en mode de secours...</p>';
-      setTimeout(startSafeMode, 3000);
+      document.body.innerHTML += '<p style="margin-top: 1rem; color: #6b7280; text-align: center;">Redirection automatique en mode de secours...</p>';
+      setTimeout(startWithoutLocalAI, 3000);
     }, 60000);
   </script>
 </body>
