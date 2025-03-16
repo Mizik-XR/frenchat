@@ -22,7 +22,6 @@ const renderApp = () => {
     console.log('Application rendue avec succès');
   } catch (error) {
     console.error('Erreur lors du rendu de l\'application:', error);
-    // Fallback pour l'affichage d'une erreur à l'utilisateur
     rootElement.innerHTML = `
       <div style="text-align: center; padding: 2rem;">
         <h1>Erreur de chargement</h1>
