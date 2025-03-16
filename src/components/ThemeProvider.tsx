@@ -1,5 +1,6 @@
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { safeCreateContext } from "@/utils/react/reactInitializer";
 
 type Theme = "dark" | "light" | "system";
 
@@ -19,7 +20,8 @@ const initialState: ThemeProviderState = {
   setTheme: () => null,
 };
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+// Utiliser la méthode sécurisée pour créer le contexte
+const ThemeProviderContext = safeCreateContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
