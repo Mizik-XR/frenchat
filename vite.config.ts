@@ -1,5 +1,5 @@
 
-import { defineConfig } from "vite";
+import { defineConfig, ConfigEnv, PluginOption, UserConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
@@ -12,7 +12,7 @@ const detectCircularDependencies = () => {
     buildStart() {
       console.log('🔍 Vérification des dépendances circulaires lors du build...');
     },
-    resolveId(source: string, importer: string) {
+    resolveId(source: string, importer?: string) {
       // La logique de détection sera implémentée dans le script de diagnostic externe
       return null;
     }
@@ -39,7 +39,7 @@ const optimizeReactImports = () => {
 };
 
 // Configuration principale
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   console.log(`🚀 Mode de compilation: ${mode}`);
   
   // Détecter si nous sommes en mode récupération
@@ -50,7 +50,7 @@ export default defineConfig(({ mode }) => {
   console.log(`☁️ Mode cloud: ${isCloudMode ? 'Activé' : 'Désactivé'}`);
   
   // Déterminer les plugins à utiliser
-  const effectivePlugins = [
+  const effectivePlugins: PluginOption[] = [
     // Toujours inclure React avec des options optimisées
     react({
       jsxRuntime: 'automatic',
@@ -61,17 +61,16 @@ export default defineConfig(({ mode }) => {
           plugins: ['jsx']
         }
       },
-      // Remplacé fastRefresh par une option valide
-      // Utiliser refresh qui est l'option correcte pour contrôler le Fast Refresh
-      refresh: !isRecoveryMode,
+      // Utiliser fastRefresh qui est l'option correcte pour contrôler le Fast Refresh
+      fastRefresh: !isRecoveryMode,
     }),
     
     // Ajouter les plugins conditionnellement
     ...(isRecoveryMode ? [] : [
-      mode === 'development' && componentTagger(),
+      mode === 'development' ? componentTagger() : false,
       detectCircularDependencies(),
       optimizeReactImports()
-    ].filter(Boolean)),
+    ].filter(Boolean) as PluginOption[]),
   ];
   
   return {
