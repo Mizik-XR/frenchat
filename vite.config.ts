@@ -2,19 +2,19 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { componentTagger } from "lovable-tagger";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
   },
   plugins: [
     react({
-      // Configuration simple
       jsxRuntime: 'automatic',
-      fastRefresh: true,
     }),
-  ],
+    mode === 'development' && componentTagger(),
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -24,7 +24,6 @@ export default defineConfig({
     minify: 'esbuild',
     target: 'es2015',
     outDir: 'dist',
-    // Assurer que les chunks sont divisés proprement
     rollupOptions: {
       output: {
         manualChunks: (id) => {
@@ -38,13 +37,11 @@ export default defineConfig({
       },
     },
   },
-  // Éviter les problèmes de compilation
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
     force: true,
   },
-  // Variables globales simplifiées
   define: {
     'process.env': {},
   }
-});
+}));
