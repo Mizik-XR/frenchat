@@ -59,11 +59,7 @@ export const checkForFallbackMode = (): boolean => {
  */
 export const renderFallbackScreen = (rootElement: HTMLElement, message = "Erreur lors du rendu de l'application") => {
   try {
-    if (typeof React === 'undefined' || !React) {
-      throw new Error('React is not defined');
-    }
-    
-    // Utiliser le bon import de react-dom/client
+    // Utiliser le bon import de react-dom/client déjà importé en haut du fichier
     try {
       const root = createRoot(rootElement);
       root.render(<LoadingScreen showRetry={true} message={message} />);
