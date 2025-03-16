@@ -4,7 +4,8 @@
  * Ce module utilise l'initialisation globale de React du module reactGlobalInitializer
  */
 
-import { safeCreateContext, initializeReact, isReactAvailable } from './reactGlobalInitializer';
+// Import only the functions we need, and rename safeCreateContext to avoid conflicts
+import { initializeReact, isReactAvailable } from './reactGlobalInitializer';
 import React from 'react';
 
 // Initialisation immédiate pour garantir la disponibilité
