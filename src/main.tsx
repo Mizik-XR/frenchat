@@ -43,6 +43,13 @@ const renderApp = () => {
       localStorage.setItem('aiServiceType', 'cloud');
     }
     
+    // Définir React globalement si nécessaire
+    if (typeof window !== 'undefined' && !window.React && React) {
+      // Définition explicite de React globalement
+      window.React = React;
+      console.log('React a été défini globalement');
+    }
+    
     // Vérifier l'élément racine
     const rootElement = document.getElementById('root');
     if (!rootElement) {
