@@ -61,8 +61,8 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
           plugins: ['jsx']
         }
       },
-      // Utiliser fastRefresh qui est l'option correcte pour contrôler le Fast Refresh
-      fastRefresh: !isRecoveryMode,
+      // Suppression de l'option fastRefresh qui cause l'erreur
+      // Nous utiliserons les options standard du plugin
     }),
     
     // Ajouter les plugins conditionnellement
