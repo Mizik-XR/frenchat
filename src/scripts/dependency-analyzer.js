@@ -357,6 +357,42 @@ function identifyComplexComponents() {
 }
 
 /**
+ * Analyse spécifique pour détecter les problèmes de createContext
+ */
+function analyzeCreateContextIssues() {
+  for (const [file, _] of dependencyGraph.entries()) {
+    try {
+      const content = fs.readFileSync(file, 'utf-8');
+      const relPath = path.relative(path.resolve(__dirname, '../..'), file);
+      
+      // Détecter les createContext directs
+      if (content.includes('createContext(') && !content.includes('safeCreateContext') && !content.includes('createContextSafely')) {
+        problems.push({
+          type: 'unsafe-context-creation',
+          severity: 'high',
+          path: relPath,
+          message: `Utilisation directe de createContext dans ${relPath}`,
+          suggestion: `Utilisez 'createContextSafely' de '@/core/ReactInstance' ou 'safeCreateContext' de '@/utils/react/ReactBootstrap' pour assurer une instance React unique.`
+        });
+      }
+      
+      // Détecter l'import direct de createContext
+      if (content.match(/import\s+\{\s*(?:[^}]*,\s*)?createContext(?:\s*,[^}]*)?\s*\}\s+from\s+['"]react['"]/)) {
+        problems.push({
+          type: 'direct-context-import',
+          severity: 'high',
+          path: relPath,
+          message: `Import direct de createContext depuis 'react' dans ${relPath}`,
+          suggestion: `Importez createContext depuis '@/core/ReactInstance' pour assurer une instance React unique.`
+        });
+      }
+    } catch (err) {
+      console.error(`Erreur lors de l'analyse des problèmes de createContext dans ${file}:`, err.message);
+    }
+  }
+}
+
+/**
  * Rapport principal
  */
 function generateReport() {
@@ -496,6 +532,45 @@ function generateProjectImprovementSuggestions() {
 }
 
 /**
+ * Analyse spécifique pour identifier les problèmes de production
+ */
+function analyzeProductionBuildIssues() {
+  console.log('\n🔨 ANALYSE DES PROBLÈMES DE BUILD EN PRODUCTION:');
+  console.log('------------------------------------------\n');
+  
+  // Compter les problèmes critiques qui affectent souvent les builds de production
+  const reactInstanceIssues = problems.filter(p => 
+    p.type === 'unsafe-context-creation' || 
+    p.type === 'direct-context-import'
+  );
+  
+  const circularIssues = problems.filter(p => p.type === 'circular-dependency');
+  const complexComponentIssues = problems.filter(p => p.type === 'complex-component');
+  
+  // Rapport sur les problèmes qui peuvent affecter la production
+  console.log('DIFFÉRENCES ENTRE LES BUILDS DE DÉVELOPPEMENT ET DE PRODUCTION:');
+  console.log('1. Tree shaking plus agressif en production peut révéler des dépendances circulaires');
+  console.log('2. La minification en production peut masquer les erreurs d\'instance React');
+  console.log('3. Les optimisations de code peuvent causer des problèmes avec createContext');
+  console.log('4. La division en chunks peut séparer des composants qui devraient partager une instance React');
+  console.log('\n');
+  
+  console.log('PROBLÈMES SPÉCIFIQUES DÉTECTÉS:');
+  console.log(`- ${reactInstanceIssues.length} problèmes liés à l'instance React et createContext`);
+  console.log(`- ${circularIssues.length} dépendances circulaires qui peuvent causer des problèmes en production`);
+  console.log(`- ${complexComponentIssues.length} composants trop complexes susceptibles de provoquer des erreurs d'optimisation`);
+  console.log('\n');
+  
+  console.log('PLAN D\'ACTION POUR UN BUILD DE PRODUCTION STABLE:');
+  console.log('1. Remplacer tous les appels directs à createContext par la version sécurisée');
+  console.log('2. Résoudre les dépendances circulaires en commençant par les plus critiques');
+  console.log('3. Diviser les composants complexes en sous-composants plus petits');
+  console.log('4. Utiliser l\'instance React unique dans tous les fichiers qui utilisent React');
+  console.log('5. Tester avec "npm run build -- --mode development" puis en mode production');
+  console.log('\n');
+}
+
+/**
  * Exécute l'analyse complète
  */
 function runAnalysis() {
@@ -510,10 +585,12 @@ function runAnalysis() {
   analyzeAliasImports();
   detectReactImportIssues();
   identifyComplexComponents();
+  analyzeCreateContextIssues();
   
   // Générer le rapport
   generateReport();
   generateProjectImprovementSuggestions();
+  analyzeProductionBuildIssues();
 }
 
 // Exécuter l'analyse
