@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Index from './pages/Index';
 import AuthPage from './pages/Auth';
 import ChatPage from './pages/Chat';
@@ -11,7 +12,19 @@ import SystemStatus from './pages/SystemStatus';
 import LocalAISetup from './pages/LocalAISetup';
 
 export default function App() {
-  const [showDebugPanel, setShowDebugPanel] = useState(import.meta.env.DEV);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+
+  // Vérifier si nous sommes en mode développement
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      setShowDebugPanel(true);
+    }
+    
+    // Vérifier si le mode debug est activé
+    if (localStorage.getItem('DEBUG_MODE') === 'true') {
+      setShowDebugPanel(true);
+    }
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen">

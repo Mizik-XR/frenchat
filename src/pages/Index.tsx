@@ -4,7 +4,24 @@ import { useNavigate } from 'react-router-dom';
 import Landing from './Landing';
 import { useAuth } from "@/components/AuthProvider";
 import { LoadingScreen } from '@/components/auth/LoadingScreen';
-import { initializeSafeMode } from '@/utils/startup/simplifiedStartup';
+
+// Fonction séparée pour simplifier le composant principal
+const initSafeMode = (): boolean => {
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  if (urlParams.get('mode') === 'safe') {
+    console.log('Mode de démarrage sécurisé activé');
+    
+    // Forcer le mode cloud qui est plus stable
+    localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+    localStorage.setItem('aiServiceType', 'cloud');
+    localStorage.setItem('mode', 'safe');
+    
+    return true;
+  }
+  
+  return false;
+};
 
 export default function Index() {
   const navigate = useNavigate();
@@ -14,11 +31,11 @@ export default function Index() {
   const [safeModeActive, setSafeModeActive] = useState(false);
   
   useEffect(() => {
-    console.log("Index page loaded, user:", user ? "Authenticated" : "Not authenticated", "isLoading:", isLoading);
-    
     try {
+      console.log("Index page loaded, user:", user ? "Authenticated" : "Not authenticated", "isLoading:", isLoading);
+      
       // Activer le mode de secours si demandé par l'URL
-      const isSafeMode = initializeSafeMode();
+      const isSafeMode = initSafeMode();
       setSafeModeActive(isSafeMode);
       
       // Stocker la route pour la gestion de session
@@ -36,13 +53,7 @@ export default function Index() {
         localStorage.setItem('aiServiceType', 'cloud');
       }
       
-      // Vérifier les paramètres d'URL pour diagnostic
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('reset') === 'true') {
-        console.log("Réinitialisation complète demandée par l'URL");
-      }
-      
-      // Seulement rediriger après que le statut d'authentification soit confirmé
+      // Gestion simplifiée du routing basé sur l'authentification
       if (!isLoading) {
         if (user) {
           console.log("Redirecting authenticated user to /chat");
@@ -75,10 +86,10 @@ export default function Index() {
             </button>
             
             <button 
-              onClick={() => window.location.href = '/recovery.html'}
+              onClick={() => window.location.href = '/?mode=safe&forceCloud=true'}
               className="w-full py-2 px-4 bg-white text-blue-600 border border-blue-600 rounded hover:bg-blue-50"
             >
-              Mode de récupération
+              Mode de secours
             </button>
           </div>
         </div>

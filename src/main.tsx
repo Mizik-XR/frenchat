@@ -1,141 +1,87 @@
-// Stratégie d'importation pour éviter les problèmes de chargement
+
+// Stratégie d'importation claire et directe
 import React from 'react';
-import * as ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import './styles/message-styles.css';
-import { handleLoadError } from './utils/startup/errorHandlingUtils';
 
-// Configuration améliorée pour le déploiement avec gestion des erreurs
+// Fonction de rendu simple et robuste
 const renderApp = () => {
   try {
-    // Vérifier si l'application est en mode de récupération via l'URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const isRecoveryMode = urlParams.get('mode') === 'recovery';
-    
-    if (isRecoveryMode) {
-      console.log('Application démarrée en mode récupération');
-      // Forcer le mode cloud et réinitialiser les paramètres problématiques
-      localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-      localStorage.setItem('aiServiceType', 'cloud');
-      localStorage.removeItem('useLocalAI');
-      localStorage.removeItem('last_route');
-    }
-
-    // Vérifier que l'élément racine existe
+    // Récupérer l'élément racine
     const rootElement = document.getElementById('root');
+    
     if (!rootElement) {
-      console.error('Élément racine introuvable');
+      console.error("Élément root non trouvé");
       document.body.innerHTML = `
-        <div style="text-align: center; padding: 2rem;">
+        <div style="padding: 2rem; text-align: center;">
           <h1>Erreur critique</h1>
-          <p>L'élément racine #root est introuvable dans le DOM.</p>
+          <p>L'élément #root est introuvable dans le DOM.</p>
           <button onclick="window.location.reload()" style="padding: 0.5rem 1rem;">
-            Réessayer
+            Rafraîchir
           </button>
         </div>
       `;
       return;
     }
-
-    // Vérification explicite des modules React critiques
-    if (typeof React === 'undefined') {
-      throw new Error("React n'est pas défini");
-    }
     
-    if (typeof ReactDOM === 'undefined' || typeof ReactDOM.createRoot !== 'function') {
-      throw new Error("ReactDOM.createRoot n'est pas disponible");
-    }
-
-    // Utiliser une méthode try/catch pour le rendu React
-    try {
-      const root = ReactDOM.createRoot(rootElement);
-      root.render(
-        <React.StrictMode>
-          <App />
-        </React.StrictMode>,
-      );
-      console.log('Application rendue avec succès');
-    } catch (error) {
-      console.error('Erreur lors du rendu de l\'application:', error);
-      
-      // Basculer en mode de récupération - évite la boucle infinie d'erreurs
-      if (!isRecoveryMode) {
-        console.log('Tentative de basculement en mode récupération...');
-        localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-        localStorage.setItem('aiServiceType', 'cloud');
-        window.location.href = '/?mode=recovery&forceCloud=true';
-      } else {
-        // Déjà en mode récupération mais erreur persistante, afficher une page de récupération HTML pure
-        rootElement.innerHTML = `
-          <div style="text-align: center; padding: 2rem;">
-            <h1>Erreur de chargement</h1>
-            <p>L'application n'a pas pu démarrer correctement même en mode récupération.</p>
-            <p style="color: red; margin: 1rem 0;">Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}</p>
-            <div>
-              <button onclick="window.location.href = '/recovery.html'" style="padding: 0.5rem 1rem; background: #4F46E5; color: white; border: none; margin-right: 0.5rem;">
-                Page de récupération
+    // Créer la racine React et rendre l'application
+    const root = createRoot(rootElement);
+    root.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+    
+    console.log("Application rendue avec succès");
+  } catch (error) {
+    console.error("Erreur critique lors du démarrage:", error);
+    
+    // Afficher une page d'erreur en HTML pur si React échoue
+    const rootElement = document.getElementById('root');
+    if (rootElement) {
+      rootElement.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(to bottom right, #f0f9ff, #e1e7ff);">
+          <div style="background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 500px; width: 100%; text-align: center;">
+            <h1 style="color: #4f46e5; font-size: 1.5rem; margin-bottom: 1rem;">Mode de secours FileChat</h1>
+            <p style="margin-bottom: 1.5rem; color: #4b5563;">
+              L'application n'a pas pu démarrer correctement.
+              ${error instanceof Error ? `<br>Erreur: ${error.message}` : ''}
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <button onclick="window.location.href = '/?mode=safe&forceCloud=true'" style="background-color: #4f46e5; color: white; border: none; padding: 0.75rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+                Mode sécurisé
               </button>
-              <button onclick="localStorage.clear(); window.location.reload()" style="padding: 0.5rem 1rem;">
-                Réinitialiser et réessayer
+              <button onclick="localStorage.clear(); window.location.href = '/?reset=true'" style="background-color: white; color: #ef4444; border: 1px solid #ef4444; padding: 0.75rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500; margin-top: 0.5rem;">
+                Réinitialisation complète
               </button>
             </div>
           </div>
-        `;
-      }
-    }
-  } catch (outerError) {
-    console.error('Erreur critique lors du démarrage:', outerError);
-    
-    // Traiter l'erreur de manière sécurisée avec fallback HTML pur
-    const errorMessage = outerError instanceof Error ? outerError.message : String(outerError);
-    if (document.getElementById('root')) {
-      handleLoadError(outerError instanceof Error ? outerError : new Error(errorMessage));
-    } else {
-      document.body.innerHTML = `
-        <div style="text-align: center; padding: 2rem;">
-          <h1>Erreur critique</h1>
-          <p>Une erreur critique s'est produite pendant le démarrage de l'application.</p>
-          <p style="color: red; margin: 1rem 0;">${errorMessage}</p>
-          <button onclick="window.location.href = '/recovery.html'" style="padding: 0.5rem 1rem; background: #4F46E5; color: white; border: none; margin-right: 0.5rem;">
-            Page de récupération
-          </button>
-          <button onclick="window.location.href = '/?forceCloud=true&reset=true'" style="padding: 0.5rem 1rem;">
-            Redémarrer en mode sécurisé
-          </button>
         </div>
       `;
     }
   }
 };
 
-// Lancer l'application avec une gestion des erreurs améliorée
+// Lancer le rendu quand le DOM est prêt
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', renderApp);
 } else {
   renderApp();
 }
 
-// Ajouter une détection des erreurs globales pour améliorer la résilience
+// Gestionnaire global d'erreurs
 window.addEventListener('error', (event) => {
   console.error('Erreur non gérée détectée:', event.error);
   
-  // Si l'erreur est liée à React ou aux bibliothèques de rendu
-  if (event.error && (
-    event.error.message?.includes('React') || 
-    event.error.message?.includes('renderToString') ||
-    event.error.message?.includes('useLayoutEffect') ||
-    event.error.message?.includes('createRoot')
-  )) {
-    console.warn('Erreur critique de rendu détectée, basculement en mode de secours...');
-    
-    // Forcer le mode cloud pour éviter les problèmes avec les services locaux
+  if (event.error && event.error.message?.includes('React')) {
     localStorage.setItem('FORCE_CLOUD_MODE', 'true');
     localStorage.setItem('aiServiceType', 'cloud');
     
-    // Redirection avec paramètres de mode sécurisé
+    // Redirection avec paramètres de mode sécurisé sans boucle infinie
     if (!window.location.search.includes('mode=safe')) {
-      window.location.href = '/?mode=safe&forceCloud=true&reset=partial';
+      window.location.href = '/?mode=safe&forceCloud=true';
     }
   }
-}, { capture: true });
+});

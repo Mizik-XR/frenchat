@@ -4,398 +4,244 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Frenchat - Récupération d'urgence</title>
+  <title>FileChat - Mode de Récupération</title>
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background: linear-gradient(to bottom right, #f0f9ff, #e1e7ff);
+      height: 100vh;
       margin: 0;
-      padding: 0;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      color: #1e293b;
     }
-    
     .container {
       background: white;
-      padding: 2rem;
       border-radius: 1rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-      max-width: 550px;
-      width: 90%;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      max-width: 600px;
+      width: 100%;
       text-align: center;
     }
-    
     h1 {
       color: #4f46e5;
-      font-size: 1.75rem;
+      font-size: 1.5rem;
       margin-bottom: 1rem;
     }
-    
     p {
-      margin-bottom: 1.5rem;
       color: #4b5563;
-      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
     }
-    
-    .button {
-      background-color: #4f46e5;
-      color: white;
-      border: none;
-      padding: 0.75rem 1rem;
-      border-radius: 0.375rem;
-      cursor: pointer;
-      font-weight: 500;
-      text-decoration: none;
-      display: inline-block;
-      margin-bottom: 0.5rem;
-      width: 100%;
-      box-sizing: border-box;
-      transition: all 0.2s;
-    }
-    
-    .button:hover {
-      background-color: #4338ca;
-      transform: translateY(-1px);
-    }
-    
-    .button-outline {
-      background-color: white;
-      color: #4f46e5;
-      border: 1px solid #4f46e5;
-    }
-    
-    .button-outline:hover {
-      background-color: #f5f3ff;
-    }
-    
-    .button-danger {
-      background-color: white;
-      color: #ef4444;
-      border: 1px solid #ef4444;
-      margin-top: 0.5rem;
-    }
-    
-    .button-danger:hover {
-      background-color: #fef2f2;
-      color: #dc2626;
-    }
-    
     .button-container {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
     }
-    
-    .info {
-      background-color: #f3f4f6;
-      padding: 1rem;
+    button {
+      padding: 0.75rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .primary {
+      background-color: #4f46e5;
+      color: white;
+    }
+    .primary:hover {
+      background-color: #4338ca;
+    }
+    .secondary {
+      background-color: white;
+      color: #4f46e5;
+      border: 1px solid #4f46e5;
+    }
+    .secondary:hover {
+      background-color: #f5f7ff;
+    }
+    .danger {
+      background-color: white;
+      color: #ef4444;
+      border: 1px solid #ef4444;
+      margin-top: 0.5rem;
+    }
+    .danger:hover {
+      background-color: #fef2f2;
+    }
+    .log-container {
+      background-color: #f9fafb;
       border-radius: 0.5rem;
-      margin-bottom: 1.5rem;
-      font-family: monospace;
-      font-size: 0.8rem;
-      color: #6b7280;
-      text-align: left;
-    }
-    
-    .logo {
-      width: 64px;
-      height: 64px;
-      margin: 0 auto 1.5rem;
-      display: block;
-    }
-    
-    .diagnostic {
+      padding: 1rem;
       margin-top: 1.5rem;
       text-align: left;
-      display: none;
-    }
-    
-    .diagnostic-header {
-      font-weight: 600;
-      color: #4b5563;
-      margin-bottom: 0.5rem;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-    }
-    
-    .diagnostic-header:after {
-      content: '+';
-      margin-left: auto;
-      font-size: 1.25rem;
-    }
-    
-    .progress-container {
-      height: 4px;
-      background-color: #e5e7eb;
-      border-radius: 2px;
-      margin: 1.5rem 0;
-      overflow: hidden;
-    }
-    
-    .progress-bar {
-      height: 100%;
-      background-color: #4f46e5;
-      border-radius: 2px;
-      width: 0%;
-      transition: width 0.3s ease;
-    }
-    
-    .steps {
-      margin: 1.5rem 0;
-      text-align: left;
-    }
-    
-    .step {
-      padding: 0.5rem 0;
-      display: flex;
-      align-items: center;
-      color: #9ca3af;
-    }
-    
-    .step.active {
-      color: #4b5563;
-    }
-    
-    .step.done {
-      color: #10b981;
-    }
-    
-    .step-number {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background-color: #f3f4f6;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 0.75rem;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
       font-size: 0.8rem;
-      font-weight: 600;
+      color: #4b5563;
     }
-    
-    .step.active .step-number {
-      background-color: #4f46e5;
-      color: white;
+    .success {
+      color: #047857;
+      font-weight: bold;
     }
-    
-    .step.done .step-number {
-      background-color: #10b981;
-      color: white;
-    }
-    
-    .version {
-      font-size: 0.7rem;
-      color: #9ca3af;
-      margin-top: 2rem;
+    .error {
+      color: #dc2626;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0ZjQ2ZTUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjEgMTVhMiAyIDAgMCAxLTIgMkg3bC00IDRWNWEyIDIgMCAwIDEgMi0yaDE0YTIgMiAwIDAgMSAyIDJ6Ij48L3BhdGg+PC9zdmc+" alt="Logo" class="logo">
-    
-    <h1>Frenchat - Page de Récupération</h1>
-    
-    <p>Un problème critique a été détecté lors du chargement de l'application. Cette page va vous aider à récupérer l'accès.</p>
-    
-    <div class="info">
-      <div id="error-info">
-        Type d'erreur: Erreur de chargement de l'application
-        <br>
-        Page: <span id="current-url"></span>
-        <br>
-        Date: <span id="current-date"></span>
-      </div>
-    </div>
-    
-    <div class="progress-container">
-      <div class="progress-bar" id="progress-bar"></div>
-    </div>
-    
-    <div class="steps">
-      <div class="step active" id="step1">
-        <div class="step-number">1</div>
-        <div class="step-text">Diagnostic du problème</div>
-      </div>
-      <div class="step" id="step2">
-        <div class="step-number">2</div>
-        <div class="step-text">Réinitialisation des paramètres problématiques</div>
-      </div>
-      <div class="step" id="step3">
-        <div class="step-number">3</div>
-        <div class="step-text">Redémarrage de l'application</div>
-      </div>
-    </div>
+    <h1>Mode de Récupération FileChat</h1>
+    <p>
+      Cette page vous permet de récupérer l'application lorsqu'elle rencontre des problèmes de démarrage.
+      Choisissez l'une des options ci-dessous pour résoudre le problème.
+    </p>
     
     <div class="button-container">
-      <a href="/?mode=safe&forceCloud=true&noLocalServices=true" id="safe-mode-btn" class="button">
-        Démarrer en mode sécurisé
-      </a>
+      <button class="primary" onclick="startSafeMode()">
+        Démarrer en mode sécurisé (Recommandé)
+      </button>
       
-      <button id="reset-settings-btn" class="button button-outline">
+      <button class="secondary" onclick="resetSettings()">
         Réinitialiser les paramètres
       </button>
       
-      <button id="reset-full-btn" class="button button-danger">
+      <button class="secondary" onclick="clearCache()">
+        Vider le cache du navigateur
+      </button>
+      
+      <button class="danger" onclick="fullReset()">
         Réinitialisation complète
       </button>
     </div>
     
-    <div class="diagnostic" id="diagnostic-section">
-      <div class="diagnostic-header" id="diagnostic-toggle">
-        Informations techniques
-      </div>
-      <div class="diagnostic-content" id="diagnostic-content" style="display: none;">
-        <!-- Sera rempli par JavaScript -->
-      </div>
+    <div id="log" class="log-container">
+      <div>Prêt à effectuer la récupération...</div>
     </div>
-    
-    <p class="version">Frenchat Recovery v1.1</p>
   </div>
   
   <script>
-    // Mettre à jour les informations dynamiques
-    document.getElementById('current-url').textContent = window.location.href;
-    document.getElementById('current-date').textContent = new Date().toLocaleString();
+    const logContainer = document.getElementById('log');
     
-    // Variables pour l'interface
-    let currentStep = 1;
-    let progress = 0;
-    const progressBar = document.getElementById('progress-bar');
-    
-    // Fonction pour mettre à jour la progression
-    function updateProgress(percent) {
-      progress = percent;
-      progressBar.style.width = `${progress}%`;
+    function log(message, type = 'info') {
+      const logEntry = document.createElement('div');
+      logEntry.className = type;
+      logEntry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+      logContainer.appendChild(logEntry);
+      logContainer.scrollTop = logContainer.scrollHeight;
     }
     
-    // Fonction pour passer à l'étape suivante
-    function nextStep() {
-      if (currentStep < 3) {
-        document.getElementById(`step${currentStep}`).classList.remove('active');
-        document.getElementById(`step${currentStep}`).classList.add('done');
-        currentStep++;
-        document.getElementById(`step${currentStep}`).classList.add('active');
-        updateProgress(currentStep * 33);
-      }
-    }
-    
-    // Fonction pour diagnostiquer le problème
-    function diagnoseIssue() {
-      const issues = [];
+    function startSafeMode() {
+      log('Démarrage en mode sécurisé...', 'info');
+      localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+      localStorage.setItem('aiServiceType', 'cloud');
+      localStorage.setItem('mode', 'safe');
       
-      // Vérifier les paramètres problématiques
+      // Supprimer les paramètres problématiques
       const problematicSettings = [
         'useLocalAI', 
         'aiProviderSelection',
-        'last_route',
-        'lastView',
-        'requestedModel',
-        'app_loading_issue'
-      ];
-      
-      problematicSettings.forEach(key => {
-        if (localStorage.getItem(key)) {
-          issues.push(`Paramètre problématique détecté: ${key}`);
-        }
-      });
-      
-      // Vérifier si on est en mode local
-      if (localStorage.getItem('aiServiceType') === 'local') {
-        issues.push('Mode IA locale activé (source potentielle de problèmes)');
-      }
-      
-      // Construire le rapport de diagnostic
-      const diagnosticContent = document.getElementById('diagnostic-content');
-      if (issues.length > 0) {
-        diagnosticContent.innerHTML = '<strong>Problèmes détectés:</strong><ul>' + 
-          issues.map(issue => `<li>${issue}</li>`).join('') + 
-          '</ul>';
-      } else {
-        diagnosticContent.innerHTML = 'Aucun problème évident détecté dans les paramètres locaux.';
-      }
-      
-      nextStep();
-      return issues.length > 0;
-    }
-    
-    // Fonctions de réinitialisation
-    function resetSettings() {
-      // Réinitialiser les paramètres problématiques
-      const problematicSettings = [
-        'useLocalAI', 
-        'aiProviderSelection',
-        'last_route',
-        'lastView',
-        'requestedModel',
-        'app_loading_issue'
+        'localAIUrl',
+        'localProvider'
       ];
       
       problematicSettings.forEach(key => {
         localStorage.removeItem(key);
       });
       
-      // Forcer le mode cloud
+      log('Mode sécurisé activé avec succès', 'success');
+      setTimeout(() => {
+        log('Redirection vers l\'application...', 'info');
+        window.location.href = '/?mode=safe&forceCloud=true&client=true';
+      }, 1500);
+    }
+    
+    function resetSettings() {
+      log('Réinitialisation des paramètres...', 'info');
+      
+      // Liste des paramètres à conserver
+      const keysToKeep = ['user', 'auth_session', 'supabase-auth-token'];
+      
+      // Sauvegarder les paramètres à conserver
+      const savedSettings = {};
+      keysToKeep.forEach(key => {
+        savedSettings[key] = localStorage.getItem(key);
+      });
+      
+      // Effacer tout le localStorage
+      localStorage.clear();
+      
+      // Restaurer les paramètres à conserver
+      Object.keys(savedSettings).forEach(key => {
+        if (savedSettings[key]) {
+          localStorage.setItem(key, savedSettings[key]);
+        }
+      });
+      
+      // Configurer le mode cloud
       localStorage.setItem('FORCE_CLOUD_MODE', 'true');
       localStorage.setItem('aiServiceType', 'cloud');
       
-      nextStep();
-      
-      // Après une courte pause, rediriger
+      log('Paramètres réinitialisés avec succès', 'success');
       setTimeout(() => {
-        window.location.href = '/?mode=safe&forceCloud=true&reset=partial';
+        log('Redirection vers l\'application...', 'info');
+        window.location.href = '/?reset=partial&forceCloud=true';
       }, 1500);
     }
     
-    function resetFull() {
-      localStorage.clear();
-      nextStep();
+    function clearCache() {
+      log('Tentative de nettoyage du cache...', 'info');
       
-      // Après une courte pause, rediriger
+      // Essayer de nettoyer le cache si le navigateur le supporte
+      if ('caches' in window) {
+        caches.keys().then(cacheNames => {
+          cacheNames.forEach(cacheName => {
+            caches.delete(cacheName);
+          });
+          log('Cache du navigateur nettoyé', 'success');
+        }).catch(err => {
+          log(`Erreur lors du nettoyage du cache: ${err}`, 'error');
+        });
+      } else {
+        log('Votre navigateur ne supporte pas l\'API Cache', 'error');
+      }
+      
+      // Redirection après un délai pour permettre au cache de se nettoyer
       setTimeout(() => {
-        window.location.href = '/?reset=true&forceCloud=true';
-      }, 1500);
+        log('Redirection vers l\'application...', 'info');
+        window.location.href = '/?fresh=true';
+      }, 2000);
     }
     
-    // Ajouter les gestionnaires d'événements
-    document.getElementById('reset-settings-btn').addEventListener('click', resetSettings);
-    document.getElementById('reset-full-btn').addEventListener('click', resetFull);
-    document.getElementById('safe-mode-btn').addEventListener('click', function(e) {
-      e.preventDefault();
-      nextStep();
-      setTimeout(() => {
-        window.location.href = '/?mode=safe&forceCloud=true&noLocalServices=true';
-      }, 1000);
-    });
-    
-    // Toggle pour les informations de diagnostic
-    document.getElementById('diagnostic-toggle').addEventListener('click', function() {
-      const content = document.getElementById('diagnostic-content');
-      const display = content.style.display === 'none' ? 'block' : 'none';
-      content.style.display = display;
-      this.style.setProperty('--after', display === 'none' ? '+' : '-');
-    });
-    
-    // Démarrer le diagnostic automatiquement
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(() => {
-        updateProgress(5);
+    function fullReset() {
+      if (confirm('Attention: Ceci va effacer toutes vos préférences et vous déconnecter. Continuer?')) {
+        log('Réinitialisation complète en cours...', 'info');
+        localStorage.clear();
         
-        // Vérifier s'il y a un historique de problèmes
-        if (localStorage.getItem('app_loading_issue')) {
-          document.getElementById('diagnostic-section').style.display = 'block';
-        }
+        // Nettoyer les cookies liés à l'application
+        document.cookie.split(';').forEach(function(c) {
+          document.cookie = c.trim().split('=')[0] + '=;' + 'expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';
+        });
         
+        log('Réinitialisation terminée', 'success');
         setTimeout(() => {
-          updateProgress(15);
-          diagnoseIssue();
-        }, 800);
-      }, 300);
+          log('Redirection vers la page d\'accueil...', 'info');
+          window.location.href = '/?reset=true';
+        }, 1500);
+      }
+    }
+    
+    // Vérifier si l'utilisateur a été redirigé après une erreur
+    window.addEventListener('load', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('error')) {
+        log(`Erreur détectée: ${urlParams.get('error')}`, 'error');
+        log('Utilisez les options ci-dessus pour résoudre le problème', 'info');
+      }
     });
   </script>
 </body>

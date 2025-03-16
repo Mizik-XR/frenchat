@@ -14,7 +14,7 @@ export function NavbarLogo() {
           className="h-8 w-auto" 
           src="/favicon.ico" 
           alt="Frenchat"
-          onError={(e) => {
+          onError={() => {
             console.log("Image de logo non trouvée, utilisation du fallback");
             setImgError(true);
           }}
