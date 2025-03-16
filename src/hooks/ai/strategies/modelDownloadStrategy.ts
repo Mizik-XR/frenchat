@@ -8,87 +8,34 @@ import { ModelDownloadStatus } from '../types';
 export const fetchModelDownloadProgress = async (localAIUrl: string | null): Promise<ModelDownloadStatus | null> => {
   if (!localAIUrl) return null;
   
-  // Vérifier si nous sommes dans un environnement de prévisualisation
-  if (window.location.hostname.includes('lovable') || 
-      window.location.search.includes('forceCloud') ||
-      localStorage.getItem('FORCE_CLOUD_MODE') === 'true') {
-    console.log("Environnement Lovable détecté: téléchargement de modèle désactivé");
-    return null;
-  }
-  
   try {
-    // Ajouter un timeout pour éviter les attentes trop longues
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
-    
-    const response = await fetch(`${localAIUrl}/download-progress`, {
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeoutId);
-    
+    const response = await fetch(`${localAIUrl}/download-progress`);
     if (response.ok) {
       const status = await response.json();
       return status;
     }
   } catch (error) {
-    // Ignorer les erreurs de connexion dans l'environnement Lovable
-    if (!window.location.hostname.includes('lovable')) {
-      console.error("Erreur lors de la vérification du téléchargement:", error);
-    }
+    console.error("Erreur lors de la vérification du téléchargement:", error);
   }
   return null;
 };
 
 export const fetchAvailableModels = async (serviceType: string, localAIUrl: string | null) => {
-  // Ne pas essayer de récupérer les modèles dans un environnement de prévisualisation
-  if (window.location.hostname.includes('lovable') || 
-      window.location.search.includes('forceCloud') ||
-      localStorage.getItem('FORCE_CLOUD_MODE') === 'true') {
-    console.log("Environnement Lovable détecté: récupération des modèles disponibles désactivée");
-    return [];
-  }
-  
   if (serviceType === 'local' && localAIUrl) {
     try {
-      // Ajouter un timeout pour éviter les attentes trop longues
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      
-      const response = await fetch(`${localAIUrl}/models`, {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
+      const response = await fetch(`${localAIUrl}/models`);
       if (response.ok) {
         const data = await response.json();
         return data.available || [];
       }
     } catch (error) {
-      // Ignorer les erreurs de connexion dans l'environnement Lovable
-      if (!window.location.hostname.includes('lovable')) {
-        console.error("Erreur lors de la récupération des modèles:", error);
-      }
+      console.error("Erreur lors de la récupération des modèles:", error);
     }
   }
   return [];
 };
 
 export const downloadModel = async (modelId: string, localAIUrl: string | null, serviceType: string) => {
-  // Vérifier si nous sommes dans un environnement de prévisualisation
-  if (window.location.hostname.includes('lovable') || 
-      window.location.search.includes('forceCloud') ||
-      localStorage.getItem('FORCE_CLOUD_MODE') === 'true') {
-    toast({
-      title: "Mode prévisualisation",
-      description: "Le téléchargement de modèles n'est pas disponible dans cet environnement.",
-      variant: "destructive"
-    });
-    console.log("Environnement Lovable détecté: téléchargement de modèle bloqué");
-    return false;
-  }
-  
   if (serviceType !== 'local' || !localAIUrl) {
     toast({
       title: "Erreur",
@@ -114,10 +61,6 @@ export const downloadModel = async (modelId: string, localAIUrl: string | null, 
     // Estimer la taille du modèle
     const estimatedSize = modelId.includes('Mixtral') ? 26 : 13; // GB
     
-    // Ajouter un timeout pour éviter les attentes trop longues
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    
     const response = await fetch(`${localAIUrl}/download-model`, {
       method: 'POST',
       headers: {
@@ -127,10 +70,7 @@ export const downloadModel = async (modelId: string, localAIUrl: string | null, 
         model: modelId,
         consent: true
       }),
-      signal: controller.signal
     });
-    
-    clearTimeout(timeoutId);
     
     if (response.ok) {
       const data = await response.json();

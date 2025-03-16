@@ -14,8 +14,7 @@ echo      ASSISTANT FILECHAT - INSTALLATION ET DÉMARRAGE
 echo ===================================================
 echo.
 
-REM Activation du mode DEBUG - force le script à rester ouvert en cas d'erreur
-set "DEBUG_MODE=1"
+REM Ajout d'une pause en cas d'erreur pour voir les messages
 set "ERROR_PAUSE=pause"
 
 REM Vérification des prérequis
@@ -66,9 +65,9 @@ if %ERRORLEVEL% EQU 0 (
         if %ERRORLEVEL% EQU 0 (
             set "TRANSFORMERS_AVAILABLE=1"
             echo [OK] La bibliothèque Hugging Face Hub est installée (compatible).
-        ) else (
+        ) else {
             echo [INFO] Les bibliothèques Transformers/Hugging Face ne sont pas installées.
-        )
+        }
     )
 ) else (
     echo [INFO] Python n'est pas installé ou n'est pas dans le PATH.
@@ -159,12 +158,6 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
-REM Vérification de l'existence du dossier actuel pour éviter les erreurs
-echo [VÉRIFICATION] Vérification des chemins de fichiers...
-cd > "%TEMP%\current_path.txt"
-set /p CURRENT_PATH=<"%TEMP%\current_path.txt"
-echo [INFO] Emplacement actuel: %CURRENT_PATH%
-
 REM Vérification si l'application est déjà construite
 if not exist "dist\" (
     echo [ACTION] Construction de l'application en cours...
@@ -172,7 +165,7 @@ if not exist "dist\" (
     REM Vérification des modules node
     if not exist "node_modules\" (
         echo [ACTION] Installation des dépendances Node.js...
-        call npm install --force
+        call npm install
         if %ERRORLEVEL% NEQ 0 (
             echo [ERREUR] Installation des dépendances échouée
             echo [INFO] Vérifiez votre connexion Internet et réessayez
@@ -252,7 +245,7 @@ echo [ACTION] Démarrage du serveur web...
 where http-server >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo [ACTION] Installation du serveur web...
-    call npm install -g http-server --no-audit --no-fund
+    call npm install -g http-server
     if %ERRORLEVEL% NEQ 0 (
         echo [INFO] Installation globale échouée, tentative avec npx...
         set "HTTP_SERVER_CMD=npx http-server dist -p 8080 -c-1 --cors"

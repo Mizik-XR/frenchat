@@ -17,20 +17,8 @@ export function useModelDownload() {
     downloaded_mb: 0
   });
 
-  // Fonction pour vérifier si on est dans un environnement Lovable ou autre environnement sans serveur local
-  const isPreviewEnvironment = useCallback(() => {
-    return window.location.hostname.includes('lovable') || 
-           window.location.search.includes('forceCloud') ||
-           localStorage.getItem('FORCE_CLOUD_MODE') === 'true';
-  }, []);
-
   // Fonction pour récupérer l'état actuel du téléchargement
   const fetchDownloadProgress = async () => {
-    // Ne pas tenter de se connecter dans un environnement de prévisualisation
-    if (isPreviewEnvironment()) {
-      return null;
-    }
-    
     try {
       const response = await fetch(`${API_URL}/download-progress`, {
         method: 'GET',
@@ -52,16 +40,6 @@ export function useModelDownload() {
 
   // Fonction pour démarrer un téléchargement de modèle
   const startModelDownload = async (request: ModelDownloadRequest) => {
-    // Ne pas tenter de télécharger dans un environnement de prévisualisation
-    if (isPreviewEnvironment()) {
-      toast({
-        title: "Mode prévisualisation",
-        description: "Le téléchargement de modèles n'est pas disponible dans cet environnement.",
-        variant: "destructive"
-      });
-      return null;
-    }
-    
     try {
       const response = await fetch(`${API_URL}/download-model`, {
         method: 'POST',
@@ -117,11 +95,6 @@ export function useModelDownload() {
 
   // Effet pour mettre à jour l'état du téléchargement périodiquement
   useEffect(() => {
-    // Ne pas démarrer la surveillance dans un environnement de prévisualisation
-    if (isPreviewEnvironment()) {
-      return;
-    }
-    
     let intervalId: number | undefined;
 
     const updateProgress = async () => {
@@ -148,12 +121,8 @@ export function useModelDownload() {
       }
     };
 
-    // Vérifier le statut initial de façon sécurisée
-    try {
-      fetchDownloadProgress();
-    } catch (error) {
-      console.log("Impossible de vérifier l'état du téléchargement, probablement dans un environnement sans serveur local");
-    }
+    // Vérifier le statut initial
+    fetchDownloadProgress();
 
     // Mettre en place la mise à jour périodique si un téléchargement est en cours
     if (downloadStatus.status === 'downloading') {
@@ -165,7 +134,7 @@ export function useModelDownload() {
         clearInterval(intervalId);
       }
     };
-  }, [downloadStatus.status, isPreviewEnvironment]);
+  }, [downloadStatus.status]);
 
   return {
     downloadStatus,
