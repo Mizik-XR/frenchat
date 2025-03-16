@@ -12,7 +12,7 @@ const detectCircularDependencies = () => {
     buildStart() {
       console.log('🔍 Vérification des dépendances circulaires lors du build...');
     },
-    resolveId(source, importer) {
+    resolveId(source: string, importer: string) {
       // La logique de détection sera implémentée dans le script de diagnostic externe
       return null;
     }
@@ -23,7 +23,7 @@ const detectCircularDependencies = () => {
 const optimizeReactImports = () => {
   return {
     name: 'optimize-react-imports',
-    transform(code, id) {
+    transform(code: string, id: string) {
       // Simple transformation pour s'assurer que React est importé correctement
       if (id.endsWith('.tsx') || id.endsWith('.jsx')) {
         if (!code.includes('import React') && !code.includes('React.') && !code.includes('* as React')) {
@@ -61,8 +61,9 @@ export default defineConfig(({ mode }) => {
           plugins: ['jsx']
         }
       },
-      // Éviter les transformations qui peuvent causer des problèmes
-      fastRefresh: !isRecoveryMode,
+      // Remplacé fastRefresh par une option valide
+      // Utiliser refresh qui est l'option correcte pour contrôler le Fast Refresh
+      refresh: !isRecoveryMode,
     }),
     
     // Ajouter les plugins conditionnellement

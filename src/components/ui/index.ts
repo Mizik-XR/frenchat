@@ -46,7 +46,7 @@ export { ScrollArea, ScrollBar } from './scroll-area';
 export { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from './select';
 export { Separator } from './separator';
 export { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from './sheet';
-export { Sidebar, SidebarContent, SidebarDescription, SidebarFooter, SidebarHeader, SidebarList, SidebarListItem, SidebarTitle, SidebarTrigger } from './sidebar';
+export { Sidebar, SidebarItem, SidebarSection } from './sidebar';
 export { Skeleton } from './skeleton';
 export { Slider } from './slider';
 export { Switch } from './switch';
@@ -61,9 +61,10 @@ export { Toggle, toggleVariants } from './toggle';
 export { ToggleGroup, ToggleGroupItem } from './toggle-group';
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
-// Exporter les types communs
-export type { ButtonProps } from './button';
-export type { CardProps } from './card';
-export type { DialogProps } from './dialog';
-export type { InputProps } from './input';
-export type { SelectProps } from './select';
+// Les types suivants n'existent pas dans les fichiers actuels, 
+// nous les retirons de l'exportation pour éviter les erreurs
+// export type { ButtonProps } from './button';
+// export type { CardProps } from './card';
+// export type { DialogProps } from './dialog';
+// export type { InputProps } from './input';
+// export type { SelectProps } from './select';
