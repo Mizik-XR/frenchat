@@ -6,6 +6,10 @@ import './index.css'
 import './styles/message-styles.css'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { initializeReact } from './utils/react/reactGlobalInitializer'
+
+// Initialisation explicite de React avant toute autre opération
+initializeReact();
 
 // Création explicite du client QueryClient
 const queryClient = new QueryClient({
@@ -21,35 +25,12 @@ const queryClient = new QueryClient({
 // Fonction sécurisée pour rendre l'application
 const renderApp = () => {
   try {
-    // S'assurer que React est correctement initialisé
-    if (!React || !React.createElement) {
-      console.error("React n'est pas correctement initialisé");
-      document.getElementById('root')?.innerHTML = `
-        <div style="text-align: center; padding: 2rem;">
-          <h2>Erreur de chargement de React</h2>
-          <button onclick="window.location.href='/?forceCloud=true&reset=true'" style="padding: 10px 20px; margin-top: 20px;">
-            Mode de secours
-          </button>
-        </div>
-      `;
-      return;
-    }
-    
     // Vérifier si nous sommes dans un environnement de prévisualisation
     const isPreviewEnvironment = window.location.hostname.includes('lovable');
     if (isPreviewEnvironment) {
       console.log("Environnement de prévisualisation détecté, activation du mode cloud");
       localStorage.setItem('FORCE_CLOUD_MODE', 'true');
       localStorage.setItem('aiServiceType', 'cloud');
-    }
-    
-    // Définir React globalement si nécessaire - correction du problème TypeScript
-    if (typeof window !== 'undefined' && window && React) {
-      if (!window.React) {
-        // Définition explicite de React globalement avec une assertion de type
-        (window as any).React = React;
-        console.log('React a été défini globalement');
-      }
     }
     
     // Vérifier l'élément racine
