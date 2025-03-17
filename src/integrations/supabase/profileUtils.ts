@@ -5,15 +5,7 @@
 
 import { supabase } from './client';
 import { APP_STATE } from '@/compatibility/supabaseCompat';
-
-// Définition du type UserProfile (au lieu d'importer de supabaseModels)
-interface UserProfile {
-  id: string;
-  is_first_login?: boolean;
-  created_at: string;
-  updated_at: string;
-  [key: string]: any;  // Pour les autres propriétés du profil
-}
+import { UserProfile } from './supabaseModels';
 
 // Fonction pour gérer les requêtes de profil utilisateur
 export const handleProfileQuery = async (userId: string) => {
