@@ -10,7 +10,7 @@ import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { SettingsProvider } from './contexts/SettingsContext';
 import Chat from './pages/Chat';
 import Config from './pages/Config';
-import { GoogleDriveConfig } from './components/config/GoogleDriveConfig';
+import { GoogleDriveConfig } from './components/config/GoogleDrive/GoogleDriveConfig';
 
 // Ajouter un composant de diagnostic pour le mode dev
 const DevTools = () => {
@@ -61,7 +61,7 @@ function App() {
               <Route path="/" element={<Chat />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/config" element={<Config />} />
-              <Route path="/config/google-drive" element={<GoogleDriveConfig config={{}} onConfigChange={() => {}} onSave={() => {}} />} />
+              <Route path="/config/google-drive" element={<GoogleDriveConfig />} />
             </Routes>
             <Toaster />
             {import.meta.env.DEV && <DevTools />}
