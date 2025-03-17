@@ -1,4 +1,5 @@
 
+
 /**
  * Utilitaire pour analyser et détecter les dépendances circulaires
  * 
@@ -95,4 +96,15 @@ export function generateDependencyReport(dependencyMap: DependencyMap): string {
   }
   
   return report;
+}
+
+// Fonction pour créer une carte de dépendances à partir des importations
+export function analyzeDependencies(importMap: Record<string, string[]>): DependencyMap {
+  const dependencyMap = new Map<string, string[]>();
+  
+  for (const [module, imports] of Object.entries(importMap)) {
+    dependencyMap.set(module, imports);
+  }
+  
+  return dependencyMap;
 }

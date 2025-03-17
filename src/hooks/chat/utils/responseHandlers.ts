@@ -1,18 +1,27 @@
 
 import { AIProvider, WebUIConfig } from "@/types/chat";
 import { supabase } from "@/integrations/supabase/client";
+import { RagContext } from "@/integrations/supabase/sharedTypes";
 
 /**
  * Fetches RAG context for a conversation
  */
 export const fetchRagContext = async (conversationId: string) => {
-  const { data: ragContext } = await supabase
-    .from('rag_contexts')
-    .select('context')
-    .eq('conversation_id', conversationId)
-    .maybeSingle();
+  try {
+    // Utiliser une requête SQL personnalisée ou RPC pour éviter les problèmes de typage
+    const { data, error } = await supabase
+      .rpc('get_rag_context', { conversation_id: conversationId });
+      
+    if (error) {
+      console.error('Error fetching RAG context:', error);
+      return null;
+    }
     
-  return ragContext?.context || null;
+    return data as RagContext | null;
+  } catch (error) {
+    console.error('Error in fetchRagContext:', error);
+    return null;
+  }
 };
 
 /**
@@ -45,10 +54,20 @@ export const saveMessageToDatabase = async (
     timestamp: Date;
   }
 ) => {
-  const { error } = await supabase
-    .from('conversation_messages')
-    .insert(message);
+  try {
+    const { error } = await supabase.rpc('insert_chat_message', {
+      p_id: message.id,
+      p_role: message.role,
+      p_content: message.content,
+      p_conversation_id: message.conversationId,
+      p_metadata: message.metadata,
+      p_created_at: message.timestamp.toISOString()
+    });
     
-  if (error) throw error;
-  return message;
+    if (error) throw error;
+    return message;
+  } catch (error) {
+    console.error('Error saving message:', error);
+    throw error;
+  }
 };

@@ -22,7 +22,19 @@ export const ConversationSidebar = ({
   const handleCreateNewConversation = async () => {
     const newConversation = await createNewConversation();
     if (newConversation) {
-      setActiveConversation(newConversation);
+      // Utiliser la structure correcte du type Conversation
+      setActiveConversation({
+        id: newConversation.id,
+        title: newConversation.title,
+        createdAt: newConversation.created_at,
+        updatedAt: newConversation.updated_at,
+        // Copier les autres propriétés nécessaires
+        is_pinned: newConversation.is_pinned,
+        is_archived: newConversation.is_archived,
+        folder_id: newConversation.folder_id,
+        settings: newConversation.settings,
+        user_id: newConversation.user_id
+      });
       navigate(`/chat/${newConversation.id}`);
     }
   };

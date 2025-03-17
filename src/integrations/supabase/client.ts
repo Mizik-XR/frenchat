@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import type { UserWithProfile } from './sharedTypes';
@@ -37,4 +38,6 @@ export async function getCurrentUserWithProfile(): Promise<UserWithProfile | nul
   }
 }
 
-// Autres fonctions utilitaires pour l'authentification...
+// Réexporter les éléments nécessaires depuis le module de compatibilité
+export { APP_STATE, preloadSession } from '@/compatibility/supabaseCompat';
+export type { EdgeFunctionResponse } from './sharedTypes';

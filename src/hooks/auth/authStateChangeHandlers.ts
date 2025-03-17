@@ -8,7 +8,7 @@ import { useNavigationHelpers } from "./navigation/navigationHelpers";
 import { isAuthPagePath, isPublicPagePath } from "./routes/routeHelpers";
 import { handleProfileAndConfig } from "./profile/profileUtils";
 import { handleUserRedirection } from "./redirection/redirectionUtils";
-import { APP_STATE } from "@/integrations/supabase/client";
+import { APP_STATE } from "@/compatibility/supabaseCompat";
 
 /**
  * Gère les changements d'état d'authentification

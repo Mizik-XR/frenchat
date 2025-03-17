@@ -1,3 +1,4 @@
+
 import type { Profile, UserWithProfile } from './sharedTypes';
 import { supabase } from './client';
 
