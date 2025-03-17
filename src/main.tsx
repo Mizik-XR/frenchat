@@ -1,3 +1,4 @@
+
 /**
  * Point d'entrée principal de l'application
  * 
@@ -14,11 +15,6 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import './styles/message-styles.css';
 
-// Importer le diagnostic Lovable
-import { runLovableDiagnostic } from './utils/diagnostic/lovableDiagnostic';
-// Importer l'auto-correction Lovable
-import './utils/lovable/autoFixIntegration';
-
 // Importer l'application après avoir initialisé React
 import App from './App';
 
@@ -29,7 +25,6 @@ const isDebugMode = import.meta.env.VITE_DEBUG_MODE === 'true' ||
                   window.location.search.includes('debug=true');
 const isCloudMode = import.meta.env.VITE_CLOUD_MODE === 'true' || 
                   window.location.search.includes('cloud=true');
-const isLovableAutofix = window.location.search.includes('autofix=lovable');
 
 // Logger de diagnostic
 const diagnosticLog = (message: string, type: 'info' | 'error' | 'warning' = 'info') => {
@@ -43,12 +38,6 @@ const diagnosticLog = (message: string, type: 'info' | 'error' | 'warning' = 'in
     console.log(`%c[FileChat] ${message}`, styles[type]);
   }
 };
-
-// Exécuter le diagnostic Lovable au démarrage
-if (isDebugMode || isLovableAutofix) {
-  console.log('%c[FileChat] Exécution du diagnostic Lovable', 'color: #9b59b6; font-weight: bold;');
-  runLovableDiagnostic();
-}
 
 // Configuration améliorée pour le démarrage
 const renderApp = () => {
@@ -170,9 +159,7 @@ if (isDebugMode) {
     isRecoveryMode,
     isDebugMode,
     isCloudMode,
-    isLovableAutofix,
     reactVersion: React.version,
-    runDiagnostic: runLovableDiagnostic,
     checkReact: () => {
       try {
         const testComponent = React.createElement('div', null, 'Test');

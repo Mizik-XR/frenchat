@@ -8,7 +8,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { WebUIConfig, AnalysisMode, AIProvider } from '@/types/chat';
 import { useChatState } from '@/hooks/useChatState';
 import { useAIMode, AIMode } from '@/hooks/useAIMode';
-import { Conversation } from '@/integrations/supabase/sharedTypes';
 
 interface ChatContainerProps {
   config: WebUIConfig;
@@ -44,7 +43,7 @@ export const ChatContainer = ({ config, setConfig }: ChatContainerProps) => {
     // Si aucun ID n'est fourni et qu'il y a des conversations
     if (!id && conversations?.length > 0 && !activeConversation) {
       const mostRecentConversation = [...(conversations || [])].sort(
-        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       )[0];
       
       if (mostRecentConversation) {

@@ -80,7 +80,7 @@ class CompatAppState {
     this._localAIAvailable = value;
   }
 
-  // Méthode detectLocalAIService pour la compatibilité
+  // Ajout de la méthode detectLocalAIService pour résoudre l'erreur TS2339
   detectLocalAIService = async (): Promise<{ available: boolean; message?: string }> => {
     console.warn('[Compat] Using APP_STATE.detectLocalAIService from compatibility module');
     

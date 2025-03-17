@@ -1,6 +1,5 @@
-
-import { React, useState, useEffect } from '@/core/ReactInstance';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Index from './pages/Index';
 import AuthPage from './pages/Auth';
 import ChatPage from './pages/Chat';

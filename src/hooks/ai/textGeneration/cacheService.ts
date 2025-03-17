@@ -1,110 +1,75 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { cacheService } from '@/services/cacheService';
+import { logTokenUsage } from './creditManagement';
 
-// Interface pour le service de cache
-export interface AICacheService {
-  cacheResponse: (key: string, response: string, validityHours?: number) => Promise<void>;
-  getCachedResponse: (key: string) => Promise<string | null>;
-  removeFromCache: (key: string) => Promise<void>;
-  clearCache: () => Promise<void>;
-  findCachedResponse?: (key: string) => Promise<string | null>; // Méthode de compatibilité
+/**
+ * Gère le cache des réponses générées
+ */
+export async function findCachedResponse(
+  prompt: string,
+  systemPrompt: string,
+  provider: string,
+  userId?: string
+): Promise<{ response: string, tokens_used: number } | null> {
+  try {
+    const cachedResponse = await cacheService.findCachedResponse(
+      prompt, 
+      systemPrompt, 
+      provider
+    );
+    
+    if (cachedResponse) {
+      console.log(`Réponse trouvée en cache (${cachedResponse.tokens_used} tokens)`);
+      
+      // Enregistrer l'utilisation dans les statistiques
+      if (userId) {
+        try {
+          await logTokenUsage(
+            userId,
+            0,
+            0,
+            provider,
+            true
+          );
+        } catch (logError) {
+          console.error("Erreur lors de l'enregistrement de l'utilisation du cache:", logError);
+        }
+      }
+      
+      return cachedResponse;
+    }
+    
+    return null;
+  } catch (cacheError) {
+    console.warn("Erreur lors de la vérification du cache:", cacheError);
+    return null;
+  }
 }
 
-// Création du service de cache
-export const createCacheService = (): AICacheService => {
-  return {
-    // Mettre en cache une réponse
-    cacheResponse: async (key: string, response: string, validityHours = 24) => {
-      try {
-        // Calculer la date d'expiration
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + validityHours);
-        
-        const { error } = await supabase
-          .from('embeddings_cache')
-          .upsert({
-            key,
-            value: response,
-            expires_at: expiresAt.toISOString(),
-            access_count: 1
-          });
-        
-        if (error) throw error;
-      } catch (err) {
-        console.error('Erreur lors du cache de la réponse:', err);
-      }
-    },
+/**
+ * Stocke une réponse dans le cache
+ */
+export async function cacheResponse(
+  prompt: string,
+  systemPrompt: string,
+  responseText: string,
+  provider: string,
+  totalTokens: number,
+  userId?: string
+): Promise<void> {
+  try {
+    await cacheService.cacheResponse(
+      prompt,
+      systemPrompt,
+      responseText,
+      provider,
+      totalTokens,
+      7, // expiration en jours
+      userId // transmettre l'ID utilisateur pour associer l'entrée
+    );
     
-    // Récupérer une réponse en cache
-    getCachedResponse: async (key: string) => {
-      try {
-        const { data, error } = await supabase
-          .from('embeddings_cache')
-          .select('value, expires_at')
-          .eq('key', key)
-          .single();
-        
-        if (error || !data) return null;
-        
-        // Vérifier si la réponse n'est pas expirée
-        const expiresAt = new Date(data.expires_at);
-        const now = new Date();
-        
-        if (expiresAt < now) {
-          // La réponse est expirée, on la supprime du cache
-          await supabase
-            .from('embeddings_cache')
-            .delete()
-            .eq('key', key);
-          
-          return null;
-        }
-        
-        // Incrémenter le compteur d'accès
-        await supabase.rpc('increment_cache_access_count', { cache_key: key });
-        
-        return data.value;
-      } catch (err) {
-        console.error('Erreur lors de la récupération du cache:', err);
-        return null;
-      }
-    },
-    
-    // Supprime une entrée du cache
-    removeFromCache: async (key: string) => {
-      try {
-        const { error } = await supabase
-          .from('embeddings_cache')
-          .delete()
-          .eq('key', key);
-        
-        if (error) throw error;
-      } catch (err) {
-        console.error('Erreur lors de la suppression du cache:', err);
-      }
-    },
-    
-    // Vide le cache
-    clearCache: async () => {
-      try {
-        const { error } = await supabase
-          .from('embeddings_cache')
-          .delete()
-          .gte('id', 0); // Supprime toutes les entrées
-        
-        if (error) throw error;
-      } catch (err) {
-        console.error('Erreur lors du vidage du cache:', err);
-      }
-    },
-    
-    // Méthode de compatibilité
-    findCachedResponse: async (key: string) => {
-      return await this.getCachedResponse(key);
-    }
-  };
-};
-
-// Export du singleton
-export const cacheService = createCacheService();
-export const AICacheService = cacheService; // Pour la compatibilité avec le code existant
+    console.log(`Réponse mise en cache (${totalTokens} tokens estimés)`);
+  } catch (cacheError) {
+    console.warn("Erreur lors de la mise en cache:", cacheError);
+  }
+}

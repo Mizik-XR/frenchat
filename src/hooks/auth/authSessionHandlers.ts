@@ -1,6 +1,6 @@
 
 import { Session, User } from "@supabase/supabase-js";
-import { handleProfileAndConfig } from "./profile/profileUtils";
+import { handleProfileAndConfig, handleUserRedirection, isAuthPagePath, isPublicPagePath } from "./sessionHelpers";
 import { useNavigationHelpers } from "./sessionHelpers";
 import { toast } from "sonner";
 
@@ -45,6 +45,11 @@ export const handleAuthSession = async (
     // Récupérer le profil et les configurations
     const result = await handleProfileAndConfig(session.user.id);
     
+    if (result.profileError) {
+      console.error("Erreur lors de la récupération du profil:", result.profileError);
+      toast.error("Erreur lors de la récupération de votre profil");
+    }
+
     if (result.error) {
       console.error("Erreur inattendue:", result.error);
       toast.error("Une erreur est survenue lors de la récupération de vos données");
@@ -67,25 +72,5 @@ export const handleAuthSession = async (
     toast.error("Une erreur est survenue lors de la vérification de votre session");
   } finally {
     setIsLoading(false);
-  }
-};
-
-// Fonctions utilitaires importées
-const isPublicPagePath = (pathname: string) => {
-  return pathname === '/' || pathname === '/auth' || pathname.startsWith('/auth/');
-};
-
-const handleUserRedirection = (
-  isAuthPage: boolean,
-  needsConfig: boolean,
-  isFirstLogin: boolean,
-  navigationHelpers: ReturnType<typeof useNavigationHelpers>
-) => {
-  if (isAuthPage) {
-    if (needsConfig || isFirstLogin) {
-      navigationHelpers.navigate('/config');
-    } else {
-      navigationHelpers.navigate('/home');
-    }
   }
 };

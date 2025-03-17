@@ -1,5 +1,6 @@
+
 /**
- * Script simplifié de vérification des usages de createContext et des dépendances circulaires
+ * Script de vérification des usages de createContext et des dépendances circulaires
  * 
  * Ce script analyse la base de code pour détecter les imports directs
  * de createContext et les dépendances circulaires potentielles.
@@ -47,6 +48,10 @@ const CIRCULAR_DEPENDENCY_PATTERNS = [
   {
     files: ['client.ts', 'profileUtils.ts'],
     description: "Dépendance circulaire entre client et profileUtils"
+  },
+  {
+    files: ['ReactInstance.ts', 'ReactBootstrap.ts'],
+    description: "Dépendance circulaire entre ReactInstance et ReactBootstrap"
   }
 ];
 

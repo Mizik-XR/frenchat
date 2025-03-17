@@ -1,189 +1,197 @@
 
-import { useState, useEffect, useCallback } from '@/core/ReactInstance';
-import { v4 as uuidv4 } from 'uuid';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from "react";
+import { Message, MessageMetadata } from "@/types/chat";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-export type MessageType = 'user' | 'assistant' | 'system';
-
-export interface MessageMetadata {
-  source?: string;
-  timestamp?: string;
-  model?: string;
-  tokens?: number;
-  quoted_message?: any;
-}
-
-export interface ChatMessage {
-  id: string;
-  role: MessageType;
-  content: string;
-  conversation_id: string;
-  user_id?: string;
-  metadata?: MessageMetadata;
-  created_at?: string;
-  createdAt?: number;
-  updatedAt?: number;
-}
-
-export const useChatMessages = (conversationId: string | null) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export function useChatMessages(conversationId: string | null) {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch messages on conversation change
-  const fetchMessages = useCallback(async () => {
-    if (!conversationId) {
-      setMessages([]);
-      return;
-    }
+  // Fonction pour formater les messages depuis Supabase
+  const formatMessages = useCallback((data: any[]): Message[] => {
+    return data.map((msg: any) => ({
+      id: msg.id,
+      role: msg.role,
+      content: msg.content,
+      type: msg.type || 'text',
+      conversationId: msg.conversation_id,
+      timestamp: new Date(msg.created_at).getTime(),
+      replyTo: msg.reply_to,
+      quotedMessageId: msg.quoted_message_id,
+      metadata: msg.metadata
+    }));
+  }, []);
 
+  // Fonction pour récupérer les messages
+  const fetchMessages = useCallback(async (convoId: string) => {
+    if (!convoId) return;
+    
     setIsLoading(true);
     setError(null);
-
+    
     try {
-      const { data, error: fetchError } = await supabase
+      console.log(`Fetching messages for conversation: ${convoId}`);
+      
+      const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
-        .eq('conversation_id', conversationId)
+        .eq('conversation_id', convoId)
         .order('created_at', { ascending: true });
-
-      if (fetchError) {
-        throw new Error(fetchError.message);
-      }
-
-      // Transform to ChatMessage format
-      const formattedMessages = data.map((msg): ChatMessage => ({
-        id: msg.id,
-        role: msg.role as MessageType,
-        content: msg.content,
-        conversation_id: msg.conversation_id,
-        user_id: msg.user_id,
-        metadata: msg.metadata as MessageMetadata,
-        created_at: msg.created_at,
-        createdAt: new Date(msg.created_at).getTime(),
-        updatedAt: new Date(msg.updated_at || msg.created_at).getTime()
-      }));
-
+      
+      if (error) throw error;
+      
+      const formattedMessages = formatMessages(data);
       setMessages(formattedMessages);
-    } catch (err) {
-      console.error('Error fetching messages:', err);
-      setError(err as Error);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      setError("Impossible de récupérer les messages. Veuillez réessayer.");
+      toast.error("Erreur de connexion");
     } finally {
       setIsLoading(false);
     }
+  }, [formatMessages]);
+
+  // Charger les messages au changement de conversation
+  useEffect(() => {
+    if (conversationId) {
+      fetchMessages(conversationId);
+    } else {
+      setMessages([]);
+      setError(null);
+    }
+  }, [conversationId, fetchMessages]);
+
+  // Fonction pour ajouter un message utilisateur
+  const addUserMessage = useCallback((content: string, replyToId?: string): Message => {
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: content,
+      type: 'text',
+      conversationId: conversationId || 'default',
+      timestamp: Date.now(),
+      quotedMessageId: replyToId
+    };
+    
+    setMessages((prev) => [...prev, newMessage]);
+    return newMessage;
   }, [conversationId]);
 
-  useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages, conversationId]);
+  // Fonction pour mettre à jour le dernier message
+  const updateLastMessage = useCallback((content: string, context?: string) => {
+    setMessages((prev) => {
+      const updated = [...prev];
+      if (updated.length > 0) {
+        const lastMsg = { ...updated[updated.length - 1] };
+        lastMsg.content = content;
+        if (context) lastMsg.context = context;
+        updated[updated.length - 1] = lastMsg;
+      }
+      return updated;
+    });
+  }, []);
 
-  // Add a new message
-  const addMessage = async (message: Omit<ChatMessage, 'id'>) => {
+  // Fonction pour ajouter une réponse de l'assistant
+  const setAssistantResponse = useCallback((content: string, context?: string, metadata?: MessageMetadata): Message => {
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      role: 'assistant',
+      content: content,
+      type: 'text',
+      context: context,
+      metadata: metadata,
+      conversationId: conversationId || 'default',
+      timestamp: Date.now(),
+    };
+    
+    setMessages((prev) => [...prev, newMessage]);
+    return newMessage;
+  }, [conversationId]);
+
+  // Fonction pour effacer tous les messages
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+    setError(null);
+  }, []);
+
+  // Fonction pour sauvegarder un message dans Supabase
+  const saveMessageToSupabase = useCallback(async (messageData: {
+    conversation_id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    type: string;
+    quoted_message_id?: string;
+  }) => {
+    const { error } = await supabase
+      .from('chat_messages')
+      .insert(messageData);
+    
+    if (error) throw error;
+  }, []);
+
+  // Fonction pour simuler une réponse de l'IA
+  const generateAIResponse = useCallback(async (content: string, convoId: string) => {
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData?.user?.id;
+      const responseText = "Voici une réponse de l'assistant IA à votre message: " + content;
       
-      if (!userId) {
-        throw new Error('User not authenticated');
-      }
+      await saveMessageToSupabase({
+        conversation_id: convoId,
+        role: 'assistant',
+        content: responseText,
+        type: 'text'
+      });
       
-      const newMessage: ChatMessage = {
-        id: uuidv4(),
-        ...message,
-        user_id: userId,
-        created_at: new Date().toISOString(),
-        createdAt: Date.now()
-      };
-      
-      // Add to local state first
-      setMessages(prev => [...prev, newMessage]);
-      
-      // Then save to database
-      const { error: insertError } = await supabase
-        .from('chat_messages')
-        .insert({
-          id: newMessage.id,
-          role: newMessage.role,
-          content: newMessage.content,
-          conversation_id: newMessage.conversation_id,
-          user_id: newMessage.user_id,
-          metadata: {
-            ...newMessage.metadata,
-            // Pour compatibilité avec le code existant qui pourrait attendre quoted_message_id
-            quoted_message_id: newMessage.metadata?.quoted_message?.id
-          },
-          message_type: newMessage.role === 'assistant' ? 'ai_response' : 'user_message',
-          created_at: newMessage.created_at
-        });
-      
-      if (insertError) {
-        throw new Error(insertError.message);
-      }
-      
-      return newMessage;
+      setAssistantResponse(responseText);
+      setIsLoading(false);
     } catch (err) {
-      console.error('Error adding message:', err);
-      throw err;
+      console.error("Error processing response:", err);
+      setError("Erreur lors du traitement de la réponse");
+      toast.error("Erreur de traitement");
+      setIsLoading(false);
     }
-  };
-  
-  // Update a message
-  const updateMessage = async (id: string, updates: Partial<ChatMessage>) => {
+  }, [saveMessageToSupabase, setAssistantResponse]);
+
+  // Fonction principale pour envoyer un message
+  const sendMessage = useCallback(async (content: string, convoId: string, replyToId?: string) => {
+    if (!content.trim() || !convoId) return;
+
     try {
-      const { error: updateError } = await supabase
-        .from('chat_messages')
-        .update({
-          ...updates,
-          message_type: updates.role === 'assistant' ? 'ai_response' : 'user_message',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-      
-      if (updateError) {
-        throw new Error(updateError.message);
-      }
-      
-      // Update local state
-      setMessages(prev => 
-        prev.map(msg => msg.id === id ? { ...msg, ...updates } : msg)
-      );
-      
-      return true;
-    } catch (err) {
-      console.error('Error updating message:', err);
-      return false;
+      const userMessage = addUserMessage(content, replyToId);
+      setIsLoading(true);
+      setError(null);
+
+      await saveMessageToSupabase({
+        conversation_id: convoId,
+        role: 'user',
+        content: content,
+        type: 'text',
+        quoted_message_id: replyToId
+      });
+
+      // Simulation de réponse IA avec un délai
+      setTimeout(() => {
+        generateAIResponse(content, convoId);
+      }, 1000);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setError("Impossible d'envoyer le message");
+      toast.error("Erreur d'envoi");
+      setIsLoading(false);
     }
-  };
-  
-  // Delete a message
-  const deleteMessage = async (id: string) => {
-    try {
-      const { error: deleteError } = await supabase
-        .from('chat_messages')
-        .delete()
-        .eq('id', id);
-      
-      if (deleteError) {
-        throw new Error(deleteError.message);
-      }
-      
-      // Update local state
-      setMessages(prev => prev.filter(msg => msg.id !== id));
-      
-      return true;
-    } catch (err) {
-      console.error('Error deleting message:', err);
-      return false;
-    }
-  };
+  }, [addUserMessage, generateAIResponse, saveMessageToSupabase]);
 
   return {
     messages,
     isLoading,
     error,
-    addMessage,
-    updateMessage,
-    deleteMessage,
+    setIsLoading,
+    addUserMessage,
+    updateLastMessage,
+    setAssistantResponse,
+    clearMessages,
+    sendMessage,
     fetchMessages
   };
-};
+}

@@ -1,121 +1,75 @@
 
-import { v4 as uuidv4 } from 'uuid';
-import { supabase } from '@/integrations/supabase/client';
-import { Message, SendMessageOptions } from '../types';
+import { saveMessageToDatabase } from "../utils/responseHandlers";
+import { SendMessageOptions } from "../types";
+import { WebUIConfig } from "@/types/chat";
 
-export interface MessageServiceType {
-  createUserMessage: (
-    content: string, 
-    conversationId: string, 
-    files?: File[], 
-    fileUrls?: string[],
-    replyTo?: string,
-    config?: any
-  ) => Message;
-  
-  createAssistantMessage: (
-    content: string, 
-    conversationId: string, 
-    userMessageId: string,
-    config?: any
-  ) => Message;
-  
-  saveMessageToDatabase: (message: Omit<Message, 'timestamp' | 'conversationId'> & { 
-    conversation_id: string,
-    created_at?: string
-  }) => Promise<void>;
-}
+/**
+ * Service for creating and formatting messages
+ */
+export const useMessageService = () => {
+  /**
+   * Create a user message with metadata
+   */
+  const createUserMessage = (
+    content: string,
+    conversationId: string,
+    files: File[] = [],
+    fileUrls: string[] = [],
+    replyTo?: { id: string; content: string; role: 'user' | 'assistant' },
+    config?: WebUIConfig
+  ) => {
+    const userMessageId = crypto.randomUUID();
+    
+    // Préparer les métadonnées
+    const messageMetadata = {
+      replyToId: replyTo?.id,
+      replyToContent: replyTo?.content,
+      replyToRole: replyTo?.role,
+      fileIds: [],
+      fileUrls: fileUrls || [],
+      model: config?.model || "huggingface",
+      provider: config?.provider || "huggingface",
+    };
 
-export const messageService: MessageServiceType = {
-  createUserMessage: (content, conversationId, files = [], fileUrls = [], replyTo, config) => {
-    const timestamp = Date.now();
-    const metadata: any = {};
-    
-    if (files.length > 0 || fileUrls.length > 0) {
-      metadata.files = files.map(file => file.name);
-      metadata.fileUrls = fileUrls;
-    }
-    
-    if (replyTo) {
-      metadata.quoted_message = { id: replyTo };
-    }
-    
-    if (config?.provider) {
-      metadata.provider = config.provider;
-    }
-    
-    if (config?.model) {
-      metadata.model = config.model;
-    }
-    
+    // Créer le message utilisateur
     return {
-      id: uuidv4(),
+      id: userMessageId,
       role: 'user',
       content,
-      timestamp,
       conversationId,
-      metadata
+      metadata: messageMetadata,
+      timestamp: new Date()
     };
-  },
-  
-  createAssistantMessage: (content, conversationId, userMessageId, config) => {
-    const timestamp = Date.now();
-    const metadata: any = {
-      source: 'ai',
-      timestamp: new Date().toISOString(),
-    };
-    
-    if (userMessageId) {
-      metadata.quoted_message = { id: userMessageId };
-    }
-    
-    if (config?.provider) {
-      metadata.provider = config.provider;
-    }
-    
-    if (config?.model) {
-      metadata.model = config.model;
-    }
-    
-    if (config?.tokens) {
-      metadata.tokens = config.tokens;
-    }
-    
+  };
+
+  /**
+   * Create an assistant message with metadata
+   */
+  const createAssistantMessage = (
+    content: string,
+    conversationId: string,
+    replyToId: string,
+    config?: WebUIConfig
+  ) => {
+    const assistantMessageId = crypto.randomUUID();
+
     return {
-      id: uuidv4(),
+      id: assistantMessageId,
       role: 'assistant',
       content,
-      timestamp,
       conversationId,
-      metadata
+      metadata: {
+        replyToId,
+        model: config?.model || "huggingface",
+        provider: config?.provider || "huggingface",
+      },
+      timestamp: new Date()
     };
-  },
-  
-  saveMessageToDatabase: async (message) => {
-    try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .insert({
-          id: message.id,
-          role: message.role,
-          content: message.content,
-          conversation_id: message.conversation_id,
-          user_id: message.user_id,
-          metadata: message.metadata,
-          message_type: message.role === 'assistant' ? 'ai_response' : 'user_message',
-          created_at: message.created_at || new Date().toISOString()
-        });
-      
-      if (error) throw error;
-      
-      return data;
-    } catch (err) {
-      console.error("Error saving message to database:", err);
-      throw err;
-    }
-  }
-};
+  };
 
-export const useMessageService = () => {
-  return messageService;
+  return {
+    createUserMessage,
+    createAssistantMessage,
+    saveMessageToDatabase
+  };
 };

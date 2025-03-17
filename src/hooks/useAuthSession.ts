@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
-import { APP_STATE } from "@/compatibility/supabaseCompat";
+import { supabase, APP_STATE } from "@/integrations/supabase/client";
 import { 
   cachedUser, 
   isSessionLoading, 
@@ -11,12 +10,7 @@ import {
   updateSessionLoading
 } from "./auth/authConstants";
 import { useSignOut } from "./auth/authActions";
-
-// Importer correctement les handlers d'événements d'auth
-import { 
-  useAuthStateChangeHandler as createAuthStateChangeHandler, 
-  useInitialSessionCheck as createInitialSessionCheck
-} from "./auth/authEventHandlers";
+import { useAuthStateChangeHandler, useInitialSessionCheck } from "./auth/authEventHandlers";
 
 export function useAuthSession() {
   const [user, setUser] = useState<User | null>(cachedUser);
@@ -24,9 +18,8 @@ export function useAuthSession() {
   const [offlineMode, setOfflineMode] = useState(APP_STATE.isOfflineMode);
   const signOut = useSignOut();
   
-  // Obtenir les handlers
-  const authStateChangeHandler = createAuthStateChangeHandler();
-  const initialSessionCheck = createInitialSessionCheck();
+  const handleAuthChange = useAuthStateChangeHandler();
+  const checkSession = useInitialSessionCheck();
 
   // Gérer le mode hors ligne
   useEffect(() => {
@@ -51,13 +44,7 @@ export function useAuthSession() {
     
     if (supabase) {
       const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-        const result = await authStateChangeHandler(
-          event, 
-          session, 
-          setIsLoading,
-          () => {}, // onAuthenticated
-          () => {}  // onUnauthenticated
-        );
+        const result = await handleAuthChange(event, session);
         setUser(result?.user ?? null);
         setIsLoading(false);
       });
@@ -65,14 +52,14 @@ export function useAuthSession() {
     }
     
     // Initial session check
-    initialSessionCheck().finally(() => {
+    checkSession().finally(() => {
       setIsLoading(false);
     });
     
     return () => {
       subscription?.unsubscribe();
     };
-  }, [authStateChangeHandler, initialSessionCheck]);
+  }, [handleAuthChange, checkSession]);
 
   // Fonction pour basculer manuellement le mode hors ligne
   const toggleOfflineMode = (value?: boolean) => {

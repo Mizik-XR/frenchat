@@ -1,5 +1,5 @@
 
-import { React, useState, useEffect, createSafeContext } from '@/core/ReactInstance';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { isLocalAIAllowed } from '@/hooks/ai/environment/environmentDetection';
 
 interface SettingsContextType {
@@ -23,16 +23,11 @@ const defaultSettings: SettingsContextType = {
   isLocalAIAvailable: true,
 };
 
-// Création du contexte avec l'API simplifiée
-const { Context: SettingsContext, useContext: useSettings } = createSafeContext<SettingsContextType>(
-  defaultSettings,
-  "SettingsContext"
-);
+const SettingsContext = createContext<SettingsContextType>(defaultSettings);
 
-// Export direct du hook
-export { useSettings };
+export const useSettings = () => useContext(SettingsContext);
 
-export const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
+export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(
     (localStorage.getItem('theme') as 'light' | 'dark' | 'system') || 'system'
   );

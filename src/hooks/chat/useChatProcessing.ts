@@ -2,7 +2,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useAIProviderService } from "./services/aiProviderService";
-import { messageService } from "./services/messageService";
+import { useMessageService } from "./services/messageService";
 import { SendMessageOptions, MessageResult } from "./types";
 import { useAuth } from "@/components/AuthProvider";
 import { AIProvider } from "@/types/chat";
@@ -11,6 +11,7 @@ import { AIProvider } from "@/types/chat";
 export function useChatProcessing() {
   const { user } = useAuth();
   const aiProviderService = useAIProviderService();
+  const messageService = useMessageService();
   
   const [isError, setIsError] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -48,12 +49,11 @@ export function useChatProcessing() {
         if (user) {
           await messageService.saveMessageToDatabase({
             id: userMessage.id,
-            role: userMessage.role,
+            role: 'user',
             content: userMessage.content,
-            conversation_id: userMessage.conversationId,
+            conversationId: userMessage.conversationId,
             metadata: userMessage.metadata,
-            user_id: user.id,
-            created_at: new Date().toISOString()
+            timestamp: userMessage.timestamp
           });
         }
 
@@ -62,16 +62,12 @@ export function useChatProcessing() {
         let modelProvider = config?.provider as AIProvider || 'mistral';
 
         if (modelProvider === 'openai-agent' && config?.useRag) {
-          // Utiliser la fonction compatibilité
           generatedText = await aiProviderService.generateOpenAIAgentResponse(content, conversationId, config);
         } else if (modelProvider === 'openai') {
-          // Utiliser la fonction compatibilité
           generatedText = await aiProviderService.generateOpenAIResponse(content, config);
         } else if (modelProvider === 'anthropic') {
-          // Utiliser la fonction compatibilité
           generatedText = await aiProviderService.generateAnthropicResponse(content, config);
         } else {
-          // Utiliser la fonction compatibilité
           generatedText = await aiProviderService.generateStandardResponse(
             content, 
             modelProvider,
@@ -91,12 +87,11 @@ export function useChatProcessing() {
         if (user) {
           await messageService.saveMessageToDatabase({
             id: assistantMessage.id,
-            role: assistantMessage.role,
+            role: 'assistant',
             content: assistantMessage.content,
-            conversation_id: assistantMessage.conversationId,
+            conversationId: assistantMessage.conversationId,
             metadata: assistantMessage.metadata,
-            user_id: user.id,
-            created_at: new Date().toISOString()
+            timestamp: assistantMessage.timestamp
           });
         }
 

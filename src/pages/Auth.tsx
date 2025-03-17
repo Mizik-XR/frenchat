@@ -1,144 +1,206 @@
 
-import { useEffect, useState } from "@/core/ReactInstance";
-import { useNavigate, useLocation } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
-import { Logo } from "@/components/ui/logo";
-import { supabase } from "@/integrations/supabase/client";
-import { handleAuthChange } from "@/hooks/auth/authStateChangeHandlers";
-import { AuthChangeEvent } from "@supabase/supabase-js";
+import React, { useEffect, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase, handleProfileQuery, APP_STATE } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
+import { SignInForm } from '@/components/auth/SignInForm';
+import { SignUpForm } from '@/components/auth/SignUpForm';
+import { AuthContainer } from '@/components/auth/AuthContainer';
+import { AuthLoadingScreen } from '@/components/auth/AuthLoadingScreen';
+import { useAuthForms } from '@/hooks/useAuthForms';
+import { toast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
-const Auth = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const navigate = useNavigate();
+export default function Auth() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [offlineMode, setOfflineMode] = useState(APP_STATE.isOfflineMode);
   const location = useLocation();
-  const [prevUser, setPrevUser] = useState(null);
-
-  const { from } = location.state || { from: "/home" };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: email.split("@")[0],
-            },
-          },
-        });
-
-        if (error) {
-          toast({
-            title: "Erreur lors de l'inscription",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Inscription réussie",
-            description: "Veuillez vérifier votre email pour confirmer votre compte.",
-          });
-          navigate("/config");
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          toast({
-            title: "Erreur lors de la connexion",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Connexion réussie",
-            description: "Vous êtes maintenant connecté.",
-          });
-          navigate(from || "/home");
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const authForms = useAuthForms();
+  
+  // Get selected tab from navigation state
+  const defaultTab = location.state?.tab || 'signin';
 
   useEffect(() => {
-    const handleAuthState = async (event: AuthChangeEvent, session: any) => {
-      if (event === "SIGNED_IN" && !prevUser) {
-        navigate("/config");
+    console.log("Auth component initializing");
+    
+    // Vérifier si on est en mode hors ligne
+    if (APP_STATE.isOfflineMode) {
+      setOfflineMode(true);
+      setLoading(false);
+      setError("Application en mode hors ligne. L'authentification n'est pas disponible.");
+      console.log("Mode hors ligne détecté dans Auth.tsx");
+      return;
+    }
+    
+    const checkSession = async () => {
+      try {
+        if (!supabase) {
+          throw new Error("Client Supabase non disponible. Vérifiez votre connexion Internet.");
+        }
+        
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error retrieving session:', error);
+          setError('Une erreur est survenue lors de la vérification de votre session.');
+          toast({
+            title: "Erreur d'authentification",
+            description: "Problème de connexion avec le serveur. Veuillez réessayer.",
+            variant: "destructive",
+          });
+        }
+        setSession(currentSession);
+      } catch (error) {
+        console.error('Error in checkSession:', error);
+        setError('Une erreur inattendue est survenue.');
+      } finally {
+        setLoading(false);
       }
-      await handleAuthChange(event, session, setLoading, () => {}, () => {});
     };
 
-    supabase.auth.onAuthStateChange(handleAuthState);
+    checkSession();
+
+    // Ajouter un gestionnaire pour mode hors ligne
+    const handleOfflineChange = () => {
+      setOfflineMode(APP_STATE.isOfflineMode);
+      if (APP_STATE.isOfflineMode) {
+        setError("Application en mode hors ligne. L'authentification n'est pas disponible.");
+      }
+    };
+    
+    // Écouteur d'événement pour les changements de mode hors ligne
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'OFFLINE_MODE') {
+        handleOfflineChange();
+      }
+    });
+
+    // Ne configurer l'écouteur de changement d'état d'authentification que si Supabase est disponible
+    let subscription: { unsubscribe: () => void } | null = null;
+    
+    if (supabase) {
+      const { data: authData } = supabase.auth.onAuthStateChange((_event, session) => {
+        console.log("Auth state changed", _event, session);
+        setSession(session);
+        
+        // Si user vient de s'inscrire ou de se connecter, vérifier les erreurs de base de données
+        if (session && (_event === 'SIGNED_IN' || _event === 'SIGNED_UP')) {
+          handleProfileQuery(session.user.id)
+            .then(({ error }) => {
+              if (error) {
+                console.warn("Problème de profil détecté, mais continuation avec la session:", error);
+                toast({
+                  title: "Avertissement",
+                  description: "Votre profil a été initialisé avec des valeurs par défaut.",
+                  duration: 5000,
+                });
+              }
+            });
+        }
+      });
+      
+      subscription = authData.subscription;
+    }
 
     return () => {
-      supabase.auth.signOut();
+      subscription?.unsubscribe();
+      window.removeEventListener('storage', handleOfflineChange);
     };
-  }, [navigate, prevUser]);
+  }, []);
+
+  // Use redirect path from state, or default to home
+  const redirectTo = location.state?.from || '/';
+  console.log("Redirection path if authenticated:", redirectTo);
+
+  if (loading) {
+    return <AuthLoadingScreen />;
+  }
+
+  // If user is authenticated, redirect to requested page or home
+  if (session) {
+    console.log("User is authenticated, redirecting to:", redirectTo);
+    return <Navigate to={redirectTo} replace />;
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="space-y-6 bg-white p-8 rounded shadow-md w-96">
-        <Logo className="w-24 h-auto mx-auto" />
-        <h2 className="text-2xl font-semibold text-center">
-          {isSignUp ? "Créer un compte" : "Se connecter"}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <input
-              type="email"
-              placeholder="Adresse email"
-              className="w-full p-2 border rounded"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <input
-              type="password"
-              placeholder="Mot de passe"
-              className="w-full p-2 border rounded"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <button
-              type="submit"
-              className="w-full bg-primary text-white p-2 rounded hover:bg-primary-dark transition duration-300"
-              disabled={loading}
+    <AuthContainer>
+      {offlineMode && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Mode Hors Ligne</AlertTitle>
+          <AlertDescription>
+            L'application fonctionne en mode hors ligne. L'authentification n'est pas disponible.
+            <br />
+            <button 
+              className="text-blue-600 hover:text-blue-800 underline mt-2"
+              onClick={() => {
+                APP_STATE.setOfflineMode(false);
+                setOfflineMode(false);
+                setError(null);
+                window.location.reload();
+              }}
             >
-              {loading ? "Chargement..." : isSignUp ? "S'inscrire" : "Se connecter"}
+              Tenter de se reconnecter
             </button>
-          </div>
-        </form>
-        <div className="text-center">
-          <button
-            type="button"
-            className="text-sm text-gray-600 hover:text-gray-800 transition duration-300"
-            onClick={() => setIsSignUp(!isSignUp)}
-          >
-            {isSignUp
-              ? "Vous avez déjà un compte? Se connecter"
-              : "Créer un nouveau compte"}
-          </button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {!offlineMode && (
+        <Card className="border-gray-200 shadow-lg">
+          <CardHeader className="pb-0">
+            <Tabs defaultValue={defaultTab} className="w-full">
+              <TabsList className="grid grid-cols-2 mb-4">
+                <TabsTrigger value="signin">Connexion</TabsTrigger>
+                <TabsTrigger value="signup">Inscription</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="signin">
+                <CardContent className="pt-6">
+                  <SignInForm 
+                    loading={authForms.isLoading}
+                    email={authForms.email}
+                    setEmail={authForms.setEmail}
+                    password={authForms.password}
+                    setPassword={authForms.setPassword}
+                    handleSignIn={authForms.handleSignIn}
+                    handleMagicLink={authForms.handleMagicLink}
+                    rememberMe={authForms.rememberMe}
+                    setRememberMe={authForms.setRememberMe}
+                  />
+                </CardContent>
+              </TabsContent>
+              
+              <TabsContent value="signup">
+                <CardContent className="pt-6">
+                  <SignUpForm 
+                    loading={authForms.isLoading}
+                    email={authForms.email}
+                    setEmail={authForms.setEmail}
+                    password={authForms.password}
+                    setPassword={authForms.setPassword}
+                    fullName={authForms.fullName}
+                    setFullName={authForms.setFullName}
+                    confirmPassword={authForms.confirmPassword}
+                    setConfirmPassword={authForms.setConfirmPassword}
+                    handleSignUp={authForms.handleSignUp}
+                  />
+                </CardContent>
+              </TabsContent>
+            </Tabs>
+          </CardHeader>
+        </Card>
+      )}
+      
+      {error && (
+        <div className="mt-4 p-3 bg-red-100 text-red-800 rounded-md text-sm">
+          {error}
         </div>
-      </div>
-    </div>
+      )}
+    </AuthContainer>
   );
-};
-
-export default Auth;
+}

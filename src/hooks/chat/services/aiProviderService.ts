@@ -1,106 +1,103 @@
 
-import { AIProvider, AIModelConfig, AIProviderOptions } from '@/types/chat';
-import { Message } from '../types';
-import { supabase } from '@/integrations/supabase/client';
-import { openAiService } from './openAiService';
-import { anthropicService } from './anthropicService';
-import { createChatPrompt } from '../utils/promptBuilders';
+import { useAIProviders } from "../useAIProviders";
+import { useHuggingFace } from "../../useHuggingFace";
+import { useSecureApiProxy } from "../../useSecureApiProxy";
+import { useOpenAIAgents } from "../../ai/useOpenAIAgents";
+import { WebUIConfig, AIProvider } from "@/types/chat";
+import { fetchRagContext, extractAnthropicResponse } from "../utils/responseHandlers";
+import { saveMessageToDatabase } from "../utils/responseHandlers";
+import { SendMessageOptions } from "../types";
 
-export interface AIProviderServiceType {
-  generateResponse: (
-    messages: Message[], 
-    modelConfig: AIModelConfig,
-    options?: AIProviderOptions
-  ) => Promise<{
-    content: string;
-    usage: { total_tokens: number };
-  }>;
-  
-  // Pour la compatibilité avec le code existant
-  generateOpenAIAgentResponse: (
-    content: string, 
-    conversationId: string, 
-    config?: any
-  ) => Promise<string>;
-  
-  generateOpenAIResponse: (
-    content: string,
-    config?: any
-  ) => Promise<string>;
-  
-  generateAnthropicResponse: (
-    content: string,
-    config?: any
-  ) => Promise<string>;
-  
-  generateStandardResponse: (
-    content: string,
-    provider: AIProvider,
-    config?: any
-  ) => Promise<string>;
-}
-
-export const aiProviderService: AIProviderServiceType = {
-  generateResponse: async (messages, modelConfig, options = {}) => {
-    const provider = modelConfig.provider || 'openai';
-    const prompt = createChatPrompt(messages);
-    
-    let response;
-    
-    switch (provider) {
-      case 'openai': 
-        response = await openAiService.generateMessage(JSON.stringify(prompt), {
-          model: modelConfig.model,
-          temperature: modelConfig.temperature,
-          ...options
-        });
-        break;
-      case 'anthropic':
-        response = await anthropicService.generateMessage(JSON.stringify(prompt), {
-          model: modelConfig.model,
-          temperature: modelConfig.temperature,
-          ...options
-        });
-        break;
-      default:
-        // Fallback pour tout autre provider
-        response = {
-          content: `Réponse générée par le provider ${provider}. Ce provider n'est pas encore implémenté.`,
-          usage: { total_tokens: 0 }
-        };
-    }
-    
-    return response;
-  },
-  
-  // Méthodes de compatibilité
-  generateOpenAIAgentResponse: async (content, conversationId, config) => {
-    const prompt = `Conversation ID: ${conversationId}\nUser: ${content}`;
-    const response = await openAiService.generateMessage(prompt, config);
-    return response.content;
-  },
-  
-  generateOpenAIResponse: async (content, config) => {
-    const response = await openAiService.generateMessage(content, config);
-    return response.content;
-  },
-  
-  generateAnthropicResponse: async (content, config) => {
-    const response = await anthropicService.generateMessage(content, config);
-    return response.content;
-  },
-  
-  generateStandardResponse: async (content, provider, config) => {
-    if (provider === 'openai') {
-      return aiProviderService.generateOpenAIResponse(content, config);
-    } else if (provider === 'anthropic') {
-      return aiProviderService.generateAnthropicResponse(content, config);
-    } else {
-      return `Réponse générée par le provider ${provider}. Ce provider n'est pas encore implémenté.`;
-    }
-  }
-};
-
+/**
+ * Service for generating AI responses using different providers
+ */
 export const useAIProviderService = () => {
-  return aiProviderService;
+  const { generateResponse } = useAIProviders();
+  const { textGeneration } = useHuggingFace();
+  const { callApi, generateText } = useSecureApiProxy();
+  const { askAgentWithContext } = useOpenAIAgents();
+
+  /**
+   * Generate a response using OpenAI Agent with RAG
+   */
+  const generateOpenAIAgentResponse = async (
+    content: string, 
+    conversationId: string,
+    config: WebUIConfig
+  ) => {
+    const ragContext = await fetchRagContext(conversationId);
+    
+    if (ragContext) {
+      const response = await askAgentWithContext(
+        ragContext,
+        content,
+        {
+          modelName: config.model || "gpt-4o",
+          instructions: `Tu es un assistant qui répond aux questions en utilisant uniquement le contexte fourni. 
+          Si la réponse ne peut pas être déterminée à partir du contexte, dis-le clairement.`
+        }
+      );
+      
+      if (response) {
+        return response;
+      }
+    }
+    
+    throw new Error("Contexte RAG non disponible ou erreur de génération");
+  };
+
+  /**
+   * Generate a response using OpenAI API
+   */
+  const generateOpenAIResponse = async (content: string, config: WebUIConfig) => {
+    return await generateText(content, {
+      model: config.model || "gpt-4o-mini",
+      temperature: config.temperature,
+      max_tokens: config.maxTokens,
+      system_prompt: `Tu es un assistant d'IA qui répond aux questions de manière concise et précise. 
+      Mode d'analyse: ${config.analysisMode}`
+    });
+  };
+
+  /**
+   * Generate a response using Anthropic API
+   */
+  const generateAnthropicResponse = async (content: string, config: WebUIConfig) => {
+    const response = await callApi('anthropic', 'messages', {
+      model: config.model || "claude-3-haiku-20240307",
+      max_tokens: config.maxTokens || 1000,
+      temperature: config.temperature || 0.7,
+      system: `Tu es un assistant d'IA qui répond aux questions de manière utile, précise et honnête. Mode d'analyse: ${config.analysisMode}`,
+      messages: [
+        { role: "user", content: content }
+      ]
+    });
+    
+    return extractAnthropicResponse(response);
+  };
+
+  /**
+   * Generate a response using standard providers (Huggingface, etc.)
+   */
+  const generateStandardResponse = async (content: string, provider: AIProvider, config: WebUIConfig) => {
+    const results = await generateResponse(
+      content,
+      content,
+      provider,
+      config
+    );
+    
+    if (results && results.length > 0) {
+      return results[0].generated_text || "";
+    }
+    
+    throw new Error("Erreur lors de la génération de texte");
+  };
+
+  return {
+    generateOpenAIAgentResponse,
+    generateOpenAIResponse,
+    generateAnthropicResponse,
+    generateStandardResponse
+  };
 };

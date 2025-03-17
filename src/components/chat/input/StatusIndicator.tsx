@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { WifiOff, Wifi, Check, AlertTriangle, X, Server, Cloud, Cpu } from "lucide-react";
+import { APP_STATE } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { APP_STATE } from "@/compatibility/supabaseCompat";
 
 interface StatusIndicatorProps {
   serviceType: string;

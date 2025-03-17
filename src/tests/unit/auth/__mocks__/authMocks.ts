@@ -1,110 +1,123 @@
 
-import { vi } from 'vitest';
-import { createMockFunction, enhanceMockFunction } from './mockUtils';
+import { supabase } from "@/integrations/supabase/client";
+import { vi } from "vitest";
+import { Session, User } from "@supabase/supabase-js";
 
-// Mocks pour les fonctions Supabase
-export const mockSignIn = enhanceMockFunction(createMockFunction());
-export const mockSignUp = enhanceMockFunction(createMockFunction());
-export const mockSignOut = enhanceMockFunction(createMockFunction());
-export const mockGetUser = enhanceMockFunction(createMockFunction());
-export const mockGetSession = enhanceMockFunction(createMockFunction());
+// Mock Supabase client
+vi.mock("@/integrations/supabase/client", () => {
+  return {
+    supabase: {
+      auth: {
+        getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+        onAuthStateChange: vi.fn().mockReturnValue({
+          data: { subscription: { unsubscribe: vi.fn() } },
+        }),
+        signOut: vi.fn().mockResolvedValue({ error: null }),
+      },
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }),
+    },
+    APP_STATE: {
+      isOfflineMode: false,
+      setOfflineMode: vi.fn(),
+    },
+  };
+});
 
-// Mock pour le service Supabase
-export const mockSupabaseAuth = {
-  getUser: mockGetUser,
-  getSession: mockGetSession,
-  signInWithPassword: mockSignIn,
-  signUp: mockSignUp,
-  signOut: mockSignOut,
-  onAuthStateChange: vi.fn()
-};
+// Mock React Router
+vi.mock("react-router-dom", () => {
+  return {
+    useNavigate: vi.fn().mockReturnValue(vi.fn()),
+    useLocation: vi.fn().mockReturnValue({
+      pathname: "/test",
+      search: "",
+      hash: "",
+      state: null,
+      key: "default",
+    }),
+  };
+});
 
-export const mockSupabase = {
-  auth: mockSupabaseAuth,
-  from: vi.fn().mockImplementation(() => ({
-    select: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
-    delete: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    single: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
-    range: vi.fn().mockReturnThis(),
-    match: vi.fn().mockReturnThis(),
-    upsert: vi.fn().mockReturnThis(),
-    maybeSingle: vi.fn().mockReturnThis(),
-    then: vi.fn().mockImplementation(callback => Promise.resolve(callback({ data: null, error: null })))
-  }))
-};
+// Mock the toast
+vi.mock("sonner", () => {
+  return {
+    toast: {
+      error: vi.fn(),
+      success: vi.fn(),
+      info: vi.fn(),
+    },
+  };
+});
 
-// Réinitialiser tous les mocks
-export const resetMocks = () => {
-  vi.resetAllMocks();
-  mockSignIn.mockReset();
-  mockSignUp.mockReset();
-  mockSignOut.mockReset();
-  mockGetUser.mockReset();
-  mockGetSession.mockReset();
-  mockSupabaseAuth.onAuthStateChange.mockReset();
-};
-
-// Pour la compatibilité avec les tests existants
-export const resetAuthMocks = resetMocks;
-
-// Données de test
-export const mockUser = {
-  id: 'test-user-id',
-  email: 'test@example.com',
-  role: 'authenticated',
+// Helper function to create a mock user
+export const getMockUser = (overrides = {}): User => ({
+  id: "mock-user-id",
+  email: "user@example.com",
+  role: "authenticated",
+  aud: "authenticated",
+  created_at: new Date().toISOString(),
   app_metadata: {},
   user_metadata: {},
-  aud: 'authenticated',
-  created_at: '2023-01-01T00:00:00.000Z'
-};
+  ...overrides,
+});
 
-export const mockSession = {
-  access_token: 'test-access-token',
-  refresh_token: 'test-refresh-token',
-  user: mockUser,
-  token_type: 'bearer',
+export const getMockSession = (overrides = {}): Session => ({
+  access_token: "mock-access-token",
+  refresh_token: "mock-refresh-token",
+  expires_at: Date.now() + 3600,
   expires_in: 3600,
-  expires_at: 9999999999,
-  provider_token: null,
-  provider_refresh_token: null
+  token_type: "bearer",
+  user: getMockUser(),
+  ...overrides,
+});
+
+// Setup function to configure mocks with specific returns
+export const setupAuthMocks = ({
+  getSessionReturn = { data: { session: null }, error: null },
+  signOutReturn = { error: null },
+  profileQueryReturn = { data: null, error: null },
+  configQueryReturn = { data: [], error: null },
+} = {}) => {
+  supabase.auth.getSession.mockResolvedValue(getSessionReturn);
+  supabase.auth.signOut.mockResolvedValue(signOutReturn);
+  
+  // Mock the from().select() chain for profile query
+  const selectMock = vi.fn().mockReturnThis();
+  const eqMock = vi.fn().mockReturnThis();
+  const singleMock = vi.fn().mockResolvedValue(profileQueryReturn);
+  
+  supabase.from.mockImplementation((table) => {
+    if (table === 'user_profiles') {
+      return {
+        select: selectMock,
+        eq: eqMock,
+        single: singleMock
+      };
+    } else if (table === 'service_configurations') {
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue(configQueryReturn)
+      };
+    }
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: null, error: null })
+    };
+  });
+
+  return {
+    supabase,
+    selectMock,
+    eqMock,
+    singleMock
+  };
 };
 
-// Helper pour configurer les mocks pour les tests
-export const setupAuthMocks = (options = {}) => {
-  const {
-    signOutReturn = { error: null },
-    signInReturn = { data: { session: mockSession, user: mockUser }, error: null },
-    getUserReturn = { data: { user: mockUser }, error: null },
-    getSessionReturn = { data: { session: mockSession }, error: null }
-  } = options;
-
-  mockSignOut.mockResolvedValue(signOutReturn);
-  mockSignIn.mockResolvedValue(signInReturn);
-  mockGetUser.mockResolvedValue(getUserReturn);
-  mockGetSession.mockResolvedValue(getSessionReturn);
-};
-
-// Helper pour obtenir les mocks
-export const getMockUser = () => mockUser;
-export const getMockSession = () => mockSession;
-
-// Réponses prédéfinies
-export const mockSignedInResponse = {
-  data: { session: mockSession, user: mockUser },
-  error: null
-};
-
-export const mockSignedOutResponse = {
-  data: { session: null, user: null },
-  error: null
-};
-
-export const mockErrorResponse = {
-  data: { session: null, user: null },
-  error: { message: 'Authentication error', status: 401 }
+// Reset all mocks
+export const resetAuthMocks = () => {
+  vi.resetAllMocks();
 };

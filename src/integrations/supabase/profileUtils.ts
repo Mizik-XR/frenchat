@@ -1,60 +1,120 @@
 
-import type { Profile, UserWithProfile } from './sharedTypes';
-import { supabase } from './client';
-
 /**
- * Récupère le profil utilisateur depuis Supabase
+ * Utilitaires pour la gestion des profils utilisateurs dans Supabase
  */
-export async function getUserProfile(userId: string): Promise<Profile | null> {
+
+import { supabase } from './client';
+import { APP_STATE } from '@/compatibility/supabaseCompat';
+
+// Définition du type UserProfile (au lieu d'importer de supabaseModels)
+interface UserProfile {
+  id: string;
+  is_first_login?: boolean;
+  created_at: string;
+  updated_at: string;
+  [key: string]: any;  // Pour les autres propriétés du profil
+}
+
+// Fonction pour gérer les requêtes de profil utilisateur
+export const handleProfileQuery = async (userId: string) => {
+  // Si on est en mode hors ligne, fournir un profil par défaut
+  if (APP_STATE.isOfflineMode || !supabase) {
+    console.log("Mode hors ligne actif, utilisation d'un profil par défaut");
+    return { 
+      data: { 
+        id: userId,
+        is_first_login: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as UserProfile, 
+      error: null 
+    };
+  }
+  
   try {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-
+      
     if (error) {
-      console.error('Erreur lors de la récupération du profil:', error);
-      return null;
+      if (error.message?.includes('infinite recursion')) {
+        console.warn("Database policy recursion detected. Using fallback profile.");
+        
+        // Si nous détectons une récursion infinie, créons un profil minimal
+        try {
+          // Tenter de créer le profil manuellement
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({ 
+              id: userId,
+              is_first_login: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .single();
+            
+          if (insertError) {
+            console.error("Erreur lors de la création du profil de secours:", insertError);
+          } else {
+            console.log("Profil de secours créé avec succès");
+            
+            // Récupérer le nouveau profil
+            const { data: newProfile, error: newError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', userId)
+              .single();
+              
+            if (!newError) {
+              return { data: newProfile, error: null };
+            }
+          }
+        } catch (createError) {
+          console.error("Erreur lors de la tentative de création de profil:", createError);
+        }
+        
+        // Return a minimal fallback profile if all else fails
+        return { 
+          data: { 
+            id: userId,
+            is_first_login: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          } as UserProfile, 
+          error: null 
+        };
+      }
+      return { data: null, error };
     }
-
-    return data;
-  } catch (error) {
-    console.error('Exception lors de la récupération du profil:', error);
-    return null;
+    
+    return { data, error: null };
+  } catch (err) {
+    console.error("Error querying profile:", err);
+    
+    // En cas d'erreur, fournir un profil de secours
+    return { 
+      data: { 
+        id: userId,
+        is_first_login: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as UserProfile, 
+      error: { message: err instanceof Error ? err.message : 'Unknown error' } 
+    };
   }
-}
+};
 
-/**
- * Vérifie si l'utilisateur a complété son profil
- */
-export function hasCompletedProfile(profile: Profile | null): boolean {
-  if (!profile) return false;
+// Fonction simplifiée pour vérifier la connexion à Supabase
+export const checkSupabaseConnection = async (): Promise<boolean> => {
+  if (APP_STATE.isOfflineMode) return false;
   
-  // Vérifier si les champs essentiels sont remplis
-  return !!profile.full_name;
-}
-
-/**
- * Met à jour le profil utilisateur
- */
-export async function updateUserProfile(userId: string, profileData: Partial<Profile>): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('profiles')
-      .update(profileData)
-      .eq('id', userId);
-
-    if (error) {
-      console.error('Erreur lors de la mise à jour du profil:', error);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Exception lors de la mise à jour du profil:', error);
+    const { error } = await supabase.from('profiles').select('count').limit(1);
+    return !error;
+  } catch (err) {
+    console.error("Erreur de connexion à Supabase:", err);
     return false;
   }
-}
-
-// Autres fonctions utilitaires pour les profils...
+};
