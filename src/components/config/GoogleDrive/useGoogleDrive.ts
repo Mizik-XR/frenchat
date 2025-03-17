@@ -3,6 +3,7 @@ import { useCallback, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getRedirectUrl } from '@/utils/environment/urlUtils';
 import { useToast } from '@/hooks/use-toast';
+import { ServiceConfiguration } from '@/integrations/supabase/supabaseModels';
 
 export const useGoogleDrive = (user, onSuccess) => {
   const [isConnecting, setIsConnecting] = useState(false);

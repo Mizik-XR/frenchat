@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { IndexingProgress as IndexingProgressType } from '@/integrations/supabase/supabaseModels';
 
 interface IndexingProgressProps {
   userId: string;
@@ -21,7 +22,7 @@ export const IndexingProgress: React.FC<IndexingProgressProps> = ({ userId }) =>
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      return data as IndexingProgressType;
     },
     refetchInterval: 1000,
     retry: 3
