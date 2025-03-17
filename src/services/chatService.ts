@@ -1,198 +1,142 @@
 
-import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageType, MessageMetadata } from '@/integrations/supabase/sharedTypes';
-import { APP_STATE } from '@/compatibility/supabaseCompat';
-import { AICacheService } from './cacheService';
-import { messageMetadataToJson } from '@/integrations/supabase/typesCompatibility';
+import { v4 as uuidv4 } from 'uuid';
 
-// Interface pour les messages de chat
-interface ChatMessage {
+// Type MessageType pour aider à résoudre l'erreur string vs MessageType
+export type MessageType = 'user' | 'assistant' | 'system' | string;
+
+// Interface modifiée pour correspondre à la table
+export interface ChatMessage {
   id: string;
-  conversation_id: string;
   content: string;
   role: MessageType;
-  message_type: string;
+  conversation_id: string;
   metadata?: any;
-  user_id?: string;
+  created_at?: string;
+  message_type?: string;
+  user_id: string;
+  context?: string;
 }
 
-// Service de gestion des conversations et des messages
-export class ChatService {
-  private cacheService: AICacheService;
-  
-  constructor() {
-    this.cacheService = new AICacheService();
-  }
-  
-  // Récupérer les messages d'une conversation
-  async getMessages(conversationId: string): Promise<ChatMessage[]> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
-      
-      if (error) {
-        console.error('Erreur Supabase:', error);
-        throw error;
-      }
-      
-      return data || [];
-    } catch (error) {
-      console.error('Erreur lors de la récupération des messages:', error);
-      console.error(error);
+// Interface pour les métadonnées
+export interface MessageMetadata {
+  source?: string;
+  timestamp?: string;
+  model?: string;
+  tokens?: number;
+  quoted_message?: any;
+  // Ajout de cette propriété pour compatibilité avec le code existant
+  quoted_message_id?: string;
+}
+
+/**
+ * Récupère les messages d'une conversation
+ */
+export const getConversationMessages = async (conversationId: string): Promise<ChatMessage[]> => {
+  try {
+    const { data: messages, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching messages:', error);
       return [];
     }
-  }
-  
-  // Ajouter un message à une conversation
-  async addMessage(conversationId: string, content: string, role: MessageType, metadata?: any): Promise<ChatMessage | null> {
-    try {
-      const currentUser = (await supabase.auth.getUser()).data.user;
-      
-      if (!currentUser) {
-        throw new Error('User not authenticated');
-      }
-      
-      const newMessage: ChatMessage = {
-        id: uuidv4(),
-        conversation_id: conversationId,
-        content: content,
-        role: role,
-        message_type: 'text',
-        metadata: metadata,
-        user_id: currentUser.id
-      };
-      
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .insert([newMessage])
-        .select();
-      
-      if (error) {
-        console.error('Erreur Supabase:', error);
-        throw error;
-      }
-      
-      return data ? data[0] : null;
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout du message:', error);
-      console.error(error);
-      return null;
-    }
-  }
-  
-  // Générer une réponse de l'IA (avec cache)
-  async generateAIResponse(prompt: string, provider: string, conversationId: string, userId: string, metadata?: any): Promise<string | null> {
-    try {
-      // Vérifier si la réponse est en cache
-      const cachedResponse = await this.cacheService.getCachedResponse(prompt, provider, userId);
-      if (cachedResponse) {
-        console.log('Réponse trouvée dans le cache:', cachedResponse);
-        return cachedResponse.response;
-      }
-      
-      // Simuler un appel à l'API de l'IA
-      const aiResponse = await this.simulateAIResponse(prompt);
-      
-      if (!aiResponse) {
-        throw new Error('Impossible de générer une réponse de l\'IA');
-      }
-      
-      // Mettre en cache la réponse
-      await this.cacheService.cacheResponse(prompt, aiResponse, provider, userId, metadata);
-      
-      return aiResponse;
-    } catch (error) {
-      console.error('Erreur lors de la génération de la réponse de l\'IA:', error);
-      console.error(error);
-      return null;
-    }
-  }
-  
-  // Simuler une réponse de l'IA
-  private async simulateAIResponse(prompt: string): Promise<string> {
-    // Simuler un délai de réponse
-    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Retourner une réponse simulée
-    return `Réponse simulée de l'IA pour la question: ${prompt}`;
-  }
-  
-  // Insérer plusieurs messages dans une conversation
-  async insertMessages(
-    messages: { 
-      content: string; 
-      role: MessageType; 
-      conversation_id: string; 
-      message_type: string; 
-      metadata?: any 
-    }[], 
-    conversationId: string
-  ): Promise<void> {
-    const currentUser = (await supabase.auth.getUser()).data.user;
+    // Assurons-nous que chaque message a le bon format (notamment role typé comme MessageType)
+    const formattedMessages = messages.map(msg => ({
+      ...msg,
+      role: msg.role as MessageType,
+      metadata: msg.metadata || {},
+      message_type: msg.message_type || 'text',
+      user_id: msg.user_id || ''
+    }));
     
-    if (!currentUser) {
-      throw new Error('User not authenticated');
-    }
-    
-    try {
-      for (const message of messages) {
-        // Convertir chaque message individuellement
-        await supabase
-          .from('chat_messages')
-          .insert({
-            content: message.content,
-            role: message.role,
-            conversation_id: message.conversation_id,
-            message_type: message.message_type,
-            metadata: messageMetadataToJson(message.metadata),
-            user_id: currentUser.id
-          });
-      }
-    } catch (error) {
-      console.error('Erreur lors de l\'insertion des messages:', error);
-      console.error(error);
-      throw error;
-    }
+    return formattedMessages as ChatMessage[];
+  } catch (error) {
+    console.error('Error in getConversationMessages:', error);
+    return [];
   }
+};
 
-  async insertChatMessages(
-    messages: { 
-      content: string; 
-      role: MessageType; 
-      conversation_id: string; 
-      message_type: string; 
-      metadata?: any 
-    }[], 
-    conversationId: string
-  ): Promise<void> {
-    const currentUser = (await supabase.auth.getUser()).data.user;
-    
-    if (!currentUser) {
-      throw new Error('User not authenticated');
+/**
+ * Ajoute un nouveau message à une conversation
+ */
+export const addMessage = async (message: ChatMessage): Promise<ChatMessage | null> => {
+  try {
+    // Vérifier que l'utilisateur est connecté
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      console.error('User not authenticated');
+      return null;
     }
     
-    try {
-      for (const message of messages) {
-        // Convertir chaque message individuellement
-        await supabase
-          .from('chat_messages')
-          .insert({
-            content: message.content,
-            role: message.role,
-            conversation_id: message.conversation_id,
-            message_type: message.message_type,
-            metadata: messageMetadataToJson(message.metadata),
-            user_id: currentUser.id
-          });
-      }
-    } catch (error) {
-      console.error('Erreur lors de l\'insertion des messages:', error);
-      console.error(error);
-      throw error;
+    // Assurer que le user_id est défini
+    const messageToAdd = {
+      ...message,
+      id: message.id || uuidv4(),
+      user_id: message.user_id || userData.user.id,
+      created_at: message.created_at || new Date().toISOString(),
+      message_type: message.message_type || 'text',
+    };
+    
+    // Insérer un message à la fois
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .insert(messageToAdd)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding message:', error);
+      return null;
     }
+    
+    return data as ChatMessage;
+  } catch (error) {
+    console.error('Error in addMessage:', error);
+    return null;
   }
-}
+};
+
+/**
+ * Ajoute plusieurs messages à une conversation
+ */
+export const addMessages = async (messages: ChatMessage[]): Promise<boolean> => {
+  try {
+    // Insérer les messages un par un pour éviter les problèmes de type
+    for (const message of messages) {
+      await addMessage(message);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in addMessages:', error);
+    return false;
+  }
+};
+
+/**
+ * Récupère un message par son ID
+ */
+export const getMessageById = async (messageId: string): Promise<ChatMessage | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('id', messageId)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching message by ID:', error);
+      return null;
+    }
+    
+    return data as ChatMessage;
+  } catch (error) {
+    console.error('Error in getMessageById:', error);
+    return null;
+  }
+};

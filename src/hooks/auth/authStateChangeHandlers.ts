@@ -1,7 +1,7 @@
 
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { APP_STATE } from '@/compatibility/supabaseCompat';
+import { APP_STATE } from '@/contexts/AppStateContext';
 
 // Fonction unifiée pour gérer les changements d'état d'authentification
 export const handleAuthStateChange = async (
@@ -62,3 +62,10 @@ export const handleAuthStateChange = async (
 
 // Pour compatibilité
 export const handleAuthChange = handleAuthStateChange;
+
+// Exporter une fonction nommée pour compatibilité avec d'autres imports
+export const useAuthStateChangeHandler = () => {
+  return {
+    handleAuthStateChange
+  };
+};

@@ -1,44 +1,35 @@
 
-// Importer les dépendances nécessaires
-import { React, useEffect, useState } from "@/core/ReactInstance";
+import { useEffect, useState } from "@/core/ReactInstance";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Logo } from "@/components/ui/logo";
 import { supabase } from "@/integrations/supabase/client";
-import { handleAuthStateChange } from "@/hooks/auth/authStateChangeHandlers";
+import { handleAuthChange } from "@/hooks/auth/authStateChangeHandlers";
+import { AuthChangeEvent } from "@supabase/supabase-js";
 
-// Définir le type pour les états de l'URL
-interface LocationState {
-  from: string;
-}
-
-// Composant Auth
-const Auth: React.FC = () => {
+const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const [prevUser, setPrevUser] = useState<any>(null);
+  const [prevUser, setPrevUser] = useState(null);
 
-  // Extraire l'état de l'URL
-  const { from } = location.state as LocationState || { from: "/home" };
+  const { from } = location.state || { from: "/home" };
 
-  // Fonction pour gérer la soumission du formulaire
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       if (isSignUp) {
-        // Inscription
         const { data, error } = await supabase.auth.signUp({
-          email: email,
-          password: password,
+          email,
+          password,
           options: {
             data: {
-              full_name: email.split('@')[0],
+              full_name: email.split("@")[0],
             },
           },
         });
@@ -54,14 +45,12 @@ const Auth: React.FC = () => {
             title: "Inscription réussie",
             description: "Veuillez vérifier votre email pour confirmer votre compte.",
           });
-          // Rediriger vers la page de configuration après l'inscription
           navigate("/config");
         }
       } else {
-        // Connexion
         const { error } = await supabase.auth.signInWithPassword({
-          email: email,
-          password: password,
+          email,
+          password,
         });
 
         if (error) {
@@ -75,7 +64,6 @@ const Auth: React.FC = () => {
             title: "Connexion réussie",
             description: "Vous êtes maintenant connecté.",
           });
-          // Rediriger vers la page d'accueil après la connexion
           navigate(from || "/home");
         }
       }
@@ -84,25 +72,21 @@ const Auth: React.FC = () => {
     }
   };
 
-  // Gestionnaire d'événements d'authentification
   useEffect(() => {
-    const handleAuthState = async (event: string, session: any) => {
+    const handleAuthState = async (event: AuthChangeEvent, session: any) => {
       if (event === "SIGNED_IN" && !prevUser) {
-        // Rediriger vers la page de configuration après l'inscription
         navigate("/config");
       }
-      await handleAuthStateChange(event, session, setLoading, () => {}, () => {});
+      await handleAuthChange(event, session, setLoading, () => {}, () => {});
     };
 
     supabase.auth.onAuthStateChange(handleAuthState);
 
-    // Nettoyer l'abonnement
     return () => {
       supabase.auth.signOut();
     };
   }, [navigate, prevUser]);
 
-  // Rendu du composant
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="space-y-6 bg-white p-8 rounded shadow-md w-96">

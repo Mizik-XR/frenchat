@@ -1,75 +1,66 @@
 
-import { saveMessageToDatabase } from "../utils/responseHandlers";
-import { SendMessageOptions } from "../types";
-import { WebUIConfig } from "@/types/chat";
+import { v4 as uuidv4 } from 'uuid';
+import { saveMessageToDatabase } from '../utils/responseHandlers';
+
+// Types
+export interface Message {
+  id?: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  conversationId: string;
+  metadata?: any;
+  createdAt?: number;
+}
+
+export interface SavedMessage extends Message {
+  id: string;
+  createdAt: number;
+}
 
 /**
- * Service for creating and formatting messages
+ * Sauvegarde un message dans la base de données
  */
-export const useMessageService = () => {
-  /**
-   * Create a user message with metadata
-   */
-  const createUserMessage = (
-    content: string,
-    conversationId: string,
-    files: File[] = [],
-    fileUrls: string[] = [],
-    replyTo?: { id: string; content: string; role: 'user' | 'assistant' },
-    config?: WebUIConfig
-  ) => {
-    const userMessageId = crypto.randomUUID();
+export const saveMessage = async (message: Message): Promise<SavedMessage | null> => {
+  try {
+    // Formater le message pour la sauvegarde
+    const messageToSave = {
+      id: message.id || uuidv4(),
+      role: message.role,
+      content: message.content,
+      conversation_id: message.conversationId,
+      metadata: message.metadata || {},
+      created_at: new Date().toISOString(),
+      user_id: ''  // Sera rempli par saveMessageToDatabase
+    };
     
-    // Préparer les métadonnées
-    const messageMetadata = {
-      replyToId: replyTo?.id,
-      replyToContent: replyTo?.content,
-      replyToRole: replyTo?.role,
-      fileIds: [],
-      fileUrls: fileUrls || [],
-      model: config?.model || "huggingface",
-      provider: config?.provider || "huggingface",
-    };
-
-    // Créer le message utilisateur
+    // Sauvegarder le message
+    const savedMessage = await saveMessageToDatabase(messageToSave);
+    
+    if (!savedMessage) {
+      console.error('Failed to save message');
+      return null;
+    }
+    
+    // Convertir au format SavedMessage
     return {
-      id: userMessageId,
-      role: 'user',
-      content,
-      conversationId,
-      metadata: messageMetadata,
-      timestamp: new Date()
+      id: savedMessage.id,
+      role: savedMessage.role as 'user' | 'assistant' | 'system',
+      content: savedMessage.content,
+      conversationId: savedMessage.conversation_id,
+      metadata: savedMessage.metadata,
+      createdAt: new Date(savedMessage.created_at || Date.now()).getTime()
     };
-  };
+  } catch (error) {
+    console.error('Error saving message:', error);
+    return null;
+  }
+};
 
-  /**
-   * Create an assistant message with metadata
-   */
-  const createAssistantMessage = (
-    content: string,
-    conversationId: string,
-    replyToId: string,
-    config?: WebUIConfig
-  ) => {
-    const assistantMessageId = crypto.randomUUID();
-
-    return {
-      id: assistantMessageId,
-      role: 'assistant',
-      content,
-      conversationId,
-      metadata: {
-        replyToId,
-        model: config?.model || "huggingface",
-        provider: config?.provider || "huggingface",
-      },
-      timestamp: new Date()
-    };
-  };
-
-  return {
-    createUserMessage,
-    createAssistantMessage,
-    saveMessageToDatabase
-  };
+/**
+ * Récupère les messages d'une conversation
+ */
+export const getMessages = async (conversationId: string): Promise<SavedMessage[]> => {
+  // Implémentation stub pour le moment
+  console.warn('getMessages est un stub et ne récupère pas de vrais messages');
+  return [];
 };

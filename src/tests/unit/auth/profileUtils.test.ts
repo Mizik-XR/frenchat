@@ -1,86 +1,91 @@
+import { getUserProfileWithConfig } from '../../../hooks/auth/profileUtils';
+import { mockSupabase } from './__mocks__/authMocks';
+import { createMockFunction } from './__mocks__/mockUtils';
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handleProfileAndConfig } from "@/hooks/auth/profile/profileUtils";
-import { resetAuthMocks, setupAuthMocks } from "./__mocks__/authMocks";
+// Mock de fetchUserProfile
+const mockFetchUserProfile = createMockFunction();
 
-describe("profileUtils", () => {
+// Remplacer l'implémentation réelle par le mock
+jest.mock('../../../hooks/auth/profileUtils', () => ({
+  ...jest.requireActual('../../../hooks/auth/profileUtils'), // Conserver les autres fonctions non mockées
+  fetchUserProfile: mockFetchUserProfile
+}));
+
+describe('profileUtils', () => {
   beforeEach(() => {
-    vi.mock("react-router-dom", () => ({
-      useNavigate: vi.fn().mockReturnValue(vi.fn()),
-      useLocation: vi.fn().mockReturnValue({
-        pathname: "/test",
-        search: "?mode=cloud&client=true",
-        hash: "",
-        state: null,
-        key: "default",
-      }),
-    }));
+    // Réinitialiser le mock avant chaque test
+    mockFetchUserProfile.mockReset();
   });
 
-  afterEach(() => {
-    resetAuthMocks();
+  test('returns profile data, needsConfig and isFirstLogin when successful', async () => {
+    const mockProfile = { id: 'test-id', full_name: 'Test User' };
+    const mockConfigs = [{ id: 'config-id', key: 'test-key', value: 'test-value' }];
+    mockFetchUserProfile.mockResolvedValue({
+      profile: mockProfile,
+      configs: mockConfigs,
+      needsConfig: false,
+      isFirstLogin: false,
+      error: null
+    });
+
+    const result = await getUserProfileWithConfig();
+
+    expect(result.profile).toEqual(mockProfile);
+    expect(result.isFirstLogin).toBeFalsy();
+    expect(result.needsConfig).toBeFalsy();
+    expect(result.error).toBeNull();
   });
 
-  describe("handleProfileAndConfig", () => {
-    it("should return profile and configuration status", async () => {
-      setupAuthMocks({
-        profileQueryReturn: { 
-          data: { id: "test-user", is_first_login: true }, 
-          error: null 
-        },
-        configQueryReturn: { 
-          data: [{ service_type: "google_drive", status: "configured" }], 
-          error: null 
-        }
-      });
-
-      const result = await handleProfileAndConfig("test-user");
-      
-      expect(result.profile).toBeDefined();
-      expect(result.profile?.is_first_login).toBe(true);
-      expect(result.configs).toBeDefined();
-      expect(result.needsConfig).toBe(false);
-      expect(result.isFirstLogin).toBe(true);
+  test('returns needsConfig true when no configs are found', async () => {
+    const mockProfile = { id: 'test-id', full_name: 'Test User' };
+    mockFetchUserProfile.mockResolvedValue({
+      profile: mockProfile,
+      configs: [],
+      needsConfig: true,
+      isFirstLogin: false,
+      error: null
     });
 
-    it("should handle profile retrieval errors", async () => {
-      setupAuthMocks({
-        profileQueryReturn: { 
-          data: null, 
-          error: new Error("Profile not found") 
-        }
-      });
+    const result = await getUserProfileWithConfig();
 
-      const result = await handleProfileAndConfig("test-user");
-      
-      expect(result.profileError).toBeDefined();
-      expect(result.profile).toBeNull();
+    expect(result.profile).toEqual(mockProfile);
+    expect(result.isFirstLogin).toBeFalsy();
+    expect(result.needsConfig).toBeTruthy();
+    expect(result.error).toBeNull();
+  });
+
+  test('handles error from fetchUserProfile', async () => {
+    const mockError = { message: 'Test error' };
+    mockFetchUserProfile.mockResolvedValue({
+      profile: null,
+      configs: [],
+      needsConfig: true,
+      isFirstLogin: false,
+      error: mockError // Changement ici: profileError -> error
     });
 
-    it("should correctly determine if config is needed", async () => {
-      // No configured services
-      setupAuthMocks({
-        profileQueryReturn: { data: { id: "test-user" }, error: null },
-        configQueryReturn: { 
-          data: [{ service_type: "google_drive", status: "pending" }], 
-          error: null 
-        }
-      });
+    const result = await getUserProfileWithConfig();
+    
+    expect(result.profile).toBeNull();
+    expect(result.isFirstLogin).toBeFalsy();
+    expect(result.needsConfig).toBeTruthy();
+    expect(result.error).toEqual(mockError); // Changement ici aussi
+  });
 
-      const result = await handleProfileAndConfig("test-user");
-      expect(result.needsConfig).toBe(true);
-
-      // With configured services
-      setupAuthMocks({
-        profileQueryReturn: { data: { id: "test-user" }, error: null },
-        configQueryReturn: { 
-          data: [{ service_type: "google_drive", status: "configured" }], 
-          error: null 
-        }
-      });
-
-      const result2 = await handleProfileAndConfig("test-user");
-      expect(result2.needsConfig).toBe(false);
+  test('returns isFirstLogin true when no profile is found', async () => {
+    mockFetchUserProfile.mockResolvedValue({
+      profile: null,
+      configs: [],
+      needsConfig: true,
+      isFirstLogin: true,
+      error: null
     });
+
+    const result = await getUserProfileWithConfig();
+
+    expect(result.profile).toBeNull();
+    expect(result.isFirstLogin).toBeTruthy();
+    expect(result.needsConfig).toBeTruthy();
+    expect(result.error).toBeNull();
   });
 });

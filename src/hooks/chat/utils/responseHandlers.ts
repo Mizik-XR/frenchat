@@ -1,94 +1,110 @@
-import { v4 as uuidv4 } from 'uuid';
-import { toast } from '@/components/ui';
-import { AICacheService } from '@/services/cacheService';
-import { buildRAGPrompt } from './promptBuilder';
-import { getRagContext, insertChatMessage } from '@/integrations/supabase/rpcFunctions';
 
-/**
- * Gère la réponse de l'IA, met à jour l'état du chat et insère le message dans la base de données.
- * @param {string} response - La réponse de l'IA.
- * @param {string} conversationId - L'ID de la conversation.
- * @param {string} prompt - Le prompt de l'utilisateur.
- * @param {string} provider - Le fournisseur d'IA utilisé.
- * @param {number} tokensUsed - Le nombre de tokens utilisés.
- * @param {number} estimatedCost - Le coût estimé de la requête.
- * @param {any} metadata - Les métadonnées de la réponse.
- * @param {Function} setChatMessages - La fonction pour mettre à jour les messages du chat.
- * @param {Function} setIsLoading - La fonction pour gérer l'état de chargement.
- */
-export const handleAIResponse = async (
-  response: any,
-  conversationId: string,
-  prompt: string,
-  provider: string,
-  tokensUsed: number,
-  estimatedCost: number,
-  metadata: any,
-  setChatMessages: Function,
-  setIsLoading: Function
-) => {
+import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
+import { createChatPrompt } from './promptBuilder';
+import { AICacheService } from '@/services/cacheService';
+
+// Types
+export interface Message {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  metadata?: any;
+  createdAt?: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  conversation_id: string;
+  metadata?: any;
+  created_at?: string;
+  user_id?: string;
+}
+
+// Ajouter cette fonction pour la compatibilité avec le code existant
+export const saveMessageToDatabase = async (
+  message: ChatMessage
+): Promise<ChatMessage | null> => {
   try {
-    const messageId = uuidv4();
-    const cacheService = new AICacheService();
-    
-    // Récupérer le contexte RAG pour la conversation
-    const ragContext = await getRagContext(conversationId);
-    const error = !ragContext;
-    
-    if (error) {
-      console.error('Erreur lors de la récupération du contexte RAG:', error);
-      toast({
-        title: "Erreur de contexte",
-        description: "Impossible de récupérer le contexte RAG pour cette conversation.",
-        variant: "destructive"
-      });
+    // Récupération de l'utilisateur courant
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData?.user;
+
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
     }
-    
-    // Construire le prompt RAG
-    const ragPrompt = buildRAGPrompt(ragContext.context);
-    
-    // Mettre à jour les messages du chat avec la réponse de l'IA
-    setChatMessages((prevChatMessages: any) => [
-      ...prevChatMessages,
-      {
-        id: messageId,
-        conversation_id: conversationId,
-        content: response.content,
-        role: 'assistant',
-        createdAt: new Date(),
-        metadata: response.metadata || {}
-      }
-    ]);
-    
-    // Insérer le message de l'assistant dans la base de données
-    await insertChatMessage({
-      id: messageId,
-      role: 'assistant',
-      content: response.content,
-      conversationId: conversationId,
-      metadata: response.metadata || {},
-      timestamp: new Date()
-    });
-    
-    // Mettre à jour le cache avec la réponse de l'IA
-    await cacheService.upsertCache({
-      hash: conversationId,
-      prompt: ragPrompt,
-      response: response.content,
-      provider: provider,
-      tokensUsed: tokensUsed,
-      estimatedCost: estimatedCost,
-      metadata: metadata,
-      userId: 'user_id' // TODO: Récupérer l'ID de l'utilisateur
-    });
-  } catch (dbError: any) {
-    console.error("Erreur lors de l'insertion du message dans la base de données:", dbError);
-    toast({
-      title: "Erreur de base de données",
-      description: "Impossible de sauvegarder le message dans la base de données.",
-      variant: "destructive"
-    });
-  } finally {
-    setIsLoading(false);
+
+    // S'assurer que l'ID utilisateur est défini
+    const messageWithUserId = {
+      ...message,
+      user_id: message.user_id || user.id
+    };
+
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .insert(messageWithUserId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving message to database:', error);
+      return null;
+    }
+
+    return data as ChatMessage;
+  } catch (error) {
+    console.error('Error in saveMessageToDatabase:', error);
+    return null;
   }
+};
+
+// Fonction pour transformer les messages avant envoi à l'IA
+export const prepareMessagesForAI = (messages: Message[]): any[] => {
+  return messages.map(msg => ({
+    role: msg.role,
+    content: msg.content
+  }));
+};
+
+// Fonction pour enregistrer la réponse en cache
+export const cacheResponse = async (
+  prompt: string,
+  response: string,
+  modelId: string
+): Promise<void> => {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+
+    if (!userId) {
+      console.warn('No user ID available for caching');
+      return;
+    }
+
+    const cacheService = new AICacheService();
+    await cacheService.upsertCache(`${prompt}-${modelId}`, {
+      prompt,
+      response,
+      provider: modelId,
+      user_id: userId,
+      tokens_used: 0,
+      estimated_cost: 0,
+      created_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error caching response:', error);
+  }
+};
+
+// Fonction pour générer un ID unique pour un message
+export const generateMessageId = (): string => {
+  return uuidv4();
+};
+
+// Fonction pour formater la date en ISO string
+export const formatDate = (date: Date = new Date()): string => {
+  return date.toISOString();
 };

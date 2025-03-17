@@ -4,30 +4,33 @@
  */
 
 export function createMockFunction<T, R>(implementation?: (...args: T[]) => R) {
-  const mock = jest.fn(implementation || (() => undefined as unknown as R));
+  // Création d'une fonction mock de base
+  const mockFn = jest.fn(implementation || (() => undefined as unknown as R));
   
-  // Définir les méthodes sur l'objet mock lui-même
-  mock.mockResolvedValue = function(value: R) {
-    jest.fn().mockImplementation(() => Promise.resolve(value));
-    return this;
+  // Retourner la fonction avec les méthodes ajoutées
+  return {
+    ...mockFn,
+    mockResolvedValue: (value: R) => {
+      mockFn.mockImplementation(() => Promise.resolve(value));
+      return mockFn;
+    },
+    mockImplementation: (fn: (...args: T[]) => R) => {
+      mockFn.mockImplementation(fn);
+      return mockFn;
+    },
+    mockResolvedValueOnce: (value: R) => {
+      mockFn.mockImplementationOnce(() => Promise.resolve(value));
+      return mockFn;
+    },
+    mockRejectedValue: (reason: any) => {
+      mockFn.mockImplementation(() => Promise.reject(reason));
+      return mockFn;
+    },
+    mockRejectedValueOnce: (reason: any) => {
+      mockFn.mockImplementationOnce(() => Promise.reject(reason));
+      return mockFn;
+    }
   };
-  
-  mock.mockImplementation = function(fn: (...args: T[]) => R) {
-    jest.fn().mockImplementation(fn);
-    return this;
-  };
-  
-  mock.mockResolvedValueOnce = function(value: R) {
-    jest.fn().mockImplementation(() => Promise.resolve(value));
-    return this;
-  };
-  
-  mock.mockRejectedValue = function(reason: any) {
-    jest.fn().mockImplementation(() => Promise.reject(reason));
-    return this;
-  };
-  
-  return mock;
 }
 
 // Déclarations pour jest car il n'est pas forcément inclus dans les types
@@ -39,6 +42,7 @@ declare global {
       mockImplementation: (fn: (...args: Y) => T) => Mock<T, Y>;
       mockResolvedValueOnce: (value: T) => Mock<T, Y>;
       mockRejectedValue: (reason: any) => Mock<T, Y>;
+      mockRejectedValueOnce: (reason: any) => Mock<T, Y>;
     }
     function fn<T = any, Y extends any[] = any[]>(implementation?: (...args: Y) => T): Mock<T, Y>;
   }

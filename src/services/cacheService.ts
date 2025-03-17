@@ -79,7 +79,9 @@ export class AICacheService {
     response: string,
     provider: string,
     userId: string,
-    metadata: any = {}
+    metadata: any = {},
+    tokensUsed: number = 0,
+    estimatedCost: number = 0
   ): Promise<void> {
     const hash = this.generateCacheKey(prompt, provider, metadata);
     const expirationDate = new Date();
@@ -89,8 +91,8 @@ export class AICacheService {
       prompt,
       response,
       provider,
-      tokens_used: 0,
-      estimated_cost: 0,
+      tokens_used: tokensUsed,
+      estimated_cost: estimatedCost,
       user_id: userId,
       metadata
     };
@@ -104,6 +106,17 @@ export class AICacheService {
     } catch (error) {
       console.error('Error caching response:', error);
     }
+  }
+
+  // Méthode ajoutée pour la compatibilité avec l'ancien code
+  upsertCache(key: string, value: any): Promise<void> {
+    return this.cacheResponse(
+      value.prompt || '', 
+      value.response || '', 
+      value.provider || 'unknown', 
+      value.user_id || '',
+      value.metadata || {}
+    );
   }
 
   private generateCacheKey(prompt: string, provider: string, metadata: any): string {
@@ -133,5 +146,8 @@ export const setCachedResponse = async (
   metadata: any = {}
 ): Promise<void> => {
   const cacheService = new AICacheService();
-  return cacheService.cacheResponse(prompt, response, provider, userId, metadata);
+  return cacheService.cacheResponse(prompt, response, provider, userId, metadata, tokensUsed, estimatedCost);
 };
+
+// Export sous l'ancien nom pour compatibilité
+export const cacheService = new AICacheService();
