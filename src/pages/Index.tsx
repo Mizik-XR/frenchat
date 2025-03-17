@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import { React, useEffect, useState } from '@/core/ReactInstance';
 import { useNavigate } from 'react-router-dom';
 import Landing from './Landing';
 import { useAuth } from "@/components/AuthProvider";

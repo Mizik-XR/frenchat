@@ -1,5 +1,5 @@
 
-import React from 'react';
+import { React } from '@/core/ReactInstance';
 import { toast } from '@/hooks/use-toast';
 import { preloadSession } from '@/integrations/supabase/client';
 import { initLovableIntegration } from '@/utils/lovable/lovableIntegration';
