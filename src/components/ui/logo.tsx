@@ -1,6 +1,6 @@
 
 import { React } from '@/core/ReactInstance';
-import LogoImage from '../common/LogoImage';
+import { LogoImage } from '../common/LogoImage';
 
 interface LogoProps {
   className?: string;

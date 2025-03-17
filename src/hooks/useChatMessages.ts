@@ -58,7 +58,7 @@ export const useChatMessages = (conversationId: string | null) => {
         content: msg.content,
         conversation_id: msg.conversation_id,
         user_id: msg.user_id,
-        metadata: msg.metadata,
+        metadata: msg.metadata as MessageMetadata,
         created_at: msg.created_at,
         createdAt: new Date(msg.created_at).getTime(),
         updatedAt: new Date(msg.updated_at || msg.created_at).getTime()
@@ -112,6 +112,7 @@ export const useChatMessages = (conversationId: string | null) => {
             // Pour compatibilité avec le code existant qui pourrait attendre quoted_message_id
             quoted_message_id: newMessage.metadata?.quoted_message?.id
           },
+          message_type: newMessage.role === 'assistant' ? 'ai_response' : 'user_message',
           created_at: newMessage.created_at
         });
       
@@ -133,6 +134,7 @@ export const useChatMessages = (conversationId: string | null) => {
         .from('chat_messages')
         .update({
           ...updates,
+          message_type: updates.role === 'assistant' ? 'ai_response' : 'user_message',
           updated_at: new Date().toISOString()
         })
         .eq('id', id);

@@ -1,13 +1,13 @@
 
-// Importer createMockFunction pour créer des mocks compatibles
-import { createMockFunction } from './mockUtils';
+import { vi } from 'vitest';
+import { createMockFunction, enhanceMockFunction } from './mockUtils';
 
 // Mocks pour les fonctions Supabase
-export const mockSignIn = createMockFunction();
-export const mockSignUp = createMockFunction();
-export const mockSignOut = createMockFunction();
-export const mockGetUser = createMockFunction();
-export const mockGetSession = createMockFunction();
+export const mockSignIn = enhanceMockFunction(createMockFunction());
+export const mockSignUp = enhanceMockFunction(createMockFunction());
+export const mockSignOut = enhanceMockFunction(createMockFunction());
+export const mockGetUser = enhanceMockFunction(createMockFunction());
+export const mockGetSession = enhanceMockFunction(createMockFunction());
 
 // Mock pour le service Supabase
 export const mockSupabaseAuth = {
@@ -16,30 +16,31 @@ export const mockSupabaseAuth = {
   signInWithPassword: mockSignIn,
   signUp: mockSignUp,
   signOut: mockSignOut,
-  onAuthStateChange: jest.fn()
+  onAuthStateChange: vi.fn()
 };
 
 export const mockSupabase = {
   auth: mockSupabaseAuth,
-  from: jest.fn().mockReturnValue({
-    select: jest.fn().mockReturnThis(),
-    insert: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    single: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    range: jest.fn().mockReturnThis(),
-    match: jest.fn().mockReturnThis(),
-    upsert: jest.fn().mockReturnThis(),
-    maybeSingle: jest.fn().mockReturnThis(),
-    then: jest.fn().mockImplementation(callback => Promise.resolve(callback({ data: null, error: null })))
-  })
+  from: vi.fn().mockImplementation(() => ({
+    select: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
+    match: vi.fn().mockReturnThis(),
+    upsert: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockReturnThis(),
+    then: vi.fn().mockImplementation(callback => Promise.resolve(callback({ data: null, error: null })))
+  }))
 };
 
 // Réinitialiser tous les mocks
 export const resetMocks = () => {
+  vi.resetAllMocks();
   mockSignIn.mockReset();
   mockSignUp.mockReset();
   mockSignOut.mockReset();
@@ -47,6 +48,9 @@ export const resetMocks = () => {
   mockGetSession.mockReset();
   mockSupabaseAuth.onAuthStateChange.mockReset();
 };
+
+// Pour la compatibilité avec les tests existants
+export const resetAuthMocks = resetMocks;
 
 // Données de test
 export const mockUser = {
@@ -69,6 +73,25 @@ export const mockSession = {
   provider_token: null,
   provider_refresh_token: null
 };
+
+// Helper pour configurer les mocks pour les tests
+export const setupAuthMocks = (options = {}) => {
+  const {
+    signOutReturn = { error: null },
+    signInReturn = { data: { session: mockSession, user: mockUser }, error: null },
+    getUserReturn = { data: { user: mockUser }, error: null },
+    getSessionReturn = { data: { session: mockSession }, error: null }
+  } = options;
+
+  mockSignOut.mockResolvedValue(signOutReturn);
+  mockSignIn.mockResolvedValue(signInReturn);
+  mockGetUser.mockResolvedValue(getUserReturn);
+  mockGetSession.mockResolvedValue(getSessionReturn);
+};
+
+// Helper pour obtenir les mocks
+export const getMockUser = () => mockUser;
+export const getMockSession = () => mockSession;
 
 // Réponses prédéfinies
 export const mockSignedInResponse = {

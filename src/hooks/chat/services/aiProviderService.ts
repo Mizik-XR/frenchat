@@ -1,100 +1,106 @@
 
+import { AIProvider, AIModelConfig, AIProviderOptions } from '@/types/chat';
+import { Message } from '../types';
 import { supabase } from '@/integrations/supabase/client';
-import { prepareMessagesForAI, cacheResponse } from '../utils/responseHandlers';
-import { anthropicService } from './anthropicService';
 import { openAiService } from './openAiService';
-import { Message } from '../utils/responseHandlers';
+import { anthropicService } from './anthropicService';
 import { createChatPrompt } from '../utils/promptBuilders';
-import SupabaseContext from '@/contexts/SupabaseContext';
 
-// Types
-export interface AIModelConfig {
-  id: string;
-  name: string;
-  provider: string;
-  apiKey?: string;
-  temperature?: number;
-  maxTokens?: number;
-}
-
-export interface AIProviderOptions {
-  temperature?: number;
-  maxTokens?: number;
-  systemPrompt?: string;
-  cacheResults?: boolean;
-  metadata?: any;
-}
-
-// Service principal pour l'IA
-export const useAiProviderService = () => {
-  const generateResponse = async (
-    messages: Message[],
+export interface AIProviderServiceType {
+  generateResponse: (
+    messages: Message[], 
     modelConfig: AIModelConfig,
-    options: AIProviderOptions = {}
-  ) => {
-    try {
-      // Préparer les messages pour l'IA
-      const formattedMessages = prepareMessagesForAI(messages);
-      
-      // Créer le prompt complet
-      const prompt = createChatPrompt(formattedMessages, options.systemPrompt);
-      
-      let content = '';
-      let usage = { total_tokens: 0 };
-      
-      // Sélectionner le service approprié en fonction du fournisseur
-      switch (modelConfig.provider.toLowerCase()) {
-        case 'anthropic':
-          const anthropicResponse = await anthropicService.generateMessage(
-            JSON.stringify(prompt),
-            {
-              temperature: options.temperature || modelConfig.temperature || 0.7,
-              maxTokens: options.maxTokens || modelConfig.maxTokens || 1000
-            }
-          );
-          content = anthropicResponse.content;
-          usage = anthropicResponse.usage;
-          break;
-          
-        case 'openai':
-          const openaiResponse = await openAiService.generateMessage(
-            JSON.stringify(prompt),
-            {
-              temperature: options.temperature || modelConfig.temperature || 0.7,
-              maxTokens: options.maxTokens || modelConfig.maxTokens || 1000
-            }
-          );
-          content = openaiResponse.content;
-          usage = openaiResponse.usage;
-          break;
-          
-        default:
-          content = "Je ne suis pas configuré pour ce fournisseur d'IA.";
-      }
-      
-      // Mettre en cache la réponse si demandé
-      if (options.cacheResults !== false) {
-        await cacheResponse(
-          JSON.stringify(prompt),
-          content,
-          modelConfig.id
-        );
-      }
-      
-      return {
-        content,
-        usage
-      };
-    } catch (error) {
-      console.error('Error generating AI response:', error);
-      throw error;
-    }
-  };
+    options?: AIProviderOptions
+  ) => Promise<{
+    content: string;
+    usage: { total_tokens: number };
+  }>;
   
-  return {
-    generateResponse
-  };
+  // Pour la compatibilité avec le code existant
+  generateOpenAIAgentResponse: (
+    content: string, 
+    conversationId: string, 
+    config?: any
+  ) => Promise<string>;
+  
+  generateOpenAIResponse: (
+    content: string,
+    config?: any
+  ) => Promise<string>;
+  
+  generateAnthropicResponse: (
+    content: string,
+    config?: any
+  ) => Promise<string>;
+  
+  generateStandardResponse: (
+    content: string,
+    provider: AIProvider,
+    config?: any
+  ) => Promise<string>;
+}
+
+export const aiProviderService: AIProviderServiceType = {
+  generateResponse: async (messages, modelConfig, options = {}) => {
+    const provider = modelConfig.provider || 'openai';
+    const prompt = createChatPrompt(messages);
+    
+    let response;
+    
+    switch (provider) {
+      case 'openai': 
+        response = await openAiService.generateMessage(JSON.stringify(prompt), {
+          model: modelConfig.model,
+          temperature: modelConfig.temperature,
+          ...options
+        });
+        break;
+      case 'anthropic':
+        response = await anthropicService.generateMessage(JSON.stringify(prompt), {
+          model: modelConfig.model,
+          temperature: modelConfig.temperature,
+          ...options
+        });
+        break;
+      default:
+        // Fallback pour tout autre provider
+        response = {
+          content: `Réponse générée par le provider ${provider}. Ce provider n'est pas encore implémenté.`,
+          usage: { total_tokens: 0 }
+        };
+    }
+    
+    return response;
+  },
+  
+  // Méthodes de compatibilité
+  generateOpenAIAgentResponse: async (content, conversationId, config) => {
+    const prompt = `Conversation ID: ${conversationId}\nUser: ${content}`;
+    const response = await openAiService.generateMessage(prompt, config);
+    return response.content;
+  },
+  
+  generateOpenAIResponse: async (content, config) => {
+    const response = await openAiService.generateMessage(content, config);
+    return response.content;
+  },
+  
+  generateAnthropicResponse: async (content, config) => {
+    const response = await anthropicService.generateMessage(content, config);
+    return response.content;
+  },
+  
+  generateStandardResponse: async (content, provider, config) => {
+    if (provider === 'openai') {
+      return aiProviderService.generateOpenAIResponse(content, config);
+    } else if (provider === 'anthropic') {
+      return aiProviderService.generateAnthropicResponse(content, config);
+    } else {
+      return `Réponse générée par le provider ${provider}. Ce provider n'est pas encore implémenté.`;
+    }
+  }
 };
 
-// Pour compatibilité avec d'autres modules
-export const useAIProviderService = useAiProviderService;
+export const useAIProviderService = () => {
+  return aiProviderService;
+};

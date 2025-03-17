@@ -1,49 +1,49 @@
 
-/**
- * Utilitaires pour les mocks de test
- */
+import { vi } from 'vitest';
 
-export function createMockFunction<T, R>(implementation?: (...args: T[]) => R) {
-  // Création d'une fonction mock de base
-  const mockFn = jest.fn(implementation || (() => undefined as unknown as R));
-  
-  // Retourner la fonction avec les méthodes ajoutées
-  return {
-    ...mockFn,
-    mockResolvedValue: (value: R) => {
-      mockFn.mockImplementation(() => Promise.resolve(value));
-      return mockFn;
-    },
-    mockImplementation: (fn: (...args: T[]) => R) => {
-      mockFn.mockImplementation(fn);
-      return mockFn;
-    },
-    mockResolvedValueOnce: (value: R) => {
-      mockFn.mockImplementationOnce(() => Promise.resolve(value));
-      return mockFn;
-    },
-    mockRejectedValue: (reason: any) => {
-      mockFn.mockImplementation(() => Promise.reject(reason));
-      return mockFn;
-    },
-    mockRejectedValueOnce: (reason: any) => {
-      mockFn.mockImplementationOnce(() => Promise.reject(reason));
-      return mockFn;
-    }
-  };
+/**
+ * Crée une fonction mock compatible avec Vitest
+ */
+export function createMockFunction() {
+  return vi.fn().mockImplementation((...args) => {
+    // Implémentation par défaut
+    return Promise.resolve(null);
+  });
 }
 
-// Déclarations pour jest car il n'est pas forcément inclus dans les types
-declare global {
-  namespace jest {
-    interface Mock<T = any, Y extends any[] = any[]> {
-      (...args: Y): T;
-      mockResolvedValue: (value: T) => Mock<T, Y>;
-      mockImplementation: (fn: (...args: Y) => T) => Mock<T, Y>;
-      mockResolvedValueOnce: (value: T) => Mock<T, Y>;
-      mockRejectedValue: (reason: any) => Mock<T, Y>;
-      mockRejectedValueOnce: (reason: any) => Mock<T, Y>;
-    }
-    function fn<T = any, Y extends any[] = any[]>(implementation?: (...args: Y) => T): Mock<T, Y>;
-  }
+/**
+ * Ajoute des méthodes mock à une fonction mock
+ */
+export function enhanceMockFunction(mock) {
+  mock.mockResolvedValue = (value) => {
+    mock.mockImplementation(() => Promise.resolve(value));
+    return mock;
+  };
+
+  mock.mockImplementation = (fn) => {
+    vi.fn().mockImplementation(fn);
+    return mock;
+  };
+
+  mock.mockResolvedValueOnce = (value) => {
+    mock.mockImplementation(() => Promise.resolve(value));
+    return mock;
+  };
+
+  mock.mockRejectedValue = (reason) => {
+    mock.mockImplementation(() => Promise.reject(reason));
+    return mock;
+  };
+
+  mock.mockRejectedValueOnce = (reason) => {
+    mock.mockImplementation(() => Promise.reject(reason));
+    return mock;
+  };
+
+  mock.mockReset = () => {
+    vi.resetAllMocks();
+    return mock;
+  };
+
+  return mock;
 }

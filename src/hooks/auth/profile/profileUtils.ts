@@ -1,95 +1,96 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
+
+// Définir les types
+interface UserProfile {
+  id: string;
+  email?: string;
+  full_name?: string;
+  avatar_url?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+interface UserConfig {
+  id: string;
+  user_id: string;
+  key: string;
+  value: any;
+  created_at: string;
+  updated_at?: string;
+}
+
+interface ProfileResult {
+  profile: UserProfile | null;
+  configs: UserConfig[];
+  needsConfig: boolean;
+  isFirstLogin: boolean;
+  error: Error | null;
+}
 
 /**
- * Gère la récupération du profil utilisateur et de sa configuration
+ * Récupère le profil utilisateur et sa configuration
+ * @returns Informations sur le profil, la configuration et le statut de connexion
  */
-export const handleProfileAndConfig = async (userId: string) => {
-  if (!userId) return { profile: null, configs: [], needsConfig: false, isFirstLogin: false };
-
+export async function fetchUserProfile(): Promise<ProfileResult> {
   try {
-    // Récupérer le profil utilisateur avec une requête simplifiée
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, created_at, updated_at, is_first_login, full_name, avatar_url")
-      .eq("id", userId)
-      .single();
-
-    if (profileError) {
-      console.error("Erreur lors de la récupération du profil:", profileError);
-      
-      try {
-        // Créer un profil minimal en cas d'erreur
-        return { 
-          profile: { id: userId, is_first_login: true }, 
-          configs: [], 
-          needsConfig: true, 
-          isFirstLogin: true,
-          error: profileError
-        };
-      } catch (innerError) {
-        console.error("Erreur lors de la création d'un profil minimal:", innerError);
-        return { 
-          profile: null, 
-          configs: [], 
-          needsConfig: true, 
-          isFirstLogin: false,
-          error: innerError 
-        };
-      }
-    }
-
-    // Vérifier si le profil est bien récupéré
-    if (!profile) {
+    // Récupérer les informations utilisateur actuelles
+    const { data: userData, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !userData.user) {
       return {
         profile: null,
         configs: [],
         needsConfig: true,
-        isFirstLogin: true,
-        error: new Error('Profil non trouvé')
+        isFirstLogin: false,
+        error: authError || new Error('Utilisateur non authentifié')
       };
     }
-
-    // Utiliser des types explicites pour éviter les problèmes de profondeur excessive
-    const isFirstLogin = !!profile.is_first_login;
-
-    // Récupérer les configurations de l'utilisateur
+    
+    const userId = userData.user.id;
+    
+    // Récupérer le profil utilisateur
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    // Récupérer les configurations utilisateur
     const { data: configs, error: configError } = await supabase
-      .from("service_configurations")
-      .select("id, service_type, status, created_at")
-      .eq("user_id", userId);
-
-    if (configError) {
-      console.error("Erreur lors de la récupération des configurations:", configError);
-      return { 
-        profile, 
-        configs: [], 
-        needsConfig: true, 
-        isFirstLogin,
-        error: configError
-      };
-    }
-
-    // Convertir explicitement les configurations pour éviter les erreurs de type
-    const configsArray = configs || [];
+      .from('user_configs')
+      .select('*')
+      .eq('user_id', userId);
+    
+    // Déterminer s'il s'agit de la première connexion
+    const isFirstLogin = !profile || profile.is_first_login === true;
     
     // Déterminer si une configuration est nécessaire
-    const hasConfigured = configsArray.some(config => config.status === "configured");
+    const needsConfig = !configs || configs.length === 0;
     
     return {
-      profile,
-      configs: configsArray,
-      needsConfig: !hasConfigured,
-      isFirstLogin
+      profile: profile || null,
+      configs: configs || [],
+      needsConfig,
+      isFirstLogin,
+      error: profileError || configError || null
     };
   } catch (error) {
-    console.error("Erreur inattendue:", error);
-    return { 
-      profile: null, 
-      configs: [], 
-      needsConfig: true, 
-      isFirstLogin: false, 
-      error 
+    console.error('Erreur lors de la récupération du profil utilisateur:', error);
+    return {
+      profile: null,
+      configs: [],
+      needsConfig: true,
+      isFirstLogin: false,
+      error: error as Error
     };
   }
-};
+}
+
+/**
+ * Récupère le profil utilisateur avec sa configuration
+ * @returns Informations sur le profil et le statut de connexion
+ */
+export async function getUserProfileWithConfig() {
+  return await fetchUserProfile();
+}

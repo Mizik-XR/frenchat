@@ -1,110 +1,102 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { v4 as uuidv4 } from 'uuid';
-import { createChatPrompt } from './promptBuilder';
-import { AICacheService } from '@/services/cacheService';
+import { Message } from '../types';
 
-// Types
-export interface Message {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  metadata?: any;
-  createdAt?: number;
-}
-
-export interface ChatMessage {
+/**
+ * Sauvegarde un message dans la base de données
+ * @param message Le message à sauvegarder
+ * @returns L'ID du message sauvegardé
+ */
+export async function saveMessageToDatabase(message: {
+  user_id: string;
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   conversation_id: string;
   metadata?: any;
   created_at?: string;
-  user_id?: string;
-}
-
-// Ajouter cette fonction pour la compatibilité avec le code existant
-export const saveMessageToDatabase = async (
-  message: ChatMessage
-): Promise<ChatMessage | null> => {
+}) {
   try {
-    // Récupération de l'utilisateur courant
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user;
-
-    if (!user) {
-      console.error('No authenticated user found');
-      return null;
-    }
-
-    // S'assurer que l'ID utilisateur est défini
-    const messageWithUserId = {
-      ...message,
-      user_id: message.user_id || user.id
-    };
-
+    // Ajouter le message_type requis par le schéma de la table
+    const messageType = 
+      message.role === 'user' ? 'user_message' : 
+      message.role === 'assistant' ? 'ai_response' : 'system_message';
+    
     const { data, error } = await supabase
       .from('chat_messages')
-      .insert(messageWithUserId)
-      .select()
-      .single();
+      .insert({
+        id: message.id,
+        user_id: message.user_id,
+        role: message.role,
+        content: message.content,
+        conversation_id: message.conversation_id,
+        metadata: message.metadata || {},
+        message_type: messageType,
+        created_at: message.created_at || new Date().toISOString()
+      });
 
     if (error) {
       console.error('Error saving message to database:', error);
-      return null;
+      throw error;
     }
 
-    return data as ChatMessage;
+    return message.id;
   } catch (error) {
-    console.error('Error in saveMessageToDatabase:', error);
-    return null;
+    console.error('Exception saving message to database:', error);
+    throw error;
   }
-};
+}
 
-// Fonction pour transformer les messages avant envoi à l'IA
-export const prepareMessagesForAI = (messages: Message[]): any[] => {
-  return messages.map(msg => ({
-    role: msg.role,
-    content: msg.content
-  }));
-};
-
-// Fonction pour enregistrer la réponse en cache
-export const cacheResponse = async (
-  prompt: string,
-  response: string,
-  modelId: string
-): Promise<void> => {
+/**
+ * Traite une réponse de l'IA
+ * @param response La réponse de l'IA
+ * @param messageContext Le contexte du message (conversation, user, etc.)
+ * @returns Le message formaté
+ */
+export async function processAIResponse(
+  response: { content: string; usage?: { total_tokens: number } },
+  messageContext: {
+    conversationId: string;
+    userId: string;
+    messageId: string;
+    requestId?: string;
+  }
+): Promise<Message> {
   try {
-    const { data: userData } = await supabase.auth.getUser();
-    const userId = userData?.user?.id;
-
-    if (!userId) {
-      console.warn('No user ID available for caching');
-      return;
-    }
-
-    const cacheService = new AICacheService();
-    await cacheService.upsertCache(`${prompt}-${modelId}`, {
-      prompt,
-      response,
-      provider: modelId,
+    const { conversationId, userId, messageId, requestId } = messageContext;
+    
+    // Créer un ID pour la réponse
+    const responseId = `resp_${messageId}`;
+    
+    // Créer les métadonnées
+    const metadata = {
+      source: 'ai',
+      timestamp: new Date().toISOString(),
+      tokens: response.usage?.total_tokens || 0,
+      quoted_message: { id: messageId }
+    };
+    
+    // Sauvegarder la réponse en base de données
+    await saveMessageToDatabase({
+      id: responseId,
       user_id: userId,
-      tokens_used: 0,
-      estimated_cost: 0,
-      created_at: new Date().toISOString()
+      role: 'assistant',
+      content: response.content,
+      conversation_id: conversationId,
+      metadata
     });
+    
+    // Retourner le message formaté
+    return {
+      id: responseId,
+      role: 'assistant',
+      content: response.content,
+      timestamp: Date.now(),
+      conversationId,
+      metadata
+    };
   } catch (error) {
-    console.error('Error caching response:', error);
+    console.error('Error processing AI response:', error);
+    throw error;
   }
-};
-
-// Fonction pour générer un ID unique pour un message
-export const generateMessageId = (): string => {
-  return uuidv4();
-};
-
-// Fonction pour formater la date en ISO string
-export const formatDate = (date: Date = new Date()): string => {
-  return date.toISOString();
-};
+}

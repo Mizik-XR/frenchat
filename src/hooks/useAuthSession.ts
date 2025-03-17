@@ -11,7 +11,12 @@ import {
   updateSessionLoading
 } from "./auth/authConstants";
 import { useSignOut } from "./auth/authActions";
-import { useAuthStateChangeHandler, useInitialSessionCheck } from "./auth/authEventHandlers";
+
+// Importer correctement les handlers d'événements d'auth
+import { 
+  useAuthStateChangeHandler as createAuthStateChangeHandler, 
+  useInitialSessionCheck as createInitialSessionCheck
+} from "./auth/authEventHandlers";
 
 export function useAuthSession() {
   const [user, setUser] = useState<User | null>(cachedUser);
@@ -19,8 +24,9 @@ export function useAuthSession() {
   const [offlineMode, setOfflineMode] = useState(APP_STATE.isOfflineMode);
   const signOut = useSignOut();
   
-  const handleAuthChange = useAuthStateChangeHandler();
-  const checkSession = useInitialSessionCheck();
+  // Obtenir les handlers
+  const authStateChangeHandler = createAuthStateChangeHandler();
+  const initialSessionCheck = createInitialSessionCheck();
 
   // Gérer le mode hors ligne
   useEffect(() => {
@@ -45,7 +51,13 @@ export function useAuthSession() {
     
     if (supabase) {
       const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-        const result = await handleAuthChange(event, session);
+        const result = await authStateChangeHandler(
+          event, 
+          session, 
+          setIsLoading,
+          () => {}, // onAuthenticated
+          () => {}  // onUnauthenticated
+        );
         setUser(result?.user ?? null);
         setIsLoading(false);
       });
@@ -53,14 +65,14 @@ export function useAuthSession() {
     }
     
     // Initial session check
-    checkSession().finally(() => {
+    initialSessionCheck().finally(() => {
       setIsLoading(false);
     });
     
     return () => {
       subscription?.unsubscribe();
     };
-  }, [handleAuthChange, checkSession]);
+  }, [authStateChangeHandler, initialSessionCheck]);
 
   // Fonction pour basculer manuellement le mode hors ligne
   const toggleOfflineMode = (value?: boolean) => {

@@ -1,66 +1,121 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { saveMessageToDatabase } from '../utils/responseHandlers';
+import { supabase } from '@/integrations/supabase/client';
+import { Message, SendMessageOptions } from '../types';
 
-// Types
-export interface Message {
-  id?: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  conversationId: string;
-  metadata?: any;
-  createdAt?: number;
+export interface MessageServiceType {
+  createUserMessage: (
+    content: string, 
+    conversationId: string, 
+    files?: File[], 
+    fileUrls?: string[],
+    replyTo?: string,
+    config?: any
+  ) => Message;
+  
+  createAssistantMessage: (
+    content: string, 
+    conversationId: string, 
+    userMessageId: string,
+    config?: any
+  ) => Message;
+  
+  saveMessageToDatabase: (message: Omit<Message, 'timestamp' | 'conversationId'> & { 
+    conversation_id: string,
+    created_at?: string
+  }) => Promise<void>;
 }
 
-export interface SavedMessage extends Message {
-  id: string;
-  createdAt: number;
-}
-
-/**
- * Sauvegarde un message dans la base de données
- */
-export const saveMessage = async (message: Message): Promise<SavedMessage | null> => {
-  try {
-    // Formater le message pour la sauvegarde
-    const messageToSave = {
-      id: message.id || uuidv4(),
-      role: message.role,
-      content: message.content,
-      conversation_id: message.conversationId,
-      metadata: message.metadata || {},
-      created_at: new Date().toISOString(),
-      user_id: ''  // Sera rempli par saveMessageToDatabase
-    };
+export const messageService: MessageServiceType = {
+  createUserMessage: (content, conversationId, files = [], fileUrls = [], replyTo, config) => {
+    const timestamp = Date.now();
+    const metadata: any = {};
     
-    // Sauvegarder le message
-    const savedMessage = await saveMessageToDatabase(messageToSave);
-    
-    if (!savedMessage) {
-      console.error('Failed to save message');
-      return null;
+    if (files.length > 0 || fileUrls.length > 0) {
+      metadata.files = files.map(file => file.name);
+      metadata.fileUrls = fileUrls;
     }
     
-    // Convertir au format SavedMessage
+    if (replyTo) {
+      metadata.quoted_message = { id: replyTo };
+    }
+    
+    if (config?.provider) {
+      metadata.provider = config.provider;
+    }
+    
+    if (config?.model) {
+      metadata.model = config.model;
+    }
+    
     return {
-      id: savedMessage.id,
-      role: savedMessage.role as 'user' | 'assistant' | 'system',
-      content: savedMessage.content,
-      conversationId: savedMessage.conversation_id,
-      metadata: savedMessage.metadata,
-      createdAt: new Date(savedMessage.created_at || Date.now()).getTime()
+      id: uuidv4(),
+      role: 'user',
+      content,
+      timestamp,
+      conversationId,
+      metadata
     };
-  } catch (error) {
-    console.error('Error saving message:', error);
-    return null;
+  },
+  
+  createAssistantMessage: (content, conversationId, userMessageId, config) => {
+    const timestamp = Date.now();
+    const metadata: any = {
+      source: 'ai',
+      timestamp: new Date().toISOString(),
+    };
+    
+    if (userMessageId) {
+      metadata.quoted_message = { id: userMessageId };
+    }
+    
+    if (config?.provider) {
+      metadata.provider = config.provider;
+    }
+    
+    if (config?.model) {
+      metadata.model = config.model;
+    }
+    
+    if (config?.tokens) {
+      metadata.tokens = config.tokens;
+    }
+    
+    return {
+      id: uuidv4(),
+      role: 'assistant',
+      content,
+      timestamp,
+      conversationId,
+      metadata
+    };
+  },
+  
+  saveMessageToDatabase: async (message) => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert({
+          id: message.id,
+          role: message.role,
+          content: message.content,
+          conversation_id: message.conversation_id,
+          user_id: message.user_id,
+          metadata: message.metadata,
+          message_type: message.role === 'assistant' ? 'ai_response' : 'user_message',
+          created_at: message.created_at || new Date().toISOString()
+        });
+      
+      if (error) throw error;
+      
+      return data;
+    } catch (err) {
+      console.error("Error saving message to database:", err);
+      throw err;
+    }
   }
 };
 
-/**
- * Récupère les messages d'une conversation
- */
-export const getMessages = async (conversationId: string): Promise<SavedMessage[]> => {
-  // Implémentation stub pour le moment
-  console.warn('getMessages est un stub et ne récupère pas de vrais messages');
-  return [];
+export const useMessageService = () => {
+  return messageService;
 };
