@@ -3,7 +3,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config';
-import { APP_STATE, checkOfflineMode, detectLocalAIService } from './appState';
+import { 
+  APP_STATE, 
+  detectLocalAIService,
+  checkOfflineMode,
+  preloadSession as compatPreloadSession
+} from '@/compatibility/supabaseCompat';
 
 // Type helper for Edge Function responses
 export type EdgeFunctionResponse<T> = {
@@ -71,9 +76,8 @@ export const supabase = supabaseClient;
 // Réexportation des constantes d'APP_STATE pour maintenir la compatibilité API
 export { APP_STATE, checkOfflineMode, detectLocalAIService };
 
-// Importer les gestionnaires de session ici pour éviter les dépendances circulaires
-import { preloadSession } from './sessionManager';
-export { preloadSession };
+// Utilisation de la fonction de compatibilité
+export const preloadSession = compatPreloadSession;
 
 // Importer les utilitaires de profil ici pour éviter les dépendances circulaires
 import { handleProfileQuery, checkSupabaseConnection } from './profileUtils';

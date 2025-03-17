@@ -1,5 +1,5 @@
 
-import { APP_STATE } from '@/integrations/supabase/client';
+import { APP_STATE } from '@/compatibility/supabaseCompat';
 import { toast } from '@/hooks/use-toast';
 
 /**
@@ -82,7 +82,7 @@ export async function checkLocalServiceConnectivity(
 export function enableOfflineMode(reason: string): void {
   if (!APP_STATE.isOfflineMode) {
     console.log(`Activation du mode hors ligne: ${reason}`);
-    APP_STATE.isOfflineMode = true;
+    APP_STATE.setOfflineMode(true);
     
     toast({
       title: "Mode hors ligne activé",
