@@ -69,6 +69,9 @@ export { APP_STATE, checkOfflineMode, detectLocalAIService };
 // Utilisation de la fonction de compatibilité
 export const preloadSession = compatPreloadSession;
 
+// Réexporte le type EdgeFunctionResponse pour qu'il soit disponible aux imports
+export type { EdgeFunctionResponse };
+
 // Importer les utilitaires de profil après l'export de supabase
 // Ceci évite la dépendance circulaire
 import { handleProfileQuery, checkSupabaseConnection } from './profileUtils';
