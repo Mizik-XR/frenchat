@@ -7,9 +7,6 @@ import App from '@/App';
 import { LoadingScreen } from '@/components/auth/LoadingScreen';
 import { renderFallbackScreen } from './errorHandlingUtils';
 
-// Ajout de vérification de l'instance React
-import { checkReactInstance } from '@/core/ReactInstance';
-
 /**
  * Configure le client de requête pour React Query
  */
@@ -31,17 +28,6 @@ export const createQueryClient = (): QueryClient => {
  */
 export const renderApp = (rootElement: HTMLElement, queryClient: QueryClient): void => {
   try {
-    // Vérifier l'instance React avant le rendu
-    console.log("Vérification de l'instance React avant le rendu...");
-    if (!checkReactInstance()) {
-      console.error("Problème avec l'instance React, tentative de récupération...");
-      if (typeof window !== 'undefined' && window.React) {
-        console.log("Utilisation de l'instance React globale via window");
-      } else {
-        console.error("Aucune instance React globale disponible. Risque d'erreur sur createContext");
-      }
-    }
-    
     // S'assurer que createRoot est accessible
     if (typeof createRoot !== 'function') {
       console.error("react-dom/client createRoot n'est pas disponible, tentative de contournement...");

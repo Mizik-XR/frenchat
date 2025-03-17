@@ -1,80 +1,38 @@
-
-// Importation correcte de React depuis l'instance centrale
-import { React } from '@/core/ReactInstance';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import Index from './pages/Index';
+import AuthPage from './pages/Auth';
+import ChatPage from './pages/Chat';
+import DocumentsPage from './pages/Documents';
+import ConfigPage from './pages/Config';
 import { AuthProvider } from './components/AuthProvider';
-import { ThemeProvider } from './components/ThemeProvider';
-import { Toaster } from './components/ui/toaster';
-import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
-import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
-import { SettingsProvider } from './contexts/SettingsContext';
-import Chat from './pages/Chat';
-import Config from './pages/Config';
-import { GoogleDriveConfig } from './components/config/GoogleDrive/GoogleDriveConfig';
+import { DebugPanel } from './components/DebugPanel';
+import SystemStatus from './pages/SystemStatus';
+import LocalAISetup from './pages/LocalAISetup';
 
-// Ajouter un composant de diagnostic pour le mode dev
-const DevTools = () => {
-  // Ne rendre qu'en mode développement
-  if (import.meta.env.PROD) return null;
-  
-  const runDiagnostic = () => {
-    // Importer dynamiquement pour éviter les problèmes en production
-    import('./utils/diagnostics/diagnoseApp')
-      .then(module => module.diagnoseApplication())
-      .catch(err => console.error('Erreur lors du chargement du diagnostic:', err));
-  };
-  
+export default function App() {
+  const [showDebugPanel, setShowDebugPanel] = useState(import.meta.env.DEV);
+
   return (
-    <div style={{ 
-      position: 'fixed', 
-      bottom: '10px', 
-      right: '10px', 
-      zIndex: 9999,
-      opacity: 0.8,
-    }}>
-      <button
-        onClick={runDiagnostic}
-        style={{
-          background: '#6366f1',
-          color: 'white',
-          border: 'none',
-          padding: '8px 12px',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontSize: '12px',
-        }}
-      >
-        Diagnostic
-      </button>
+    <div className="flex flex-col min-h-screen">
+      {showDebugPanel && <div className="absolute top-0 right-0 z-50"><DebugPanel /></div>}
+      
+      <div className="flex-1">
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/chat/:conversationId" element={<ChatPage />} />
+              <Route path="/documents" element={<DocumentsPage />} />
+              <Route path="/config" element={<ConfigPage />} />
+              <Route path="/system-status" element={<SystemStatus />} />
+              <Route path="/local-ai-setup" element={<LocalAISetup />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </div>
     </div>
   );
-};
-
-// Création du client de requête pour React Query
-const queryClient = new QueryClient();
-
-function App() {
-  return (
-    <Router>
-      <ThemeProvider>
-        <AuthProvider>
-          <QueryClientProvider client={queryClient}>
-            <SettingsProvider>
-              <ReactErrorMonitor />
-              <Routes>
-                <Route path="/" element={<Chat />} />
-                <Route path="/chat" element={<Chat />} />
-                <Route path="/config" element={<Config />} />
-                <Route path="/config/google-drive" element={<GoogleDriveConfig />} />
-              </Routes>
-              <Toaster />
-              {import.meta.env.DEV && <DevTools />}
-            </SettingsProvider>
-          </QueryClientProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </Router>
-  );
 }
-
-export default App;

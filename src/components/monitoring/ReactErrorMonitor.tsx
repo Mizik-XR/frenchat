@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { APP_STATE } from '@/compatibility/supabaseCompat';
+import { APP_STATE } from '@/integrations/supabase/client';
 
 /**
  * Composant qui surveille et capture les erreurs React non gérées
@@ -33,7 +33,7 @@ export const ReactErrorMonitor = () => {
       
       if (isReactError) {
         console.warn('Erreur React potentielle détectée, mise en mode fallback...');
-        APP_STATE.setOfflineMode(true);
+        APP_STATE.isOfflineMode = true;
       }
       
       // Notification à l'utilisateur
@@ -66,7 +66,7 @@ export const ReactErrorMonitor = () => {
       
       if (isConnectionError) {
         console.warn('Problème de connexion détecté, activation du mode hors ligne...');
-        APP_STATE.setOfflineMode(true);
+        APP_STATE.isOfflineMode = true;
       }
       
       // Notification à l'utilisateur

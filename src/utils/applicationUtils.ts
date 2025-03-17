@@ -3,8 +3,8 @@
  * Utilitaires pour l'état et le chargement de l'application
  */
 
-import { APP_STATE } from '@/compatibility/supabaseCompat';
-import { toast } from '@/hooks/use-toast';
+import { detectLocalAIService } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 /**
  * Vérifie l'état de santé de l'application et ses services critiques
@@ -33,11 +33,8 @@ export const checkApplicationHealth = async () => {
 
   // Vérifier le service d'IA local
   try {
-    // Utilisation de l'API du module de compatibilité au lieu de la fonction directe
-    if (APP_STATE && typeof APP_STATE.detectLocalAIService === 'function') {
-      const localAICheck = await APP_STATE.detectLocalAIService();
-      results.localAI = localAICheck.available;
-    }
+    const localAI = await detectLocalAIService();
+    results.localAI = localAI.available;
   } catch (e) {
     console.error("Erreur lors de la vérification du service d'IA local:", e);
   }

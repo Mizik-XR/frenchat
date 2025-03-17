@@ -162,6 +162,15 @@ export interface UserNotification {
   expires_at?: string | null;
 }
 
+// Type d'état de l'application
+export interface AppState {
+  isOfflineMode: boolean;
+  lastError?: Error | null;
+  supbaseErrors: Error[];
+  setOfflineMode: (offline: boolean) => void;
+  logSupabaseError: (error: Error) => void;
+}
+
 // Fonctions utilitaires pour les profils
 export interface ProfileUtils {
   handleProfileQuery: (userId: string) => Promise<{ data: UserProfile | null, error: any }>;

@@ -1,80 +1,48 @@
 
 /**
- * INSTANCE CENTRALE DE REACT
+ * ReactInstance.ts
  * 
- * Ce fichier est le point d'entrée unique pour toutes les fonctionnalités React.
- * Il garantit que la même instance de React est utilisée dans toute l'application.
- * 
- * IMPORTANT: Importez toujours React depuis ce module, jamais directement depuis 'react'
+ * Ce fichier exporte une instance unique de React à utiliser dans toute l'application.
+ * Cela garantit que tous les composants utilisent la même instance de React,
+ * évitant ainsi les problèmes de versions multiples qui peuvent survenir avec
+ * le code-splitting ou des dépendances circulaires.
  */
 
-// Import direct de React pour garantir une instance unique
-import * as ReactOriginal from 'react';
-import * as ReactDOMOriginal from 'react-dom';
-import * as ReactDOMClientOriginal from 'react-dom/client';
+import * as React from 'react';
 
-// Exporter React pour garantir qu'une seule instance est utilisée partout
-export const React = ReactOriginal;
-export const ReactDOM = ReactDOMOriginal;
-export const ReactDOMClient = ReactDOMClientOriginal;
+// Exporter l'instance unique de React
+export { React };
 
-// Exportations nommées pour les API les plus couramment utilisées
-export const {
-  useState,
-  useEffect,
-  useContext,
-  useReducer,
-  useCallback,
-  useMemo,
-  useRef,
-  createContext,
-  memo,
-  forwardRef,
-  Fragment,
-  Suspense,
-  lazy,
-  createElement,
-  cloneElement,
-  createRef,
-  isValidElement
-} = React;
+// Fonctions utilitaires pour faciliter l'utilisation
+export const useState = React.useState;
+export const useEffect = React.useEffect;
+export const useContext = React.useContext;
+export const useCallback = React.useCallback;
+export const useMemo = React.useMemo;
+export const useRef = React.useRef;
+export const useLayoutEffect = React.useLayoutEffect;
+export const createContext = React.createContext;
 
-/**
- * Vérifie si l'instance React est correctement configurée
- * @returns true si l'instance est correcte
- */
-export function checkReactInstance(): boolean {
-  // Vérifier si les composants vitaux sont disponibles
-  if (!React || !React.createContext || !React.useState) {
-    console.error("[ERREUR CRITIQUE] Instance React invalide détectée");
+// Vérifier si React est correctement chargé
+export function checkReactInstance() {
+  if (!React || !React.version) {
+    console.error("ERREUR CRITIQUE: React n'est pas correctement chargé");
     return false;
   }
   
+  console.log(`React version ${React.version} chargé correctement`);
   return true;
 }
 
-/**
- * Récupération d'urgence de l'instance React
- * @returns l'instance React récupérée ou null
- */
-export function getEmergencyReactInstance() {
-  try {
-    // Tentative d'accès à l'instance globale (en dernier recours)
-    if (typeof window !== 'undefined' && 'React' in window) {
-      console.warn("[RÉCUPÉRATION] Utilisation de l'instance React globale (window.React)");
-      return (window as any).React;
-    }
-    
-    // Si React n'est pas disponible globalement, essayer de le réimporter
-    if (!React || !React.createContext) {
-      console.warn("[RÉCUPÉRATION] Tentative de réimportation de React");
-      const dynamicReact = require('react');
-      return dynamicReact;
-    }
-    
-    return null;
-  } catch (e) {
-    console.error("[ERREUR CRITIQUE] Échec de récupération de l'instance React:", e);
-    return null;
+// Assigner React à la propriété window si elle est définie
+// Cela peut aider à résoudre les problèmes d'instance en production
+if (typeof window !== 'undefined') {
+  window.React = React;
+}
+
+// Interface pour le type global Window
+declare global {
+  interface Window {
+    React?: typeof React;
   }
 }
