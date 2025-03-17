@@ -2,6 +2,7 @@
 import React from 'react';
 import { toast } from '@/hooks/use-toast';
 import { preloadSession } from '@/integrations/supabase/client';
+import { initLovableIntegration } from '@/utils/lovable/lovableIntegration';
 
 /**
  * Vérification des dépendances React
@@ -85,4 +86,30 @@ export const setupNetworkListeners = (): void => {
       variant: "destructive"
     });
   });
+};
+
+/**
+ * Initialisation de l'intégration Lovable
+ */
+export const setupLovableIntegration = (): void => {
+  // Initialiser l'intégration Lovable
+  initLovableIntegration();
+  
+  // Vérifier après un court délai si l'intégration est effective
+  if (typeof window !== 'undefined') {
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const isLoaded = document.querySelector('script[src*="gptengineer.js"]');
+        if (!isLoaded) {
+          console.warn("L'intégration Lovable n'a pas été chargée correctement");
+          // Notification toast pour alerter l'utilisateur
+          toast({
+            title: "Problème d'intégration Lovable",
+            description: "L'édition AI pourrait ne pas fonctionner. Utilisez fix-lovable-integration.sh pour réparer.",
+            variant: "destructive"
+          });
+        }
+      }, 2000);
+    });
+  }
 };

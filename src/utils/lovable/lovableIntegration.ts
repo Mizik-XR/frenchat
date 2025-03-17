@@ -1,103 +1,88 @@
 
 /**
- * Utilitaire pour l'intégration et la gestion de l'éditeur Lovable
+ * Utilitaires pour l'intégration Lovable
+ * 
+ * Ce fichier contient des fonctions permettant de s'assurer que
+ * l'intégration avec Lovable fonctionne correctement.
  */
 
 /**
  * Vérifie si le script Lovable est correctement chargé
- * @returns Boolean indiquant si le script est chargé
  */
 export function isLovableLoaded(): boolean {
-  // Vérifier si le script est présent dans le document
-  const scripts = document.querySelectorAll('script');
-  for (const script of scripts) {
-    if (script.src && script.src.includes('gptengineer.js')) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
- * Tente d'injecter le script Lovable s'il n'est pas déjà présent
- * @returns Une promesse résolue quand le script est injecté
- */
-export function injectLovableScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (isLovableLoaded()) {
-      console.log("Script Lovable déjà chargé");
-      resolve();
-      return;
-    }
-
-    console.log("Tentative d'injection du script Lovable");
-    const script = document.createElement('script');
-    script.src = 'https://cdn.gpteng.co/gptengineer.js';
-    script.type = 'module';
-    script.async = true;
-    script.onload = () => {
-      console.log("Script Lovable injecté avec succès");
-      resolve();
-    };
-    script.onerror = (err) => {
-      console.error("Erreur lors de l'injection du script Lovable", err);
-      reject(err);
-    };
-
-    document.head.appendChild(script);
-  });
-}
-
-/**
- * Vérifie l'état de l'intégration Lovable et retourne un diagnostic
- * @returns Un objet contenant les informations de diagnostic
- */
-export function getLovableDiagnostic(): { 
-  isLoaded: boolean; 
-  url: string;
-  userAgent: string;
-  isIframe: boolean;
-  mode: string;
-} {
-  return {
-    isLoaded: isLovableLoaded(),
-    url: typeof window !== 'undefined' ? window.location.href : '',
-    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-    isIframe: typeof window !== 'undefined' ? window !== window.parent : false,
-    mode: import.meta.env.MODE
-  };
-}
-
-/**
- * Initialise Lovable automatiquement si nécessaire
- */
-export function initializeLovable(): void {
-  // Vérifier si on est en mode développement
-  if (import.meta.env.MODE === 'production') {
-    return; // Ne pas initialiser en production
+  if (typeof window === 'undefined') return false;
+  
+  // Vérifier si le script Lovable est présent dans le DOM
+  const lovableScripts = document.querySelectorAll('script[src*="gptengineer.js"]');
+  if (lovableScripts.length === 0) {
+    console.warn("Le script Lovable n'est pas chargé dans le DOM. L'édition AI ne fonctionnera pas.");
+    return false;
   }
   
-  // Vérifier si le script est déjà chargé
-  if (!isLovableLoaded()) {
-    console.log("Lovable non détecté, injection automatique...");
-    injectLovableScript()
-      .then(() => {
-        console.log("Lovable initialisé avec succès");
-      })
-      .catch((err) => {
-        console.error("Échec de l'initialisation de Lovable:", err);
-      });
+  // Vérifier si l'objet global est disponible
+  const hasLovableGlobal = 'GPTEngineer' in window || '__GPTEngineer' in window;
+  if (!hasLovableGlobal) {
+    console.warn("L'objet global Lovable n'est pas disponible. Le script pourrait ne pas être correctement chargé.");
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Injecte le script Lovable s'il n'est pas déjà présent
+ */
+export function injectLovableScript(): void {
+  if (typeof window === 'undefined') return;
+  
+  // Ne pas réinjecter si déjà présent
+  if (document.querySelector('script[src*="gptengineer.js"]')) return;
+  
+  console.info("Injection automatique du script Lovable");
+  
+  const script = document.createElement('script');
+  script.src = 'https://cdn.gpteng.co/gptengineer.js';
+  script.type = 'module';
+  script.async = true;
+  script.dataset.injected = 'true';
+  
+  // Ajouter avant le premier script existant pour s'assurer qu'il se charge tôt
+  const firstScript = document.querySelector('script');
+  if (firstScript) {
+    firstScript.parentNode?.insertBefore(script, firstScript);
   } else {
-    console.log("Lovable déjà initialisé");
+    document.head.appendChild(script);
   }
 }
 
-// Ajouter un diagnostic au démarrage du module
-console.log("Module d'intégration Lovable chargé");
-if (typeof window !== 'undefined') {
-  // Utiliser un délai pour s'assurer que le DOM est complètement chargé
-  setTimeout(() => {
-    const diagnostic = getLovableDiagnostic();
-    console.log("Diagnostic Lovable:", diagnostic);
-  }, 1000);
+/**
+ * Initialise l'intégration Lovable
+ * Cette fonction peut être appelée au démarrage de l'application
+ */
+export function initLovableIntegration(): void {
+  // Injecter le script si nécessaire
+  if (typeof window !== 'undefined') {
+    // Vérifier si nous sommes en mode production
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // En développement ou si explicitement activé, injecter le script
+    if (!isProduction || process.env.VITE_ENABLE_LOVABLE === 'true') {
+      if (!isLovableLoaded()) {
+        injectLovableScript();
+      }
+      
+      // Ajouter un listener pour vérifier périodiquement
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          if (!isLovableLoaded()) {
+            console.warn("Lovable n'a pas été chargé après 3 secondes. Tentative de réinjection...");
+            injectLovableScript();
+          }
+        }, 3000);
+      });
+    }
+  }
 }
+
+// Appeler initLovableIntegration lors de l'import de ce module
+initLovableIntegration();
