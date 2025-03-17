@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Conversation, WebUIConfig } from "@/types/chat";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { Json } from "@/types/database";
 
 export function useConversations() {
   const queryClient = useQueryClient();
@@ -50,12 +51,14 @@ export function useConversations() {
     };
 
     const config = webUIConfig || defaultConfig;
+    // Convertir WebUIConfig en Json pour Supabase
+    const configAsJson: Json = config as unknown as Json;
 
     const { data, error } = await supabase
       .from('chat_conversations')
       .insert({
         title: "Nouvelle conversation",
-        settings: config,
+        settings: configAsJson,
         user_id: user.user.id,
         is_archived: false
       })

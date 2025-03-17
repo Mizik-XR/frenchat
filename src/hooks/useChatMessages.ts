@@ -124,9 +124,23 @@ export function useChatMessages(conversationId: string | null) {
     type: string;
     quoted_message_id?: string;
   }) => {
+    const user = (await supabase.auth.getUser()).data.user;
+    
+    if (!user) {
+      console.warn("Tentative de sauvegarde de message sans authentification");
+      return;
+    }
+    
     const { error } = await supabase
       .from('chat_messages')
-      .insert(messageData);
+      .insert({
+        conversation_id: messageData.conversation_id,
+        role: messageData.role,
+        content: messageData.content,
+        message_type: messageData.type,
+        quoted_message_id: messageData.quoted_message_id,
+        user_id: user.id
+      });
     
     if (error) throw error;
   }, []);

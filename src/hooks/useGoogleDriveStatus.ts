@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,7 +26,7 @@ export const useGoogleDriveStatus = () => {
       // Vérifier le statut de la connexion à Google Drive
       const { data, error } = await supabase
         .from('service_configurations')
-        .select('status, created_at, config_data')
+        .select('status, created_at, config')
         .eq('user_id', user.id)
         .eq('service_type', 'google_drive')
         .single();
@@ -38,7 +39,7 @@ export const useGoogleDriveStatus = () => {
         setIsConnected(true);
         
         // Extraire les informations de connexion
-        const configData = data.config_data as Record<string, any>;
+        const configData = data.config as Record<string, any>;
         setConnectionData({
           email: configData?.email || 'Utilisateur Google',
           connectedSince: data.created_at ? new Date(data.created_at) : null,

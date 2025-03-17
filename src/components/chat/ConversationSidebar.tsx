@@ -22,12 +22,12 @@ export const ConversationSidebar = ({
   const handleCreateNewConversation = async () => {
     const newConversation = await createNewConversation();
     if (newConversation) {
-      // Utiliser la structure correcte du type Conversation
+      // Convertir les dates en timestamp (nombre)
       setActiveConversation({
         id: newConversation.id,
         title: newConversation.title,
-        createdAt: newConversation.created_at,
-        updatedAt: newConversation.updated_at,
+        createdAt: new Date(newConversation.created_at).getTime(),
+        updatedAt: new Date(newConversation.updated_at).getTime(),
         // Copier les autres propriétés nécessaires
         is_pinned: newConversation.is_pinned,
         is_archived: newConversation.is_archived,

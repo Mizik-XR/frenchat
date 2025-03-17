@@ -1,5 +1,6 @@
 
 import type { Database } from './types';
+import type { Json } from '@/types/database';
 
 // Types partagés utilisés par client.ts et profileUtils.ts
 export type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -22,8 +23,8 @@ export interface EdgeFunctionResponse<T = any> {
 export interface Conversation {
   id: string;
   title: string;
-  createdAt: string; // Format standardisé
-  updatedAt: string; // Format standardisé
+  createdAt: number; // Convertir en number pour la compatibilité TypeScript
+  updatedAt: number; // Convertir en number pour la compatibilité TypeScript
   is_pinned?: boolean;
   is_archived?: boolean;
   folder_id?: string;
@@ -53,4 +54,17 @@ export interface RagContext {
   context: string;
   source?: string;
   metadata?: any;
+}
+
+// Fonction RPC définie dans Supabase mais non exportée dans le type Database
+export interface CustomSupabaseRPCFunctions {
+  get_rag_context: (args: { conversation_id: string }) => Promise<RagContext>;
+  insert_chat_message: (args: {
+    p_id: string;
+    p_role: string;
+    p_content: string;
+    p_conversation_id: string;
+    p_metadata: any;
+    p_created_at: string;
+  }) => Promise<void>;
 }

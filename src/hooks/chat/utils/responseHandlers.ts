@@ -2,15 +2,19 @@
 import { AIProvider, WebUIConfig } from "@/types/chat";
 import { supabase } from "@/integrations/supabase/client";
 import { RagContext } from "@/integrations/supabase/sharedTypes";
+import { PostgrestError } from "@supabase/supabase-js";
 
 /**
  * Fetches RAG context for a conversation
  */
 export const fetchRagContext = async (conversationId: string) => {
   try {
-    // Utiliser une requête SQL personnalisée ou RPC pour éviter les problèmes de typage
+    // Utilisation d'une requête SQL personnalisée pour éviter les problèmes de typage
     const { data, error } = await supabase
-      .rpc('get_rag_context', { conversation_id: conversationId });
+      .from('rag_contexts')
+      .select('context, source, metadata')
+      .eq('conversation_id', conversationId)
+      .maybeSingle();
       
     if (error) {
       console.error('Error fetching RAG context:', error);
@@ -55,14 +59,18 @@ export const saveMessageToDatabase = async (
   }
 ) => {
   try {
-    const { error } = await supabase.rpc('insert_chat_message', {
-      p_id: message.id,
-      p_role: message.role,
-      p_content: message.content,
-      p_conversation_id: message.conversationId,
-      p_metadata: message.metadata,
-      p_created_at: message.timestamp.toISOString()
-    });
+    const { error } = await supabase
+      .from('chat_messages')
+      .insert({
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        conversation_id: message.conversationId,
+        metadata: message.metadata,
+        message_type: 'text',
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+        created_at: message.timestamp.toISOString()
+      });
     
     if (error) throw error;
     return message;
