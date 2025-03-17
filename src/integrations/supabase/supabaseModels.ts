@@ -180,7 +180,7 @@ export interface AuthUtils {
 }
 
 // Type helper for Edge Function responses
-export interface EdgeFunctionResponse<T> {
+export type EdgeFunctionResponse<T> = {
   data: T;
   error: null;
 } | {
@@ -188,7 +188,7 @@ export interface EdgeFunctionResponse<T> {
   error: {
     message: string;
   };
-}
+};
 
 // Utilitaires pour convertir les types Supabase en types d'application
 export function mapDatabaseUserToProfile<T extends Record<string, any>>(user: T): UserProfile {
