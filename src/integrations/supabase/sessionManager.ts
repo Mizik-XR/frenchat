@@ -1,6 +1,6 @@
 
 import { supabase } from './client';
-import { APP_STATE } from './appState';
+import { APP_STATE } from './supabaseModels';
 
 // Préchargement de la session Supabase
 export const preloadSession = async () => {

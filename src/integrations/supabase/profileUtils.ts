@@ -1,6 +1,6 @@
 
 import { supabase } from './client';
-import { APP_STATE } from './appState';
+import { APP_STATE, UserProfile } from './supabaseModels';
 
 // Fonction pour gérer les requêtes de profil utilisateur
 export const handleProfileQuery = async (userId: string) => {
@@ -13,7 +13,7 @@ export const handleProfileQuery = async (userId: string) => {
         is_first_login: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      }, 
+      } as UserProfile, 
       error: null 
     };
   }
@@ -69,7 +69,7 @@ export const handleProfileQuery = async (userId: string) => {
             is_first_login: true,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          }, 
+          } as UserProfile, 
           error: null 
         };
       }
@@ -87,7 +87,7 @@ export const handleProfileQuery = async (userId: string) => {
         is_first_login: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      }, 
+      } as UserProfile, 
       error: { message: err instanceof Error ? err.message : 'Unknown error' } 
     };
   }

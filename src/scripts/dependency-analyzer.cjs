@@ -317,7 +317,7 @@ function detectReactImportIssues() {
           severity: 'medium',
           path: relPath,
           message: `Utilisation de React sans l'importer dans ${relPath}`,
-          suggestion: `Ajoutez 'import React from "react";' en haut du fichier.`
+          suggestion: `Ajoutez 'import { React } from "@/core/ReactInstance";' en haut du fichier.`
         });
       }
       
@@ -372,7 +372,7 @@ function analyzeCreateContextIssues() {
           severity: 'high',
           path: relPath,
           message: `Utilisation directe de createContext dans ${relPath}`,
-          suggestion: `Utilisez 'createContextSafely' de '@/core/ReactInstance' ou 'safeCreateContext' de '@/utils/react/ReactBootstrap' pour assurer une instance React unique.`
+          suggestion: `Utilisez 'createContextSafely' de '@/utils/react/createContextSafely' ou 'safeCreateContext' de '@/utils/react/ReactBootstrap' pour assurer une instance React unique.`
         });
       }
       

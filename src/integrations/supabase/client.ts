@@ -3,10 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config';
-import { APP_STATE, checkOfflineMode } from './appState';
-import { preloadSession } from './sessionManager';
-import { detectLocalAIService } from './aiServiceDetector';
-import { handleProfileQuery, checkSupabaseConnection } from './profileUtils';
+import { AppState } from './supabaseModels';
 
 // Type helper for Edge Function responses
 export type EdgeFunctionResponse<T> = {
@@ -17,6 +14,57 @@ export type EdgeFunctionResponse<T> = {
   error: {
     message: string;
   };
+};
+
+// Application state singleton
+export const APP_STATE: AppState = {
+  isOfflineMode: false,
+  supbaseErrors: [],
+  setOfflineMode: (offline: boolean) => {
+    APP_STATE.isOfflineMode = offline;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('OFFLINE_MODE', offline ? 'true' : 'false');
+      window.dispatchEvent(new Event('storage'));
+    }
+  },
+  logSupabaseError: (error: Error) => {
+    APP_STATE.lastError = error;
+    APP_STATE.supbaseErrors.push(error);
+    console.error("Supabase error logged:", error);
+    
+    // Limiter le nombre d'erreurs stockées
+    if (APP_STATE.supbaseErrors.length > 20) {
+      APP_STATE.supbaseErrors.shift();
+    }
+  }
+};
+
+// Vérifier si on devrait utiliser le mode hors ligne
+export const checkOfflineMode = () => {
+  if (typeof window !== 'undefined') {
+    const savedOfflineMode = localStorage.getItem('OFFLINE_MODE');
+    if (savedOfflineMode === 'true') {
+      APP_STATE.isOfflineMode = true;
+    }
+  }
+};
+
+// Détection des services AI
+export const detectLocalAIService = async (): Promise<boolean> => {
+  if (APP_STATE.isOfflineMode) return false;
+  
+  try {
+    const response = await fetch('http://localhost:8000/health', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(2000) // Timeout de 2 secondes
+    });
+    
+    return response.ok;
+  } catch (err) {
+    console.warn("Service AI local non détecté:", err);
+    return false;
+  }
 };
 
 // Create client with error handling
@@ -70,7 +118,31 @@ try {
 
 // Export Supabase client and utilities
 export const supabase = supabaseClient;
-export { APP_STATE, checkOfflineMode, preloadSession, detectLocalAIService, handleProfileQuery, checkSupabaseConnection };
+export { APP_STATE, checkOfflineMode, detectLocalAIService };
+
+// Importer les gestionnaires de session ici pour éviter les dépendances circulaires
+import { preloadSession } from './sessionManager';
+export { preloadSession };
+
+// Importer les utilitaires de profil ici pour éviter les dépendances circulaires
+import { handleProfileQuery, checkSupabaseConnection } from './profileUtils';
+export { handleProfileQuery, checkSupabaseConnection };
+
+// Tester la validation des paramètres Supabase
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  console.error("ERREUR CRITIQUE: Configuration Supabase manquante!");
+  if (typeof window !== 'undefined') {
+    // Afficher une alerte dans la console du navigateur
+    console.error(
+      "%c⚠️ ERREUR DE CONFIGURATION SUPABASE ⚠️",
+      "background: #f44336; color: white; font-size: 16px; padding: 8px;"
+    );
+    console.error(
+      "%cURL Supabase ou clé d'API manquante. Vérifiez votre configuration.",
+      "font-size: 14px;"
+    );
+  }
+}
 
 // Preload session if we're in a browser
 if (typeof window !== 'undefined') {
@@ -87,20 +159,4 @@ if (typeof window !== 'undefined') {
       console.warn("Local AI service detection failed:", err);
     });
   }, 1000);
-}
-
-// Tester la validation des paramètres Supabase
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  console.error("ERREUR CRITIQUE: Configuration Supabase manquante!");
-  if (typeof window !== 'undefined') {
-    // Afficher une alerte dans la console du navigateur
-    console.error(
-      "%c⚠️ ERREUR DE CONFIGURATION SUPABASE ⚠️",
-      "background: #f44336; color: white; font-size: 16px; padding: 8px;"
-    );
-    console.error(
-      "%cURL Supabase ou clé d'API manquante. Vérifiez votre configuration.",
-      "font-size: 14px;"
-    );
-  }
 }

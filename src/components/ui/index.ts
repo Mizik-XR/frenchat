@@ -30,7 +30,8 @@ export { ContextMenu, ContextMenuCheckboxItem, ContextMenuContent, ContextMenuGr
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './dialog';
 export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from './drawer';
 export { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from './dropdown-menu';
-export { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFormField } from './form';
+export { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from './form';
+export { useFormField } from './form';
 export { HoverCard, HoverCardContent, HoverCardTrigger } from './hover-card';
 export { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from './input-otp';
 export { Input } from './input';
@@ -55,16 +56,9 @@ export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
 export { Textarea } from './textarea';
 export { ThreeStateToggle } from './ThreeStateToggle';
 export { FrenchTitle } from './FrenchTitle';
+// Exporter les imports de toast depuis le fichier approprié
 export { toast } from './use-toast';
 export { Toaster } from './toaster';
 export { Toggle, toggleVariants } from './toggle';
 export { ToggleGroup, ToggleGroupItem } from './toggle-group';
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
-
-// Les types suivants n'existent pas dans les fichiers actuels, 
-// nous les retirons de l'exportation pour éviter les erreurs
-// export type { ButtonProps } from './button';
-// export type { CardProps } from './card';
-// export type { DialogProps } from './dialog';
-// export type { InputProps } from './input';
-// export type { SelectProps } from './select';

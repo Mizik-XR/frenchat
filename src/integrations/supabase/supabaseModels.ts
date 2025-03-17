@@ -19,6 +19,7 @@ export interface UserProfile {
   avatar_url?: string | null;
   is_first_login?: boolean;
   created_at?: string | null;
+  updated_at?: string | null;
   client_id?: string | null;
 }
 
@@ -161,8 +162,28 @@ export interface UserNotification {
   expires_at?: string | null;
 }
 
+// Type d'état de l'application
+export interface AppState {
+  isOfflineMode: boolean;
+  lastError?: Error | null;
+  supbaseErrors: Error[];
+  setOfflineMode: (offline: boolean) => void;
+  logSupabaseError: (error: Error) => void;
+}
+
+// Fonctions utilitaires pour les profils
+export interface ProfileUtils {
+  handleProfileQuery: (userId: string) => Promise<{ data: UserProfile | null, error: any }>;
+  checkSupabaseConnection: () => Promise<boolean>;
+}
+
+// Fonctions utilitaires pour l'authentification
+export interface AuthUtils {
+  preloadSession: () => Promise<{ session: any }>;
+}
+
 // Utilitaires pour convertir les types Supabase en types d'application
-export function mapDatabaseUserToProfile(user: any): UserProfile {
+export function mapDatabaseUserToProfile<T extends Record<string, any>>(user: T): UserProfile {
   return {
     id: user.id,
     email: user.email,
@@ -170,6 +191,7 @@ export function mapDatabaseUserToProfile(user: any): UserProfile {
     avatar_url: user.avatar_url,
     is_first_login: user.is_first_login,
     created_at: user.created_at,
+    updated_at: user.updated_at,
     client_id: user.client_id
   };
 }
