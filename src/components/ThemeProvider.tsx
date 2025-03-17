@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { React, createContext, useState, useEffect, useContext } from "@/core/ReactInstance";
 
 type Theme = "dark" | "light" | "system";
 

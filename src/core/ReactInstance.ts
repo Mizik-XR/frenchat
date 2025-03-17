@@ -6,73 +6,26 @@
  * Cela garantit que tous les composants utilisent la même instance de React,
  * évitant ainsi les problèmes de versions multiples qui peuvent survenir avec
  * le code-splitting ou des dépendances circulaires.
- * 
- * Usage:
- * import { React } from '@/core/ReactInstance';
  */
 
 import * as React from 'react';
 
-// Assigner React à la propriété window si elle est définie
-// Cela peut aider à résoudre les problèmes d'instance en production
-if (typeof window !== 'undefined') {
-  window.React = React;
-}
-
-// Exporter React directement
+// Exporter l'instance unique de React
 export { React };
 
+// Exporter createContext pour centraliser son utilisation
+export const createContext = React.createContext;
+
 // Fonctions utilitaires pour faciliter l'utilisation
-export const createContextSafely = <T>(defaultValue: T) => {
-  try {
-    return React.createContext(defaultValue);
-  } catch (error) {
-    console.error('Erreur lors de la création du contexte React:', error);
-    return React.createContext(defaultValue);
-  }
-};
+export const useState = React.useState;
+export const useEffect = React.useEffect;
+export const useContext = React.useContext;
+export const useCallback = React.useCallback;
+export const useMemo = React.useMemo;
+export const useRef = React.useRef;
+export const useLayoutEffect = React.useLayoutEffect;
 
-// Hook personnalisé pour vérifier si React est correctement chargé
-export function useReactCheck() {
-  const [isReactValid, setIsReactValid] = React.useState(true);
-  
-  React.useEffect(() => {
-    try {
-      // Vérifier si les hooks React fonctionnent
-      const testState = React.useState(true);
-      const testRef = React.useRef(null);
-      
-      if (!testState || !testRef) {
-        console.error("Erreur de validation React: hooks non fonctionnels");
-        setIsReactValid(false);
-      }
-    } catch (e) {
-      console.error("Erreur lors de la vérification de React:", e);
-      setIsReactValid(false);
-    }
-  }, []);
-  
-  return isReactValid;
-}
-
-// Exportation des hooks couramment utilisés pour garantir l'instance unique
-export const {
-  useState,
-  useEffect,
-  useContext,
-  useReducer,
-  useCallback,
-  useMemo,
-  useRef,
-  useLayoutEffect,
-  useImperativeHandle,
-  useDebugValue
-} = React;
-
-/**
- * Fonction de secours pour vérifier si React est correctement chargé
- * Utile pour le débogage des problèmes d'instance React
- */
+// Vérifier si React est correctement chargé
 export function checkReactInstance() {
   if (!React || !React.version) {
     console.error("ERREUR CRITIQUE: React n'est pas correctement chargé");
@@ -80,14 +33,13 @@ export function checkReactInstance() {
   }
   
   console.log(`React version ${React.version} chargé correctement`);
-  
-  // Vérifier si createContext est disponible
-  if (typeof React.createContext !== 'function') {
-    console.error("ERREUR CRITIQUE: React.createContext n'est pas disponible");
-    return false;
-  }
-  
   return true;
+}
+
+// Assigner React à la propriété window si elle est définie
+// Cela peut aider à résoudre les problèmes d'instance en production
+if (typeof window !== 'undefined') {
+  window.React = React;
 }
 
 // Interface pour le type global Window

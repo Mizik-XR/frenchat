@@ -19,13 +19,23 @@ const IGNORED_DIRS = ['node_modules', 'dist', 'build', '.git'];
 const PROBLEMATIC_PATTERNS = [
   {
     pattern: /import\s+\{\s*(?:[^}]*,\s*)?createContext(?:\s*,[^}]*)?\s*\}\s+from\s+['"]react['"]/g,
-    replacement: `import { createContextSafely } from '@/utils/react/createContextSafely';`,
+    replacement: `import { createContext } from '@/core/ReactInstance';`,
     description: "Import direct de createContext depuis 'react'"
   },
   {
-    pattern: /const\s+(\w+)\s*=\s*createContext\(/g,
-    replacement: `const $1 = createContextSafely(`,
-    description: "Utilisation directe de createContext au lieu de createContextSafely"
+    pattern: /const\s+(\w+)\s*=\s*React\.createContext\(/g,
+    replacement: `const $1 = createContext(`,
+    description: "Utilisation directe de React.createContext au lieu de createContext importé"
+  },
+  {
+    pattern: /import\s+React\s+from\s+['"]react['"]/g,
+    replacement: `import { React } from '@/core/ReactInstance';`,
+    description: "Import direct de React depuis 'react'"
+  },
+  {
+    pattern: /import\s+\*\s+as\s+React\s+from\s+['"]react['"]/g,
+    replacement: `import { React } from '@/core/ReactInstance';`,
+    description: "Import direct de React depuis 'react' avec import *"
   }
 ];
 
@@ -110,8 +120,8 @@ console.log(`Total des problèmes trouvés: ${issuesFound}`);
 if (issuesFound > 0) {
   console.log();
   console.log(chalk.yellow('Recommandation:'));
-  console.log(`Utilisez ${chalk.green("import { createContextSafely } from '@/utils/react/createContextSafely';")} au lieu de l'import direct.`);
-  console.log(`Puis utilisez ${chalk.green('createContextSafely()')} au lieu de createContext().`);
+  console.log(`Utilisez ${chalk.green("import { createContext } from '@/core/ReactInstance';")} au lieu de l'import direct.`);
+  console.log(`Ou utilisez ${chalk.green("import { React } from '@/core/ReactInstance';")} pour l'instance React complète.`);
   console.log();
   process.exit(1);
 } else {
