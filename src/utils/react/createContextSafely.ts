@@ -37,8 +37,35 @@ export function createContextSafely<T>(defaultValue: T, displayName: string) {
     return context;
   };
   
-  // Retourner à la fois le contexte et le hook
-  return { Context, useContext };
+  // Utilitaire pour obtenir la valeur de contexte (pour les tests)
+  const getContextValue = () => {
+    return defaultValue;
+  };
+  
+  // Retourner à la fois le contexte, le hook et la fonction utilitaire
+  return { Context, useContext, getContextValue };
+}
+
+/**
+ * Fonction utilitaire pour obtenir la valeur d'un contexte avec une valeur par défaut
+ * 
+ * Cette fonction est utile pour les cas où un composant pourrait être utilisé en dehors
+ * de son Provider, fournissant une valeur de secours sécurisée.
+ * 
+ * @param context Le contexte React
+ * @param defaultValue Valeur par défaut à utiliser si le contexte est undefined
+ * @returns La valeur du contexte ou la valeur par défaut
+ */
+export function getContextValue<T>(context: React.Context<T>, defaultValue: T): T {
+  console.warn('getContextValue est déconseillé, utilisez plutôt useContextSafely');
+  // Tenter d'accéder à la valeur actuelle du contexte (si disponible)
+  // Sinon, retourner la valeur par défaut
+  try {
+    const value = (context as any)._currentValue;
+    return value !== undefined ? value : defaultValue;
+  } catch (e) {
+    return defaultValue;
+  }
 }
 
 /**

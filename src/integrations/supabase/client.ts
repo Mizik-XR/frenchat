@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config';
-import { AppState } from './supabaseModels';
+import { APP_STATE, checkOfflineMode, detectLocalAIService } from './appState';
 
 // Type helper for Edge Function responses
 export type EdgeFunctionResponse<T> = {
@@ -14,57 +14,6 @@ export type EdgeFunctionResponse<T> = {
   error: {
     message: string;
   };
-};
-
-// Application state singleton
-export const APP_STATE: AppState = {
-  isOfflineMode: false,
-  supbaseErrors: [],
-  setOfflineMode: (offline: boolean) => {
-    APP_STATE.isOfflineMode = offline;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('OFFLINE_MODE', offline ? 'true' : 'false');
-      window.dispatchEvent(new Event('storage'));
-    }
-  },
-  logSupabaseError: (error: Error) => {
-    APP_STATE.lastError = error;
-    APP_STATE.supbaseErrors.push(error);
-    console.error("Supabase error logged:", error);
-    
-    // Limiter le nombre d'erreurs stockées
-    if (APP_STATE.supbaseErrors.length > 20) {
-      APP_STATE.supbaseErrors.shift();
-    }
-  }
-};
-
-// Vérifier si on devrait utiliser le mode hors ligne
-export const checkOfflineMode = () => {
-  if (typeof window !== 'undefined') {
-    const savedOfflineMode = localStorage.getItem('OFFLINE_MODE');
-    if (savedOfflineMode === 'true') {
-      APP_STATE.isOfflineMode = true;
-    }
-  }
-};
-
-// Détection des services AI
-export const detectLocalAIService = async (): Promise<boolean> => {
-  if (APP_STATE.isOfflineMode) return false;
-  
-  try {
-    const response = await fetch('http://localhost:8000/health', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(2000) // Timeout de 2 secondes
-    });
-    
-    return response.ok;
-  } catch (err) {
-    console.warn("Service AI local non détecté:", err);
-    return false;
-  }
 };
 
 // Create client with error handling
@@ -118,6 +67,8 @@ try {
 
 // Export Supabase client and utilities
 export const supabase = supabaseClient;
+
+// Réexportation des constantes d'APP_STATE pour maintenir la compatibilité API
 export { APP_STATE, checkOfflineMode, detectLocalAIService };
 
 // Importer les gestionnaires de session ici pour éviter les dépendances circulaires

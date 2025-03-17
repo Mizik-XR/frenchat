@@ -1,6 +1,7 @@
 
 import { supabase } from './client';
-import { APP_STATE, UserProfile } from './supabaseModels';
+import { APP_STATE } from './appState';
+import { UserProfile } from './supabaseModels';
 
 // Fonction pour gérer les requêtes de profil utilisateur
 export const handleProfileQuery = async (userId: string) => {
