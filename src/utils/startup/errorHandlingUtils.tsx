@@ -8,6 +8,17 @@ import { LoadingScreen } from '@/components/auth/LoadingScreen';
 export const handleLoadError = (error: Error) => {
   console.error("Erreur critique lors du chargement de l'application:", error);
   
+  // Vérifier si l'erreur est liée à createContext
+  const isCreateContextError = error.message && (
+    error.message.includes('createContext') || 
+    error.message.includes('Cannot read properties of undefined')
+  );
+  
+  // Message spécifique pour les erreurs de createContext
+  const errorMessage = isCreateContextError
+    ? "Erreur d'initialisation React. Essayez de recharger la page ou d'utiliser le mode de secours."
+    : `${error?.message || 'Erreur inconnue lors du chargement'}`;
+  
   // Afficher un message d'erreur utilisateur avec des options de récupération
   const rootElement = document.getElementById("root");
   if (rootElement) {
@@ -19,7 +30,7 @@ export const handleLoadError = (error: Error) => {
             Une erreur est survenue lors du chargement de l'application.
           </p>
           <div style="background-color: #f3f4f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; font-family: monospace; font-size: 0.8rem; color: #6b7280; overflow-x: auto;">
-            ${error?.message || 'Erreur inconnue lors du chargement'}
+            ${errorMessage}
             <br/>
             URL: ${window.location.href}
             <br/>
@@ -55,6 +66,21 @@ export const checkForFallbackMode = (): boolean => {
  */
 export const renderFallbackScreen = (rootElement: HTMLElement, message = "Erreur lors du rendu de l'application") => {
   try {
+    // Forcer le rendu avec la version window.React si disponible
+    if (window.React && typeof window.React.createElement === 'function') {
+      const fallbackElement = window.React.createElement(LoadingScreen, { 
+        showRetry: true, 
+        message: message 
+      });
+      
+      // Utiliser ReactDOM.render directement pour éviter les problèmes avec createRoot
+      if (window.ReactDOM && typeof window.ReactDOM.render === 'function') {
+        window.ReactDOM.render(fallbackElement, rootElement);
+        return;
+      }
+    }
+    
+    // Fallback si React n'est pas disponible via window
     const { createRoot } = require('react-dom/client');
     createRoot(rootElement).render(<LoadingScreen showRetry={true} message={message} />);
   } catch (error) {
@@ -73,3 +99,11 @@ export const renderFallbackScreen = (rootElement: HTMLElement, message = "Erreur
     `;
   }
 };
+
+// Interface pour le type global Window
+declare global {
+  interface Window {
+    React?: any;
+    ReactDOM?: any;
+  }
+}

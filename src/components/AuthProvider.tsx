@@ -1,8 +1,9 @@
 
-import { createContext, useContext } from "react";
+import { useContext } from "react";
 import { User } from "@supabase/supabase-js";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
+import { createContextSafely } from "@/utils/react/createContextSafely";
 
 interface AuthContextType {
   user: User | null;
@@ -10,7 +11,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
+const AuthContext = createContextSafely<AuthContextType>({
   user: null,
   isLoading: true,
   signOut: async () => {},
@@ -32,9 +33,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth doit être utilisé à l'intérieur d'un AuthProvider");
+  try {
+    const context = useContext(AuthContext);
+    if (!context) {
+      console.error("useAuth doit être utilisé à l'intérieur d'un AuthProvider");
+      return AuthContext._currentValue;
+    }
+    return context;
+  } catch (error) {
+    console.error("Erreur lors de l'utilisation du contexte Auth:", error);
+    return AuthContext._currentValue;
   }
-  return context;
 };

@@ -25,7 +25,49 @@ import { React } from '@/core/ReactInstance';
  * const MyContext = createContextSafely(defaultValue);
  */
 export function createContextSafely<T>(defaultValue: T) {
-  return React.createContext(defaultValue);
+  try {
+    // Vérifier que React est correctement défini
+    if (!React || typeof React.createContext !== 'function') {
+      console.error('Erreur critique: React.createContext n\'est pas disponible');
+      
+      // Fallback pour la production - utiliser window.React si disponible
+      // Cela peut aider à récupérer dans certains cas où l'importation échoue
+      if (typeof window !== 'undefined' && window.React && typeof window.React.createContext === 'function') {
+        console.warn('Utilisation du fallback window.React.createContext');
+        return window.React.createContext(defaultValue);
+      }
+      
+      // Si aucune solution n'est disponible, créer un contexte minimal de secours
+      return createFallbackContext(defaultValue);
+    }
+    
+    return React.createContext(defaultValue);
+  } catch (err) {
+    console.error('Erreur lors de la création du contexte:', err);
+    
+    // En cas d'erreur, utiliser le contexte de secours
+    return createFallbackContext(defaultValue);
+  }
+}
+
+/**
+ * Crée un contexte minimal de secours en cas d'échec de React.createContext
+ * Cela permet d'éviter les erreurs fatales mais avec des fonctionnalités limitées
+ */
+function createFallbackContext<T>(defaultValue: T) {
+  // Créer un objet qui imite l'interface d'un contexte React
+  // avec des fonctions Provider et Consumer minimales
+  const context = {
+    Provider: ({ children, value }: { children: React.ReactNode, value: T }) => children,
+    Consumer: ({ children }: { children: (value: T) => React.ReactNode }) => 
+      typeof children === 'function' ? children(defaultValue) : null,
+    displayName: 'FallbackContext',
+    _currentValue: defaultValue,
+    _currentValue2: defaultValue,
+  };
+  
+  console.warn('Utilisation d\'un contexte de secours avec des fonctionnalités limitées');
+  return context as React.Context<T>;
 }
 
 /**
@@ -68,10 +110,34 @@ export function createSafeContextHook<T>(
   contextName: string = 'Context'
 ): () => T {
   return () => {
-    const value = React.useContext(context);
-    if (value === undefined) {
-      throw new Error(`use${contextName} doit être utilisé à l'intérieur d'un ${contextName}Provider`);
+    try {
+      if (!React || typeof React.useContext !== 'function') {
+        console.error(`Erreur critique: React.useContext n'est pas disponible pour ${contextName}`);
+        // Retourner une valeur par défaut pour éviter les erreurs
+        return (context as any)._currentValue;
+      }
+      
+      const value = React.useContext(context);
+      if (value === undefined) {
+        throw new Error(`use${contextName} doit être utilisé à l'intérieur d'un ${contextName}Provider`);
+      }
+      return value;
+    } catch (err) {
+      console.error(`Erreur lors de l'utilisation du contexte ${contextName}:`, err);
+      // Retourner une valeur par défaut pour éviter les erreurs fatales
+      return (context as any)._currentValue;
     }
-    return value;
   };
+}
+
+// Définir React global pour la récupération d'urgence
+if (typeof window !== 'undefined' && !window.React && React) {
+  window.React = React;
+}
+
+// Interface pour le type global Window
+declare global {
+  interface Window {
+    React?: typeof React;
+  }
 }

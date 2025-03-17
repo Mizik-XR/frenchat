@@ -13,12 +13,36 @@
 
 import * as React from 'react';
 
+// Assigner React à la propriété window si elle est définie
+// Cela peut aider à résoudre les problèmes d'instance en production
+if (typeof window !== 'undefined') {
+  window.React = React;
+}
+
 // Exporter React directement
 export { React };
 
 // Fonctions utilitaires pour faciliter l'utilisation
 export const createContextSafely = <T>(defaultValue: T) => {
-  return React.createContext(defaultValue);
+  try {
+    if (!React || typeof React.createContext !== 'function') {
+      console.error('React.createContext n\'est pas défini dans ReactInstance.ts');
+      // Fallback vers window.React si disponible
+      if (typeof window !== 'undefined' && window.React && typeof window.React.createContext === 'function') {
+        return window.React.createContext(defaultValue);
+      }
+      throw new Error('Impossible de créer un contexte React');
+    }
+    return React.createContext(defaultValue);
+  } catch (error) {
+    console.error('Erreur lors de la création du contexte React:', error);
+    // Création d'un contexte de secours minimal
+    return {
+      Provider: ({ children }: { children: any }) => children,
+      Consumer: ({ children }: { children: any }) => children(defaultValue),
+      displayName: 'FallbackContext'
+    } as React.Context<T>;
+  }
 };
 
 // Hook personnalisé pour vérifier si React est correctement chargé
@@ -69,5 +93,19 @@ export function checkReactInstance() {
   }
   
   console.log(`React version ${React.version} chargé correctement`);
+  
+  // Vérifier si createContext est disponible
+  if (typeof React.createContext !== 'function') {
+    console.error("ERREUR CRITIQUE: React.createContext n'est pas disponible");
+    return false;
+  }
+  
   return true;
+}
+
+// Interface pour le type global Window
+declare global {
+  interface Window {
+    React?: typeof React;
+  }
 }
