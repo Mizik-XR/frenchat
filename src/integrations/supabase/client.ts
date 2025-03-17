@@ -5,7 +5,6 @@ import type { Database } from './types';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config';
 import { 
   APP_STATE, 
-  detectLocalAIService,
   checkOfflineMode,
   preloadSession as compatPreloadSession
 } from '@/compatibility/supabaseCompat';
@@ -74,7 +73,11 @@ try {
 export const supabase = supabaseClient;
 
 // Réexportation des constantes d'APP_STATE pour maintenir la compatibilité API
-export { APP_STATE, checkOfflineMode, detectLocalAIService };
+export { APP_STATE, checkOfflineMode };
+
+// Import la fonction detectLocalAIService depuis appState.ts
+import { detectLocalAIService } from './appState';
+export { detectLocalAIService };
 
 // Utilisation de la fonction de compatibilité
 export const preloadSession = compatPreloadSession;

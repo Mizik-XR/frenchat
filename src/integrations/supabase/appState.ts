@@ -22,9 +22,11 @@ export { APP_STATE };
 // Fonction pour détecter le service d'IA local
 export const detectLocalAIService = async () => {
   // Utiliser l'implémentation du module de compatibilité
-  return APP_STATE.detectLocalAIService ? 
-    APP_STATE.detectLocalAIService() : 
-    { available: false, message: "Non disponible (module de compatibilité)" };
+  // Vérification de l'existence de la fonction dans APP_STATE
+  if (typeof APP_STATE.detectLocalAIService === 'function') {
+    return APP_STATE.detectLocalAIService();
+  }
+  return { available: false, message: "Non disponible (module de compatibilité)" };
 };
 
 // Initialiser la référence dans sessionManager pour éviter la dépendance circulaire
