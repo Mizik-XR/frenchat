@@ -9,6 +9,7 @@ import {
   checkOfflineMode,
   preloadSession as compatPreloadSession
 } from '@/compatibility/supabaseCompat';
+import { UserProfile, ProfileUtils, AuthUtils } from './supabaseModels';
 
 // Type helper for Edge Function responses
 export type EdgeFunctionResponse<T> = {
