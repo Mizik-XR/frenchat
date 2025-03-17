@@ -43,7 +43,8 @@ describe('Lovable Integration', () => {
       reactVersion: '18.2.0',
       lovablePresent: false,
       windowReact: true,
-      reactInstancesMatch: false
+      reactInstancesMatch: false,
+      circularImports: [] // Ajout de la propriété manquante
     });
     
     vi.spyOn(lovableDiagnostic, 'checkLovableScriptPresence').mockReturnValue(false);
@@ -77,7 +78,8 @@ describe('Lovable Integration', () => {
       reactVersion: '18.2.0',
       lovablePresent: true,
       windowReact: true,
-      reactInstancesMatch: true
+      reactInstancesMatch: true,
+      circularImports: [] // Ajout de la propriété manquante
     });
     
     vi.spyOn(lovableDiagnostic, 'checkLovableScriptPresence').mockReturnValue(true);
