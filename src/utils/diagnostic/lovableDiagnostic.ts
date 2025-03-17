@@ -70,10 +70,12 @@ export function checkLovableScriptPresence() {
   
   console.log(`Script Lovable dans le DOM: ${isPresent ? 'Présent' : 'Absent'}`);
   if (isPresent) {
+    // Correction ici: Cast explicite du type Element à HTMLScriptElement
+    const scriptElement = lovableScripts[0] as HTMLScriptElement;
     console.log('Attributs du script:', {
-      type: lovableScripts[0].getAttribute('type'),
-      async: lovableScripts[0].async,
-      position: lovableScripts[0].parentNode?.nodeName
+      type: scriptElement.getAttribute('type'),
+      async: scriptElement.async,
+      position: scriptElement.parentNode?.nodeName
     });
   }
   
