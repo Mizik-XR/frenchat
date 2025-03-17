@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { isProduction, isNetlifyEnvironment } from "@/utils/environment/environmentDetection";
+import { isProduction } from "@/utils/environment/environmentDetection";
 import { getApiBaseUrl } from "@/utils/environment/cloudModeUtils";
 
 // Détermination dynamique de l'URL API en fonction de l'environnement

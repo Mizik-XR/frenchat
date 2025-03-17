@@ -79,6 +79,46 @@ class CompatAppState {
   setLocalAIAvailable(value: boolean): void {
     this._localAIAvailable = value;
   }
+
+  // Cette fonction est nécessaire pour éviter les erreurs de compilation
+  detectLocalAIService = async (): Promise<{ available: boolean; message?: string }> => {
+    console.warn('[Compat] Using detectLocalAIService from compatibility module');
+    
+    try {
+      if (this._isOfflineMode) {
+        return { available: false, message: "Mode hors ligne activé" };
+      }
+      
+      // Simuler une tentative de connexion à un service local
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        const response = await fetch('http://localhost:8000/health', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          this.setLocalAIAvailable(true);
+          return { available: true, message: data.status || "Service disponible" };
+        } else {
+          this.setLocalAIAvailable(false);
+          return { available: false, message: "Service indisponible" };
+        }
+      } catch (error) {
+        this.setLocalAIAvailable(false);
+        return { available: false, message: error instanceof Error ? error.message : "Erreur inconnue" };
+      }
+    } catch (error) {
+      console.error('[Compat] Erreur lors de la détection du service IA local:', error);
+      return { available: false, message: "Erreur lors de la vérification" };
+    }
+  }
 }
 
 // Instance unique exportée
@@ -106,42 +146,7 @@ export const checkOfflineMode = () => {
 };
 
 export const detectLocalAIService = async (): Promise<{ available: boolean; message?: string }> => {
-  console.warn('[Compat] Using detectLocalAIService from compatibility module');
-  
-  try {
-    if (APP_STATE.isOfflineMode) {
-      return { available: false, message: "Mode hors ligne activé" };
-    }
-    
-    // Simuler une tentative de connexion à un service local
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      
-      const response = await fetch('http://localhost:8000/health', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        const data = await response.json();
-        APP_STATE.setLocalAIAvailable(true);
-        return { available: true, message: data.status || "Service disponible" };
-      } else {
-        APP_STATE.setLocalAIAvailable(false);
-        return { available: false, message: "Service indisponible" };
-      }
-    } catch (error) {
-      APP_STATE.setLocalAIAvailable(false);
-      return { available: false, message: error instanceof Error ? error.message : "Erreur inconnue" };
-    }
-  } catch (error) {
-    console.error('[Compat] Erreur lors de la détection du service IA local:', error);
-    return { available: false, message: "Erreur lors de la vérification" };
-  }
+  return APP_STATE.detectLocalAIService();
 };
 
 // Helpers pour le module de compatibilité

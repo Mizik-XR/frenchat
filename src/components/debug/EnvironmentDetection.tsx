@@ -24,7 +24,6 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
     const isPreview = 
       hostname.includes('lovableproject.com') || 
       hostname.includes('preview') || 
-      hostname.includes('netlify') ||
       hostname.includes('localhost');
     
     setIsPreviewEnvironment(isPreview);

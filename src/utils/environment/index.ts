@@ -9,7 +9,6 @@ export {
   isProduction,
   isDevelopment,
   isLovableEnvironment,
-  isNetlifyEnvironment,
   isCloudMode
 } from './environmentDetection';
 

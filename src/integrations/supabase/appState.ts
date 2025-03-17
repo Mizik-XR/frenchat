@@ -22,8 +22,8 @@ export { APP_STATE };
 // Fonction pour détecter le service d'IA local
 export const detectLocalAIService = async () => {
   // Utiliser l'implémentation du module de compatibilité
-  return APP_STATE.detectLocalAIService ? 
-    APP_STATE.detectLocalAIService() : 
+  return APP_STATE.isOfflineMode ? 
+    { available: false, message: "Mode hors ligne activé" } : 
     { available: false, message: "Non disponible (module de compatibilité)" };
 };
 
