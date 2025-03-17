@@ -30,11 +30,12 @@ export function createContextSafely<T>(defaultValue: T, displayName?: string) {
 export function getContextValue<T>(context: React.Context<T>): T {
   try {
     // Tenter d'accéder à la valeur actuelle via les propriétés internes
-    return (context as any)._currentValue || context.defaultValue;
+    // Dans React, _currentValue est une propriété interne qui stocke la valeur actuelle
+    return (context as any)._currentValue || (context as any)._defaultValue || context.Provider.props?.value;
   } catch (err) {
     console.error('Erreur lors de l\'accès à la valeur du contexte:', err);
-    // Retourner la valeur par défaut en cas d'échec
-    return context.defaultValue;
+    // En cas d'échec, retourner une valeur de secours
+    return (context as any)._defaultValue;
   }
 }
 
