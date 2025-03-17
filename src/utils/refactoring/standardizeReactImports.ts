@@ -11,7 +11,7 @@
  * Types de remplacement d'imports
  */
 export type ImportReplacement = {
-  original: string;
+  original: string | RegExp;
   replacement: string;
   description: string;
 };

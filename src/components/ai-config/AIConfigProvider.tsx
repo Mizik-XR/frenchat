@@ -1,6 +1,5 @@
 
-import { React, useState } from "@/core/ReactInstance";
-import { createContextSafely } from "@/utils/react/createContextSafely";
+import { React, useState, createSafeContext } from "@/core/ReactInstance";
 
 interface AIConfigContextType {
   provider: string;
@@ -24,20 +23,14 @@ const defaultAIConfig: AIConfigContextType = {
   setSummary: () => {}
 };
 
-// Création du contexte avec la nouvelle API
-const { Context: AIConfigContext, useContext: useAIConfigContextInternal } = createContextSafely<AIConfigContextType | undefined>(
-  undefined, 
+// Création du contexte avec l'API simplifiée
+const { Context: AIConfigContext, useContext: useAIConfigContext } = createSafeContext<AIConfigContextType>(
+  defaultAIConfig, 
   "AIConfigContext"
 );
 
-export const useAIConfigContext = () => {
-  const context = useAIConfigContextInternal();
-  if (!context) {
-    console.error("useAIConfigContext must be used within an AIConfigProvider");
-    return defaultAIConfig;
-  }
-  return context;
-};
+// Export direct du hook
+export { useAIConfigContext };
 
 interface AIConfigProviderProps {
   children: React.ReactNode;

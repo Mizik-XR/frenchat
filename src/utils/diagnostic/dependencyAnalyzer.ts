@@ -106,9 +106,16 @@ export function analyzeDependencies(): DependencyAnalysisResult {
  */
 function estimateModuleCount(): number {
   // Estimation basée sur la taille typique des projets React
-  return typeof window !== 'undefined' && window.performance 
-    ? Math.round(window.performance.memory?.usedJSHeapSize / (1024 * 1024) * 5) 
-    : 100;
+  // Correction de l'erreur: Performance.memory n'existe pas sur tous les navigateurs
+  if (typeof window !== 'undefined' && window.performance) {
+    // Vérifier si la propriété memory existe (elle n'existe que sur Chrome)
+    const memoryInfo = (window.performance as any).memory;
+    if (memoryInfo && memoryInfo.usedJSHeapSize) {
+      return Math.round(memoryInfo.usedJSHeapSize / (1024 * 1024) * 5);
+    }
+  }
+  // Valeur par défaut si l'API memory n'est pas disponible
+  return 100;
 }
 
 /**

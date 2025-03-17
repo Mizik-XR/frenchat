@@ -1,9 +1,9 @@
 
 /**
- * ReactDependencyResolver
+ * ReactDependencyResolver - Version simplifiée
  * 
  * Ce fichier fournit des utilitaires pour résoudre les problèmes de dépendances
- * circulaires dans les composants React.
+ * circulaires dans les composants React, en utilisant l'instance unique de React.
  */
 
 import { React } from '@/core/ReactInstance';
@@ -31,8 +31,7 @@ export function detectCircularDependencies(): string[] {
   const knownCircularPatterns = [
     { from: 'client.ts', to: 'sessionManager.ts' },
     { from: 'profileUtils.ts', to: 'client.ts' },
-    { from: 'index.ts', to: 'components/*.tsx' },
-    { from: 'ReactInstance.ts', to: 'ReactBootstrap.ts' }
+    { from: 'index.ts', to: 'components/*.tsx' }
   ];
   
   // Logique de détection (simplifiée pour l'exemple)
