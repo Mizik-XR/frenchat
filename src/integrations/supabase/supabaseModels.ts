@@ -162,13 +162,13 @@ export interface UserNotification {
   expires_at?: string | null;
 }
 
-// Fonctions utilitaires pour les profils
+// Fonctions utilitaires pour les profils - uniquement les définitions de type ici
 export interface ProfileUtils {
   handleProfileQuery: (userId: string) => Promise<{ data: UserProfile | null, error: any }>;
   checkSupabaseConnection: () => Promise<boolean>;
 }
 
-// Fonctions utilitaires pour l'authentification
+// Fonctions utilitaires pour l'authentification - uniquement les définitions de type ici
 export interface AuthUtils {
   preloadSession: () => Promise<{ session: any }>;
 }
