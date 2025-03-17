@@ -5,7 +5,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Toaster } from './components/ui/toaster';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { SettingsProvider } from './contexts/SettingsContext';
 import Chat from './pages/Chat';
@@ -50,22 +50,27 @@ const DevTools = () => {
   );
 };
 
+// Création du client de requête pour React Query
+const queryClient = new QueryClient();
+
 function App() {
   return (
     <Router>
       <ThemeProvider>
         <AuthProvider>
-          <SettingsProvider>
-            <ReactErrorMonitor />
-            <Routes>
-              <Route path="/" element={<Chat />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/config" element={<Config />} />
-              <Route path="/config/google-drive" element={<GoogleDriveConfig />} />
-            </Routes>
-            <Toaster />
-            {import.meta.env.DEV && <DevTools />}
-          </SettingsProvider>
+          <QueryClientProvider client={queryClient}>
+            <SettingsProvider>
+              <ReactErrorMonitor />
+              <Routes>
+                <Route path="/" element={<Chat />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/config" element={<Config />} />
+                <Route path="/config/google-drive" element={<GoogleDriveConfig />} />
+              </Routes>
+              <Toaster />
+              {import.meta.env.DEV && <DevTools />}
+            </SettingsProvider>
+          </QueryClientProvider>
         </AuthProvider>
       </ThemeProvider>
     </Router>
