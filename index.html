@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -76,6 +77,25 @@
       function forceHomepageInCloudMode() {
         window.location.href = '/?forceCloud=true&mode=cloud&client=true';
       }
+      
+      // Diagnostic précoce pour l'intégration Lovable
+      function earlyLovableDiagnostic() {
+        console.log('🔍 Diagnostic Précoce Lovable');
+        
+        // Vérification du script Lovable
+        var lovableScripts = document.querySelectorAll('script[src*="gptengineer.js"]');
+        var lovableLoaded = lovableScripts.length > 0;
+        console.log('Script Lovable dans le DOM: ' + (lovableLoaded ? 'Présent' : 'Absent'));
+        
+        return {
+          lovableScriptPresent: lovableLoaded,
+          lovableScriptType: lovableLoaded ? lovableScripts[0].getAttribute('type') : null,
+          timeOfCheck: new Date().toISOString()
+        };
+      }
+      
+      // Exécuter le diagnostic précoce avant le chargement complet
+      window.__LOVABLE_EARLY_DIAGNOSTIC = earlyLovableDiagnostic();
       
       // Détection et récupération en cas d'erreur de chargement
       window.addEventListener('error', function(event) {

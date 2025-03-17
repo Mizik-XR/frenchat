@@ -15,6 +15,9 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import './styles/message-styles.css';
 
+// Importer le diagnostic Lovable
+import { runLovableDiagnostic } from './utils/diagnostic/lovableDiagnostic';
+
 // Importer l'application après avoir initialisé React
 import App from './App';
 
@@ -38,6 +41,12 @@ const diagnosticLog = (message: string, type: 'info' | 'error' | 'warning' = 'in
     console.log(`%c[FileChat] ${message}`, styles[type]);
   }
 };
+
+// Exécuter le diagnostic Lovable au démarrage
+if (isDebugMode) {
+  console.log('%c[FileChat] Exécution du diagnostic Lovable', 'color: #9b59b6; font-weight: bold;');
+  runLovableDiagnostic();
+}
 
 // Configuration améliorée pour le démarrage
 const renderApp = () => {
@@ -160,6 +169,7 @@ if (isDebugMode) {
     isDebugMode,
     isCloudMode,
     reactVersion: React.version,
+    runDiagnostic: runLovableDiagnostic,
     checkReact: () => {
       try {
         const testComponent = React.createElement('div', null, 'Test');
