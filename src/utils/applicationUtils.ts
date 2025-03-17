@@ -3,8 +3,8 @@
  * Utilitaires pour l'état et le chargement de l'application
  */
 
-import { detectLocalAIService } from "@/integrations/supabase/appState";
-import { toast } from "@/hooks/use-toast";
+import { detectLocalAIService, APP_STATE } from '@/compatibility/supabaseCompat';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Vérifie l'état de santé de l'application et ses services critiques

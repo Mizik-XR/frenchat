@@ -1,6 +1,7 @@
 
 // Gestionnaire de session Supabase optimisé pour éviter les dépendances circulaires
 import { supabase } from './client';
+import { APP_STATE } from '@/compatibility/supabaseCompat';
 
 // Type simple pour l'état de l'application (évite l'import circulaire de appState)
 interface AppStateInterface {
@@ -9,16 +10,10 @@ interface AppStateInterface {
   logSupabaseError: (error: Error) => void;
 }
 
-// État de l'application par défaut (évite la dépendance circulaire)
-let APP_STATE: AppStateInterface = {
-  isOfflineMode: false,
-  setOfflineMode: () => {},
-  logSupabaseError: () => {}
-};
-
-// Fonction pour initialiser l'état de l'application
+// Utilisation du module de compatibilité comme état de l'application
 export const initializeAppState = (appState: AppStateInterface) => {
-  APP_STATE = appState;
+  console.log("initializeAppState appelé mais ignoré - utilisation du module de compatibilité");
+  // Pas besoin d'initialiser APP_STATE car nous utilisons la version du module de compatibilité
 };
 
 // Préchargement de la session Supabase

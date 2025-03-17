@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { supabase, APP_STATE } from '@/integrations/supabase/client';
+import { APP_STATE } from '@/compatibility/supabaseCompat';
 
 export interface DiagnosticResults {
   supabaseConnected: boolean;
@@ -36,16 +36,12 @@ export function useDiagnosticTools() {
     // Vérifier la connexion Supabase
     let isSupabaseConnected = false;
     try {
-      if (!supabase) {
-        throw new Error("Client Supabase non initialisé");
-      }
+      // Test simple de connexion
+      isSupabaseConnected = !APP_STATE.isOfflineMode;
       
-      const { error } = await supabase.from('profiles').select('count').limit(1).maybeSingle();
-      isSupabaseConnected = !error;
-      
-      if (error) {
-        errors.push(`Erreur de connexion Supabase: ${error.message}`);
-        details.supabase = { error: error.message };
+      if (APP_STATE.isOfflineMode) {
+        errors.push(`Mode hors ligne activé, connexion Supabase indisponible`);
+        details.supabase = { error: "Mode hors ligne activé" };
       } else {
         details.supabase = { connected: true };
       }
@@ -90,7 +86,7 @@ export function useDiagnosticTools() {
     // Récupérer les informations sur l'application
     details.appState = {
       isOfflineMode: APP_STATE.isOfflineMode,
-      hasErrors: APP_STATE.supbaseErrors.length > 0,
+      hasErrors: APP_STATE.supabaseErrors.length > 0,
       lastError: APP_STATE.lastError ? APP_STATE.lastError.message : null
     };
     

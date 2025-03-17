@@ -4,7 +4,7 @@
  */
 
 import { supabase } from './client';
-import { APP_STATE } from './appState';
+import { APP_STATE } from '@/compatibility/supabaseCompat';
 
 // Définition du type UserProfile (au lieu d'importer de supabaseModels)
 interface UserProfile {
