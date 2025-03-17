@@ -6,37 +6,47 @@
  * de manière sécurisée, en utilisant l'instance unique de React.
  */
 
-import { React, createContext } from '@/core/ReactInstance';
+import { React, createContext as reactCreateContext } from '@/core/ReactInstance';
+
+/**
+ * Interface pour le résultat de createContextSafely
+ */
+export interface SafeContext<T> {
+  Context: React.Context<T>;
+  Provider: React.Provider<T>;
+  Consumer: React.Consumer<T>;
+  useContext: () => T;
+}
 
 /**
  * Crée un contexte React de manière sécurisée, en utilisant l'instance React unique
  * 
  * @param defaultValue - La valeur par défaut du contexte
  * @param displayName - Nom optionnel pour le contexte (utile pour le debugging)
- * @returns Le contexte React créé
+ * @returns Un objet contenant le contexte et des méthodes sécurisées pour l'utiliser
  */
-export function createContextSafely<T>(defaultValue: T, displayName?: string) {
-  const context = createContext<T>(defaultValue);
+export function createContextSafely<T>(defaultValue: T, displayName?: string): SafeContext<T> {
+  const context = reactCreateContext<T>(defaultValue);
+  
   if (displayName) {
     context.displayName = displayName;
   }
-  return context;
-}
-
-/**
- * Fonction pour obtenir la valeur actuelle d'un contexte en toute sécurité
- * Utile lorsque useContext n'est pas disponible
- */
-export function getContextValue<T>(context: React.Context<T>): T {
-  try {
-    // Tenter d'accéder à la valeur actuelle via les propriétés internes
-    // Dans React, _currentValue est une propriété interne qui stocke la valeur actuelle
-    return (context as any)._currentValue || (context as any)._defaultValue || context.Provider.props?.value;
-  } catch (err) {
-    console.error('Erreur lors de l\'accès à la valeur du contexte:', err);
-    // En cas d'échec, retourner une valeur de secours
-    return (context as any)._defaultValue;
-  }
+  
+  // Fonction sécurisée pour obtenir la valeur du contexte
+  const useContextSafely = () => {
+    const value = React.useContext(context);
+    if (value === undefined) {
+      return defaultValue; // Retourne la valeur par défaut si le contexte n'est pas trouvé
+    }
+    return value;
+  };
+  
+  return {
+    Context: context,
+    Provider: context.Provider,
+    Consumer: context.Consumer,
+    useContext: useContextSafely
+  };
 }
 
 /**
@@ -57,22 +67,40 @@ export function isContextValid<T>(context: React.Context<T>): boolean {
 }
 
 /**
+ * Fonction pour obtenir la valeur actuelle d'un contexte en toute sécurité
+ * Utile lorsque useContext n'est pas disponible
+ */
+export function getContextValue<T>(context: React.Context<T>, fallbackValue?: T): T {
+  try {
+    // Tenter d'accéder à la valeur actuelle via les propriétés internes
+    // Dans React, _currentValue est une propriété interne qui stocke la valeur actuelle
+    const currentValue = (context as any)._currentValue;
+    return currentValue !== undefined ? currentValue : (fallbackValue as T);
+  } catch (err) {
+    console.error('Erreur lors de l\'accès à la valeur du contexte:', err);
+    return fallbackValue as T;
+  }
+}
+
+/**
  * Crée un hook personnalisé sécurisé pour utiliser un contexte
  */
 export function createSafeContextHook<T>(
   context: React.Context<T>,
+  fallbackValue: T,
   contextName: string = 'Context'
 ): () => T {
   return () => {
     try {
       const value = React.useContext(context);
       if (value === undefined) {
-        throw new Error(`use${contextName} doit être utilisé à l'intérieur d'un ${contextName}Provider`);
+        console.warn(`use${contextName} doit être utilisé à l'intérieur d'un ${contextName}Provider`);
+        return fallbackValue;
       }
       return value;
     } catch (err) {
       console.error(`Erreur lors de l'utilisation du contexte ${contextName}:`, err);
-      return getContextValue(context);
+      return fallbackValue;
     }
   };
 }

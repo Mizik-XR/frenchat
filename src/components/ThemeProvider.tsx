@@ -1,5 +1,6 @@
 
-import { React, createContext, useState, useEffect, useContext } from "@/core/ReactInstance";
+import { React, useState, useEffect, useContext } from "@/core/ReactInstance";
+import { createContextSafely } from "@/utils/react/createContextSafely";
 
 type Theme = "dark" | "light" | "system";
 
@@ -19,7 +20,8 @@ const initialState: ThemeProviderState = {
   setTheme: () => null,
 };
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+// Création du contexte avec la nouvelle API
+const { Context: ThemeProviderContext, useContext: useThemeContext } = createContextSafely<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
@@ -63,7 +65,7 @@ export function ThemeProvider({
 }
 
 export const useTheme = () => {
-  const context = useContext(ThemeProviderContext);
+  const context = useThemeContext();
 
   if (context === undefined)
     throw new Error("useTheme must be used within a ThemeProvider");

@@ -1,6 +1,6 @@
 
-import { React, useState, useContext } from "@/core/ReactInstance";
-import { createContextSafely, getContextValue } from "@/utils/react/createContextSafely";
+import { React, useState } from "@/core/ReactInstance";
+import { createContextSafely } from "@/utils/react/createContextSafely";
 
 interface AIConfigContextType {
   provider: string;
@@ -13,23 +13,28 @@ interface AIConfigContextType {
   setSummary: (summary: string) => void;
 }
 
-const AIConfigContext = createContextSafely<AIConfigContextType | undefined>(undefined, "AIConfigContext");
+const defaultAIConfig: AIConfigContextType = {
+  provider: "huggingface",
+  modelName: "t5-small",
+  testText: "",
+  summary: "",
+  setProvider: () => {},
+  setModelName: () => {},
+  setTestText: () => {},
+  setSummary: () => {}
+};
+
+// Création du contexte avec la nouvelle API
+const { Context: AIConfigContext, useContext: useAIConfigContextInternal } = createContextSafely<AIConfigContextType | undefined>(
+  undefined, 
+  "AIConfigContext"
+);
 
 export const useAIConfigContext = () => {
-  const context = useContext(AIConfigContext);
+  const context = useAIConfigContextInternal();
   if (!context) {
     console.error("useAIConfigContext must be used within an AIConfigProvider");
-    // Utiliser la fonction sécurisée pour obtenir la valeur par défaut
-    return getContextValue(AIConfigContext) || {
-      provider: "huggingface",
-      modelName: "t5-small",
-      testText: "",
-      summary: "",
-      setProvider: () => {},
-      setModelName: () => {},
-      setTestText: () => {},
-      setSummary: () => {}
-    };
+    return defaultAIConfig;
   }
   return context;
 };

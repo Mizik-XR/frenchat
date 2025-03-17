@@ -11,7 +11,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContextSafely<AuthContextType>({
+// Création du contexte avec la nouvelle API
+const { Context: AuthContext, useContext: useAuthContext } = createContextSafely<AuthContextType>({
   user: null,
   isLoading: true,
   signOut: async () => {},
@@ -37,11 +38,19 @@ export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
       console.error("useAuth doit être utilisé à l'intérieur d'un AuthProvider");
-      return getContextValue(AuthContext);
+      return getContextValue(AuthContext, {
+        user: null,
+        isLoading: true,
+        signOut: async () => {},
+      });
     }
     return context;
   } catch (error) {
     console.error("Erreur lors de l'utilisation du contexte Auth:", error);
-    return getContextValue(AuthContext);
+    return getContextValue(AuthContext, {
+      user: null,
+      isLoading: true,
+      signOut: async () => {},
+    });
   }
 };
