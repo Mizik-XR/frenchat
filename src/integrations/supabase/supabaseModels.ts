@@ -9,7 +9,7 @@
 import { Database } from "./types";
 
 // Types de base
-export type Json = Database['public']['Tables']['notes']['Row']['content'];
+export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
 // Interfaces utilisateurs
 export interface UserProfile {
@@ -162,7 +162,7 @@ export interface UserNotification {
 }
 
 // Utilitaires pour convertir les types Supabase en types d'application
-export function mapDatabaseUserToProfile(user: Database['public']['Tables']['profiles']['Row']): UserProfile {
+export function mapDatabaseUserToProfile(user: any): UserProfile {
   return {
     id: user.id,
     email: user.email,
