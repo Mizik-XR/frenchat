@@ -78,6 +78,22 @@ export const isCloudMode = (): boolean => {
   return false;
 };
 
+/**
+ * Retourne toujours false pour indiquer que nous ne sommes pas dans l'environnement Netlify
+ * @returns false
+ */
+export const isNetlifyEnvironment = (): boolean => {
+  return false;
+};
+
+/**
+ * Retourne toujours false pour indiquer que nous ne sommes pas dans l'environnement Vercel
+ * @returns false
+ */
+export const isVercelEnvironment = (): boolean => {
+  return false;
+};
+
 // Déclaration de type pour ajouter la propriété gptengineer à l'objet Window
 declare global {
   interface Window {

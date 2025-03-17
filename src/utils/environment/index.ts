@@ -9,7 +9,9 @@ export {
   isProduction,
   isDevelopment,
   isLovableEnvironment,
-  isCloudMode
+  isCloudMode,
+  isNetlifyEnvironment,
+  isVercelEnvironment
 } from './environmentDetection';
 
 // Exporter les fonctions de gestion d'URL
