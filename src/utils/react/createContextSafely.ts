@@ -6,7 +6,7 @@
  * de manière sécurisée, en utilisant l'instance unique de React.
  */
 
-import { React, createContext as reactCreateContext } from '@/core/ReactInstance';
+import { React } from '@/core/ReactInstance';
 
 /**
  * Interface pour le résultat de createContextSafely
@@ -26,7 +26,7 @@ export interface SafeContext<T> {
  * @returns Un objet contenant le contexte et des méthodes sécurisées pour l'utiliser
  */
 export function createContextSafely<T>(defaultValue: T, displayName?: string): SafeContext<T> {
-  const context = reactCreateContext<T>(defaultValue);
+  const context = React.createContext<T>(defaultValue);
   
   if (displayName) {
     context.displayName = displayName;
@@ -72,8 +72,14 @@ export function isContextValid<T>(context: React.Context<T>): boolean {
  */
 export function getContextValue<T>(context: React.Context<T>, fallbackValue?: T): T {
   try {
-    // Tenter d'accéder à la valeur actuelle via les propriétés internes
-    // Dans React, _currentValue est une propriété interne qui stocke la valeur actuelle
+    // Utiliser le hook useContext si possible
+    if (typeof React.useContext === 'function') {
+      const value = React.useContext(context);
+      return value !== undefined ? value : (fallbackValue as T);
+    }
+    
+    // Fallback: tenter d'accéder à la propriété interne _currentValue
+    // Ceci est un hack et pourrait ne pas fonctionner dans toutes les versions de React
     const currentValue = (context as any)._currentValue;
     return currentValue !== undefined ? currentValue : (fallbackValue as T);
   } catch (err) {

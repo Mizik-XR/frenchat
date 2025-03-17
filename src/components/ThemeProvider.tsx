@@ -21,7 +21,7 @@ const initialState: ThemeProviderState = {
 };
 
 // Création du contexte avec la nouvelle API
-const { Context: ThemeProviderContext, useContext: useThemeContext } = createContextSafely<ThemeProviderState>(initialState);
+const { Context: ThemeProviderContext, useContext: useThemeContext } = createContextSafely<ThemeProviderState>(initialState, "ThemeContext");
 
 export function ThemeProvider({
   children,
