@@ -24,13 +24,34 @@ export const handleProfileAndConfig = async (userId: string) => {
           profile: { id: userId, is_first_login: true }, 
           configs: [], 
           needsConfig: true, 
-          isFirstLogin: true 
+          isFirstLogin: true,
+          error: profileError
         };
       } catch (innerError) {
         console.error("Erreur lors de la création d'un profil minimal:", innerError);
-        return { profile: null, configs: [], needsConfig: true, isFirstLogin: false };
+        return { 
+          profile: null, 
+          configs: [], 
+          needsConfig: true, 
+          isFirstLogin: false,
+          error: innerError 
+        };
       }
     }
+
+    // Vérifier si le profil est bien récupéré
+    if (!profile) {
+      return {
+        profile: null,
+        configs: [],
+        needsConfig: true,
+        isFirstLogin: true,
+        error: new Error('Profil non trouvé')
+      };
+    }
+
+    // Utiliser des types explicites pour éviter les problèmes de profondeur excessive
+    const isFirstLogin = !!profile.is_first_login;
 
     // Récupérer les configurations de l'utilisateur
     const { data: configs, error: configError } = await supabase
@@ -44,21 +65,31 @@ export const handleProfileAndConfig = async (userId: string) => {
         profile, 
         configs: [], 
         needsConfig: true, 
-        isFirstLogin: profile?.is_first_login || false 
+        isFirstLogin,
+        error: configError
       };
     }
 
+    // Convertir explicitement les configurations pour éviter les erreurs de type
+    const configsArray = configs || [];
+    
     // Déterminer si une configuration est nécessaire
-    const hasConfigured = configs && configs.some(config => config.status === "configured");
+    const hasConfigured = configsArray.some(config => config.status === "configured");
     
     return {
       profile,
-      configs: configs || [],
+      configs: configsArray,
       needsConfig: !hasConfigured,
-      isFirstLogin: profile?.is_first_login || false
+      isFirstLogin
     };
   } catch (error) {
     console.error("Erreur inattendue:", error);
-    return { profile: null, configs: [], needsConfig: true, isFirstLogin: false, error };
+    return { 
+      profile: null, 
+      configs: [], 
+      needsConfig: true, 
+      isFirstLogin: false, 
+      error 
+    };
   }
 };

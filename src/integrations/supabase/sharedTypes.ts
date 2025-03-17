@@ -55,16 +55,3 @@ export interface RagContext {
   source?: string;
   metadata?: any;
 }
-
-// Fonction RPC définie dans Supabase mais non exportée dans le type Database
-export interface CustomSupabaseRPCFunctions {
-  get_rag_context: (args: { conversation_id: string }) => Promise<RagContext>;
-  insert_chat_message: (args: {
-    p_id: string;
-    p_role: string;
-    p_content: string;
-    p_conversation_id: string;
-    p_metadata: any;
-    p_created_at: string;
-  }) => Promise<void>;
-}

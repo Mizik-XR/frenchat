@@ -7,7 +7,7 @@
  */
 
 import { runLovableDiagnostic } from './lovableDiagnostic';
-import { analyzeDependencies, generateDependencyReport } from './dependencyAnalyzer';
+import { analyzeDependencies, generateDependencyReport, detectCircularDependencies } from './dependencyAnalyzer';
 import { analyzeContexts, generateContextReport } from './contextAnalyzer';
 
 /**
@@ -18,7 +18,9 @@ export function generateCompleteReport(): string {
   
   // Exécuter toutes les analyses
   const lovableDiagnostic = runLovableDiagnostic();
-  const dependencyReport = generateDependencyReport();
+  // Utiliser un objet vide comme fallback pour éviter les erreurs
+  const dependencyMap = analyzeDependencies({}) || new Map();
+  const dependencyReport = generateDependencyReport(dependencyMap);
   const contextReport = generateContextReport();
   
   // Générer le rapport combiné

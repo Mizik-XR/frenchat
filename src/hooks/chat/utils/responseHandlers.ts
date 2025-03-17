@@ -1,81 +1,94 @@
-
-import { AIProvider, WebUIConfig } from "@/types/chat";
-import { supabase } from "@/integrations/supabase/client";
-import { RagContext } from "@/integrations/supabase/sharedTypes";
-import { PostgrestError } from "@supabase/supabase-js";
-
-/**
- * Fetches RAG context for a conversation
- */
-export const fetchRagContext = async (conversationId: string) => {
-  try {
-    // Utilisation d'une requête SQL personnalisée pour éviter les problèmes de typage
-    const { data, error } = await supabase
-      .from('rag_contexts')
-      .select('context, source, metadata')
-      .eq('conversation_id', conversationId)
-      .maybeSingle();
-      
-    if (error) {
-      console.error('Error fetching RAG context:', error);
-      return null;
-    }
-    
-    return data as RagContext | null;
-  } catch (error) {
-    console.error('Error in fetchRagContext:', error);
-    return null;
-  }
-};
+import { v4 as uuidv4 } from 'uuid';
+import { toast } from '@/components/ui';
+import { AICacheService } from '@/services/cacheService';
+import { buildRAGPrompt } from './promptBuilder';
+import { getRagContext, insertChatMessage } from '@/integrations/supabase/rpcFunctions';
 
 /**
- * Safely extracts text from Anthropic API response
+ * Gère la réponse de l'IA, met à jour l'état du chat et insère le message dans la base de données.
+ * @param {string} response - La réponse de l'IA.
+ * @param {string} conversationId - L'ID de la conversation.
+ * @param {string} prompt - Le prompt de l'utilisateur.
+ * @param {string} provider - Le fournisseur d'IA utilisé.
+ * @param {number} tokensUsed - Le nombre de tokens utilisés.
+ * @param {number} estimatedCost - Le coût estimé de la requête.
+ * @param {any} metadata - Les métadonnées de la réponse.
+ * @param {Function} setChatMessages - La fonction pour mettre à jour les messages du chat.
+ * @param {Function} setIsLoading - La fonction pour gérer l'état de chargement.
  */
-export const extractAnthropicResponse = (response: unknown): string => {
-  // Vérification sécuritaire du type de réponse et extraction du contenu
-  if (response && 
-      typeof response === 'object' && 
-      'content' in response && 
-      Array.isArray(response.content) && 
-      response.content.length > 0 && 
-      typeof response.content[0] === 'object' && 
-      'text' in response.content[0]) {
-    return response.content[0].text || "";
-  }
-  return "";
-};
-
-/**
- * Creates and saves a message to the database
- */
-export const saveMessageToDatabase = async (
-  message: {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    conversationId: string;
-    metadata: any;
-    timestamp: Date;
-  }
+export const handleAIResponse = async (
+  response: any,
+  conversationId: string,
+  prompt: string,
+  provider: string,
+  tokensUsed: number,
+  estimatedCost: number,
+  metadata: any,
+  setChatMessages: Function,
+  setIsLoading: Function
 ) => {
   try {
-    const { error } = await supabase
-      .from('chat_messages')
-      .insert({
-        id: message.id,
-        role: message.role,
-        content: message.content,
-        conversation_id: message.conversationId,
-        metadata: message.metadata,
-        message_type: 'text',
-        user_id: (await supabase.auth.getUser()).data.user?.id,
-        created_at: message.timestamp.toISOString()
-      });
+    const messageId = uuidv4();
+    const cacheService = new AICacheService();
     
-    if (error) throw error;
-    return message;
-  } catch (error) {
-    console.error('Error saving message:', error);
-    throw error;
+    // Récupérer le contexte RAG pour la conversation
+    const ragContext = await getRagContext(conversationId);
+    const error = !ragContext;
+    
+    if (error) {
+      console.error('Erreur lors de la récupération du contexte RAG:', error);
+      toast({
+        title: "Erreur de contexte",
+        description: "Impossible de récupérer le contexte RAG pour cette conversation.",
+        variant: "destructive"
+      });
+    }
+    
+    // Construire le prompt RAG
+    const ragPrompt = buildRAGPrompt(ragContext.context);
+    
+    // Mettre à jour les messages du chat avec la réponse de l'IA
+    setChatMessages((prevChatMessages: any) => [
+      ...prevChatMessages,
+      {
+        id: messageId,
+        conversation_id: conversationId,
+        content: response.content,
+        role: 'assistant',
+        createdAt: new Date(),
+        metadata: response.metadata || {}
+      }
+    ]);
+    
+    // Insérer le message de l'assistant dans la base de données
+    await insertChatMessage({
+      id: messageId,
+      role: 'assistant',
+      content: response.content,
+      conversationId: conversationId,
+      metadata: response.metadata || {},
+      timestamp: new Date()
+    });
+    
+    // Mettre à jour le cache avec la réponse de l'IA
+    await cacheService.upsertCache({
+      hash: conversationId,
+      prompt: ragPrompt,
+      response: response.content,
+      provider: provider,
+      tokensUsed: tokensUsed,
+      estimatedCost: estimatedCost,
+      metadata: metadata,
+      userId: 'user_id' // TODO: Récupérer l'ID de l'utilisateur
+    });
+  } catch (dbError: any) {
+    console.error("Erreur lors de l'insertion du message dans la base de données:", dbError);
+    toast({
+      title: "Erreur de base de données",
+      description: "Impossible de sauvegarder le message dans la base de données.",
+      variant: "destructive"
+    });
+  } finally {
+    setIsLoading(false);
   }
 };

@@ -1,103 +1,113 @@
+import { v4 as uuidv4 } from 'uuid';
+import { useToast } from "@/hooks/use-toast";
+import { getAnthropicResponse } from "./anthropicService";
+import { getOpenAiResponse } from "./openAiService";
+import { ChatMessage } from "@/integrations/supabase/sharedTypes";
+import { buildRAGPrompt } from "../utils/promptBuilders";
+import { useSupabase } from "@/contexts/SupabaseContext";
 
-import { useAIProviders } from "../useAIProviders";
-import { useHuggingFace } from "../../useHuggingFace";
-import { useSecureApiProxy } from "../../useSecureApiProxy";
-import { useOpenAIAgents } from "../../ai/useOpenAIAgents";
-import { WebUIConfig, AIProvider } from "@/types/chat";
-import { fetchRagContext, extractAnthropicResponse } from "../utils/responseHandlers";
-import { saveMessageToDatabase } from "../utils/responseHandlers";
-import { SendMessageOptions } from "../types";
+interface AiServiceParams {
+  prompt: string;
+  selectedModel: string;
+  temperature: number;
+  conversationId: string;
+  onNewMessage: (message: ChatMessage) => void;
+  onUpdateMessage: (message: ChatMessage) => void;
+  ragContext?: { context: string; source?: string; metadata?: any };
+}
 
-/**
- * Service for generating AI responses using different providers
- */
-export const useAIProviderService = () => {
-  const { generateResponse } = useAIProviders();
-  const { textGeneration } = useHuggingFace();
-  const { callApi, generateText } = useSecureApiProxy();
-  const { askAgentWithContext } = useOpenAIAgents();
+export const useAiProviderService = () => {
+  const { toast } = useToast();
+	const { supabase } = useSupabase();
 
-  /**
-   * Generate a response using OpenAI Agent with RAG
-   */
-  const generateOpenAIAgentResponse = async (
-    content: string, 
-    conversationId: string,
-    config: WebUIConfig
-  ) => {
-    const ragContext = await fetchRagContext(conversationId);
-    
-    if (ragContext) {
-      const response = await askAgentWithContext(
-        ragContext,
-        content,
-        {
-          modelName: config.model || "gpt-4o",
-          instructions: `Tu es un assistant qui répond aux questions en utilisant uniquement le contexte fourni. 
-          Si la réponse ne peut pas être déterminée à partir du contexte, dis-le clairement.`
-        }
-      );
-      
-      if (response) {
-        return response;
+  const getAIStream = async ({
+    prompt,
+    selectedModel,
+    temperature,
+    conversationId,
+    onNewMessage,
+    onUpdateMessage,
+    ragContext
+  }: AiServiceParams) => {
+    try {
+      if (!selectedModel) {
+        throw new Error("No model selected");
       }
+
+      if (!prompt) {
+        throw new Error("No prompt provided");
+      }
+
+      let context = ragContext;
+      if (!ragContext) {
+        const { data: ragContext, error } = await supabase
+          .from('rag_contexts')
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .single();
+
+        if (error) {
+          console.error("Error fetching RAG context:", error);
+          toast({
+            title: "Error fetching RAG context",
+            description: "Please try again.",
+            variant: "destructive",
+          });
+        }
+
+        context = ragContext;
+      }
+
+      if (!context) {
+        console.warn("No RAG context found, proceeding without it.");
+      }
+
+      const ragPrompt = buildRAGPrompt(context.context);
+
+      const messageId = uuidv4();
+      const initialMessage: ChatMessage = {
+        id: messageId,
+        conversation_id: conversationId,
+        created_at: new Date().toISOString(),
+        content: "",
+        role: "assistant",
+        message_type: "text",
+      };
+
+      onNewMessage(initialMessage);
+
+      const updateMessage = (content: string) => {
+        const updatedMessage: ChatMessage = {
+          ...initialMessage,
+          content: content,
+        };
+        onUpdateMessage(updatedMessage);
+      };
+
+      if (selectedModel.includes("claude")) {
+        await getAnthropicResponse({
+          prompt: ragPrompt,
+          selectedModel: selectedModel,
+          temperature: temperature,
+          updateMessage: updateMessage,
+        });
+      } else {
+        await getOpenAiResponse({
+          prompt: ragPrompt,
+          selectedModel: selectedModel,
+          temperature: temperature,
+          updateMessage: updateMessage,
+        });
+      }
+    } catch (error: any) {
+      console.error("Error in AI service:", error);
+      toast({
+        title: "AI Provider Error",
+        description: error.message || "Failed to generate response. Please try again.",
+        variant: "destructive",
+      });
     }
-    
-    throw new Error("Contexte RAG non disponible ou erreur de génération");
   };
 
-  /**
-   * Generate a response using OpenAI API
-   */
-  const generateOpenAIResponse = async (content: string, config: WebUIConfig) => {
-    return await generateText(content, {
-      model: config.model || "gpt-4o-mini",
-      temperature: config.temperature,
-      max_tokens: config.maxTokens,
-      system_prompt: `Tu es un assistant d'IA qui répond aux questions de manière concise et précise. 
-      Mode d'analyse: ${config.analysisMode}`
-    });
-  };
-
-  /**
-   * Generate a response using Anthropic API
-   */
-  const generateAnthropicResponse = async (content: string, config: WebUIConfig) => {
-    const response = await callApi('anthropic', 'messages', {
-      model: config.model || "claude-3-haiku-20240307",
-      max_tokens: config.maxTokens || 1000,
-      temperature: config.temperature || 0.7,
-      system: `Tu es un assistant d'IA qui répond aux questions de manière utile, précise et honnête. Mode d'analyse: ${config.analysisMode}`,
-      messages: [
-        { role: "user", content: content }
-      ]
-    });
-    
-    return extractAnthropicResponse(response);
-  };
-
-  /**
-   * Generate a response using standard providers (Huggingface, etc.)
-   */
-  const generateStandardResponse = async (content: string, provider: AIProvider, config: WebUIConfig) => {
-    const results = await generateResponse(
-      content,
-      content,
-      provider,
-      config
-    );
-    
-    if (results && results.length > 0) {
-      return results[0].generated_text || "";
-    }
-    
-    throw new Error("Erreur lors de la génération de texte");
-  };
-
-  return {
-    generateOpenAIAgentResponse,
-    generateOpenAIResponse,
-    generateAnthropicResponse,
-    generateStandardResponse
-  };
+  return { getAIStream };
 };

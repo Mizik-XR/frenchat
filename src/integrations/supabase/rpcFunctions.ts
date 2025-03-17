@@ -22,7 +22,14 @@ export const getRagContext = async (conversationId: string): Promise<RagContext 
       return null;
     }
     
-    return data as RagContext | null;
+    if (!data) return null;
+    
+    // Conversion explicite vers le type RagContext pour assurer la compatibilité
+    return {
+      context: data.context as string,
+      source: data.source as string | undefined,
+      metadata: data.metadata || undefined
+    };
   } catch (error) {
     console.error('Error in getRagContext:', error);
     return null;

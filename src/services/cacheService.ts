@@ -1,128 +1,101 @@
-
-/**
- * Service de mise en cache des réponses IA pour optimiser les coûts
- */
-import { v4 as uuidv4 } from 'uuid';
-import { supabase } from "@/integrations/supabase/client";
+// Import des fonctions de conversion de types
+import { jsonToType } from '@/integrations/supabase/typesCompatibility';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface CachedResponse {
   id: string;
+  key: string;
   prompt: string;
   response: string;
   provider: string;
   tokens_used: number;
-  created_at: Date;
-  expiration_date: Date | null;
+  estimated_cost: number;
+  user_id: string;
+  metadata: any;
   hash: string;
+  expiration_date: Date;
+  access_count: number;
 }
 
-export const cacheService = {
-  /**
-   * Génère un hash unique pour un prompt donné
-   */
-  generateHash(prompt: string, systemPrompt: string, provider: string): string {
-    // Normalisation: supprimer les espaces superflus, convertir en minuscules
-    const normalizedPrompt = prompt.trim().toLowerCase();
-    const normalizedSystem = (systemPrompt || "").trim().toLowerCase();
-    
-    // Combiner prompt et système pour le hash
-    const combined = `${normalizedSystem}|${normalizedPrompt}|${provider}`;
-    
-    // Hash simple avec algo djb2
-    let hash = 5381;
-    for (let i = 0; i < combined.length; i++) {
-      hash = ((hash << 5) + hash) + combined.charCodeAt(i);
-    }
-    
-    return String(Math.abs(hash));
-  },
-  
-  /**
-   * Cherche une réponse en cache
-   */
-  async findCachedResponse(prompt: string, systemPrompt: string, provider: string): Promise<CachedResponse | null> {
-    const hash = this.generateHash(prompt, systemPrompt, provider);
-    
-    // Utiliser la requête avec RLS (les politiques filtreron automatiquement)
-    const { data, error } = await supabase
-      .from('response_cache')
+const CACHE_EXPIRATION_TIME = 7 * 24 * 60 * 60; // 7 days in seconds
+
+export const getCachedResponse = async (
+  prompt: string,
+  provider: string,
+  userId: string,
+  metadata: any
+): Promise<CachedResponse | null> => {
+  const hash = generateCacheKey(prompt, provider, metadata);
+
+  try {
+    const { data: item, error } = await supabase
+      .from('embeddings_cache')
       .select('*')
-      .eq('hash', hash)
-      .order('created_at', { ascending: false })
-      .limit(1);
-    
-    if (error || !data || data.length === 0) {
+      .eq('key', hash)
+      .single();
+
+    if (error) {
+      console.error('Error fetching cache:', error);
       return null;
     }
-    
-    // Vérifier si la réponse en cache est expirée
-    const cachedResponse = data[0] as CachedResponse;
-    if (cachedResponse.expiration_date && new Date(cachedResponse.expiration_date) < new Date()) {
+
+    if (!item) {
       return null;
     }
-    
-    return cachedResponse;
-  },
-  
-  /**
-   * Stocke une réponse en cache
-   */
-  async cacheResponse(
-    prompt: string, 
-    systemPrompt: string, 
-    response: string, 
-    provider: string, 
-    tokensUsed: number,
-    expirationDays: number = 7,
-    userId?: string
-  ): Promise<string> {
-    const hash = this.generateHash(prompt, systemPrompt, provider);
-    const id = uuidv4();
-    
-    // Calcul de la date d'expiration
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + expirationDays);
-    
-    const { error } = await supabase
-      .from('response_cache')
-      .insert({
-        id,
-        prompt,
-        system_prompt: systemPrompt,
-        response,
-        provider,
-        tokens_used: tokensUsed,
-        hash,
-        expiration_date: expirationDate.toISOString(),
-        user_id: userId || null // Associer au user_id si disponible, sinon cache public
-      });
-    
-    if (error) {
-      console.error("Erreur lors de la mise en cache:", error);
-      throw error;
-    }
-    
-    return id;
-  },
-  
-  /**
-   * Purge les entrées de cache expirées
-   */
-  async purgeExpiredCache(): Promise<number> {
-    const now = new Date().toISOString();
-    
-    // Les politiques RLS s'appliqueront automatiquement ici aussi
-    const { data, error } = await supabase
-      .from('response_cache')
-      .delete()
-      .lt('expiration_date', now)
-      .select('id');
-    
-    if (error) {
-      console.error("Erreur lors de la purge du cache:", error);
-      throw error;
-    }
-    
-    return data?.length || 0;
+
+    // Remplacez par une conversion explicite:
+    return {
+      id: item.id,
+      key: item.key,
+      prompt: item.prompt,
+      response: item.response,
+      provider: item.provider,
+      tokens_used: item.tokens_used,
+      estimated_cost: item.estimated_cost,
+      user_id: item.user_id,
+      metadata: item.metadata,
+      hash: item.key, // Utiliser la clé comme hash
+      expiration_date: new Date(item.expires_at),
+      access_count: item.access_count
+    } as CachedResponse;
+  } catch (error) {
+    console.error('Error in getCachedResponse:', error);
+    return null;
   }
 };
+
+export const setCachedResponse = async (
+  prompt: string,
+  response: string,
+  provider: string,
+  tokensUsed: number,
+  estimatedCost: number,
+  userId: string,
+  metadata: any
+): Promise<void> => {
+  const hash = generateCacheKey(prompt, provider, metadata);
+  const expirationDate = new Date();
+  expirationDate.setSeconds(expirationDate.getSeconds() + CACHE_EXPIRATION_TIME);
+
+  try {
+    // Corriger l'objet d'insertion pour n'inclure que les champs valides:
+    await supabase.from('embeddings_cache').insert({
+      key: hash,
+      prompt: prompt,
+      response: response,
+      provider: provider,
+      tokens_used: tokensUsed,
+      estimated_cost: estimatedCost,
+      metadata: metadata as any, // Conversion explicite
+      expires_at: expirationDate.toISOString(),
+      user_id: userId
+    });
+  } catch (error) {
+    console.error('Error caching response:', error);
+  }
+};
+
+function generateCacheKey(prompt: string, provider: string, metadata: any): string {
+  const metadataString = JSON.stringify(metadata || {});
+  return `${prompt}-${provider}-${metadataString}`;
+}

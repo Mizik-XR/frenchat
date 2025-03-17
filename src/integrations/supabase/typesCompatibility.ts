@@ -27,6 +27,13 @@ export function messageMetadataToJson(metadata: MessageMetadata): Json {
 }
 
 /**
+ * Convertit Json de Supabase en MessageMetadata
+ */
+export function jsonToMessageMetadata(json: Json): MessageMetadata {
+  return json as unknown as MessageMetadata;
+}
+
+/**
  * Ajoute les fonctions RPC manquantes au type Database
  */
 export function defineCustomRPCFunctions() {
@@ -49,4 +56,18 @@ export function normalizeDate(dateValue: string | number): number {
  */
 export function timestampToISOString(timestamp: number): string {
   return new Date(timestamp).toISOString();
+}
+
+/**
+ * Convertit un type Json en type générique avec vérification
+ */
+export function jsonToType<T>(json: Json, defaultValue: T): T {
+  if (!json) return defaultValue;
+  
+  try {
+    return json as unknown as T;
+  } catch (e) {
+    console.error('Erreur lors de la conversion Json vers type:', e);
+    return defaultValue;
+  }
 }

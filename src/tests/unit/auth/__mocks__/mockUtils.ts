@@ -4,20 +4,8 @@
  */
 
 export function createMockFunction<T, R>(implementation?: (...args: T[]) => R) {
-  const fn = implementation || (() => undefined as unknown as R);
-  fn.mockResolvedValue = (value: R) => {
-    return jest.fn().mockResolvedValue(value) as unknown as typeof fn;
-  };
-  fn.mockImplementation = (impl: (...args: T[]) => R) => {
-    return jest.fn(impl) as unknown as typeof fn;
-  };
-  fn.mockResolvedValueOnce = (value: R) => {
-    return jest.fn().mockResolvedValueOnce(value) as unknown as typeof fn;
-  };
-  fn.mockRejectedValue = (reason: any) => {
-    return jest.fn().mockRejectedValue(reason) as unknown as typeof fn;
-  };
-  return fn;
+  const mock = jest.fn(implementation || (() => undefined as unknown as R));
+  return mock;
 }
 
 // Déclarations pour jest car il n'est pas forcément inclus dans les types
