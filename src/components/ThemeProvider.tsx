@@ -1,5 +1,5 @@
 
-import { React, useState, useEffect, useContext } from "@/core/ReactInstance";
+import { React, useState, useEffect } from "@/core/ReactInstance";
 import { createContextSafely } from "@/utils/react/createContextSafely";
 
 type Theme = "dark" | "light" | "system";

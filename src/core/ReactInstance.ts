@@ -13,9 +13,6 @@ import * as React from 'react';
 // Exporter l'instance unique de React
 export { React };
 
-// Exporter createContext pour centraliser son utilisation
-export const createContext = React.createContext;
-
 // Fonctions utilitaires pour faciliter l'utilisation
 export const useState = React.useState;
 export const useEffect = React.useEffect;
@@ -24,6 +21,7 @@ export const useCallback = React.useCallback;
 export const useMemo = React.useMemo;
 export const useRef = React.useRef;
 export const useLayoutEffect = React.useLayoutEffect;
+export const createContext = React.createContext;
 
 // Vérifier si React est correctement chargé
 export function checkReactInstance() {

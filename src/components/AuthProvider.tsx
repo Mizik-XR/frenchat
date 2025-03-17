@@ -1,5 +1,5 @@
 
-import { React, useContext } from "@/core/ReactInstance";
+import { React } from "@/core/ReactInstance";
 import { User } from "@supabase/supabase-js";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
@@ -35,14 +35,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   try {
-    const context = useContext(AuthContext);
+    const context = useAuthContext();
     if (!context) {
       console.error("useAuth doit être utilisé à l'intérieur d'un AuthProvider");
-      return getContextValue(AuthContext, {
+      return {
         user: null,
         isLoading: true,
         signOut: async () => {},
-      });
+      };
     }
     return context;
   } catch (error) {
