@@ -1,3 +1,4 @@
+
 // Importation correcte de React depuis l'instance centrale
 import { React } from '@/core/ReactInstance';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -7,12 +8,9 @@ import { Toaster } from './components/ui/toaster';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactErrorMonitor } from './components/monitoring/ReactErrorMonitor';
 import { SettingsProvider } from './contexts/SettingsContext';
-import ChatPage from './pages/ChatPage';
-import ConfigPage from './pages/ConfigPage';
-import GoogleDriveConfigPage from './pages/GoogleDriveConfigPage';
-import { DocsPage } from './pages/DocsPage';
-import { AboutPage } from './pages/AboutPage';
-import { SystemReportPage } from './pages/SystemReportPage';
+import Chat from './pages/Chat';
+import Config from './pages/Config';
+import { GoogleDriveConfig } from './components/config/GoogleDriveConfig';
 
 // Ajouter un composant de diagnostic pour le mode dev
 const DevTools = () => {
@@ -60,13 +58,10 @@ function App() {
           <SettingsProvider>
             <ReactErrorMonitor />
             <Routes>
-              <Route path="/" element={<ChatPage />} />
-              <Route path="/chat" element={<ChatPage />} />
-              <Route path="/config" element={<ConfigPage />} />
-              <Route path="/config/google-drive" element={<GoogleDriveConfigPage />} />
-              <Route path="/docs" element={<DocsPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/system-report" element={<SystemReportPage />} />
+              <Route path="/" element={<Chat />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/config" element={<Config />} />
+              <Route path="/config/google-drive" element={<GoogleDriveConfig config={{}} onConfigChange={() => {}} onSave={() => {}} />} />
             </Routes>
             <Toaster />
             {import.meta.env.DEV && <DevTools />}

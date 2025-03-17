@@ -23,9 +23,10 @@ export function diagnoseApplication() {
   // Vérifier l'état global
   console.log('\n🌐 Vérification de l\'état global:');
   try {
-    const APP_STATE = window.__APP_STATE || {};
+    // Utilisation d'une vérification sécurisée pour APP_STATE
+    const APP_STATE = typeof window !== 'undefined' && (window as any).__APP_STATE;
     console.log('État global disponible:', !!APP_STATE);
-    console.log('Mode hors ligne:', APP_STATE.isOfflineMode || false);
+    console.log('Mode hors ligne:', APP_STATE ? APP_STATE.isOfflineMode || false : 'Non disponible');
   } catch (e) {
     console.error('Erreur lors de la vérification de l\'état global:', e);
   }
@@ -33,10 +34,10 @@ export function diagnoseApplication() {
   // Vérifier le chargement des modules
   console.log('\n📦 Vérification des modules:');
   const modules = {
-    'React': !!window.React,
-    'ReactDOM': !!window.ReactDOM,
-    'createContext': typeof window.React?.createContext === 'function',
-    'useState': typeof window.React?.useState === 'function',
+    'React': !!(window as any).React,
+    'ReactDOM': !!(window as any).ReactDOM,
+    'createContext': typeof (window as any).React?.createContext === 'function',
+    'useState': typeof (window as any).React?.useState === 'function',
   };
   console.table(modules);
   
