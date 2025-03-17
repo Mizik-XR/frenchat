@@ -5,10 +5,10 @@
 
 import { supabase } from './client';
 import { APP_STATE } from '@/compatibility/supabaseCompat';
-import { UserProfile } from './supabaseModels';
+import { UserProfile, ProfileQueryResult } from './supabaseModels';
 
 // Fonction pour gérer les requêtes de profil utilisateur
-export const handleProfileQuery = async (userId: string) => {
+export const handleProfileQuery = async (userId: string): Promise<ProfileQueryResult> => {
   // Si on est en mode hors ligne, fournir un profil par défaut
   if (APP_STATE.isOfflineMode || !supabase) {
     console.log("Mode hors ligne actif, utilisation d'un profil par défaut");

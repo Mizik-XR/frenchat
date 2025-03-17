@@ -9,18 +9,7 @@ import {
   checkOfflineMode,
   preloadSession as compatPreloadSession
 } from '@/compatibility/supabaseCompat';
-import { UserProfile } from './supabaseModels';
-
-// Type helper for Edge Function responses
-export type EdgeFunctionResponse<T> = {
-  data: T;
-  error: null;
-} | {
-  data: null;
-  error: {
-    message: string;
-  };
-};
+import { UserProfile, EdgeFunctionResponse } from './supabaseModels';
 
 // Create client with error handling
 let supabaseClient: any = null;
@@ -80,7 +69,8 @@ export { APP_STATE, checkOfflineMode, detectLocalAIService };
 // Utilisation de la fonction de compatibilité
 export const preloadSession = compatPreloadSession;
 
-// Importer les utilitaires de profil ici pour éviter les dépendances circulaires
+// Importer les utilitaires de profil après l'export de supabase
+// Ceci évite la dépendance circulaire
 import { handleProfileQuery, checkSupabaseConnection } from './profileUtils';
 export { handleProfileQuery, checkSupabaseConnection };
 

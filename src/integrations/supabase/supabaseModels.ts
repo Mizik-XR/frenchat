@@ -162,15 +162,32 @@ export interface UserNotification {
   expires_at?: string | null;
 }
 
+// Définition des types pour les réponses de fonctions utilitaires
+export interface ProfileQueryResult {
+  data: UserProfile | null;
+  error: any;
+}
+
 // Fonctions utilitaires pour les profils - uniquement les définitions de type ici
 export interface ProfileUtils {
-  handleProfileQuery: (userId: string) => Promise<{ data: UserProfile | null, error: any }>;
+  handleProfileQuery: (userId: string) => Promise<ProfileQueryResult>;
   checkSupabaseConnection: () => Promise<boolean>;
 }
 
 // Fonctions utilitaires pour l'authentification - uniquement les définitions de type ici
 export interface AuthUtils {
   preloadSession: () => Promise<{ session: any }>;
+}
+
+// Type helper for Edge Function responses
+export interface EdgeFunctionResponse<T> {
+  data: T;
+  error: null;
+} | {
+  data: null;
+  error: {
+    message: string;
+  };
 }
 
 // Utilitaires pour convertir les types Supabase en types d'application
