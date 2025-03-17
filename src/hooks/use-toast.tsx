@@ -1,5 +1,4 @@
-import * as React from "react"
-import { createContext, useContext } from "react"
+import { React, createContext, useContext } from "@/core/ReactInstance"
 
 import type {
   ToastActionElement,
@@ -63,7 +62,7 @@ interface ToastContextType extends State {
   dismiss: (toastId?: string) => void;
 }
 
-// Create the initial context
+// Create the initial context using the safe method
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()

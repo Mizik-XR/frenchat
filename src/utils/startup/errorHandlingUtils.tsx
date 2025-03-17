@@ -1,5 +1,5 @@
 
-import React from 'react';
+import { React } from '@/core/ReactInstance';
 import { LoadingScreen } from '@/components/auth/LoadingScreen';
 
 /**
@@ -100,7 +100,7 @@ export const renderFallbackScreen = (rootElement: HTMLElement, message = "Erreur
   }
 };
 
-// Interface pour le type global Window avec typages corrects
+// Définition du type global Window
 declare global {
   interface Window {
     React?: typeof React;

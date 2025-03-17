@@ -1,7 +1,6 @@
 
-import { useState, useContext } from "react";
+import { React, useState, useContext } from "@/core/ReactInstance";
 import { createContextSafely, getContextValue } from "@/utils/react/createContextSafely";
-import { React } from "@/core/ReactInstance";
 
 interface AIConfigContextType {
   provider: string;
@@ -14,7 +13,7 @@ interface AIConfigContextType {
   setSummary: (summary: string) => void;
 }
 
-const AIConfigContext = createContextSafely<AIConfigContextType | undefined>(undefined);
+const AIConfigContext = createContextSafely<AIConfigContextType | undefined>(undefined, "AIConfigContext");
 
 export const useAIConfigContext = () => {
   const context = useContext(AIConfigContext);

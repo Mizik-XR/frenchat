@@ -1,5 +1,5 @@
 
-import { useContext } from "react";
+import { React, useContext } from "@/core/ReactInstance";
 import { User } from "@supabase/supabase-js";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
@@ -15,7 +15,7 @@ const AuthContext = createContextSafely<AuthContextType>({
   user: null,
   isLoading: true,
   signOut: async () => {},
-});
+}, "AuthContext");
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading, signOut } = useAuthSession();
