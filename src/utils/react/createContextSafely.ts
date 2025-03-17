@@ -37,8 +37,13 @@ export function createContextSafely<T>(defaultValue: T, displayName: string) {
     return context;
   };
   
-  // Retourner à la fois le contexte et le hook
-  return { Context, useContext };
+  // Utilitaire pour obtenir la valeur de contexte (pour les tests)
+  const getContextValue = () => {
+    return defaultValue;
+  };
+  
+  // Retourner à la fois le contexte, le hook et la fonction utilitaire
+  return { Context, useContext, getContextValue };
 }
 
 /**

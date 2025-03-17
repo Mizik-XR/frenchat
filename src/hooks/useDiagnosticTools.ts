@@ -90,8 +90,8 @@ export function useDiagnosticTools() {
     // Récupérer les informations sur l'application
     details.appState = {
       isOfflineMode: APP_STATE.isOfflineMode,
-      hasSupabaseError: APP_STATE.hasSupabaseError,
-      lastSupabaseError: APP_STATE.lastSupabaseError ? APP_STATE.lastSupabaseError.message : null
+      hasErrors: APP_STATE.supbaseErrors.length > 0,
+      lastError: APP_STATE.lastError ? APP_STATE.lastError.message : null
     };
     
     // Mettre à jour les résultats

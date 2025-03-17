@@ -3,7 +3,7 @@
  * Utilitaires pour l'état et le chargement de l'application
  */
 
-import { detectLocalAIService } from "@/integrations/supabase/client";
+import { detectLocalAIService } from "@/integrations/supabase/appState";
 import { toast } from "@/hooks/use-toast";
 
 /**
@@ -33,8 +33,8 @@ export const checkApplicationHealth = async () => {
 
   // Vérifier le service d'IA local
   try {
-    const localAI = await detectLocalAIService();
-    results.localAI = localAI.available;
+    const localAICheck = await detectLocalAIService();
+    results.localAI = localAICheck.available;
   } catch (e) {
     console.error("Erreur lors de la vérification du service d'IA local:", e);
   }
