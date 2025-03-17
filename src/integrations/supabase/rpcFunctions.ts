@@ -10,7 +10,41 @@ import { RagContext } from './sharedTypes';
  */
 export const getRagContext = async (conversationId: string): Promise<RagContext | null> => {
   try {
-    // Utiliser une requête Select standard au lieu de RPC
+    // Vérifier si la table existe avant de faire la requête
+    const { data: tableInfo, error: tableError } = await supabase
+      .from('rag_contexts')
+      .select('*')
+      .limit(1);
+    
+    // Si la table n'existe pas ou autre erreur, essayons une approche alternative
+    if (tableError) {
+      console.log('La table rag_contexts n\'existe pas, utilisation de la méthode alternative');
+      // Méthode alternative - recherche dans les messages de la conversation
+      const { data: messages, error: messagesError } = await supabase
+        .from('chat_messages')
+        .select('content, metadata')
+        .eq('conversation_id', conversationId)
+        .eq('role', 'system')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (messagesError || !messages || messages.length === 0) {
+        return null;
+      }
+      
+      // Essayer d'extraire le contexte des métadonnées ou du contenu
+      const message = messages[0];
+      const context = message.metadata?.context || message.content;
+      const source = message.metadata?.source || '';
+      
+      return context ? { 
+        context: typeof context === 'string' ? context : JSON.stringify(context),
+        source: source,
+        metadata: message.metadata || {}
+      } : null;
+    }
+    
+    // Si la table existe, faisons la requête normale
     const { data, error } = await supabase
       .from('rag_contexts')
       .select('context, source, metadata')

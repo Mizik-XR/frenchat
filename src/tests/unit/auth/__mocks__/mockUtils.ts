@@ -6,25 +6,25 @@
 export function createMockFunction<T, R>(implementation?: (...args: T[]) => R) {
   const mock = jest.fn(implementation || (() => undefined as unknown as R));
   
-  // Ajouter manuellement les méthodes mock requises
-  mock.mockResolvedValue = (value: R) => {
-    mock.mockImplementation(() => Promise.resolve(value));
-    return mock;
+  // Définir les méthodes sur l'objet mock lui-même
+  mock.mockResolvedValue = function(value: R) {
+    jest.fn().mockImplementation(() => Promise.resolve(value));
+    return this;
   };
   
-  mock.mockImplementation = (fn: (...args: T[]) => R) => {
+  mock.mockImplementation = function(fn: (...args: T[]) => R) {
     jest.fn().mockImplementation(fn);
-    return mock;
+    return this;
   };
   
-  mock.mockResolvedValueOnce = (value: R) => {
-    mock.mockImplementationOnce(() => Promise.resolve(value));
-    return mock;
+  mock.mockResolvedValueOnce = function(value: R) {
+    jest.fn().mockImplementation(() => Promise.resolve(value));
+    return this;
   };
   
-  mock.mockRejectedValue = (reason: any) => {
-    mock.mockImplementation(() => Promise.reject(reason));
-    return mock;
+  mock.mockRejectedValue = function(reason: any) {
+    jest.fn().mockImplementation(() => Promise.reject(reason));
+    return this;
   };
   
   return mock;

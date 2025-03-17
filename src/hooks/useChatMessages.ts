@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Message, MessageMetadata } from "@/types/chat";
 import { toast } from "sonner";
@@ -14,11 +15,11 @@ export function useChatMessages(conversationId: string | null) {
       id: msg.id,
       role: msg.role,
       content: msg.content,
-      type: msg.type || 'text',
+      type: msg.message_type || 'text',
       conversationId: msg.conversation_id,
       timestamp: new Date(msg.created_at).getTime(),
-      replyTo: msg.reply_to,
-      quotedMessageId: msg.quoted_message_id,
+      replyTo: msg.metadata?.reply_to,
+      quotedMessageId: msg.metadata?.quoted_message_id,
       metadata: msg.metadata
     }));
   }, []);
@@ -121,19 +122,24 @@ export function useChatMessages(conversationId: string | null) {
       throw new Error('User not authenticated');
     }
     
+    let metadata = null;
+    if (messageData.quoted_message_id) {
+      metadata = messageMetadataToJson({ 
+        quoted_message_id: messageData.quoted_message_id 
+      });
+    }
+    
     const { error: insertError } = await supabase.from('chat_messages').insert({
       conversation_id: conversationId,
       role: messageData.role,
       content: messageData.content,
       message_type: messageData.type,
       user_id: currentUser.user.id,
-      metadata: messageData.quoted_message_id 
-        ? messageMetadataToJson({ quoted_message_id: messageData.quoted_message_id }) 
-        : null
+      metadata: metadata
     });
     
     if (insertError) throw insertError;
-  }, []);
+  }, [conversationId]);
 
   const generateAIResponse = useCallback(async (content: string, convoId: string) => {
     try {

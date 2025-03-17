@@ -1,3 +1,4 @@
+
 // Import des fonctions de conversion de types
 import { jsonToType } from '@/integrations/supabase/typesCompatibility';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,51 +18,109 @@ export interface CachedResponse {
   access_count: number;
 }
 
-const CACHE_EXPIRATION_TIME = 7 * 24 * 60 * 60; // 7 days in seconds
+export class AICacheService {
+  private CACHE_EXPIRATION_TIME = 7 * 24 * 60 * 60; // 7 days in seconds
 
+  async getCachedResponse(
+    prompt: string,
+    provider: string,
+    userId: string,
+    metadata: any = {}
+  ): Promise<CachedResponse | null> {
+    const hash = this.generateCacheKey(prompt, provider, metadata);
+
+    try {
+      const { data: item, error } = await supabase
+        .from('embeddings_cache')
+        .select('*')
+        .eq('key', hash)
+        .single();
+
+      if (error) {
+        console.error('Error fetching cache:', error);
+        return null;
+      }
+
+      if (!item) {
+        return null;
+      }
+
+      // Vérifier le format de la réponse
+      if (item.value) {
+        const cacheValue = typeof item.value === 'string' 
+          ? JSON.parse(item.value) 
+          : item.value;
+
+        return {
+          id: item.id,
+          key: item.key,
+          prompt: cacheValue.prompt || '',
+          response: cacheValue.response || '',
+          provider: cacheValue.provider || provider,
+          tokens_used: cacheValue.tokens_used || 0,
+          estimated_cost: cacheValue.estimated_cost || 0,
+          user_id: cacheValue.user_id || userId,
+          metadata: cacheValue.metadata || metadata,
+          hash: item.key,
+          expiration_date: new Date(item.expires_at),
+          access_count: item.access_count || 0
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error in getCachedResponse:', error);
+      return null;
+    }
+  }
+
+  async cacheResponse(
+    prompt: string,
+    response: string,
+    provider: string,
+    userId: string,
+    metadata: any = {}
+  ): Promise<void> {
+    const hash = this.generateCacheKey(prompt, provider, metadata);
+    const expirationDate = new Date();
+    expirationDate.setSeconds(expirationDate.getSeconds() + this.CACHE_EXPIRATION_TIME);
+
+    const cacheValue = {
+      prompt,
+      response,
+      provider,
+      tokens_used: 0,
+      estimated_cost: 0,
+      user_id: userId,
+      metadata
+    };
+
+    try {
+      await supabase.from('embeddings_cache').insert({
+        key: hash,
+        value: cacheValue,
+        expires_at: expirationDate.toISOString(),
+      });
+    } catch (error) {
+      console.error('Error caching response:', error);
+    }
+  }
+
+  private generateCacheKey(prompt: string, provider: string, metadata: any): string {
+    const metadataString = JSON.stringify(metadata || {});
+    return `${prompt}-${provider}-${metadataString}`;
+  }
+}
+
+// Export des fonctions directes pour compatibilité
 export const getCachedResponse = async (
   prompt: string,
   provider: string,
   userId: string,
-  metadata: any
+  metadata: any = {}
 ): Promise<CachedResponse | null> => {
-  const hash = generateCacheKey(prompt, provider, metadata);
-
-  try {
-    const { data: item, error } = await supabase
-      .from('embeddings_cache')
-      .select('*')
-      .eq('key', hash)
-      .single();
-
-    if (error) {
-      console.error('Error fetching cache:', error);
-      return null;
-    }
-
-    if (!item) {
-      return null;
-    }
-
-    // Remplacez par une conversion explicite:
-    return {
-      id: item.id,
-      key: item.key,
-      prompt: item.prompt,
-      response: item.response,
-      provider: item.provider,
-      tokens_used: item.tokens_used,
-      estimated_cost: item.estimated_cost,
-      user_id: item.user_id,
-      metadata: item.metadata,
-      hash: item.key, // Utiliser la clé comme hash
-      expiration_date: new Date(item.expires_at),
-      access_count: item.access_count
-    } as CachedResponse;
-  } catch (error) {
-    console.error('Error in getCachedResponse:', error);
-    return null;
-  }
+  const cacheService = new AICacheService();
+  return cacheService.getCachedResponse(prompt, provider, userId, metadata);
 };
 
 export const setCachedResponse = async (
@@ -71,31 +130,8 @@ export const setCachedResponse = async (
   tokensUsed: number,
   estimatedCost: number,
   userId: string,
-  metadata: any
+  metadata: any = {}
 ): Promise<void> => {
-  const hash = generateCacheKey(prompt, provider, metadata);
-  const expirationDate = new Date();
-  expirationDate.setSeconds(expirationDate.getSeconds() + CACHE_EXPIRATION_TIME);
-
-  try {
-    // Corriger l'objet d'insertion pour n'inclure que les champs valides:
-    await supabase.from('embeddings_cache').insert({
-      key: hash,
-      prompt: prompt,
-      response: response,
-      provider: provider,
-      tokens_used: tokensUsed,
-      estimated_cost: estimatedCost,
-      metadata: metadata as any, // Conversion explicite
-      expires_at: expirationDate.toISOString(),
-      user_id: userId
-    });
-  } catch (error) {
-    console.error('Error caching response:', error);
-  }
+  const cacheService = new AICacheService();
+  return cacheService.cacheResponse(prompt, response, provider, userId, metadata);
 };
-
-function generateCacheKey(prompt: string, provider: string, metadata: any): string {
-  const metadataString = JSON.stringify(metadata || {});
-  return `${prompt}-${provider}-${metadataString}`;
-}
