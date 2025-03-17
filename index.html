@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Frenchat - Votre assistant d'intelligence documentaire</title>
     <meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." />
-    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" -->
+    <!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" - Position optimisée -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <!-- Style de base pour l'écran de chargement initial -->
     <style>
@@ -87,10 +87,20 @@
         var lovableLoaded = lovableScripts.length > 0;
         console.log('Script Lovable dans le DOM: ' + (lovableLoaded ? 'Présent' : 'Absent'));
         
+        // Si manquant, tenter une injection d'urgence
+        if (!lovableLoaded) {
+          console.log('Tentative d\'injection d\'urgence du script Lovable');
+          var emergencyScript = document.createElement('script');
+          emergencyScript.src = 'https://cdn.gpteng.co/gptengineer.js';
+          emergencyScript.type = 'module';
+          document.head.insertBefore(emergencyScript, document.head.firstChild);
+        }
+        
         return {
           lovableScriptPresent: lovableLoaded,
           lovableScriptType: lovableLoaded ? lovableScripts[0].getAttribute('type') : null,
-          timeOfCheck: new Date().toISOString()
+          timeOfCheck: new Date().toISOString(),
+          emergencyInjection: !lovableLoaded
         };
       }
       

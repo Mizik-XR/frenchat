@@ -38,6 +38,11 @@ export function runLovableDiagnostic() {
   const knownCircularImports = checkKnownCircularImports();
   console.log('🔄 Dépendances circulaires connues:', knownCircularImports);
   
+  // Auto-correction de l'intégration Lovable si nécessaire
+  if (!lovableLoaded && typeof window !== 'undefined') {
+    attemptAutoCorrection();
+  }
+  
   return {
     ...globalChecks,
     circularImports: knownCircularImports
@@ -83,6 +88,27 @@ export function checkLovableScriptPresence() {
 }
 
 /**
+ * Tente une correction automatique de l'intégration Lovable
+ */
+function attemptAutoCorrection() {
+  console.log('🔧 Tentative de correction automatique de l\'intégration Lovable');
+  
+  // Injection du script Lovable s'il est manquant
+  if (!checkLovableScriptPresence()) {
+    console.log('Injection du script Lovable');
+    const script = document.createElement('script');
+    script.src = 'https://cdn.gpteng.co/gptengineer.js';
+    script.type = 'module';
+    script.setAttribute('data-auto-injected', 'true');
+    
+    // Insérer en haut du document pour s'assurer qu'il se charge tôt
+    document.head.insertBefore(script, document.head.firstChild);
+    
+    console.log('Script Lovable injecté automatiquement');
+  }
+}
+
+/**
  * Auto-exécution du diagnostic au chargement du module
  */
 if (typeof window !== 'undefined') {
@@ -104,4 +130,5 @@ if (typeof window !== 'undefined') {
 if (typeof window !== 'undefined') {
   (window as any).__runLovableDiagnostic = runLovableDiagnostic;
   (window as any).__checkLovableScript = checkLovableScriptPresence;
+  (window as any).__fixLovableIntegration = attemptAutoCorrection;
 }

@@ -1,168 +1,108 @@
 
 @echo off
+chcp 65001 >nul
 setlocal enabledelayedexpansion
 
+title FileChat - Réparation intégration Lovable
+
 echo ===================================================
-echo      DIAGNOSTIC ET RÉPARATION LOVABLE
+echo     RÉPARATION INTÉGRATION LOVABLE
 echo ===================================================
 echo.
-echo Cet outil va diagnostiquer et résoudre automatiquement
-echo les problèmes d'intégration Lovable dans l'application.
+echo Cet outil va résoudre les problèmes d'édition avec Lovable
+echo et le problème "AI edits didn't result in any changes".
 echo.
 
-rem Créer un fichier de log
-set LOG_FILE=lovable-fix.log
-echo %date% %time%: Démarrage diagnostic Lovable > %LOG_FILE%
-
-rem Vérification de l'intégration dans index.html
-echo [ÉTAPE 1/5] Vérification de l'intégration Lovable dans index.html...
+REM Vérification de index.html
+echo [ÉTAPE 1/4] Vérification du fichier index.html...
 if exist "index.html" (
-    echo - Fichier index.html trouvé >> %LOG_FILE%
+    echo [INFO] Vérification de la présence du script gptengineer.js...
     findstr /C:"gptengineer.js" "index.html" >nul
-    if !errorlevel! equ 0 (
-        echo - Script Lovable présent dans index.html >> %LOG_FILE%
-        echo [✓] Le script Lovable est présent dans index.html
-    ) else (
-        echo [!] Script Lovable manquant dans index.html, correction...
-        echo - Ajout du script Lovable à index.html >> %LOG_FILE%
+    if !errorlevel! NEQ 0 (
+        echo [ATTENTION] Le script Lovable manque dans index.html, correction...
         
-        rem Sauvegarde de l'original
+        REM Sauvegarde du fichier original
         copy index.html index.html.backup >nul
         
-        rem Création d'un fichier temporaire pour l'édition
-        type NUL > temp.html
-        for /f "tokens=*" %%a in (index.html) do (
-            echo %%a | findstr /C:"<script type=\"module\" src=\"/src/main.tsx\">" >nul
-            if !errorlevel! equ 0 (
-                echo     ^<!-- Script requis pour Lovable (Pick and Edit) --^> >> temp.html
-                echo     ^<script src="https://cdn.gpteng.co/gptengineer.js" type="module"^>^</script^> >> temp.html
-                echo %%a >> temp.html
-            ) else (
-                echo %%a >> temp.html
-            )
-        )
+        REM Injecter le script Lovable au début du head
+        echo ^<!DOCTYPE html^> > index.html.temp
+        echo ^<html lang="en"^> >> index.html.temp
+        echo   ^<head^> >> index.html.temp
+        echo     ^<meta charset="UTF-8" /^> >> index.html.temp
+        echo     ^<link rel="icon" type="image/svg+xml" href="/favicon.ico" /^> >> index.html.temp
+        echo     ^<meta name="viewport" content="width=device-width, initial-scale=1.0" /^> >> index.html.temp
+        echo     ^<title^>Frenchat - Votre assistant d'intelligence documentaire^</title^> >> index.html.temp
+        echo     ^<meta name="description" content="Frenchat indexe automatiquement tous vos documents depuis Google Drive et Microsoft Teams, vous permettant d'interagir avec l'ensemble de votre base documentaire." /^> >> index.html.temp
+        echo     ^<!-- Script requis pour Lovable fonctionnant comme "Pick and Edit" - Position optimisée --^> >> index.html.temp
+        echo     ^<script src="https://cdn.gpteng.co/gptengineer.js" type="module"^>^</script^> >> index.html.temp
         
-        rem Remplacer l'original par le fichier édité
-        move /y temp.html index.html >nul
+        REM Copier le reste du fichier original
+        findstr /v /C:"<!DOCTYPE html>" /C:"<html " /C:"<head>" /C:"<meta charset" /C:"<link rel=\"icon\"" /C:"<meta name=\"viewport\"" /C:"<title>" /C:"<meta name=\"description\"" "index.html" >> index.html.temp
         
-        echo [✓] Script Lovable ajouté à index.html
+        move /y index.html.temp index.html >nul
+        echo [OK] Script gptengineer.js ajouté dans index.html.
+    ) else (
+        echo [OK] Le script gptengineer.js est déjà présent dans index.html.
     )
 ) else (
-    echo [✗] ERREUR: index.html introuvable. Avez-vous lancé ce script depuis le répertoire racine?
-    echo - index.html non trouvé >> %LOG_FILE%
+    echo [ERREUR] Le fichier index.html est manquant dans le répertoire racine.
+    pause
     exit /b 1
 )
 echo.
 
-rem Vérification du build
-echo [ÉTAPE 2/5] Vérification du build...
-if exist "dist" (
-    echo - Dossier dist trouvé >> %LOG_FILE%
-    if exist "dist\index.html" (
-        echo - dist/index.html trouvé >> %LOG_FILE%
-        findstr /C:"gptengineer.js" "dist\index.html" >nul
-        if !errorlevel! equ 0 (
-            echo [✓] Le script Lovable est présent dans le build
-        ) else (
-            echo [!] Script manquant dans le build, correction...
-            echo - Ajout du script Lovable à dist/index.html >> %LOG_FILE%
-            copy /y index.html dist\index.html >nul
-            echo [✓] Script Lovable ajouté au build
-        )
-    ) else (
-        echo [!] Le fichier dist\index.html n'existe pas, un nouveau build est nécessaire
-        echo - dist/index.html non trouvé >> %LOG_FILE%
-    )
+REM Nettoyer les fichiers de build
+echo [ÉTAPE 2/4] Nettoyage du dossier dist...
+if exist "dist\" (
+    rmdir /s /q dist
+    echo [OK] Dossier dist supprimé.
 ) else (
-    echo [!] Le dossier dist n'existe pas, un build est nécessaire
-    echo - Dossier dist non trouvé >> %LOG_FILE%
+    echo [INFO] Le dossier dist n'existe pas, étape ignorée.
 )
 echo.
 
-rem Configuration pour le build
-echo [ÉTAPE 3/5] Configuration de l'environnement...
-echo - Configuration des variables d'environnement >> %LOG_FILE%
-
-rem Vérifier si .env.local existe
-if exist ".env.local" (
-    rem Vérifier si VITE_DISABLE_DEV_MODE est déjà configuré
-    findstr /C:"VITE_DISABLE_DEV_MODE=1" ".env.local" >nul
-    if !errorlevel! neq 0 (
-        echo VITE_DISABLE_DEV_MODE=1 >> .env.local
-        echo [✓] VITE_DISABLE_DEV_MODE=1 ajouté à .env.local
-    ) else (
-        echo [✓] VITE_DISABLE_DEV_MODE est déjà configuré
-    )
-) else (
-    rem Créer .env.local avec la configuration minimale requise
-    (
-        echo VITE_DISABLE_DEV_MODE=1
-        echo VITE_SUPABASE_URL=https://dbdueopvtlanxgumenpu.supabase.co
-        echo VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZHVlb3B2dGxhbnhndW1lbnB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NzQ0NTIsImV4cCI6MjA1NTU1MDQ1Mn0.lPPbNJANU8Zc7i5OB9_atgDZ84Yp5SBjXCiIqjA79Tk
-    ) > .env.local
-    echo [✓] Fichier .env.local créé avec la configuration nécessaire
-    echo - .env.local créé avec configuration Lovable >> %LOG_FILE%
-)
-echo.
-
-rem Reconstruction de l'application
-echo [ÉTAPE 4/5] Reconstruction de l'application...
-echo - Démarrage du build >> %LOG_FILE%
-
-rem Augmenter la mémoire disponible pour Node
+REM Reconstruction de l'application
+echo [ÉTAPE 3/4] Reconstruction complète de l'application...
 set NODE_OPTIONS=--max-old-space-size=4096
-echo - NODE_OPTIONS configuré pour 4GB >> %LOG_FILE%
-
-rem Exécuter le build
 call npm run build
-if !errorlevel! equ 0 (
-    echo [✓] Application reconstruite avec succès
-    echo - Build réussi >> %LOG_FILE%
-    
-    rem Vérifier encore une fois le build pour s'assurer que le script Lovable est présent
-    if exist "dist\index.html" (
-        findstr /C:"gptengineer.js" "dist\index.html" >nul
-        if !errorlevel! neq 0 (
-            echo [!] Correction finale du build...
-            copy /y index.html dist\index.html >nul
-            echo - Correction manuelle du build final >> %LOG_FILE%
-            echo [✓] Correction appliquée
-        ) else (
-            echo [✓] Vérification finale: script Lovable est présent dans le build
-        )
-    )
+if errorlevel 1 (
+    echo [ERREUR] Reconstruction de l'application échouée.
+    pause
+    exit /b 1
 ) else (
-    echo [✗] ERREUR: La reconstruction a échoué
-    echo - Échec du build >> %LOG_FILE%
+    echo [OK] Application reconstruite avec succès.
 )
 echo.
 
-rem Vérification du navigateur
-echo [ÉTAPE 5/5] Recommandations pour le navigateur...
-reg query "HKEY_CLASSES_ROOT\ChromeHTML" >nul 2>&1
-if !errorlevel! equ 0 (
-    echo [✓] Google Chrome est installé sur votre système
-) else (
-    reg query "HKEY_CLASSES_ROOT\MSEdgeHTM" >nul 2>&1
-    if !errorlevel! equ 0 (
-        echo [✓] Microsoft Edge est installé sur votre système
+REM Vérification finale
+echo [ÉTAPE 4/4] Vérification finale...
+if exist "dist\index.html" (
+    echo [INFO] Vérification de dist\index.html...
+    findstr "gptengineer.js" "dist\index.html" >nul
+    if !errorlevel! NEQ 0 (
+        echo [ATTENTION] Le script Lovable est absent de dist\index.html.
+        echo              Application d'une correction manuelle...
+        
+        copy index.html dist\index.html >nul
+        echo [OK] Correction appliquée.
     ) else (
-        echo [!] Recommandation: Installez Google Chrome ou Microsoft Edge pour Lovable
+        echo [OK] Le fichier dist\index.html contient le script requis.
     )
+) else (
+    echo [INFO] Le dossier dist\index.html n'existe pas. Vérifiez la construction.
 )
-echo - Vérification du navigateur terminée >> %LOG_FILE%
 echo.
 
 echo ===================================================
-echo      RÉPARATION TERMINÉE
+echo     RÉPARATION TERMINÉE
 echo ===================================================
 echo.
-echo Si vous étiez en train d'utiliser l'application:
+echo Le problème "AI edits didn't result in any changes" devrait être résolu.
+echo.
+echo Pour que les changements prennent effet:
 echo 1. Redémarrez l'application
 echo 2. Videz le cache de votre navigateur ou utilisez le mode incognito
-echo 3. Si le problème persiste, utilisez Chrome ou Edge
-echo.
-echo Journal de diagnostic sauvegardé dans: %LOG_FILE%
+echo 3. Si le problème persiste, essayez un autre navigateur (Chrome ou Edge)
 echo.
 pause
 exit /b 0
