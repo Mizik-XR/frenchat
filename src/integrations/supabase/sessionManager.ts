@@ -1,6 +1,25 @@
 
+// Gestionnaire de session Supabase optimisé pour éviter les dépendances circulaires
 import { supabase } from './client';
-import { APP_STATE } from './appState';
+
+// Type simple pour l'état de l'application (évite l'import circulaire de appState)
+interface AppStateInterface {
+  isOfflineMode: boolean;
+  setOfflineMode: (value: boolean) => void;
+  logSupabaseError: (error: Error) => void;
+}
+
+// État de l'application par défaut (évite la dépendance circulaire)
+let APP_STATE: AppStateInterface = {
+  isOfflineMode: false,
+  setOfflineMode: () => {},
+  logSupabaseError: () => {}
+};
+
+// Fonction pour initialiser l'état de l'application
+export const initializeAppState = (appState: AppStateInterface) => {
+  APP_STATE = appState;
+};
 
 // Préchargement de la session Supabase
 export const preloadSession = async () => {

@@ -1,140 +1,124 @@
 
 /**
- * appState.ts
+ * État global de l'application pour Supabase
  * 
- * Ce fichier contient l'état global de l'application et les fonctions utilitaires
- * liées à la détection de connectivité et au mode hors ligne.
- * 
- * Il sert de source unique pour ces constantes afin d'éviter les exports multiples
- * et les dépendances circulaires.
+ * Ce fichier centralise l'état lié à Supabase pour éviter les dépendances circulaires
+ * et permettre un partage sécurisé entre les composants.
  */
 
-// Type d'état de l'application
-export interface AppState {
-  isOfflineMode: boolean;
-  lastError?: Error | null;
-  supbaseErrors: Error[];
-  setOfflineMode: (offline: boolean) => void;
-  logSupabaseError: (error: Error) => void;
-  hasSupabaseError?: boolean;
-  lastSupabaseError?: Error | null;
+import { initializeAppState } from './sessionManager';
+
+// Configuration Supabase
+interface SupabaseError {
+  message: string;
+  timestamp: Date;
+  context?: string;
 }
 
-// Application state singleton
-export const APP_STATE: AppState = {
-  isOfflineMode: false,
-  supbaseErrors: [],
-  setOfflineMode: (offline: boolean) => {
-    APP_STATE.isOfflineMode = offline;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('OFFLINE_MODE', offline ? 'true' : 'false');
-      window.dispatchEvent(new Event('storage'));
-    }
-  },
-  logSupabaseError: (error: Error) => {
-    APP_STATE.lastError = error;
-    APP_STATE.lastSupabaseError = error;
-    APP_STATE.supbaseErrors.push(error);
-    APP_STATE.hasSupabaseError = true;
-    console.error("Supabase error logged:", error);
+// État de l'application partagé
+class AppState {
+  // État d'authentification et de connexion
+  private _isOfflineMode: boolean = false;
+  private _isAuthenticated: boolean = false;
+  private _supabaseErrors: SupabaseError[] = [];
+  private _localAIAvailable: boolean = false;
+
+  // Propriétés en lecture seule
+  get isOfflineMode(): boolean {
+    return this._isOfflineMode;
+  }
+
+  get isAuthenticated(): boolean {
+    return this._isAuthenticated;
+  }
+
+  get supabaseErrors(): SupabaseError[] {
+    return [...this._supabaseErrors];
+  }
+
+  get localAIAvailable(): boolean {
+    return this._localAIAvailable;
+  }
+
+  // Modificateurs d'état
+  setOfflineMode(value: boolean): void {
+    this._isOfflineMode = value;
+    console.log(`Mode hors ligne ${value ? 'activé' : 'désactivé'}`);
+  }
+
+  setAuthenticated(value: boolean): void {
+    this._isAuthenticated = value;
+  }
+
+  setLocalAIAvailable(value: boolean): void {
+    this._localAIAvailable = value;
+  }
+
+  // Gestion des erreurs
+  logSupabaseError(error: Error, context?: string): void {
+    const supabaseError: SupabaseError = {
+      message: error.message,
+      timestamp: new Date(),
+      context
+    };
+    
+    this._supabaseErrors.push(supabaseError);
+    console.error(`Erreur Supabase ${context ? `(${context})` : ''}: ${error.message}`);
     
     // Limiter le nombre d'erreurs stockées
-    if (APP_STATE.supbaseErrors.length > 20) {
-      APP_STATE.supbaseErrors.shift();
+    if (this._supabaseErrors.length > 50) {
+      this._supabaseErrors = this._supabaseErrors.slice(-50);
     }
   }
-};
 
-// Vérifier si on devrait utiliser le mode hors ligne
-export const checkOfflineMode = () => {
-  if (typeof window !== 'undefined') {
-    const savedOfflineMode = localStorage.getItem('OFFLINE_MODE');
-    if (savedOfflineMode === 'true') {
-      APP_STATE.isOfflineMode = true;
-    }
+  clearErrors(): void {
+    this._supabaseErrors = [];
   }
-};
 
-// Détection des services AI
-export const detectLocalAIService = async (): Promise<{ available: boolean; url: string | null; provider?: string }> => {
-  if (APP_STATE.isOfflineMode) return { available: false, url: null };
-  
-  try {
-    // Si déjà en mode hors ligne, ignore la détection
-    if (APP_STATE.isOfflineMode) {
-      console.log("Mode hors ligne activé, utilisation du service cloud par défaut");
-      localStorage.setItem('aiServiceType', 'cloud');
-      return { available: false, url: null };
-    }
-    
-    // Teste d'abord Ollama, qui est prioritaire
+  // Détection du service d'IA local
+  async detectLocalAIService(): Promise<{ available: boolean; message?: string }> {
     try {
-      const ollamaAvailable = await fetch('http://localhost:11434/api/version', {
-        signal: AbortSignal.timeout(1500)
+      if (this._isOfflineMode) {
+        return { available: false, message: "Mode hors ligne activé" };
+      }
+      
+      // Essayer de contacter le serveur d'IA local
+      const response = await fetch('http://localhost:8000/health', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(3000) // Timeout de 3 secondes
       });
       
-      if (ollamaAvailable.ok) {
-        console.log("Service Ollama détecté à http://localhost:11434");
-        localStorage.setItem('aiServiceType', 'local');
-        localStorage.setItem('localAIUrl', 'http://localhost:11434');
-        localStorage.setItem('localProvider', 'ollama');
-        return { available: true, url: 'http://localhost:11434', provider: 'ollama' };
+      if (response.ok) {
+        const data = await response.json();
+        this._localAIAvailable = true;
+        return { available: true, message: data.status || "Service disponible" };
+      } else {
+        this._localAIAvailable = false;
+        return { available: false, message: "Service indisponible" };
       }
-    } catch (e) {
-      console.log("Ollama non détecté:", e instanceof Error ? e.message : String(e));
+    } catch (error) {
+      this._localAIAvailable = false;
+      const message = error instanceof Error ? error.message : "Erreur inconnue";
+      return { available: false, message };
     }
-    
-    // Teste ensuite le serveur Python local
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000); // Timeout après 2 secondes
-    
-    const localBaseUrls = [
-      'http://localhost:8000',
-      'http://127.0.0.1:8000',
-      // Ajoutez d'autres ports potentiels si nécessaire
-    ];
-    
-    let localAIAvailable = false;
-    let localAIUrl = '';
-    
-    for (const url of localBaseUrls) {
-      try {
-        console.log(`Tentative de connexion à ${url}/health...`);
-        const response = await fetch(`${url}/health`, {
-          method: 'GET',
-          signal: controller.signal
-        });
-        
-        if (response.ok) {
-          localAIAvailable = true;
-          localAIUrl = url;
-          console.log(`Service d'IA local détecté: ${url}`);
-          break;
-        }
-      } catch (e) {
-        console.log(`Échec de connexion à ${url}: ${e instanceof Error ? e.message : String(e)}`);
-        // Ignore les erreurs et continue avec l'URL suivante
-        continue;
-      }
-    }
-    
-    clearTimeout(timeoutId);
-    
-    if (localAIAvailable) {
-      console.log("Service d'IA Python local détecté:", localAIUrl);
-      localStorage.setItem('aiServiceType', 'local');
-      localStorage.setItem('localAIUrl', localAIUrl);
-      localStorage.setItem('localProvider', 'python');
-      return { available: true, url: localAIUrl, provider: 'python' };
-    } else {
-      console.log("Aucun service d'IA local détecté, utilisation du service cloud");
-      localStorage.setItem('aiServiceType', 'cloud');
-      localStorage.removeItem('localAIUrl');
-      return { available: false, url: null };
-    }
-  } catch (error) {
-    console.error("Erreur lors de la détection du service d'IA local:", error);
-    localStorage.setItem('aiServiceType', 'cloud');
-    return { available: false, url: null };
   }
+}
+
+// Singleton pour l'état de l'application
+export const APP_STATE = new AppState();
+
+// Initialiser la référence dans sessionManager pour éviter la dépendance circulaire
+initializeAppState({
+  isOfflineMode: APP_STATE.isOfflineMode,
+  setOfflineMode: (value) => APP_STATE.setOfflineMode(value),
+  logSupabaseError: (error) => APP_STATE.logSupabaseError(error)
+});
+
+/**
+ * Fonction pour détecter le service d'IA local
+ * Exportée pour être facilement utilisable ailleurs
+ */
+export const detectLocalAIService = async () => {
+  return APP_STATE.detectLocalAIService();
 };
