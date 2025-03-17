@@ -1,5 +1,5 @@
 
-import { isLovableEnvironment, isNetlifyEnvironment } from './environmentDetection';
+import { isLovableEnvironment } from './environmentDetection';
 
 /**
  * Retourne l'URL de base de l'API en fonction de l'environnement
@@ -16,11 +16,6 @@ export function getApiBaseUrl(): string {
   // En environnement de développement
   if (import.meta.env.DEV) {
     return 'http://localhost:8000';
-  }
-  
-  // En environnement Netlify, utiliser les fonctions Netlify
-  if (isNetlifyEnvironment()) {
-    return '/.netlify/functions';
   }
   
   // En environnement Lovable, utiliser une API cloud
@@ -69,7 +64,7 @@ export function checkUrlAndSetCloudMode(): void {
   }
   
   // Vérifier également si nous sommes dans un environnement qui nécessite le mode cloud
-  if (isLovableEnvironment() || isNetlifyEnvironment()) {
+  if (isLovableEnvironment()) {
     forceCloudMode();
     console.log('Mode cloud forcé par l\'environnement');
   }
@@ -87,8 +82,7 @@ export function initializeCloudMode(): void {
     
     // Vérifier explicitement le hostname
     if (window.location.hostname.includes('lovable') || 
-        window.location.hostname.includes('preview') || 
-        window.location.hostname.includes('netlify')) {
+        window.location.hostname.includes('preview')) {
       console.log('Environnement de prévisualisation détecté, activation du mode cloud');
       forceCloudMode();
     }

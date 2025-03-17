@@ -2,7 +2,6 @@
 // Import functions from the new module structure
 import {
   isLovableEnvironment as isLovableEnv,
-  isNetlifyEnvironment as isNetlifyEnv,
   isProduction as isProd,
   isDevelopment as isDev,
   getAllUrlParams as getUrlParams,
@@ -33,14 +32,6 @@ export function isDevelopment(): boolean {
  */
 export function isLovableEnvironment(): boolean {
   return isLovableEnv();
-}
-
-/**
- * Vérifie si l'application est dans l'environnement Netlify
- * @deprecated Utilisez import { isNetlifyEnvironment } from '@/utils/environment' à la place
- */
-export function isNetlifyEnvironment(): boolean {
-  return isNetlifyEnv();
 }
 
 /**

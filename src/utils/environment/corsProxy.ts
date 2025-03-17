@@ -9,7 +9,6 @@ export function needsCorsProxy(): boolean {
   
   return window.location.hostname.includes('lovable') || 
          window.location.hostname.includes('preview') ||
-         window.location.hostname.includes('netlify') ||
          import.meta.env.VITE_CORS_PROXY === 'true';
 }
 

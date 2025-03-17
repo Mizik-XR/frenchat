@@ -20,22 +20,6 @@ export const isDevelopment = (): boolean => {
 };
 
 /**
- * Détecte si l'application s'exécute sur une plateforme Netlify
- */
-export const isNetlifyEnvironment = (): boolean => {
-  if (typeof process !== 'undefined') {
-    return !!process.env.NETLIFY;
-  }
-  
-  // Vérifier si on est sur le domaine Netlify
-  if (typeof window !== 'undefined') {
-    return window.location.hostname.includes('netlify.app');
-  }
-  
-  return false;
-};
-
-/**
  * Détecte si l'application s'exécute sur Lovable
  */
 export const isLovableEnvironment = (): boolean => {

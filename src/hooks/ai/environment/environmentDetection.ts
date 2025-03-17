@@ -1,5 +1,5 @@
 
-import { isLovableEnvironment, isNetlifyEnvironment, isCloudMode } from '@/utils/environment/environmentDetection';
+import { isLovableEnvironment, isCloudMode } from '@/utils/environment/environmentDetection';
 
 /**
  * Détecte si le mode cloud est forcé
@@ -9,12 +9,6 @@ export function isCloudModeForced(): boolean {
   // Dans un environnement Lovable, on préfère toujours utiliser le mode cloud
   if (isLovableEnvironment()) {
     console.log("Environnement Lovable détecté, mode cloud forcé");
-    return true;
-  }
-  
-  // Dans un environnement de production Netlify, on préfère toujours utiliser les fonctions Netlify
-  if (isNetlifyEnvironment() && import.meta.env.VITE_ALLOW_LOCAL_AI !== 'true') {
-    console.log("Environnement Netlify détecté, mode cloud forcé");
     return true;
   }
   
@@ -70,7 +64,7 @@ export function isLocalAIAllowed(): boolean {
   
   // Vérifier la variable d'environnement pour autoriser explicitement l'IA locale
   const allowLocalAI = import.meta.env.VITE_ALLOW_LOCAL_AI === 'true' || 
-                       !isNetlifyEnvironment(); // En local (hors Netlify), c'est toujours autorisé
+                       import.meta.env.DEV; // En développement local, c'est toujours autorisé
   
   console.log("IA locale " + (allowLocalAI ? "autorisée" : "non autorisée") + " dans cet environnement");
   return allowLocalAI;
