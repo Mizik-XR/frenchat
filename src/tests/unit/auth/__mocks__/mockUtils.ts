@@ -5,6 +5,28 @@
 
 export function createMockFunction<T, R>(implementation?: (...args: T[]) => R) {
   const mock = jest.fn(implementation || (() => undefined as unknown as R));
+  
+  // Ajouter manuellement les méthodes mock requises
+  mock.mockResolvedValue = (value: R) => {
+    mock.mockImplementation(() => Promise.resolve(value));
+    return mock;
+  };
+  
+  mock.mockImplementation = (fn: (...args: T[]) => R) => {
+    jest.fn().mockImplementation(fn);
+    return mock;
+  };
+  
+  mock.mockResolvedValueOnce = (value: R) => {
+    mock.mockImplementationOnce(() => Promise.resolve(value));
+    return mock;
+  };
+  
+  mock.mockRejectedValue = (reason: any) => {
+    mock.mockImplementation(() => Promise.reject(reason));
+    return mock;
+  };
+  
   return mock;
 }
 

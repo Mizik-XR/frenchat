@@ -1,10 +1,11 @@
+
 // Importer les dépendances nécessaires
 import { React, useEffect, useState } from "@/core/ReactInstance";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Logo } from "@/components/ui/logo";
 import { supabase } from "@/integrations/supabase/client";
-import { handleAuthChange } from "@/hooks/auth/authStateChangeHandlers";
+import { handleAuthStateChange } from "@/hooks/auth/authStateChangeHandlers";
 
 // Définir le type pour les états de l'URL
 interface LocationState {
@@ -90,7 +91,7 @@ const Auth: React.FC = () => {
         // Rediriger vers la page de configuration après l'inscription
         navigate("/config");
       }
-      await handleAuthChange(event, session, setLoading, () => {}, () => {});
+      await handleAuthStateChange(event, session, setLoading, () => {}, () => {});
     };
 
     supabase.auth.onAuthStateChange(handleAuthState);
