@@ -3,7 +3,7 @@ import { useContext } from "react";
 import { User } from "@supabase/supabase-js";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
-import { createContextSafely } from "@/utils/react/createContextSafely";
+import { createContextSafely, getContextValue } from "@/utils/react/createContextSafely";
 
 interface AuthContextType {
   user: User | null;
@@ -37,11 +37,11 @@ export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
       console.error("useAuth doit être utilisé à l'intérieur d'un AuthProvider");
-      return AuthContext._currentValue;
+      return getContextValue(AuthContext);
     }
     return context;
   } catch (error) {
     console.error("Erreur lors de l'utilisation du contexte Auth:", error);
-    return AuthContext._currentValue;
+    return getContextValue(AuthContext);
   }
 };

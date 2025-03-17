@@ -1,6 +1,7 @@
 
-import { useState } from "react";
-import { createContextSafely } from "@/utils/react/createContextSafely";
+import { useState, useContext } from "react";
+import { createContextSafely, getContextValue } from "@/utils/react/createContextSafely";
+import { React } from "@/core/ReactInstance";
 
 interface AIConfigContextType {
   provider: string;
@@ -16,10 +17,11 @@ interface AIConfigContextType {
 const AIConfigContext = createContextSafely<AIConfigContextType | undefined>(undefined);
 
 export const useAIConfigContext = () => {
-  const context = AIConfigContext._currentValue;
+  const context = useContext(AIConfigContext);
   if (!context) {
     console.error("useAIConfigContext must be used within an AIConfigProvider");
-    return {
+    // Utiliser la fonction sécurisée pour obtenir la valeur par défaut
+    return getContextValue(AIConfigContext) || {
       provider: "huggingface",
       modelName: "t5-small",
       testText: "",

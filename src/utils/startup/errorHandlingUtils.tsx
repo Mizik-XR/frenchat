@@ -100,10 +100,12 @@ export const renderFallbackScreen = (rootElement: HTMLElement, message = "Erreur
   }
 };
 
-// Interface pour le type global Window
+// Interface pour le type global Window avec typages corrects
 declare global {
   interface Window {
-    React?: any;
-    ReactDOM?: any;
+    React?: typeof React;
+    ReactDOM?: {
+      render: (element: React.ReactNode, container: Element) => void;
+    };
   }
 }

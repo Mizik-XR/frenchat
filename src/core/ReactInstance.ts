@@ -25,23 +25,10 @@ export { React };
 // Fonctions utilitaires pour faciliter l'utilisation
 export const createContextSafely = <T>(defaultValue: T) => {
   try {
-    if (!React || typeof React.createContext !== 'function') {
-      console.error('React.createContext n\'est pas défini dans ReactInstance.ts');
-      // Fallback vers window.React si disponible
-      if (typeof window !== 'undefined' && window.React && typeof window.React.createContext === 'function') {
-        return window.React.createContext(defaultValue);
-      }
-      throw new Error('Impossible de créer un contexte React');
-    }
     return React.createContext(defaultValue);
   } catch (error) {
     console.error('Erreur lors de la création du contexte React:', error);
-    // Création d'un contexte de secours minimal
-    return {
-      Provider: ({ children }: { children: any }) => children,
-      Consumer: ({ children }: { children: any }) => children(defaultValue),
-      displayName: 'FallbackContext'
-    } as React.Context<T>;
+    return React.createContext(defaultValue);
   }
 };
 

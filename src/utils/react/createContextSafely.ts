@@ -37,37 +37,35 @@ export function createContextSafely<T>(defaultValue: T) {
         return window.React.createContext(defaultValue);
       }
       
-      // Si aucune solution n'est disponible, créer un contexte minimal de secours
-      return createFallbackContext(defaultValue);
+      // Si aucune solution n'est disponible, utiliser un contexte React standard avec des valeurs par défaut
+      // Cela évite les problèmes de typage tout en fournissant un fallback
+      return React.createContext(defaultValue);
     }
     
     return React.createContext(defaultValue);
   } catch (err) {
     console.error('Erreur lors de la création du contexte:', err);
     
-    // En cas d'erreur, utiliser le contexte de secours
-    return createFallbackContext(defaultValue);
+    // En cas d'erreur, utiliser le contexte standard avec une valeur par défaut
+    // pour éviter les problèmes de typage
+    return React.createContext(defaultValue);
   }
 }
 
 /**
- * Crée un contexte minimal de secours en cas d'échec de React.createContext
- * Cela permet d'éviter les erreurs fatales mais avec des fonctionnalités limitées
+ * Fonction pour obtenir la valeur actuelle d'un contexte en toute sécurité
+ * Utile lorsque useContext n'est pas disponible
  */
-function createFallbackContext<T>(defaultValue: T) {
-  // Créer un objet qui imite l'interface d'un contexte React
-  // avec des fonctions Provider et Consumer minimales
-  const context = {
-    Provider: ({ children, value }: { children: React.ReactNode, value: T }) => children,
-    Consumer: ({ children }: { children: (value: T) => React.ReactNode }) => 
-      typeof children === 'function' ? children(defaultValue) : null,
-    displayName: 'FallbackContext',
-    _currentValue: defaultValue,
-    _currentValue2: defaultValue,
-  };
-  
-  console.warn('Utilisation d\'un contexte de secours avec des fonctionnalités limitées');
-  return context as React.Context<T>;
+export function getContextValue<T>(context: React.Context<T>): T {
+  try {
+    // Tenter d'accéder à la valeur actuelle via les propriétés internes
+    // Note: ceci est une implémentation de secours et non recommandée
+    return (context as any)._currentValue || (context as any).defaultValue;
+  } catch (err) {
+    console.error('Erreur lors de l\'accès à la valeur du contexte:', err);
+    // Retourner undefined en cas d'échec
+    return undefined as any;
+  }
 }
 
 /**
@@ -114,7 +112,7 @@ export function createSafeContextHook<T>(
       if (!React || typeof React.useContext !== 'function') {
         console.error(`Erreur critique: React.useContext n'est pas disponible pour ${contextName}`);
         // Retourner une valeur par défaut pour éviter les erreurs
-        return (context as any)._currentValue;
+        return getContextValue(context);
       }
       
       const value = React.useContext(context);
@@ -125,7 +123,7 @@ export function createSafeContextHook<T>(
     } catch (err) {
       console.error(`Erreur lors de l'utilisation du contexte ${contextName}:`, err);
       // Retourner une valeur par défaut pour éviter les erreurs fatales
-      return (context as any)._currentValue;
+      return getContextValue(context);
     }
   };
 }
