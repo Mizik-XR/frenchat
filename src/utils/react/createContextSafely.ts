@@ -7,7 +7,7 @@
  * Il inclut également des vérifications et des messages d'erreur plus clairs.
  */
 
-import { React, createContext } from '@/core/ReactInstance';
+import { React } from '@/core/ReactInstance';
 
 /**
  * Crée un contexte React avec des vérifications de sécurité
@@ -18,7 +18,8 @@ import { React, createContext } from '@/core/ReactInstance';
  * @returns Un objet contenant le contexte et un hook pour l'utiliser
  */
 export function createContextSafely<T>(defaultValue: T, displayName: string) {
-  const Context = createContext<T>(defaultValue);
+  // Utiliser directement React.createContext pour éviter les problèmes d'instance
+  const Context = React.createContext<T>(defaultValue);
   
   // Définir le nom d'affichage pour faciliter le débogage
   Context.displayName = displayName;
@@ -77,7 +78,7 @@ export function getContextValue<T>(context: React.Context<T>, defaultValue: T): 
  * @returns Le contexte React créé avec le displayName défini
  */
 export function createStrictContext<T>(defaultValue: T, contextName: string) {
-  const Context = createContext<T>(defaultValue);
+  const Context = React.createContext<T>(defaultValue);
   Context.displayName = contextName;
   
   return Context;
