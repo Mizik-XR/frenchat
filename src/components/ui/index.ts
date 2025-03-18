@@ -10,7 +10,12 @@
  * import { Button, Card, Dialog } from "@/components/ui";
  */
 
-// Exporter les composants de base
+// Export centralisé des composants UI
+export * from './primitives';
+export * from './composite';
+
+// Pour l'instant, continuer à exporter directement les composants
+// jusqu'à ce qu'ils soient tous migrés vers primitives/ ou composite/
 export { Button, buttonVariants } from './button';
 export { Steps } from './steps';
 export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './accordion';
@@ -56,13 +61,11 @@ export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
 export { Textarea } from './textarea';
 export { ThreeStateToggle } from './ThreeStateToggle';
 export { FrenchTitle } from './FrenchTitle';
-
-// Importer le toast à partir du hook et non du fichier toast
-// Ceci évite la dépendance circulaire qui existait auparavant
-import { toast as toastFunction } from '@/hooks/use-toast';
-export { toastFunction as toast };
-export { Toaster } from './toaster';
-
 export { Toggle, toggleVariants } from './toggle';
 export { ToggleGroup, ToggleGroupItem } from './toggle-group';
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
+
+// Gérer séparément le toast pour éviter la dépendance circulaire
+import { toast as toastFunction } from '@/hooks/use-toast';
+export { toastFunction as toast };
+export { Toaster } from './toaster';
