@@ -10,6 +10,30 @@
 import { React, createContext } from '@/core/ReactInstance';
 
 /**
+ * Fonction de secours pour créer un contexte minimal en cas d'erreur
+ */
+function createFallbackContext<T>(defaultValue: T, displayName: string) {
+  console.warn(`Création d'un contexte de secours pour ${displayName}`);
+  
+  // Créer un objet qui simule un contexte React
+  const fallbackContext = {
+    Provider: ({ children, value }: { children: any, value?: T }) => {
+      // Stocker la dernière valeur fournie
+      (fallbackContext as any)._currentValue = value !== undefined ? value : defaultValue;
+      return children;
+    },
+    Consumer: ({ children }: { children: (value: T) => any }) => {
+      // Utiliser la dernière valeur stockée ou la valeur par défaut
+      return children((fallbackContext as any)._currentValue || defaultValue);
+    },
+    displayName: displayName,
+    _currentValue: defaultValue
+  };
+  
+  return fallbackContext;
+}
+
+/**
  * Crée un contexte React avec des vérifications de sécurité
  * et un hook useContext personnalisé avec vérification intégrée
  * 
@@ -18,12 +42,25 @@ import { React, createContext } from '@/core/ReactInstance';
  * @returns Un objet contenant le contexte et un hook pour l'utiliser
  */
 export function createContextSafely<T>(defaultValue: T, displayName: string) {
-  // Utiliser le createContext importé de ReactInstance pour garantir une seule instance React
-  const Context = createContext<T>(defaultValue);
+  let Context;
   
-  // Définir le nom d'affichage pour faciliter le débogage
-  if (Context) {
-    Context.displayName = displayName;
+  try {
+    // Vérifier si createContext est disponible
+    if (!createContext) {
+      throw new Error('React.createContext n\'est pas disponible');
+    }
+    
+    // Utiliser le createContext importé de ReactInstance
+    Context = createContext<T>(defaultValue);
+    
+    // Définir le nom d'affichage pour faciliter le débogage
+    if (Context) {
+      Context.displayName = displayName;
+    }
+  } catch (error) {
+    console.error(`Erreur lors de la création du contexte ${displayName}:`, error);
+    // En cas d'erreur, utiliser un contexte de secours
+    Context = createFallbackContext<T>(defaultValue, displayName);
   }
   
   /**
@@ -33,8 +70,9 @@ export function createContextSafely<T>(defaultValue: T, displayName: string) {
   const useContext = () => {
     // Vérifier que React est disponible
     if (!React || !React.useContext) {
-      console.error(`React.useContext n'est pas disponible lors de l'utilisation de ${displayName}`);
-      return defaultValue;
+      console.warn(`React.useContext n'est pas disponible lors de l'utilisation de ${displayName}`);
+      // Retourner la valeur par défaut en cas d'erreur
+      return (Context as any)?._currentValue || defaultValue;
     }
     
     try {
@@ -56,7 +94,11 @@ export function createContextSafely<T>(defaultValue: T, displayName: string) {
   
   // Utilitaire pour obtenir la valeur de contexte (pour les tests)
   const getContextValue = () => {
-    return defaultValue;
+    try {
+      return (Context as any)?._currentValue || defaultValue;
+    } catch (e) {
+      return defaultValue;
+    }
   };
   
   // Retourner à la fois le contexte, le hook et la fonction utilitaire
@@ -96,9 +138,16 @@ export function getContextValue<T>(context: React.Context<T>, defaultValue: T): 
  * @returns Le contexte React créé avec le displayName défini
  */
 export function createStrictContext<T>(defaultValue: T, contextName: string) {
-  const Context = createContext<T>(defaultValue);
-  if (Context) {
-    Context.displayName = contextName;
+  let Context;
+  
+  try {
+    Context = createContext<T>(defaultValue);
+    if (Context) {
+      Context.displayName = contextName;
+    }
+  } catch (error) {
+    console.error(`Erreur lors de la création du contexte strict ${contextName}:`, error);
+    Context = createFallbackContext<T>(defaultValue, contextName);
   }
   
   return Context;
@@ -112,6 +161,7 @@ export function createStrictContext<T>(defaultValue: T, contextName: string) {
  */
 export function validateContextHook<T>(context: T | undefined, contextName: string): asserts context is T {
   if (context === undefined) {
+    console.error(`Le hook ${contextName} doit être utilisé dans un ${contextName}Provider`);
     throw new Error(`Le hook ${contextName} doit être utilisé dans un ${contextName}Provider`);
   }
 }
