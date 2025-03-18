@@ -1,7 +1,7 @@
 
 /**
- * Scanner de fichiers pour l'analyse du projet
- * Gère le parcours récursif des répertoires et la recherche de fichiers
+ * Scanner de fichiers pour l'analyse des dépendances
+ * Utilise l'analyseur AST au lieu d'expressions régulières
  */
 
 const fs = require('fs');
@@ -9,80 +9,134 @@ const path = require('path');
 const chalk = require('chalk');
 const { analyzeWithAST } = require('./ast-analyzer');
 
-// Répertoires à ignorer
-const IGNORED_DIRS = ['node_modules', 'dist', 'build', '.git', 'coverage'];
-
 // Extensions à analyser
-const EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx'];
+const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx'];
+
+// Répertoires à ignorer
+const IGNORED_DIRS = ['node_modules', 'dist', 'build', '.git', '.vscode', 'coverage'];
 
 /**
- * Vérifie si un fichier doit être analysé en fonction de son extension
- * @param {string} filePath - Chemin du fichier
- * @returns {boolean} true si le fichier doit être analysé
+ * Vérifie si un chemin est un fichier avec une extension valide
+ * @param {string} filePath - Chemin du fichier à vérifier
+ * @returns {boolean} True si c'est un fichier valide pour l'analyse
  */
-function shouldAnalyzeFile(filePath) {
-  const ext = path.extname(filePath).toLowerCase();
-  return EXTENSIONS.includes(ext);
+function isValidFile(filePath) {
+  try {
+    const stats = fs.statSync(filePath);
+    if (!stats.isFile()) return false;
+    
+    const ext = path.extname(filePath);
+    return EXTENSIONS.includes(ext);
+  } catch (err) {
+    return false;
+  }
 }
 
 /**
- * Scanne récursivement un répertoire et analyse les fichiers correspondants
- * @param {string} directory - Répertoire à scanner
- * @param {Object} options - Options de scan
- * @returns {Object} Résultats du scan
+ * Résout un chemin d'importation relatif au fichier source
+ * @param {string} sourcePath - Chemin du fichier source
+ * @param {string} importPath - Chemin d'importation à résoudre
+ * @returns {string|null} Chemin résolu ou null si non résolvable
  */
-function scanDirectory(directory, options = {}) {
-  const results = {
-    filesScanned: 0,
-    filesWithIssues: 0,
-    totalIssues: 0,
-    issues: [],
-    dependencies: new Map()
-  };
+function resolveImportPath(sourcePath, importPath) {
+  const rootDir = process.cwd();
+  
+  if (importPath.startsWith('@/')) {
+    // Alias @ pointe vers src/
+    return path.resolve(rootDir, 'src', importPath.substring(2));
+  }
+  
+  if (importPath.startsWith('.')) {
+    // Chemin relatif
+    const sourceDir = path.dirname(sourcePath);
+    return path.resolve(sourceDir, importPath);
+  }
+  
+  // Import de node_modules, ignoré
+  return null;
+}
 
-  try {
-    const items = fs.readdirSync(directory, { withFileTypes: true });
-    
-    for (const item of items) {
-      const fullPath = path.join(directory, item.name);
+/**
+ * Détermine le chemin complet du fichier à partir d'un import
+ * @param {string} basePath - Chemin du fichier de base
+ * @param {string} importPath - Chemin d'importation
+ * @returns {string|null} Chemin complet résolu ou null
+ */
+function resolveFullFilePath(basePath, importPath) {
+  // Ignorer les imports de packages
+  if (!importPath.startsWith('.') && !importPath.startsWith('@/')) {
+    return null;
+  }
+  
+  // Résoudre le chemin de base de l'import
+  const resolvedPath = resolveImportPath(basePath, importPath);
+  if (!resolvedPath) return null;
+  
+  // Vérifier si le chemin existe directement
+  if (isValidFile(resolvedPath)) {
+    return resolvedPath;
+  }
+  
+  // Essayer d'ajouter des extensions
+  for (const ext of EXTENSIONS) {
+    const pathWithExt = `${resolvedPath}${ext}`;
+    if (isValidFile(pathWithExt)) {
+      return pathWithExt;
+    }
+  }
+  
+  // Essayer avec index.ts/js
+  for (const ext of EXTENSIONS) {
+    const indexPath = path.join(resolvedPath, `index${ext}`);
+    if (isValidFile(indexPath)) {
+      return indexPath;
+    }
+  }
+  
+  // Impossible de résoudre
+  return null;
+}
+
+/**
+ * Parcourt un dossier et analyse les fichiers
+ * @param {string} directory - Répertoire à analyser
+ * @returns {Object} Résultats de l'analyse
+ */
+function scanDirectory(directory) {
+  console.log(chalk.blue(`Analyse du répertoire: ${directory}`));
+  
+  const results = {
+    files: new Set(),
+    dependencies: new Map(),
+    problems: [],
+    totalIssues: 0
+  };
+  
+  function scanDir(dir) {
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
       
-      if (item.isDirectory()) {
-        // Ignorer les répertoires configurés
-        if (!IGNORED_DIRS.includes(item.name)) {
-          // Analyse récursive et fusion des résultats
-          const subResults = scanDirectory(fullPath, options);
-          
-          results.filesScanned += subResults.filesScanned;
-          results.filesWithIssues += subResults.filesWithIssues;
-          results.totalIssues += subResults.totalIssues;
-          results.issues = [...results.issues, ...subResults.issues];
-          
-          // Fusionner les maps de dépendances
-          for (const [key, value] of subResults.dependencies) {
-            results.dependencies.set(key, value);
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        
+        if (entry.isDirectory()) {
+          if (!IGNORED_DIRS.includes(entry.name)) {
+            scanDir(fullPath);
           }
-        }
-      } else if (shouldAnalyzeFile(fullPath)) {
-        // Analyser le fichier individuel
-        const fileResults = analyzeFile(fullPath, options);
-        
-        results.filesScanned++;
-        
-        if (fileResults.issues.length > 0) {
-          results.filesWithIssues++;
-          results.totalIssues += fileResults.issues.length;
-          results.issues = [...results.issues, ...fileResults.issues];
-        }
-        
-        // Ajouter les dépendances du fichier
-        if (fileResults.dependencies) {
-          results.dependencies.set(path.basename(fullPath), fileResults.dependencies);
+        } else if (isValidFile(fullPath)) {
+          analyzeFile(fullPath, results);
         }
       }
+    } catch (err) {
+      console.error(chalk.red(`Erreur lors de l'analyse du dossier ${dir}:`), err.message);
     }
-  } catch (err) {
-    console.error(chalk.red(`Erreur lors de l'analyse du dossier ${directory}: ${err.message}`));
   }
+  
+  // Démarrer l'analyse
+  scanDir(directory);
+  
+  // Compter le nombre total de problèmes
+  results.totalIssues = results.problems.length;
   
   return results;
 }
@@ -90,44 +144,60 @@ function scanDirectory(directory, options = {}) {
 /**
  * Analyse un fichier individuel
  * @param {string} filePath - Chemin du fichier à analyser
- * @param {Object} options - Options d'analyse
- * @returns {Object} Résultats de l'analyse
+ * @param {Object} results - Objet pour collecter les résultats
  */
-function analyzeFile(filePath, options = {}) {
-  const results = {
-    issues: [],
-    dependencies: []
-  };
+function analyzeFile(filePath, results) {
+  if (results.files.has(filePath)) return;
   
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
+    results.files.add(filePath);
     
-    // Analyser avec l'AST
-    const astResults = analyzeWithAST(filePath, content);
+    // Utiliser l'analyseur AST pour extraire les imports et problèmes
+    const { problems, imports } = analyzeWithAST(filePath, content);
     
-    // Transformer les problèmes en issues pour le rapport
-    if (astResults.problems && astResults.problems.length > 0) {
-      results.issues = astResults.problems.map(problem => ({
-        filePath,
-        ...problem,
-        relativePath: path.relative(process.cwd(), filePath)
-      }));
+    // Ajouter les problèmes détectés
+    if (problems.length > 0) {
+      problems.forEach(problem => {
+        const relativePath = path.relative(process.cwd(), filePath);
+        results.problems.push({
+          ...problem,
+          file: relativePath
+        });
+      });
     }
     
-    // Stocker les dépendances pour l'analyse
-    results.dependencies = astResults.imports.map(imp => ({
-      source: imp.source,
-      isRelative: imp.source.startsWith('.') || imp.source.startsWith('@/')
-    }));
+    // Traiter les dépendances
+    const dependencies = [];
+    
+    for (const importData of imports) {
+      const importPath = importData.source;
+      if (importPath.startsWith('.') || importPath.startsWith('@/')) {
+        const resolvedPath = resolveFullFilePath(filePath, importPath);
+        
+        if (resolvedPath) {
+          dependencies.push({
+            source: resolvedPath,
+            isRelative: importPath.startsWith('.')
+          });
+          
+          // Analyser récursivement les dépendances
+          analyzeFile(resolvedPath, results);
+        }
+      }
+    }
+    
+    // Stocker les dépendances
+    results.dependencies.set(filePath, dependencies);
     
   } catch (err) {
-    console.error(chalk.red(`Erreur lors de l'analyse du fichier ${filePath}: ${err.message}`));
+    console.error(chalk.red(`Erreur lors de l'analyse du fichier ${filePath}:`), err.message);
   }
-  
-  return results;
 }
 
 module.exports = {
   scanDirectory,
-  analyzeFile
+  isValidFile,
+  resolveImportPath,
+  resolveFullFilePath
 };
