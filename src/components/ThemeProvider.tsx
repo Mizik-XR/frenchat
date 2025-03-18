@@ -14,3 +14,6 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
     </NextThemesProvider>
   );
 }
+
+// Réexporter l'hook useTheme depuis next-themes
+export { useTheme } from "next-themes";

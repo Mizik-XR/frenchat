@@ -1,6 +1,6 @@
 
-import React from "react"
-import type { ToasterToast } from "@/utils/toast-utils"
+import { React } from "@/core/ReactInstance";
+import type { ToasterToast } from "@/utils/toast-utils";
 
 interface State {
   toasts: ToasterToast[]

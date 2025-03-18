@@ -15,7 +15,32 @@ import { React } from '@/core/ReactInstance';
  * @returns Contexte React typé
  */
 export function createContextSafely<T>(defaultValue: T) {
-  return React.createContext(defaultValue);
+  const context = React.createContext(defaultValue);
+  
+  function useContextSafely() {
+    return React.useContext(context);
+  }
+  
+  return {
+    Provider: context.Provider,
+    useContext: useContextSafely
+  };
+}
+
+/**
+ * Récupère la valeur d'un contexte de manière sécurisée avec une valeur de fallback
+ * @param context Le contexte React à utiliser
+ * @param fallbackValue Valeur à retourner en cas d'erreur
+ * @returns La valeur du contexte ou la valeur de fallback
+ */
+export function getContextValue<T>(context: React.Context<T>, fallbackValue: T): T {
+  try {
+    const value = React.useContext(context);
+    return value !== undefined ? value : fallbackValue;
+  } catch (error) {
+    console.error("Erreur lors de l'accès au contexte:", error);
+    return fallbackValue;
+  }
 }
 
 /**
@@ -101,7 +126,9 @@ export function createStateContext<
     setState: React.Dispatch<React.SetStateAction<State>>
   ) => Actions
 ) {
-  return createContextProvider<Result>((props) => {
+  const context = React.createContext<Result | undefined>(undefined);
+  
+  function Provider({ children }: React.PropsWithChildren<{}>) {
     const [state, setState] = React.useState(defaultState);
     
     const actions = React.useMemo(
@@ -109,9 +136,28 @@ export function createStateContext<
       [state]
     );
     
-    return {
+    const value = {
       state,
       ...actions
     } as Result;
-  });
+    
+    return React.createElement(
+      context.Provider,
+      { value },
+      children
+    );
+  }
+  
+  function useContext() {
+    const ctx = React.useContext(context);
+    if (ctx === undefined) {
+      throw new Error('useStateContext must be used within a Provider');
+    }
+    return ctx;
+  }
+  
+  return {
+    Provider,
+    useContext
+  };
 }
