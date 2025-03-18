@@ -40,6 +40,8 @@ export function createContextSafely<T>(defaultValue: T, displayName: string) {
     try {
       const context = React.useContext(Context);
       
+      // Si le contexte est undefined, c'est probablement parce que le hook est utilisé
+      // en dehors d'un Provider. Retournons la valeur par défaut dans ce cas.
       if (context === undefined) {
         console.warn(`useContext pour ${displayName} utilisé en dehors de son Provider`);
         return defaultValue;

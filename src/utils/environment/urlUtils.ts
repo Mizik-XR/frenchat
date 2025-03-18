@@ -90,3 +90,6 @@ export async function isUrlAccessible(url: string): Promise<boolean> {
 export function buildSupabaseConsoleUrl(projectId: string): string {
   return `https://supabase.com/dashboard/project/${projectId}`;
 }
+
+// Exporter également la fonction isLovableEnvironment pour éviter une dépendance circulaire
+export { isLovableEnvironment };

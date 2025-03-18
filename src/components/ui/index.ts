@@ -56,9 +56,13 @@ export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
 export { Textarea } from './textarea';
 export { ThreeStateToggle } from './ThreeStateToggle';
 export { FrenchTitle } from './FrenchTitle';
-// Importer et exporter le toast d'un fichier toast séparé
-export { toast } from '@/hooks/use-toast';
+
+// Importer le toast à partir du hook et non du fichier toast
+// Ceci évite la dépendance circulaire qui existait auparavant
+import { toast as toastFunction } from '@/hooks/use-toast';
+export { toastFunction as toast };
 export { Toaster } from './toaster';
+
 export { Toggle, toggleVariants } from './toggle';
 export { ToggleGroup, ToggleGroupItem } from './toggle-group';
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';

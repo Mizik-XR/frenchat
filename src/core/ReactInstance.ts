@@ -7,7 +7,16 @@
  */
 
 import * as React from 'react';
-import { createContext, useState, useEffect, useMemo, useCallback } from 'react';
+
+// Importer explicitement les hooks pour les réexporter
+import { 
+  createContext, 
+  useState, 
+  useEffect, 
+  useMemo, 
+  useCallback, 
+  useContext 
+} from 'react';
 
 // Exporter React directement
 export { React };
@@ -18,7 +27,8 @@ export {
   useState,
   useEffect,
   useMemo,
-  useCallback
+  useCallback,
+  useContext
 };
 
 /**

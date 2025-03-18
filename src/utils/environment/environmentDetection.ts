@@ -1,106 +1,64 @@
 
 /**
- * Utilities for environment detection
+ * Utilitaires de détection d'environnement
+ * 
+ * Ce fichier définit les fonctions primaires de détection d'environnement,
+ * qui sont ensuite réexportées par index.ts pour maintenir la compatibilité des API.
  */
 
 /**
- * Détecte si l'application s'exécute en environnement de production
- * @returns true si l'application est en production
+ * Vérifie si l'application est exécutée dans l'environnement Lovable
  */
-export const isProduction = (): boolean => {
-  return import.meta.env.PROD || import.meta.env.MODE === 'production';
-};
-
-/**
- * Détecte si l'application s'exécute en environnement de développement
- * @returns true si l'application est en développement
- */
-export const isDevelopment = (): boolean => {
-  return import.meta.env.DEV || import.meta.env.MODE === 'development';
-};
-
-/**
- * Détecte si l'application s'exécute sur Lovable
- */
-export const isLovableEnvironment = (): boolean => {
+export function isLovableEnvironment(): boolean {
   if (typeof window === 'undefined') return false;
   
-  // Vérifier le hostname
-  const isLovableDomain = 
-    window.location.host.includes('lovable.dev') || 
-    window.location.host.includes('lovable.app') ||
-    window.location.host.includes('lovableproject.com') ||
-    window.location.host.includes('localhost');
-  
-  // Vérifier si nous sommes dans un iframe
-  const isInIframe = window !== window.parent;
-  
-  // Vérifier si un paramètre Lovable est présent
-  const hasLovableParam = 
-    new URLSearchParams(window.location.search).get('lovable') === 'true' ||
-    window.location.search.includes('forceHideBadge=true');
-  
-  // Vérifier si le script gptengineer.js est chargé
-  const isLovableScriptLoaded = 
-    typeof window.gptengineer !== 'undefined' || 
-    document.querySelector('script[src*="gptengineer.js"]') !== null;
-  
-  return isLovableDomain || (isInIframe && hasLovableParam) || isLovableScriptLoaded;
-};
+  return window.location.hostname.includes('lovable') || 
+         window.location.hostname.includes('lovableproject.com') ||
+         window.location.hostname.includes('gpteng');
+}
 
 /**
- * Détecte si l'application fonctionne en mode cloud
+ * Vérifie si l'application est exécutée en mode développement local
  */
-export const isCloudMode = (): boolean => {
-  // Vérifier d'abord si le mode cloud est explicitement forcé par la variable d'environnement
-  if (import.meta.env.VITE_CLOUD_MODE === 'true') {
-    return true;
-  }
+export function isLocalDevelopment(): boolean {
+  if (typeof window === 'undefined') return false;
   
-  // Vérifier si nous sommes dans un environnement de prévisualisation Lovable
-  if (isLovableEnvironment()) {
-    return true;
-  }
-  
-  // Vérifier si le mode cloud est forcé par un paramètre d'URL
-  if (typeof window !== 'undefined') {
-    const forceCloud = new URLSearchParams(window.location.search).get('forceCloud') === 'true';
-    if (forceCloud) {
-      return true;
-    }
-  }
-  
-  // Par défaut, utiliser le stockage local
-  if (typeof window !== 'undefined') {
-    return window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true';
-  }
-  
-  return false;
-};
+  return window.location.hostname === 'localhost' || 
+         window.location.hostname === '127.0.0.1';
+}
 
 /**
- * Retourne toujours false pour indiquer que nous ne sommes pas dans l'environnement Netlify
- * @returns false
+ * Détecte si l'application est en cours d'exécution dans un environnement de prévisualisation
  */
-export const isNetlifyEnvironment = (): boolean => {
-  return false;
-};
+export function isPreviewEnvironment(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  return window.location.hostname.includes('preview') || 
+         isLovableEnvironment();
+}
 
 /**
- * Retourne toujours false pour indiquer que nous ne sommes pas dans l'environnement Vercel
- * @returns false
+ * Vérifie si l'application est exécutée en mode production
  */
-export const isVercelEnvironment = (): boolean => {
-  return false;
-};
+export function isProduction(): boolean {
+  return import.meta.env.PROD === true && !isPreviewEnvironment();
+}
 
-// Déclaration de type pour ajouter la propriété gptengineer à l'objet Window
-declare global {
-  interface Window {
-    gptengineer: any;
-    APP_CONFIG?: {
-      forceCloudMode?: boolean;
-      debugMode?: boolean;
-    };
-  }
+/**
+ * Vérifie si l'application est exécutée en mode développement
+ */
+export function isDevelopment(): boolean {
+  return import.meta.env.DEV === true || !isProduction();
+}
+
+/**
+ * Vérifie si le mode cloud est forcé dans l'application
+ */
+export function isCloudMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  return window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true' ||
+         window.localStorage.getItem('aiServiceType') === 'cloud' ||
+         new URLSearchParams(window.location.search).get('mode') === 'cloud' ||
+         isLovableEnvironment();
 }
