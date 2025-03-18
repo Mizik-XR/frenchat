@@ -66,6 +66,6 @@ export { ToggleGroup, ToggleGroupItem } from './toggle-group';
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
 // Gérer séparément le toast pour éviter la dépendance circulaire
-import { toast as toastFunction } from '@/hooks/use-toast';
+import { toast as toastFunction } from '@/components/ui/use-toast';
 export { toastFunction as toast };
 export { Toaster } from './toaster';
