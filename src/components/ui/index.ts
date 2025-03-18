@@ -3,21 +3,18 @@
  * Fichier d'exportation centralisé pour les composants UI
  * 
  * Ce fichier exporte tous les composants UI à partir d'un seul point d'entrée,
- * ce qui permet d'éviter les dépendances circulaires et d'améliorer l'organisation
- * des imports.
+ * en évitant les dépendances circulaires grâce à une structure optimisée.
  * 
  * Usage:
  * import { Button, Card, Dialog } from "@/components/ui";
  */
 
-// Export centralisé des composants UI
+// Exports depuis primitives/ et composite/
 export * from './primitives';
 export * from './composite';
 
-// Pour l'instant, continuer à exporter directement les composants
-// jusqu'à ce qu'ils soient tous migrés vers primitives/ ou composite/
+// Composants individuels
 export { Button, buttonVariants } from './button';
-export { Steps } from './steps';
 export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './accordion';
 export { Alert, AlertDescription, AlertTitle } from './alert';
 export { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './alert-dialog';
@@ -35,8 +32,7 @@ export { ContextMenu, ContextMenuCheckboxItem, ContextMenuContent, ContextMenuGr
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './dialog';
 export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from './drawer';
 export { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from './dropdown-menu';
-export { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from './form';
-export { useFormField } from './form';
+export { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFormField } from './form';
 export { HoverCard, HoverCardContent, HoverCardTrigger } from './hover-card';
 export { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from './input-otp';
 export { Input } from './input';
@@ -55,6 +51,7 @@ export { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHe
 export { Sidebar, SidebarItem, SidebarSection } from './sidebar';
 export { Skeleton } from './skeleton';
 export { Slider } from './slider';
+export { Steps } from './steps';
 export { Switch } from './switch';
 export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from './table';
 export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
@@ -65,7 +62,7 @@ export { Toggle, toggleVariants } from './toggle';
 export { ToggleGroup, ToggleGroupItem } from './toggle-group';
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
-// Gérer séparément le toast pour éviter la dépendance circulaire
-import { toast as toastFunction } from '@/components/ui/use-toast';
-export { toastFunction as toast };
+// Exporter le toast depuis le fichier use-toast
+import { toast } from '@/components/ui/use-toast';
+export { toast };
 export { Toaster } from './toaster';
