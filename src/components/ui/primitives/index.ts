@@ -6,5 +6,6 @@
  * pour construire des composants plus complexes.
  */
 
-// Pour l'instant, ce fichier est un emplacement pour de futurs composants primitifs
-// Les exports seront ajoutés au fur et à mesure que les composants sont déplacés vers ce dossier
+// Exports directs pour éviter les dépendances circulaires
+export { default as PrimitiveButton } from './PrimitiveButton';
+export { default as PrimitiveCard } from './PrimitiveCard';

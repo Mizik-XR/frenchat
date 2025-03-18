@@ -4,14 +4,7 @@
  * 
  * Ce fichier exporte tous les composants UI à partir d'un seul point d'entrée,
  * en évitant les dépendances circulaires grâce à une structure optimisée.
- * 
- * Usage:
- * import { Button, Card, Dialog } from "@/components/ui";
  */
-
-// Exports depuis primitives/ et composite/
-export * from './primitives';
-export * from './composite';
 
 // Composants individuels
 export { Button, buttonVariants } from './button';
@@ -62,7 +55,11 @@ export { Toggle, toggleVariants } from './toggle';
 export { ToggleGroup, ToggleGroupItem } from './toggle-group';
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
-// Exporter le toast depuis le fichier use-toast
-import { toast } from '@/components/ui/use-toast';
-export { toast };
+// Exporter le toast avec une importation directe pour éviter les dépendances circulaires
+export { toast } from '@/components/ui/use-toast';
 export { Toaster } from './toaster';
+
+// Exports futurs - importés directement pour éviter les dépendances circulaires
+// Ceci remplace l'ancien export qui créait une dépendance circulaire
+export { default as PrimitiveButton } from './primitives/PrimitiveButton';
+export { default as PrimitiveCard } from './primitives/PrimitiveCard';

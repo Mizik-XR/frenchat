@@ -6,5 +6,5 @@
  * de composants primitifs et qui implémentent des fonctionnalités plus complexes.
  */
 
-// Pour l'instant, ce fichier est un emplacement pour de futurs composants composites
-// Les exports seront ajoutés au fur et à mesure que les composants sont déplacés vers ce dossier
+// Pour l'instant, exportations directes pour éviter les dépendances circulaires
+export { default as CompositePanel } from './CompositePanel';
