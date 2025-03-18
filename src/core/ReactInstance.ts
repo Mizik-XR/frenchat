@@ -1,48 +1,44 @@
 
 /**
- * ReactInstance.ts
+ * Ce fichier garantit que nous n'utilisons qu'une seule instance de React dans toute l'application
  * 
- * Ce fichier exporte une instance unique de React à utiliser dans toute l'application.
- * Cela garantit que tous les composants utilisent la même instance de React,
- * évitant ainsi les problèmes de versions multiples qui peuvent survenir avec
- * le code-splitting ou des dépendances circulaires.
+ * Utiliser cette importation au lieu d'importer directement depuis 'react'
+ * aide à éviter les problèmes avec des instances multiples de React.
  */
 
 import * as React from 'react';
+import { createContext, useState, useEffect, useMemo, useCallback } from 'react';
 
-// Exporter l'instance unique de React
+// Exporter React directement
 export { React };
 
-// Fonctions utilitaires pour faciliter l'utilisation
-export const useState = React.useState;
-export const useEffect = React.useEffect;
-export const useContext = React.useContext;
-export const useCallback = React.useCallback;
-export const useMemo = React.useMemo;
-export const useRef = React.useRef;
-export const useLayoutEffect = React.useLayoutEffect;
-export const createContext = React.createContext;
+// Exporter les hooks et autres utilitaires React
+export {
+  createContext,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback
+};
 
-// Vérifier si React est correctement chargé
-export function checkReactInstance() {
-  if (!React || !React.version) {
-    console.error("ERREUR CRITIQUE: React n'est pas correctement chargé");
-    return false;
-  }
-  
-  console.log(`React version ${React.version} chargé correctement`);
-  return true;
+/**
+ * Version de React pour le débogage
+ */
+export const REACT_VERSION = React.version;
+
+/**
+ * Vérifie si l'instance React est correctement initialisée
+ */
+export function isReactInitialized(): boolean {
+  return React != null && typeof React.createElement === 'function';
 }
 
-// Assigner React à la propriété window si elle est définie
-// Cela peut aider à résoudre les problèmes d'instance en production
-if (typeof window !== 'undefined') {
-  window.React = React;
-}
+// Fonctions utilitaires pour vérifier l'état de React
+export const ReactUtils = {
+  version: React.version,
+  isInitialized: isReactInitialized,
+  createElement: React.createElement
+};
 
-// Interface pour le type global Window
-declare global {
-  interface Window {
-    React?: typeof React;
-  }
-}
+// Par défaut, exporter React
+export default React;

@@ -1,5 +1,5 @@
 
-import { React, useState, useEffect } from "@/core/ReactInstance";
+import React, { useState, useEffect } from "react";
 import { createContextSafely } from "@/utils/react/createContextSafely";
 
 type Theme = "dark" | "light" | "system";
@@ -30,7 +30,15 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+    () => {
+      try {
+        return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+      } catch (error) {
+        // En cas d'erreur d'accès au localStorage
+        console.warn("Erreur d'accès au localStorage:", error);
+        return defaultTheme;
+      }
+    }
   );
 
   useEffect(() => {
@@ -52,7 +60,11 @@ export function ThemeProvider({
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
+      try {
+        localStorage.setItem(storageKey, theme);
+      } catch (error) {
+        console.warn("Erreur lors de l'enregistrement du thème:", error);
+      }
       setTheme(theme);
     },
   };

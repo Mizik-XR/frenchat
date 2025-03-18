@@ -49,6 +49,18 @@ export function isDevelopment(): boolean {
 }
 
 /**
+ * Vérifie si le mode cloud est forcé dans l'application
+ */
+export function isCloudMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  return window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true' ||
+         window.localStorage.getItem('aiServiceType') === 'cloud' ||
+         new URLSearchParams(window.location.search).get('mode') === 'cloud' ||
+         isLovableEnvironment();
+}
+
+/**
  * Récupère l'URL de base de l'application
  */
 export function getBaseUrl(): string {
@@ -95,4 +107,3 @@ export function getFormattedUrlParams(): string {
   const search = window.location.search;
   return search || '';
 }
-

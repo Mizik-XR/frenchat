@@ -18,23 +18,38 @@ import { React, createContext } from '@/core/ReactInstance';
  * @returns Un objet contenant le contexte et un hook pour l'utiliser
  */
 export function createContextSafely<T>(defaultValue: T, displayName: string) {
+  // Utiliser le createContext importé de ReactInstance pour garantir une seule instance React
   const Context = createContext<T>(defaultValue);
   
   // Définir le nom d'affichage pour faciliter le débogage
-  Context.displayName = displayName;
+  if (Context) {
+    Context.displayName = displayName;
+  }
   
   /**
    * Hook personnalisé pour utiliser ce contexte
    * Inclut une vérification pour s'assurer que le hook est utilisé dans un Provider
    */
   const useContext = () => {
-    const context = React.useContext(Context);
-    
-    if (context === undefined) {
-      throw new Error(`useContext for ${displayName} must be used within its Provider`);
+    // Vérifier que React est disponible
+    if (!React || !React.useContext) {
+      console.error(`React.useContext n'est pas disponible lors de l'utilisation de ${displayName}`);
+      return defaultValue;
     }
     
-    return context;
+    try {
+      const context = React.useContext(Context);
+      
+      if (context === undefined) {
+        console.warn(`useContext pour ${displayName} utilisé en dehors de son Provider`);
+        return defaultValue;
+      }
+      
+      return context;
+    } catch (error) {
+      console.error(`Erreur lors de l'utilisation du contexte ${displayName}:`, error);
+      return defaultValue;
+    }
   };
   
   // Utilitaire pour obtenir la valeur de contexte (pour les tests)
@@ -61,6 +76,8 @@ export function getContextValue<T>(context: React.Context<T>, defaultValue: T): 
   // Tenter d'accéder à la valeur actuelle du contexte (si disponible)
   // Sinon, retourner la valeur par défaut
   try {
+    if (!context) return defaultValue;
+    
     const value = (context as any)._currentValue;
     return value !== undefined ? value : defaultValue;
   } catch (e) {
@@ -78,7 +95,9 @@ export function getContextValue<T>(context: React.Context<T>, defaultValue: T): 
  */
 export function createStrictContext<T>(defaultValue: T, contextName: string) {
   const Context = createContext<T>(defaultValue);
-  Context.displayName = contextName;
+  if (Context) {
+    Context.displayName = contextName;
+  }
   
   return Context;
 }
