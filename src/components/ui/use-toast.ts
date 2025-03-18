@@ -1,8 +1,3 @@
 
-/**
- * Réexportation du hook use-toast pour maintenir la compatibilité avec les composants UI
- */
-import { useToast, toast } from "@/hooks/use-toast";
-import type { Toast } from "@/utils/toast-utils";
-
-export { useToast, toast, type Toast };
+// Réexportation simple du hook use-toast depuis son emplacement source
+export { useToast, toast, type Toast, type ToastProps, type ToastActionElement } from "@/hooks/use-toast";

@@ -1,26 +1,35 @@
 
-/**
- * Hook principal pour le système de toast
- * Refactorisé pour éliminer les dépendances circulaires
- */
 import { React } from "@/core/ReactInstance";
-import type { Toast, ToasterToast } from "@/utils/toast-utils";
+
+// Types pour le système de toast
+export type ToastProps = {
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: React.ReactElement;
+  variant?: "default" | "destructive";
+  duration?: number;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+};
+
+export type ToastActionElement = React.ReactElement;
+
+export type ToasterToast = ToastProps & {
+  id: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: React.ReactElement;
+};
+
+export type Toast = Omit<ToasterToast, "id">;
 
 // Types d'actions pour le reducer
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-} as const;
-
-// État initial
 const TOAST_LIMIT = 1;
 const TOAST_REMOVE_DELAY = 1000000;
 
 // Génération d'ID unique pour les toasts
+let count = 0;
 function genId() {
-  let count = 0;
   count = (count + 1) % Number.MAX_SAFE_INTEGER;
   return count.toString();
 }
@@ -29,7 +38,7 @@ function genId() {
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
 // Fonction pour ajouter un toast à la file d'attente de suppression
-function addToRemoveQueue(toastId: string, delay: number) {
+function addToRemoveQueue(toastId: string) {
   if (toastTimeouts.has(toastId)) {
     return;
   }
@@ -37,7 +46,7 @@ function addToRemoveQueue(toastId: string, delay: number) {
   const timeout = setTimeout(() => {
     toastTimeouts.delete(toastId);
     dispatch({ type: "REMOVE_TOAST", toastId });
-  }, delay);
+  }, TOAST_REMOVE_DELAY);
 
   toastTimeouts.set(toastId, timeout);
 }
@@ -94,10 +103,10 @@ function reducer(state: State, action: Action): State {
 
       // Effets secondaires
       if (toastId) {
-        addToRemoveQueue(toastId, TOAST_REMOVE_DELAY);
+        addToRemoveQueue(toastId);
       } else {
         state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id, TOAST_REMOVE_DELAY);
+          addToRemoveQueue(toast.id);
         });
       }
 
@@ -147,6 +156,7 @@ interface ToastContextType extends State {
 
 // Création du contexte
 const ToastContext = React.createContext<ToastContextType | undefined>(undefined);
+ToastContext.displayName = "ToastContext";
 
 // Fonction principale pour créer un toast
 function toast({ ...props }: Toast) {
