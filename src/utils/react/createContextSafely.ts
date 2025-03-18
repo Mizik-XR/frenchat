@@ -51,7 +51,7 @@ export function createContextSafely<T>(defaultValue: T, displayName: string) {
     }
     
     // Utiliser le createContext importé de ReactInstance
-    Context = createContext<T>(defaultValue);
+    Context = createContext(defaultValue);
     
     // Définir le nom d'affichage pour faciliter le débogage
     if (Context) {
@@ -60,7 +60,7 @@ export function createContextSafely<T>(defaultValue: T, displayName: string) {
   } catch (error) {
     console.error(`Erreur lors de la création du contexte ${displayName}:`, error);
     // En cas d'erreur, utiliser un contexte de secours
-    Context = createFallbackContext<T>(defaultValue, displayName);
+    Context = createFallbackContext(defaultValue, displayName);
   }
   
   /**
@@ -141,13 +141,13 @@ export function createStrictContext<T>(defaultValue: T, contextName: string) {
   let Context;
   
   try {
-    Context = createContext<T>(defaultValue);
+    Context = createContext(defaultValue);
     if (Context) {
       Context.displayName = contextName;
     }
   } catch (error) {
     console.error(`Erreur lors de la création du contexte strict ${contextName}:`, error);
-    Context = createFallbackContext<T>(defaultValue, contextName);
+    Context = createFallbackContext(defaultValue, contextName);
   }
   
   return Context;

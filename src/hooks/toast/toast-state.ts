@@ -7,7 +7,7 @@ interface State {
 }
 
 export function useToastState(initialState: State) {
-  const [state, setState] = useState<State>(initialState);
+  const [state, setState] = useState(initialState);
 
   // Nous utilisons useCallback pour éviter que l'effet ne soit réexécuté à chaque rendu
   const handleState = useCallback((newState: State) => {
