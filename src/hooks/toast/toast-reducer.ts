@@ -1,80 +1,64 @@
-import type { ToasterToast } from "@/utils/toast-utils"
+
+// Fichier pour regrouper la logique de réduction des toasts
+// Ceci évite d'avoir trop de logique dans le hook use-toast.tsx
+
+import type { ToasterToast } from "@/utils/toast-utils";
 
 interface State {
-  toasts: ToasterToast[]
-}
-
-type ActionType = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
+  toasts: ToasterToast[];
 }
 
 type Action =
   | {
-      type: ActionType["ADD_TOAST"]
-      toast: ToasterToast
+      type: "ADD_TOAST";
+      toast: ToasterToast;
     }
   | {
-      type: ActionType["UPDATE_TOAST"]
-      toast: Partial<ToasterToast>
+      type: "UPDATE_TOAST";
+      toast: Partial<ToasterToast>;
     }
   | {
-      type: ActionType["DISMISS_TOAST"]
-      toastId?: ToasterToast["id"]
+      type: "DISMISS_TOAST";
+      toastId?: ToasterToast["id"];
     }
   | {
-      type: ActionType["REMOVE_TOAST"]
-      toastId?: ToasterToast["id"]
-    }
+      type: "REMOVE_TOAST";
+      toastId?: ToasterToast["id"];
+    };
 
-// Générateur d'ID unique pour les toasts
-let count = 0
+const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
 export function genId() {
-  count = (count + 1) % Number.MAX_SAFE_INTEGER
-  return count.toString()
+  let count = 0;
+  count = (count + 1) % Number.MAX_SAFE_INTEGER;
+  return count.toString();
 }
 
-// Gestion des timeouts pour la suppression automatique des toasts
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
-
-export const addToRemoveQueue = (toastId: string, delay: number, dispatch: (action: Action) => void) => {
+export function addToRemoveQueue(toastId: string, delay: number) {
   if (toastTimeouts.has(toastId)) {
-    return
+    return;
   }
 
   const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId)
-    dispatch({
-      type: "REMOVE_TOAST",
-      toastId: toastId,
-    })
-  }, delay)
+    toastTimeouts.delete(toastId);
+    return { type: "REMOVE_TOAST", toastId } as Action;
+  }, delay);
 
-  toastTimeouts.set(toastId, timeout)
+  toastTimeouts.set(toastId, timeout);
 }
 
-// Reducer pour gérer les états des toasts
-export const reducer = (
-  state: State, 
-  action: Action, 
-  toastRemoveDelay: number,
-  addToQueueFn: (toastId: string, delay: number, dispatch: (action: Action) => void) => void
-): State => {
-  const addToQueue = (toastId: string) => addToQueueFn(toastId, toastRemoveDelay, (action) => {
-    // Cette fonction sera appelée par le timeout
-    // On ne peut pas utiliser dispatch directement car il n'est pas encore défini à ce stade
-    // Nous utilisons donc une fonction qui sera fournie plus tard
-  });
-
+export function reducer(
+  state: State,
+  action: Action,
+  TOAST_REMOVE_DELAY: number,
+  addToQueue: (id: string, delay: number) => void
+): State {
   switch (action.type) {
     case "ADD_TOAST":
       return {
         ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, 1), // TOAST_LIMIT est hardcoded à 1 ici
-      }
+        toasts: [action.toast, ...state.toasts].slice(0, 1), // Limit to 1 toast
+      };
 
     case "UPDATE_TOAST":
       return {
@@ -82,19 +66,18 @@ export const reducer = (
         toasts: state.toasts.map((t) =>
           t.id === action.toast.id ? { ...t, ...action.toast } : t
         ),
-      }
+      };
 
     case "DISMISS_TOAST": {
-      const { toastId } = action
+      const { toastId } = action;
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
+      // Side effects
       if (toastId) {
-        addToQueue(toastId)
+        addToQueue(toastId, TOAST_REMOVE_DELAY);
       } else {
         state.toasts.forEach((toast) => {
-          addToQueue(toast.id)
-        })
+          addToQueue(toast.id, TOAST_REMOVE_DELAY);
+        });
       }
 
       return {
@@ -107,18 +90,18 @@ export const reducer = (
               }
             : t
         ),
-      }
+      };
     }
     case "REMOVE_TOAST":
       if (action.toastId === undefined) {
         return {
           ...state,
           toasts: [],
-        }
+        };
       }
       return {
         ...state,
         toasts: state.toasts.filter((t) => t.id !== action.toastId),
-      }
+      };
   }
 }

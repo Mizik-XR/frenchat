@@ -1,15 +1,16 @@
 
+// Fichier pour gérer l'état des toasts
+// Extrait depuis use-toast.tsx pour simplifier le code
+
 import { React } from "@/core/ReactInstance";
-import type { ToasterToast } from "@/utils/toast-utils";
 
 interface State {
-  toasts: ToasterToast[]
+  toasts: any[];
 }
 
 export function useToastState(initialState: State) {
-  const [state, setState] = React.useState(initialState);
+  const [state, setState] = React.useState<State>(initialState);
 
-  // Nous utilisons useCallback pour éviter que l'effet ne soit réexécuté à chaque rendu
   const handleState = React.useCallback((newState: State) => {
     setState(newState);
   }, []);

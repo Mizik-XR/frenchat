@@ -56,10 +56,10 @@ export { ToggleGroup, ToggleGroupItem } from './toggle-group';
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
 // Exporter le toast avec une importation directe pour éviter les dépendances circulaires
-export { toast } from '@/components/ui/use-toast';
+export { toast } from '@/hooks/use-toast';
 export { Toaster } from './toaster';
 
-// Exports futurs - importés directement pour éviter les dépendances circulaires
-// Ceci remplace l'ancien export qui créait une dépendance circulaire
+// Exports des composants primitifs et composites
 export { default as PrimitiveButton } from './primitives/PrimitiveButton';
 export { default as PrimitiveCard } from './primitives/PrimitiveCard';
+export { default as CompositePanel } from './composite/CompositePanel';
