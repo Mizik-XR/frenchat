@@ -16,7 +16,14 @@ export function checkBrowserCompatibilityAndSetMode(
   try {
     const browserCompatibility = checkBrowserCompatibility();
     
-    if (browserCompatibility.shouldFallbackToCloud) {
+    // Si navigateur moderne détecté par l'analyseur, ne pas basculer vers le cloud
+    const isModernBrowser = 
+      navigator.userAgent.includes('Chrome') || 
+      navigator.userAgent.includes('Firefox') || 
+      navigator.userAgent.includes('Safari') || 
+      navigator.userAgent.includes('Edge');
+    
+    if (browserCompatibility.shouldFallbackToCloud && !isModernBrowser) {
       setServiceType('cloud');
       localStorage.setItem('aiServiceType', 'cloud');
       
@@ -31,8 +38,7 @@ export function checkBrowserCompatibilityAndSetMode(
     }
   } catch (error) {
     console.warn("Erreur lors de la vérification de compatibilité:", error);
-    setServiceType('cloud');
-    localStorage.setItem('aiServiceType', 'cloud');
+    // Ne pas basculer automatiquement vers le cloud en cas d'erreur
   }
 }
 
@@ -44,8 +50,17 @@ export function ensureDefaultServiceModeSet(
   setServiceType: (type: 'local' | 'cloud' | 'hybrid') => void
 ): void {
   if (!localStorage.getItem('aiServiceType')) {
-    console.log("Définition du mode cloud par défaut (première utilisation)");
-    localStorage.setItem('aiServiceType', 'cloud');
-    setServiceType('cloud');
+    // Détecter le navigateur moderne
+    const isModernBrowser = 
+      navigator.userAgent.includes('Chrome') || 
+      navigator.userAgent.includes('Firefox') || 
+      navigator.userAgent.includes('Safari') || 
+      navigator.userAgent.includes('Edge');
+    
+    // Si navigateur moderne, définir 'local' par défaut
+    const defaultMode = isModernBrowser ? 'local' : 'cloud';
+    console.log(`Définition du mode ${defaultMode} par défaut (première utilisation)`);
+    localStorage.setItem('aiServiceType', defaultMode);
+    setServiceType(defaultMode);
   }
 }

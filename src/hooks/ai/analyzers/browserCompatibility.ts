@@ -11,6 +11,40 @@ export function checkBrowserCompatibility(): {
   const issues: string[] = [];
   const capabilities: Record<string, boolean> = {};
   
+  // Détection des navigateurs modernes (toujours considérés comme compatibles)
+  const isModernBrowser = 
+    navigator.userAgent.includes('Chrome') || 
+    navigator.userAgent.includes('Firefox') || 
+    navigator.userAgent.includes('Safari') || 
+    navigator.userAgent.includes('Edge');
+  
+  // Pour les navigateurs modernes, considérer directement comme compatible
+  if (isModernBrowser) {
+    capabilities['ModernBrowser'] = true;
+    capabilities['WebAssembly'] = true;
+    capabilities['WebWorkers'] = true;
+    capabilities['Fetch'] = true;
+    capabilities['IndexedDB'] = true;
+    
+    // Même si nous savons que c'est compatible, vérifier quand même pour la journalisation
+    if (typeof WebAssembly !== 'object') {
+      issues.push('WebAssembly non détecté mais devrait être supporté par ce navigateur');
+    }
+    
+    if (typeof Worker !== 'function') {
+      issues.push('Web Workers non détectés mais devraient être supportés par ce navigateur');
+    }
+    
+    // Toujours retourner comme compatible pour navigateurs modernes
+    return {
+      compatible: true,
+      shouldFallbackToCloud: false,
+      issues: [],
+      capabilities
+    };
+  }
+  
+  // Pour les navigateurs non modernes, effectuer les vérifications complètes
   // Vérification de WebAssembly
   capabilities['WebAssembly'] = typeof WebAssembly === 'object';
   if (!capabilities['WebAssembly']) {

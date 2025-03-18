@@ -9,12 +9,14 @@
 // Ce fichier doit être importé en premier dans main.tsx
 if (typeof window !== 'undefined') {
   // S'assurer que nous avons un point de démarrage propre
+  // @ts-ignore - Ignorer l'erreur TypeScript pour cette propriété globale
   window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || {};
 }
 
 // Définir un objet global pour traquer l'application
 // Cela aidera à éviter les problèmes de dépendances circulaires
 if (typeof window !== 'undefined') {
+  // @ts-ignore - Ignorer l'erreur TypeScript pour cette propriété globale
   window.__FILECHAT_APP__ = window.__FILECHAT_APP__ || {
     initialized: false,
     reactInstance: null,
@@ -25,6 +27,7 @@ if (typeof window !== 'undefined') {
   };
   
   // Marquer que la configuration a été chargée
+  // @ts-ignore - Ignorer l'erreur TypeScript pour cette propriété globale
   window.__FILECHAT_APP__.initialized = true;
 }
 
