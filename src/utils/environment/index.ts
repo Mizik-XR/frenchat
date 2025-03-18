@@ -1,48 +1,42 @@
 
 /**
- * Point d'entrée pour les utilitaires d'environnement
- * Regroupe et exporte toutes les fonctions des différents modules
+ * Utilitaires de détection d'environnement
  */
 
-// Exporter les fonctions de détection d'environnement
-export {
-  isProduction,
-  isDevelopment,
-  isLovableEnvironment,
-  isCloudMode,
-  isNetlifyEnvironment,
-  isVercelEnvironment
-} from './environmentDetection';
+/**
+ * Vérifie si l'application est exécutée dans l'environnement Lovable
+ */
+export function isLovableEnvironment(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  return window.location.hostname.includes('lovable') || 
+         window.location.hostname.includes('lovableproject.com') ||
+         window.location.hostname.includes('gpteng');
+}
 
-// Exporter les fonctions de gestion d'URL
-export {
-  getBaseUrl,
-  getRedirectUrl,
-  getFormattedUrlParams,
-  getAllUrlParams,
-  getNormalizedCloudModeUrl
-} from './urlUtils';
+/**
+ * Vérifie si l'application est exécutée en mode développement local
+ */
+export function isLocalDevelopment(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  return window.location.hostname === 'localhost' || 
+         window.location.hostname === '127.0.0.1';
+}
 
-// Exporter les fonctions de détection du mode cloud
-export {
-  getApiBaseUrl,
-  isCloudModeInUrl,
-  forceCloudMode,
-  checkUrlAndSetCloudMode,
-  initializeCloudMode
-} from './cloudModeUtils';
+/**
+ * Détecte si l'application est en cours d'exécution dans un environnement de prévisualisation
+ */
+export function isPreviewEnvironment(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  return window.location.hostname.includes('preview') || 
+         isLovableEnvironment();
+}
 
-// Réexporter les fonctions du environmentDetection pour la compatibilité
-export { isCloudModeForced } from '../../hooks/ai/environment/environmentDetection';
-
-// Fonctions utilitaires internes pour la gestion des modes
-export const isClientMode = () => {
-  return typeof window !== 'undefined' && 
-         window.localStorage.getItem('CLIENT_MODE') === 'true';
-};
-
-export const isDebugMode = () => {
-  return import.meta.env.DEV || 
-         (typeof window !== 'undefined' && 
-          window.localStorage.getItem('DEBUG_MODE') === 'true');
-};
+/**
+ * Vérifie si l'application est exécutée en mode production
+ */
+export function isProduction(): boolean {
+  return import.meta.env.PROD === true && !isPreviewEnvironment();
+}

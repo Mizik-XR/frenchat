@@ -2,14 +2,14 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Server, ExternalLink, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { isLovableEnvironment } from "@/utils/environment";
+import { isLovableEnvironment, isPreviewEnvironment } from "@/utils/environment";
 
 interface EnvironmentDetectionProps {
   children: React.ReactNode;
 }
 
 export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ children }) => {
-  const [isPreviewEnvironment, setIsPreviewEnvironment] = useState(false);
+  const [isPreviewEnv, setIsPreviewEnv] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [services, setServices] = useState({
     localAI: false,
@@ -20,13 +20,11 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
 
   // Vérification des URLs comme étant des environnements de prévisualisation
   useEffect(() => {
-    const hostname = window.location.hostname;
-    const isPreview = 
-      hostname.includes('lovableproject.com') || 
-      hostname.includes('preview') || 
-      hostname.includes('localhost');
+    // Utiliser les fonctions d'utilitaire pour détecter l'environnement
+    const isPreview = isPreviewEnvironment();
+    const isLovable = isLovableEnvironment();
     
-    setIsPreviewEnvironment(isPreview);
+    setIsPreviewEnv(isPreview);
     
     // Vérifier si mode cloud est forcé par un paramètre d'URL ou une variable d'environnement
     const urlParams = new URLSearchParams(window.location.search);
@@ -40,10 +38,10 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
       return;
     }
 
-    // Ne rien vérifier en environnement de prévisualisation sauf si on est sur localhost
-    if (isPreview && hostname !== 'localhost') {
+    // Ne rien vérifier en environnement de prévisualisation
+    if (isPreview) {
       // Si Lovable, forcer le mode cloud
-      if (isLovableEnvironment()) {
+      if (isLovable) {
         window.localStorage.setItem('FORCE_CLOUD_MODE', 'true');
         window.localStorage.setItem('aiServiceType', 'cloud');
         console.log("Environnement Lovable détecté, mode cloud activé automatiquement.");
@@ -52,7 +50,7 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
     }
     
     // Pour localhost, vérifier mais de façon non-bloquante et très différée
-    if (hostname === 'localhost') {
+    if (window.location.hostname === 'localhost') {
       console.log("Planification d'une vérification différée des services locaux...");
       const timer = setTimeout(() => {
         // Seulement vérifier si l'utilisateur est sur le chat (pas en auth ou accueil)
@@ -122,7 +120,7 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
   };
 
   // Ne jamais bloquer le rendu de l'application
-  if (isPreviewEnvironment || !checkAttempted || !showAlert) {
+  if (isPreviewEnv || !checkAttempted || !showAlert) {
     return <>{children}</>;
   }
 
