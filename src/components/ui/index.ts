@@ -55,8 +55,8 @@ export { Toggle, toggleVariants } from './toggle';
 export { ToggleGroup, ToggleGroupItem } from './toggle-group';
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
-// Exporter le toast avec une importation directe pour éviter les dépendances circulaires
-export { toast } from '@/hooks/use-toast';
+// Exporter le toast en utilisant l'importation depuis le hook principal
+export { toast, useToast } from '@/hooks/use-toast';
 export { Toaster } from './toaster';
 
 // Exports des composants primitifs et composites

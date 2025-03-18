@@ -1,7 +1,7 @@
 
-// Types pour le système de toast
-// En les séparant, on évite les dépendances circulaires
-
+/**
+ * Types pour le système de toast
+ */
 import { React } from "@/core/ReactInstance";
 
 export type ToastProps = {
