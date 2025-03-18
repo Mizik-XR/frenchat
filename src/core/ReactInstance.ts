@@ -1,110 +1,58 @@
 
 /**
- * Ce fichier garantit que nous n'utilisons qu'une seule instance de React dans toute l'application
+ * Instance centralisée de React pour éviter les problèmes d'instances multiples
  * 
  * Utiliser cette importation au lieu d'importer directement depuis 'react'
- * aide à éviter les problèmes avec des instances multiples de React.
+ * pour garantir qu'une seule instance de React est utilisée dans l'application.
  */
+import * as React from 'react';
 
-// Importer React avec un try-catch pour gérer les erreurs d'importation
-let React;
-try {
-  React = require('react');
-  
-  // Si React est chargé mais incomplet, le détecter rapidement
-  if (!React || typeof React.createElement !== 'function' || !React.createContext) {
-    console.error('ERREUR CRITIQUE: Instance React incomplète chargée');
-    // Tentative de récupération en utilisant window.React si disponible
-    if (typeof window !== 'undefined' && window.React) {
-      console.warn('Tentative de récupération avec window.React');
-      React = window.React;
-    }
-  }
-} catch (error) {
-  console.error('ERREUR CRITIQUE: Impossible de charger React', error);
-  // Récupération de secours pour les environnements de prévisualisation
-  if (typeof window !== 'undefined' && window.React) {
-    console.warn('Utilisation de window.React comme solution de secours');
-    React = window.React;
-  } else {
-    // Structure minimale pour éviter les erreurs fatales
-    React = {
-      version: 'fallback',
-      createElement: () => ({}),
-      createContext: (defaultValue) => ({
-        Provider: ({ children }) => children,
-        Consumer: ({ children }) => children,
-        _currentValue: defaultValue
-      }),
-      useContext: () => ({}),
-      useState: () => [null, () => {}],
-      useEffect: () => {},
-      useMemo: (fn) => fn(),
-      useCallback: (fn) => fn
-    };
-    console.error('Mode de secours React activé - fonctionnalités limitées');
-  }
-}
-
-// Importer explicitement les hooks pour les réexporter
-const { 
-  createContext, 
-  useState, 
-  useEffect, 
-  useMemo, 
-  useCallback, 
-  useContext 
-} = React;
-
-// Exporter React directement
-export { React };
-
-// Exporter les hooks et autres utilitaires React
-export {
-  createContext,
+// Fonctions React standard
+export const {
   useState,
   useEffect,
-  useMemo,
+  useContext,
+  useReducer,
   useCallback,
-  useContext
+  useMemo,
+  useRef,
+  useLayoutEffect,
+  useImperativeHandle,
+  useDebugValue,
+  createContext,
+  createElement,
+  Fragment,
+  forwardRef,
+  memo,
+  lazy,
+  Suspense,
+  isValidElement,
+  Children
+} = React;
+
+// Instance de React
+export { React };
+
+/**
+ * Crée un contexte React de manière sécurisée pour éviter les problèmes liés aux différences
+ * d'instances de React entre les composants.
+ * 
+ * @param defaultValue La valeur par défaut du contexte
+ */
+export function createContextSafely<T>(defaultValue: T) {
+  return React.createContext(defaultValue);
+}
+
+/**
+ * Utilitaire pour créer des hooks personnalisés de manière sécurisée
+ * en utilisant l'instance React partagée.
+ */
+export const hooks = {
+  useState: React.useState,
+  useEffect: React.useEffect,
+  useContext: React.useContext,
+  useReducer: React.useReducer,
+  useCallback: React.useCallback,
+  useMemo: React.useMemo,
+  useRef: React.useRef
 };
-
-/**
- * Version de React pour le débogage
- */
-export const REACT_VERSION = React.version;
-
-/**
- * Vérifie si l'instance React est correctement initialisée
- */
-export function isReactInitialized(): boolean {
-  return React != null && typeof React.createElement === 'function' && typeof React.createContext === 'function';
-}
-
-/**
- * Vérifie si nous sommes en mode de secours React
- */
-export function isReactFallbackMode(): boolean {
-  return React.version === 'fallback';
-}
-
-// Fonctions utilitaires pour vérifier l'état de React
-export const ReactUtils = {
-  version: React.version,
-  isInitialized: isReactInitialized,
-  isInFallbackMode: isReactFallbackMode,
-  createElement: React.createElement,
-  getGlobalReactStatus: () => {
-    if (typeof window === 'undefined') return 'SERVER_SIDE';
-    return window.React ? 'GLOBAL_AVAILABLE' : 'NO_GLOBAL';
-  }
-};
-
-// Si React est disponible, le rendre disponible globalement
-if (typeof window !== 'undefined' && isReactInitialized() && !window.React) {
-  console.info('Initialisation de window.React pour compatibilité');
-  window.React = React;
-}
-
-// Par défaut, exporter React
-export default React;

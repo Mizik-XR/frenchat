@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "@/core/ReactInstance"
+import React from "react"
 import type { ToasterToast } from "@/utils/toast-utils"
 
 interface State {
@@ -7,10 +7,10 @@ interface State {
 }
 
 export function useToastState(initialState: State) {
-  const [state, setState] = useState(initialState);
+  const [state, setState] = React.useState(initialState);
 
   // Nous utilisons useCallback pour éviter que l'effet ne soit réexécuté à chaque rendu
-  const handleState = useCallback((newState: State) => {
+  const handleState = React.useCallback((newState: State) => {
     setState(newState);
   }, []);
 
