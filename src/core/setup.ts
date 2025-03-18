@@ -1,29 +1,33 @@
 
 /**
- * Configuration initiale de l'application
- * Ce fichier doit être importé au début de l'application (dans main.tsx)
- * pour s'assurer que l'instance React est correctement configurée.
+ * Configuration fondamentale de React
+ * Ce fichier doit être importé avant toute utilisation de React
+ * pour éviter les problèmes de dépendances circulaires
  */
 
-// Importer l'instance React centralisée
-import { React } from './ReactInstance';
-
-// Vérifier que nous utilisons une instance unique de React
-const reactVersion = React.version;
-
-// Fonction pour vérifier que l'instance React est bien initialisée
-export function verifyReactSetup() {
-  // En développement, afficher des informations de diagnostic
-  if (import.meta.env.DEV) {
-    console.log(`[setup] React v${reactVersion} initialisé correctement`);
-    console.log('[setup] Utilisation de l\'instance React centralisée');
-  }
-  
-  return {
-    reactVersion,
-    isInitialized: true
-  };
+// Configuration globale pour prévenir les problèmes d'instance React
+// Ce fichier doit être importé en premier dans main.tsx
+if (typeof window !== 'undefined') {
+  // S'assurer que nous avons un point de démarrage propre
+  window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || {};
 }
 
-// Exécuter la vérification immédiatement
-verifyReactSetup();
+// Définir un objet global pour traquer l'application
+// Cela aidera à éviter les problèmes de dépendances circulaires
+if (typeof window !== 'undefined') {
+  window.__FILECHAT_APP__ = window.__FILECHAT_APP__ || {
+    initialized: false,
+    reactInstance: null,
+    diagnostics: {
+      setupRun: new Date().toISOString(),
+      errors: []
+    }
+  };
+  
+  // Marquer que la configuration a été chargée
+  window.__FILECHAT_APP__.initialized = true;
+}
+
+// Si jamais nous avons besoin d'exporter quelque chose de ce fichier,
+// assurez-vous qu'il ne crée pas de dépendances circulaires
+export const setupCompleted = true;
