@@ -1,29 +1,8 @@
 
 import { React } from "@/core/ReactInstance";
+import { Toast, ToasterToast, ToastProps } from "@/types/toast-types";
 
-// Types pour le système de toast
-export type ToastProps = {
-  title?: React.ReactNode;
-  description?: React.ReactNode;
-  action?: React.ReactElement;
-  variant?: "default" | "destructive";
-  duration?: number;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-};
-
-export type ToastActionElement = React.ReactElement;
-
-export type ToasterToast = ToastProps & {
-  id: string;
-  title?: React.ReactNode;
-  description?: React.ReactNode;
-  action?: React.ReactElement;
-};
-
-export type Toast = Omit<ToasterToast, "id">;
-
-// Types d'actions pour le reducer
+// Configuration
 const TOAST_LIMIT = 1;
 const TOAST_REMOVE_DELAY = 1000000;
 
@@ -228,5 +207,5 @@ export function useToast() {
   return context;
 }
 
-// Exporter la fonction toast
+// Exporter les fonctions et types nécessaires
 export { toast };
