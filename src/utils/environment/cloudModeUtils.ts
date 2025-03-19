@@ -36,6 +36,30 @@ export function toggleOfflineMode(): boolean {
 }
 
 /**
+ * Obtient l'URL de base de l'API en fonction de l'environnement
+ * @returns L'URL de base de l'API
+ */
+export function getApiBaseUrl(): string {
+  // Vérifier les variables d'environnement
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Dans l'environnement Lovable, utiliser une URL par défaut
+  if (isLovableEnvironment()) {
+    return 'https://api.frenchat.io';
+  }
+  
+  // En développement local, utiliser localhost
+  if (window.location.hostname === 'localhost') {
+    return 'http://localhost:8000';
+  }
+  
+  // Fallback pour la production
+  return 'https://api.frenchat.io';
+}
+
+/**
  * Détecte si Supabase devrait être utilisé dans l'environnement actuel
  * @returns True si Supabase devrait être utilisé
  */

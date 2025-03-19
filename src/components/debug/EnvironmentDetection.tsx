@@ -61,12 +61,18 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
       APP_STATE.setOfflineMode(false);
       localStorage.setItem('OFFLINE_MODE', 'false');
       setOfflineMode(false);
-      toast.success("Mode en ligne forcé activé");
+      toast({
+        title: "Mode en ligne forcé activé",
+        variant: "default"
+      });
     } else if (forceOffline) {
       APP_STATE.setOfflineMode(true);
       localStorage.setItem('OFFLINE_MODE', 'true');
       setOfflineMode(true);
-      toast.success("Mode hors ligne forcé activé");
+      toast({
+        title: "Mode hors ligne forcé activé",
+        variant: "default"
+      });
     } else if (forceCloudMode) {
       console.log("Mode cloud forcé par configuration. Aucune vérification locale ne sera effectuée.");
       window.localStorage.setItem('aiServiceType', 'cloud');
@@ -77,9 +83,15 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
     if (isLovable) {
       const lovableOnlineMode = localStorage.getItem('ENABLE_SUPABASE_IN_LOVABLE') === 'true';
       if (lovableOnlineMode) {
-        toast.info("Mode Supabase activé dans l'environnement Lovable");
+        toast({
+          title: "Mode Supabase activé dans l'environnement Lovable",
+          variant: "default"
+        });
       } else {
-        toast.info("Mode hors ligne actif dans l'environnement Lovable (par défaut)");
+        toast({
+          title: "Mode hors ligne actif dans l'environnement Lovable (par défaut)",
+          variant: "default"
+        });
       }
     }
     

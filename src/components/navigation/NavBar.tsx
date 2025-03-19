@@ -1,10 +1,11 @@
+
 import { React } from "@/core/ReactInstance";
 import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { UserAvatar } from "@/components/auth/UserAvatar";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { isLovableEnvironment } from "@/utils/environment";
 
 export const NavBar = ({ children }: { children?: React.ReactNode }) => {
@@ -50,7 +51,7 @@ export const NavBar = ({ children }: { children?: React.ReactNode }) => {
             <ThemeToggle />
             
             {user && !isLovable && (
-              <UserAvatar user={user} />
+              <UserAvatar />
             )}
             
             {user && !isOfflineMode && (

@@ -4,7 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Cloud, WifiOff } from "lucide-react";
 import useOfflineMode from "@/hooks/useOfflineMode";
 import { Button } from "@/components/ui/button";
-import { Tooltip } from "@/components/ui/tooltip";
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +40,7 @@ export function ConnectionStatusBadge() {
       toast({
         title: "Rechargement nécessaire",
         description: "La page va être rechargée pour appliquer le changement.",
-        variant: "info"
+        variant: "default"
       });
       
       setTimeout(() => {
@@ -78,76 +83,85 @@ export function ConnectionStatusBadge() {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 px-2 gap-1"
-        >
-          {isOffline ? (
-            <>
-              <WifiOff className="h-4 w-4 text-red-500" />
-              <Badge variant="offline" className="ml-1">Hors ligne</Badge>
-            </>
-          ) : (
-            <>
-              <Cloud className="h-4 w-4 text-blue-500" />
-              <Badge variant="online" className="ml-1">En ligne</Badge>
-            </>
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Configuration de connexion</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        
-        <div className="p-2">
-          <div className="flex items-center justify-between mb-2">
-            <span className="mr-2 text-sm">Mode hors ligne</span>
-            <Switch
-              checked={isOffline}
-              onCheckedChange={handleOfflineToggle}
-            />
+    <TooltipProvider>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 px-2 gap-1"
+              >
+                {isOffline ? (
+                  <>
+                    <WifiOff className="h-4 w-4 text-red-500" />
+                    <Badge variant="offline" className="ml-1">Hors ligne</Badge>
+                  </>
+                ) : (
+                  <>
+                    <Cloud className="h-4 w-4 text-blue-500" />
+                    <Badge variant="online" className="ml-1">En ligne</Badge>
+                  </>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Cliquez pour gérer les paramètres de connexion</p>
+            </TooltipContent>
+          </Tooltip>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Configuration de connexion</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          
+          <div className="p-2">
+            <div className="flex items-center justify-between mb-2">
+              <span className="mr-2 text-sm">Mode hors ligne</span>
+              <Switch
+                checked={isOffline}
+                onCheckedChange={handleOfflineToggle}
+              />
+            </div>
+            
+            {isLovableEnvironment && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-muted-foreground pt-2">
+                  Options de l'environnement Lovable
+                </DropdownMenuLabel>
+                
+                <div className="flex items-center justify-between my-2">
+                  <span className="mr-2 text-sm">Activer Supabase</span>
+                  <Switch
+                    checked={lovablePreferences.enableSupabase}
+                    onCheckedChange={handleSupabaseInLovableToggle}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between mb-2">
+                  <span className="mr-2 text-sm">Activer IA locale</span>
+                  <Switch
+                    checked={lovablePreferences.enableLocalAI}
+                    onCheckedChange={handleLocalAIInLovableToggle}
+                  />
+                </div>
+              </>
+            )}
           </div>
           
-          {isLovableEnvironment && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs text-muted-foreground pt-2">
-                Options de l'environnement Lovable
-              </DropdownMenuLabel>
-              
-              <div className="flex items-center justify-between my-2">
-                <span className="mr-2 text-sm">Activer Supabase</span>
-                <Switch
-                  checked={lovablePreferences.enableSupabase}
-                  onCheckedChange={handleSupabaseInLovableToggle}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between mb-2">
-                <span className="mr-2 text-sm">Activer IA locale</span>
-                <Switch
-                  checked={lovablePreferences.enableLocalAI}
-                  onCheckedChange={handleLocalAIInLovableToggle}
-                />
-              </div>
-            </>
-          )}
-        </div>
-        
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuItem
-          onClick={() => window.location.href = isOffline 
-            ? '/?forceOnline=true' 
-            : '/?forceOffline=true'
-          }
-        >
-          Basculer et recharger
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuItem
+            onClick={() => window.location.href = isOffline 
+              ? '/?forceOnline=true' 
+              : '/?forceOffline=true'
+            }
+          >
+            Basculer et recharger
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </TooltipProvider>
   );
 }
