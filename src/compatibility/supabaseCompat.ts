@@ -5,8 +5,8 @@
  * Ce fichier sert de point d'entrée unique pour toutes les fonctionnalités
  * qui étaient auparavant importées de multiples sources, créant des dépendances circulaires.
  * 
- * IMPORTANT: Ce module est une solution temporaire pour stabiliser l'application.
- * Une refactorisation plus propre devra être envisagée ultérieurement.
+ * TODO: Ce module est une solution temporaire pour stabiliser l'application.
+ * Une refactorisation plus propre devra être réalisée selon la feuille de route de restructuration.
  */
 
 import { isLovableEnvironment, isPreviewEnvironment } from '@/utils/environment';
@@ -17,10 +17,26 @@ class CompatAppState {
   private _supabaseErrors: Array<{message: string, timestamp: Date, context?: string}> = [];
   private _lastError: Error | null = null;
   private _localAIAvailable: boolean = false;
-
+  
   // Propriétés
   get isOfflineMode(): boolean {
-    return this._isOfflineMode || isLovableEnvironment();
+    // Ne force plus le mode hors ligne dans l'environnement Lovable
+    // Vérifie si le mode hors ligne explicite est activé via URL ou localStorage
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const forceOnlineMode = urlParams.get('forceOnline') === 'true';
+      
+      if (forceOnlineMode) {
+        return false;
+      }
+      
+      const forceOfflineMode = urlParams.get('forceOffline') === 'true';
+      if (forceOfflineMode) {
+        return true;
+      }
+    }
+    
+    return this._isOfflineMode;
   }
 
   set isOfflineMode(value: boolean) {
@@ -37,8 +53,11 @@ class CompatAppState {
   }
 
   get localAIAvailable(): boolean {
-    // Dans l'environnement Lovable, considérer que les services locaux ne sont jamais disponibles
-    if (isLovableEnvironment()) return false;
+    // Dans l'environnement Lovable, vérifier la configuration plutôt que d'utiliser une valeur fixe
+    if (isLovableEnvironment()) {
+      return typeof window !== 'undefined' && 
+             localStorage.getItem('ENABLE_LOCAL_AI_IN_LOVABLE') === 'true';
+    }
     return this._localAIAvailable;
   }
 
@@ -89,10 +108,18 @@ class CompatAppState {
     console.warn('[Compat] Using detectLocalAIService from compatibility module');
     
     try {
-      // Si on est dans l'environnement Lovable, ne pas tenter de détecter les services locaux
+      // Si on est dans l'environnement Lovable, vérifier la configuration plutôt que d'utiliser une valeur fixe
       if (isLovableEnvironment() || isPreviewEnvironment()) {
-        console.log("[Compat] Environnement de prévisualisation détecté, ignorant la détection de service local");
-        return { available: false, message: "Environnement de prévisualisation" };
+        const lovableAIEnabled = typeof window !== 'undefined' && 
+                                 localStorage.getItem('ENABLE_LOCAL_AI_IN_LOVABLE') === 'true';
+        
+        if (lovableAIEnabled) {
+          console.log("[Compat] Service AI local activé manuellement dans l'environnement Lovable");
+          return { available: true, message: "Service activé manuellement" };
+        } else {
+          console.log("[Compat] Environnement de prévisualisation détecté, ignorant la détection de service local");
+          return { available: false, message: "Environnement de prévisualisation" };
+        }
       }
       
       if (this._isOfflineMode) {
@@ -138,11 +165,41 @@ export const APP_STATE = new CompatAppState();
 export const checkOfflineMode = () => {
   console.warn('[Compat] Using checkOfflineMode from compatibility module');
   
-  // Si on est dans l'environnement Lovable, forcer le mode hors ligne
+  // Vérifier si nous avons un paramètre URL pour forcer le mode en ligne ou hors ligne
+  if (typeof window !== 'undefined') {
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceOnline = urlParams.get('forceOnline') === 'true';
+    const forceOffline = urlParams.get('forceOffline') === 'true';
+    
+    if (forceOnline) {
+      APP_STATE.setOfflineMode(false);
+      localStorage.setItem('FORCE_CLOUD_MODE', 'false');
+      localStorage.setItem('aiServiceType', 'local');
+      return false;
+    }
+    
+    if (forceOffline) {
+      APP_STATE.setOfflineMode(true);
+      localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+      localStorage.setItem('aiServiceType', 'cloud');
+      return true;
+    }
+  }
+  
+  // Si on est dans l'environnement Lovable, vérifier la configuration plutôt que d'utiliser une valeur fixe
   if (isLovableEnvironment()) {
-    localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-    localStorage.setItem('aiServiceType', 'cloud');
-    return true;
+    const lovableOnlineMode = typeof window !== 'undefined' && 
+                              localStorage.getItem('ENABLE_SUPABASE_IN_LOVABLE') === 'true';
+    
+    if (!lovableOnlineMode) {
+      console.log("[Compat] Mode Supabase désactivé dans l'environnement Lovable (par défaut)");
+      localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+      localStorage.setItem('aiServiceType', 'cloud');
+      return true;
+    } else {
+      console.log("[Compat] Mode Supabase activé manuellement dans l'environnement Lovable");
+      return false;
+    }
   }
   
   // Vérifier si nous sommes dans un navigateur
@@ -164,10 +221,18 @@ export const checkOfflineMode = () => {
 };
 
 export const detectLocalAIService = async (): Promise<{ available: boolean; message?: string }> => {
-  // Dans l'environnement Lovable, ne pas tenter de détecter les services locaux
+  // Dans l'environnement Lovable, vérifier la configuration plutôt que d'utiliser une valeur fixe
   if (isLovableEnvironment() || isPreviewEnvironment()) {
-    console.log("[Compat] Environnement de prévisualisation détecté, ignorant la détection de service local");
-    return { available: false, message: "Environnement de prévisualisation" };
+    const lovableAIEnabled = typeof window !== 'undefined' && 
+                             localStorage.getItem('ENABLE_LOCAL_AI_IN_LOVABLE') === 'true';
+    
+    if (lovableAIEnabled) {
+      console.log("[Compat] Service AI local activé manuellement dans l'environnement Lovable");
+      return { available: true, message: "Service activé manuellement" };
+    } else {
+      console.log("[Compat] Environnement de prévisualisation détecté, ignorant la détection de service local");
+      return { available: false, message: "Environnement de prévisualisation" };
+    }
   }
   
   return APP_STATE.detectLocalAIService();

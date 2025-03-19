@@ -1,95 +1,98 @@
 
+/**
+ * Utilitaires pour la gestion du mode cloud/hors ligne
+ * 
+ * Ce fichier fournit des fonctions pour gérer les paramètres de mode cloud et hors ligne
+ * de l'application, y compris la détection et le changement de mode.
+ */
+
 import { isLovableEnvironment } from './environmentDetection';
+import { APP_STATE } from '@/compatibility/supabaseCompat';
 
 /**
- * Retourne l'URL de base de l'API en fonction de l'environnement
- * @returns URL de base de l'API
+ * Active ou désactive le mode hors ligne
+ * @param enable True pour activer le mode hors ligne, False pour le désactiver
  */
-export function getApiBaseUrl(): string {
-  // Utiliser l'URL de l'API définie dans les variables d'environnement
-  const configuredApiUrl = import.meta.env.VITE_API_URL;
-  
-  if (configuredApiUrl) {
-    return configuredApiUrl;
-  }
-  
-  // En environnement de développement
-  if (import.meta.env.DEV) {
-    return 'http://localhost:8000';
-  }
-  
-  // En environnement Lovable, utiliser une API cloud
-  if (isLovableEnvironment()) {
-    return 'https://filechat-api.vercel.app/api';
-  }
-  
-  // Fallback pour les autres environnements
-  return '/api';
+export function setOfflineMode(enable: boolean): void {
+  APP_STATE.setOfflineMode(enable);
 }
 
 /**
- * Vérifie si le mode cloud est explicitement forcé par l'URL
- * @returns true si le mode cloud est forcé par l'URL
+ * Vérifie si le mode hors ligne est actuellement actif
+ * @returns True si le mode hors ligne est actif
  */
-export function isCloudModeInUrl(): boolean {
-  if (typeof window === 'undefined') return false;
-  
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('forceCloud') === 'true' || 
-         urlParams.get('mode') === 'cloud';
+export function isOfflineMode(): boolean {
+  return APP_STATE.isOfflineMode;
 }
 
 /**
- * Force le mode cloud dans le localStorage
+ * Basculer entre les modes en ligne et hors ligne
+ * @returns Le nouveau statut du mode hors ligne (true si activé, false si désactivé)
  */
-export function forceCloudMode(): void {
-  if (typeof window === 'undefined') return;
-  
-  window.localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-  window.localStorage.setItem('aiServiceType', 'cloud');
-  
-  // Log pour le débogage
-  console.log('Mode cloud forcé via forceCloudMode()');
+export function toggleOfflineMode(): boolean {
+  const newState = !APP_STATE.isOfflineMode;
+  APP_STATE.setOfflineMode(newState);
+  return newState;
 }
 
 /**
- * Vérifie les paramètres d'URL et force le mode cloud si nécessaire
+ * Détecte si Supabase devrait être utilisé dans l'environnement actuel
+ * @returns True si Supabase devrait être utilisé
  */
-export function checkUrlAndSetCloudMode(): void {
-  if (typeof window === 'undefined') return;
-  
-  if (isCloudModeInUrl()) {
-    forceCloudMode();
-    console.log('Mode cloud forcé par les paramètres d\'URL');
-  }
-  
-  // Vérifier également si nous sommes dans un environnement qui nécessite le mode cloud
-  if (isLovableEnvironment()) {
-    forceCloudMode();
-    console.log('Mode cloud forcé par l\'environnement');
-  }
-}
-
-/**
- * Initialise les paramètres de mode cloud au démarrage de l'application
- */
-export function initializeCloudMode(): void {
-  checkUrlAndSetCloudMode();
-  
-  // Ajouter un écouteur pour les changements d'URL
+export function shouldUseSupabase(): boolean {
+  // Vérification des paramètres d'URL
   if (typeof window !== 'undefined') {
-    window.addEventListener('popstate', checkUrlAndSetCloudMode);
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceOnline = urlParams.get('forceOnline') === 'true';
     
-    // Vérifier explicitement le hostname
-    if (window.location.hostname.includes('lovable') || 
-        window.location.hostname.includes('preview')) {
-      console.log('Environnement de prévisualisation détecté, activation du mode cloud');
-      forceCloudMode();
+    if (forceOnline) {
+      return true;
+    }
+    
+    const forceOffline = urlParams.get('forceOffline') === 'true';
+    if (forceOffline) {
+      return false;
+    }
+  }
+  
+  // Dans l'environnement Lovable, vérifier le paramètre spécifique
+  if (isLovableEnvironment()) {
+    return typeof window !== 'undefined' && 
+           localStorage.getItem('ENABLE_SUPABASE_IN_LOVABLE') === 'true';
+  }
+  
+  // Dans les autres environnements, utiliser Supabase sauf si le mode hors ligne est actif
+  return !APP_STATE.isOfflineMode;
+}
+
+/**
+ * Enregistre les préférences de mode pour l'environnement Lovable
+ * @param enableSupabase Activer Supabase dans l'environnement Lovable
+ * @param enableLocalAI Activer l'IA locale dans l'environnement Lovable
+ */
+export function setLovableEnvironmentPreferences(enableSupabase: boolean, enableLocalAI: boolean): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('ENABLE_SUPABASE_IN_LOVABLE', enableSupabase ? 'true' : 'false');
+    localStorage.setItem('ENABLE_LOCAL_AI_IN_LOVABLE', enableLocalAI ? 'true' : 'false');
+    
+    // Si nous activons Supabase, désactiver le mode hors ligne
+    if (enableSupabase) {
+      APP_STATE.setOfflineMode(false);
     }
   }
 }
 
-// Exécution automatique au chargement du module
-if (typeof window !== 'undefined') {
-  initializeCloudMode();
+/**
+ * Obtient les préférences actuelles pour l'environnement Lovable
+ * @returns Un objet contenant les préférences pour Supabase et l'IA locale
+ */
+export function getLovableEnvironmentPreferences(): { enableSupabase: boolean, enableLocalAI: boolean } {
+  if (typeof window !== 'undefined') {
+    return {
+      enableSupabase: localStorage.getItem('ENABLE_SUPABASE_IN_LOVABLE') === 'true',
+      enableLocalAI: localStorage.getItem('ENABLE_LOCAL_AI_IN_LOVABLE') === 'true'
+    };
+  }
+  
+  return { enableSupabase: false, enableLocalAI: false };
 }
