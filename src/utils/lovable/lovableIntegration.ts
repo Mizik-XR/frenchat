@@ -29,6 +29,40 @@ export function isLovableLoaded(): boolean {
 }
 
 /**
+ * Force l'injection du script Lovable avec un paramètre de version
+ * pour éviter les problèmes de cache
+ */
+export function forceInjectLovableScript(): void {
+  if (typeof window === 'undefined') return;
+  
+  // Supprimer les anciens scripts s'ils existent
+  const oldScripts = document.querySelectorAll('script[src*="gptengineer.js"]');
+  oldScripts.forEach(script => script.remove());
+  
+  console.info("Réinjection forcée du script Lovable");
+  
+  const script = document.createElement('script');
+  const timestamp = new Date().getTime(); // Ajouter un timestamp pour éviter le cache
+  script.src = `https://cdn.gpteng.co/gptengineer.js?v=${timestamp}`;
+  script.type = 'module';
+  script.async = true;
+  script.dataset.injected = 'true';
+  script.dataset.force = 'true';
+  
+  // Ajouter au début du head pour s'assurer qu'il se charge tôt
+  document.head.insertBefore(script, document.head.firstChild);
+  
+  // Vérifier après un court délai
+  setTimeout(() => {
+    if (!isLovableLoaded()) {
+      console.error("Le script Lovable n'a pas pu être chargé correctement malgré la réinjection forcée.");
+    } else {
+      console.log("Script Lovable réinjecté et chargé avec succès");
+    }
+  }, 2000);
+}
+
+/**
  * Injecte le script Lovable s'il n'est pas déjà présent
  */
 export function injectLovableScript(): void {
@@ -36,7 +70,17 @@ export function injectLovableScript(): void {
   
   // Ne pas réinjecter si déjà présent
   if (document.querySelector('script[src*="gptengineer.js"]')) {
-    console.log("Script Lovable déjà présent, pas besoin de l'injecter");
+    console.log("Script Lovable déjà présent, vérification de son état...");
+    
+    // Vérifier si l'objet global est disponible après un court délai
+    setTimeout(() => {
+      if (!window.GPTEngineer && !window.__GPTEngineer) {
+        console.warn("Script présent mais l'objet global n'est pas disponible. Tentative de réinjection forcée...");
+        forceInjectLovableScript();
+      } else {
+        console.log("Script Lovable et objet global correctement chargés");
+      }
+    }, 1000);
     return;
   }
   
@@ -58,7 +102,7 @@ export function injectLovableScript(): void {
     } else {
       console.log("Script Lovable injecté et chargé avec succès.");
     }
-  }, 1000);
+  }, 1500);
 }
 
 /**
@@ -76,9 +120,11 @@ export function initLovableIntegration(): void {
     setTimeout(() => {
       if (!isLovableLoaded()) {
         console.warn("Script Lovable présent mais pas correctement chargé, tentative de réinjection...");
-        injectLovableScript();
+        forceInjectLovableScript();
+      } else {
+        console.log("Script Lovable correctement chargé et initialisé");
       }
-    }, 500);
+    }, 800);
     return;
   }
 
@@ -87,20 +133,33 @@ export function initLovableIntegration(): void {
   
   // Double vérification après le chargement complet du DOM
   window.addEventListener('DOMContentLoaded', () => {
-    if (!document.querySelector('script[src*="gptengineer.js"]')) {
-      console.warn("Script Lovable non détecté après DOMContentLoaded, réinjection...");
-      injectLovableScript();
-    }
+    setTimeout(() => {
+      if (!isLovableLoaded()) {
+        console.warn("Script Lovable non correctement initialisé après DOMContentLoaded, réinjection...");
+        forceInjectLovableScript();
+      }
+    }, 800);
   });
   
   // Dernière chance: vérifier après le chargement complet de la page
   window.addEventListener('load', () => {
-    if (!document.querySelector('script[src*="gptengineer.js"]')) {
-      console.warn("Script Lovable non détecté après load, réinjection finale...");
-      injectLovableScript();
-    }
+    setTimeout(() => {
+      if (!isLovableLoaded()) {
+        console.warn("Script Lovable non correctement initialisé après load, réinjection finale...");
+        forceInjectLovableScript();
+      }
+    }, 1000);
   });
 }
 
 // Exporter des constantes pour une utilisation facile
 export const LOVABLE_SCRIPT_URL = 'https://cdn.gpteng.co/gptengineer.js';
+
+// Ajouter une fonction globale pour forcer la réinjection
+if (typeof window !== 'undefined') {
+  (window as any).forceLovableReload = () => {
+    console.log("Réinjection forcée du script Lovable demandée par l'utilisateur");
+    forceInjectLovableScript();
+    return "Réinjection forcée du script Lovable terminée. Patientez quelques secondes.";
+  };
+}

@@ -56,6 +56,23 @@ const fixLovableScript = () => {
   return false;
 };
 
+// Fonction pour corriger le cache du navigateur
+const fixCacheIssues = () => {
+  console.log('🔃 Tentative de contournement des problèmes de cache');
+  
+  // Supprimer les scripts existants
+  const existingScripts = document.querySelectorAll('script[src*="gptengineer.js"]');
+  existingScripts.forEach(script => script.remove());
+  
+  // Ajouter un nouveau script avec un paramètre de version pour contourner le cache
+  const script = document.createElement('script');
+  script.src = `https://cdn.gpteng.co/gptengineer.js?v=${new Date().getTime()}`;
+  script.type = 'module';
+  document.head.appendChild(script);
+  
+  return true;
+};
+
 // Exécuter le diagnostic au chargement
 window.addEventListener('DOMContentLoaded', () => {
   console.log('🚀 Diagnostic Lovable démarré');
@@ -65,11 +82,20 @@ window.addEventListener('DOMContentLoaded', () => {
   checkLovableLoaded();
   
   // Tentative de correction automatique
-  const fixed = fixLovableScript();
+  let fixed = fixLovableScript();
   if (fixed) {
     console.log('✅ Correction appliquée. Rafraîchissez la page pour vérifier.');
   } else {
-    console.log('✅ Script Lovable présent, aucune correction nécessaire.');
+    // Si le script est présent mais ne fonctionne pas, essayer de contourner le cache
+    if (!window.GPTEngineer && !window.__GPTEngineer) {
+      console.log('⚠️ Script présent mais non fonctionnel, tentative de contournement du cache');
+      fixed = fixCacheIssues();
+      if (fixed) {
+        console.log('✅ Contournement du cache appliqué. Rafraîchissez la page pour vérifier.');
+      }
+    } else {
+      console.log('✅ Script Lovable présent et fonctionnel.');
+    }
   }
 });
 
@@ -80,7 +106,18 @@ window.runLovableDiagnostic = () => {
   checkDocumentState();
   checkDevMode();
   checkLovableLoaded();
+  
+  // Si le script ne fonctionne pas, essayer de contourner le cache
+  if (!window.GPTEngineer && !window.__GPTEngineer) {
+    return fixCacheIssues();
+  }
   return fixLovableScript();
 };
 
-console.log('🏁 Script de diagnostic Lovable chargé. Utilisez window.runLovableDiagnostic() pour exécuter manuellement.');
+// Ajouter une fonction pour réinjecter le script sans utiliser le cache
+window.forceLovableReload = () => {
+  console.log('⚡ Réinjection forcée du script Lovable');
+  return fixCacheIssues();
+};
+
+console.log('🏁 Script de diagnostic Lovable chargé. Utilisez window.runLovableDiagnostic() pour exécuter manuellement ou window.forceLovableReload() pour forcer la réinjection.');

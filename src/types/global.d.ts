@@ -6,6 +6,7 @@
 declare global {
   interface Window {
     runLovableDiagnostic?: () => string | void;
+    forceLovableReload?: () => string | void;
     __FILECHAT_DEBUG__?: any;
     GPTEngineer?: any;
     __GPTEngineer?: any;

@@ -2,69 +2,87 @@
 #!/bin/bash
 
 echo "==================================================="
-echo "     RÉPARATION INTÉGRATION LOVABLE"
+echo "    SCRIPT DE RÉPARATION DE L'INTÉGRATION LOVABLE"
 echo "==================================================="
 echo
-echo "Cet outil va résoudre les problèmes d'édition Lovable."
+echo "Ce script va tenter de résoudre les problèmes d'intégration de Lovable."
+echo "Assurez-vous que l'application est en cours d'exécution."
+echo
+echo "==================================================="
 echo
 
-echo "[ÉTAPE 1/3] Vérification du fichier index.html..."
-if [ -f "index.html" ]; then
-    echo "[INFO] Vérification de la présence du script gptengineer.js..."
-    if ! grep -q "gptengineer.js" "index.html"; then
-        echo "[ATTENTION] Le script Lovable manque dans index.html, correction..."
-        
-        # Sauvegarde du fichier original
-        cp index.html index.html.backup
-        
-        # Ajouter le script manquant après le premier script détecté
-        awk '/<script /{print; print "    <script src=\"https://cdn.gpteng.co/gptengineer.js\" type=\"module\"></script>"; next}1' index.html > index.html.temp
-        
-        mv index.html.temp index.html
-        echo "[OK] Script gptengineer.js ajouté dans index.html."
-    else
-        echo "[OK] Le script gptengineer.js est déjà présent dans index.html."
-    fi
-else
-    echo "[ERREUR] Le fichier index.html est manquant dans le répertoire racine."
+# Vérifier si le fichier index.html existe
+if [ ! -f "index.html" ]; then
+    echo "[ERREUR] Le fichier index.html n'a pas été trouvé dans le répertoire courant."
+    echo "Veuillez exécuter ce script depuis le répertoire racine du projet."
     exit 1
 fi
-echo
 
-echo "[ÉTAPE 2/3] Reconstruction de l'application..."
-npm run build
-if [ $? -ne 0 ]; then
-    echo "[ERREUR] Reconstruction de l'application échouée."
-    exit 1
+# Vérifier si le script Lovable est présent dans index.html
+echo "[ÉTAPE 1/3] Vérification de la présence du script Lovable dans index.html..."
+if grep -q "gptengineer.js" index.html; then
+    echo "✅ Le script Lovable est bien présent dans index.html."
 else
-    echo "[OK] Application reconstruite avec succès."
-fi
-echo
-
-echo "[ÉTAPE 3/3] Vérification finale..."
-if [ -f "dist/index.html" ]; then
-    echo "[INFO] Vérification de dist/index.html..."
-    if ! grep -q "gptengineer.js" "dist/index.html"; then
-        echo "[ATTENTION] Le script gptengineer.js est absent de dist/index.html."
-        echo "            Application d'une correction manuelle..."
-        cp -f index.html dist/index.html
-        echo "[OK] Correction appliquée."
+    echo "❌ Le script Lovable n'est pas présent dans index.html. Ajout en cours..."
+    
+    # Ajouter le script dans l'en-tête
+    sed -i 's|<head>|<head>\n    <!-- Script requis pour Lovable - NE PAS SUPPRIMER OU MODIFIER -->\n    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>|' index.html
+    
+    if grep -q "gptengineer.js" index.html; then
+        echo "✅ Script Lovable ajouté avec succès dans index.html."
     else
-        echo "[OK] Le fichier dist/index.html contient le script requis."
+        echo "❌ Échec de l'ajout du script Lovable. Veuillez l'ajouter manuellement."
+    fi
+fi
+
+# Vérifier l'initialisation de Lovable dans main.tsx
+echo
+echo "[ÉTAPE 2/3] Vérification de l'initialisation de Lovable dans main.tsx..."
+if [ -f "src/main.tsx" ]; then
+    if grep -q "initLovableIntegration" src/main.tsx; then
+        echo "✅ L'initialisation de Lovable est bien présente dans main.tsx."
+    else
+        echo "⚠️ L'initialisation de Lovable n'a pas été trouvée dans main.tsx."
+        echo "Veuillez vous assurer que 'initLovableIntegration()' est appelé au début de main.tsx."
     fi
 else
-    echo "[INFO] Le dossier dist n'existe pas encore."
+    echo "❌ Le fichier src/main.tsx n'a pas été trouvé."
 fi
-echo
 
+# Vérifier les utilitaires Lovable
+echo
+echo "[ÉTAPE 3/3] Vérification des utilitaires Lovable..."
+if [ -d "src/utils/lovable" ]; then
+    echo "✅ Le répertoire des utilitaires Lovable existe."
+    
+    # Vérifier la présence des fichiers essentiels
+    if [ -f "src/utils/lovable/lovableIntegration.ts" ]; then
+        echo "✅ Le fichier lovableIntegration.ts est présent."
+    else
+        echo "❌ Le fichier lovableIntegration.ts est manquant."
+    fi
+    
+    if [ -f "src/utils/lovable/editingUtils.ts" ]; then
+        echo "✅ Le fichier editingUtils.ts est présent."
+    else
+        echo "❌ Le fichier editingUtils.ts est manquant."
+    fi
+else
+    echo "❌ Le répertoire des utilitaires Lovable est manquant."
+fi
+
+# Conclusion
+echo
 echo "==================================================="
-echo "     RÉPARATION TERMINÉE"
+echo "              VÉRIFICATION TERMINÉE"
 echo "==================================================="
 echo
-echo "Pour appliquer les changements:"
-echo "1. Redémarrez l'application"
-echo "2. Videz le cache de votre navigateur ou utilisez le mode incognito"
+echo "Si des problèmes ont été identifiés, veuillez les corriger."
+echo "Puis redémarrez l'application avec 'npm run dev' ou 'yarn dev'."
 echo
-chmod +x fix-lovable.sh
-echo "Le script est maintenant exécutable avec ./fix-lovable.sh"
-exit 0
+echo "Pour forcer la réinjection du script Lovable dans le navigateur:"
+echo "1. Ouvrez la console développeur (F12)"
+echo "2. Exécutez: window.forceLovableReload()"
+echo "3. Rafraîchissez la page"
+echo
+echo "==================================================="
