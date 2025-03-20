@@ -1,4 +1,3 @@
-
 import { defineConfig, ConfigEnv, PluginOption, UserConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -77,8 +76,13 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     server: {
       host: "::",
       port: 8080,
-      // Éviter les erreurs CORS en développement
-      cors: true,
+      // Configuration CORS améliorée
+      cors: {
+        origin: "*", // En développement uniquement
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+        credentials: true
+      },
       // Déboguer les problèmes du serveur de développement
       hmr: {
         // Utiliser un intervalle de polling plus long en mode récupération

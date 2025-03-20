@@ -32,6 +32,14 @@ try {
           detectSessionInUrl: true,
           storageKey: 'supabase.auth.token'
         },
+        realtime: {
+          params: {
+            eventsPerSecond: 10
+          },
+          timeout: 30000, // 30 secondes
+          reconnectAfterMs: (attempt) => Math.min(attempt * 2000, 60000),
+          maxRetries: 5 // Réduire pour éviter le spam
+        },
         global: {
           fetch: (...args) => {
             // Handle fetch arguments properly
@@ -49,7 +57,7 @@ try {
         }
       }
     );
-    console.log("Client Supabase initialized successfully");
+    console.log("Client Supabase initialized successfully with improved WebSocket configuration");
   }
 } catch (error) {
   console.error("CRITICAL ERROR: Failed to initialize Supabase client:", error);

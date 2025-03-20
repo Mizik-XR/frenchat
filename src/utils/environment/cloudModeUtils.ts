@@ -1,122 +1,51 @@
 
 /**
- * Utilitaires pour la gestion du mode cloud/hors ligne
- * 
- * Ce fichier fournit des fonctions pour gérer les paramètres de mode cloud et hors ligne
- * de l'application, y compris la détection et le changement de mode.
+ * Utilitaires pour la gestion du mode cloud
  */
 
-import { isLovableEnvironment } from './environmentDetection';
-import { APP_STATE } from '@/compatibility/supabaseCompat';
-
-/**
- * Active ou désactive le mode hors ligne
- * @param enable True pour activer le mode hors ligne, False pour le désactiver
- */
-export function setOfflineMode(enable: boolean): void {
-  APP_STATE.setOfflineMode(enable);
+// Vérifier si l'application fonctionne en mode cloud
+export function isCloudMode(): boolean {
+  return import.meta.env.VITE_CLOUD_MODE === 'true' || 
+         Boolean(import.meta.env.VITE_CLOUD_API_URL) ||
+         Boolean(window.localStorage.getItem('CLOUD_MODE')) === true;
 }
 
-/**
- * Vérifie si le mode hors ligne est actuellement actif
- * @returns True si le mode hors ligne est actif
- */
-export function isOfflineMode(): boolean {
-  return APP_STATE.isOfflineMode;
+// Activer ou désactiver le mode cloud
+export function toggleCloudMode(enable: boolean): void {
+  if (enable) {
+    window.localStorage.setItem('CLOUD_MODE', 'true');
+  } else {
+    window.localStorage.removeItem('CLOUD_MODE');
+  }
 }
 
-/**
- * Basculer entre les modes en ligne et hors ligne
- * @returns Le nouveau statut du mode hors ligne (true si activé, false si désactivé)
- */
-export function toggleOfflineMode(): boolean {
-  const newState = !APP_STATE.isOfflineMode;
-  APP_STATE.setOfflineMode(newState);
-  return newState;
-}
-
-/**
- * Obtient l'URL de base de l'API en fonction de l'environnement
- * @returns L'URL de base de l'API
- */
+// Obtenir l'URL de base de l'API cloud
 export function getApiBaseUrl(): string {
-  // Vérifier les variables d'environnement
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  const cloudApiUrl = import.meta.env.VITE_CLOUD_API_URL;
+  if (cloudApiUrl) {
+    return cloudApiUrl;
   }
   
-  // Dans l'environnement Lovable, utiliser une URL par défaut
-  if (isLovableEnvironment()) {
-    return 'https://api.frenchat.io';
-  }
-  
-  // En développement local, utiliser localhost
-  if (window.location.hostname === 'localhost') {
-    return 'http://localhost:8000';
-  }
-  
-  // Fallback pour la production
-  return 'https://api.frenchat.io';
+  // Utiliser une URL par défaut si aucune n'est définie
+  return '/api';
 }
 
-/**
- * Détecte si Supabase devrait être utilisé dans l'environnement actuel
- * @returns True si Supabase devrait être utilisé
- */
-export function shouldUseSupabase(): boolean {
-  // Vérification des paramètres d'URL
-  if (typeof window !== 'undefined') {
-    const urlParams = new URLSearchParams(window.location.search);
-    const forceOnline = urlParams.get('forceOnline') === 'true';
-    
-    if (forceOnline) {
-      return true;
-    }
-    
-    const forceOffline = urlParams.get('forceOffline') === 'true';
-    if (forceOffline) {
-      return false;
-    }
-  }
-  
-  // Dans l'environnement Lovable, vérifier le paramètre spécifique
-  if (isLovableEnvironment()) {
-    return typeof window !== 'undefined' && 
-           localStorage.getItem('ENABLE_SUPABASE_IN_LOVABLE') === 'true';
-  }
-  
-  // Dans les autres environnements, utiliser Supabase sauf si le mode hors ligne est actif
-  return !APP_STATE.isOfflineMode;
+// Créer des en-têtes adaptés au mode cloud
+export function createCloudModeHeaders(): HeadersInit {
+  return {
+    'Content-Type': 'application/json',
+    'X-Cloud-Mode': 'true'
+  };
 }
 
-/**
- * Enregistre les préférences de mode pour l'environnement Lovable
- * @param enableSupabase Activer Supabase dans l'environnement Lovable
- * @param enableLocalAI Activer l'IA locale dans l'environnement Lovable
- */
-export function setLovableEnvironmentPreferences(enableSupabase: boolean, enableLocalAI: boolean): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('ENABLE_SUPABASE_IN_LOVABLE', enableSupabase ? 'true' : 'false');
-    localStorage.setItem('ENABLE_LOCAL_AI_IN_LOVABLE', enableLocalAI ? 'true' : 'false');
-    
-    // Si nous activons Supabase, désactiver le mode hors ligne
-    if (enableSupabase) {
-      APP_STATE.setOfflineMode(false);
-    }
-  }
-}
-
-/**
- * Obtient les préférences actuelles pour l'environnement Lovable
- * @returns Un objet contenant les préférences pour Supabase et l'IA locale
- */
-export function getLovableEnvironmentPreferences(): { enableSupabase: boolean, enableLocalAI: boolean } {
-  if (typeof window !== 'undefined') {
-    return {
-      enableSupabase: localStorage.getItem('ENABLE_SUPABASE_IN_LOVABLE') === 'true',
-      enableLocalAI: localStorage.getItem('ENABLE_LOCAL_AI_IN_LOVABLE') === 'true'
-    };
-  }
+// Déterminer si une requête doit utiliser le mode cloud
+export function shouldUseCloudMode(endpoint: string): boolean {
+  // Exemples d'endpoints qui devraient toujours utiliser le mode cloud
+  const cloudOnlyEndpoints = [
+    '/api/cloud/',
+    '/api/models/',
+    '/api/embeddings/'
+  ];
   
-  return { enableSupabase: false, enableLocalAI: false };
+  return isCloudMode() || cloudOnlyEndpoints.some(e => endpoint.includes(e));
 }
