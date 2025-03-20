@@ -16,13 +16,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
 // Exposer une fonction de diagnostic Lovable globale
 if (typeof window !== 'undefined') {
-  // Définir le type pour éviter l'erreur TypeScript
-  interface WindowWithDiagnostic extends Window {
-    runLovableDiagnostic: () => string | void;
-  }
-  
   // Ajouter la fonction au window
-  (window as WindowWithDiagnostic).runLovableDiagnostic = function() {
+  (window as any).runLovableDiagnostic = function() {
     // Vérifier si le script Lovable est chargé
     const scriptExists = document.querySelector('script[src*="gptengineer.js"]');
     console.log('Script Lovable présent:', Boolean(scriptExists));

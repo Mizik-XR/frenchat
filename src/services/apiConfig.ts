@@ -67,3 +67,31 @@ export function createApiRequestWithTimeout<T>(
     clearTimeout(timeoutId);
   });
 }
+
+// Exporter la fonction isLocalDevelopment pour l'utiliser dans d'autres fichiers
+export { isLocalDevelopment };
+
+// Fonction sécurisée pour les requêtes API
+export async function secureApiRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${endpoint}`;
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...createApiHeaders(),
+        ...(options.headers || {})
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Secure API request failed:', error);
+    throw error;
+  }
+}
