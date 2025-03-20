@@ -36,7 +36,10 @@ export function injectLovableScript(): void {
   if (typeof window === 'undefined') return;
   
   // Ne pas réinjecter si déjà présent
-  if (document.querySelector('script[src*="gptengineer.js"]')) return;
+  if (document.querySelector('script[src*="gptengineer.js"]')) {
+    console.log("Script Lovable déjà présent, pas besoin de l'injecter");
+    return;
+  }
   
   console.info("Injection automatique du script Lovable");
   
@@ -46,13 +49,24 @@ export function injectLovableScript(): void {
   script.async = true;
   script.dataset.injected = 'true';
   
-  // Ajouter avant le premier script existant pour s'assurer qu'il se charge tôt
-  const firstScript = document.querySelector('script');
-  if (firstScript) {
-    firstScript.parentNode?.insertBefore(script, firstScript);
-  } else {
-    document.head.appendChild(script);
-  }
+  // Ajouter au début du head pour s'assurer qu'il se charge tôt
+  document.head.insertBefore(script, document.head.firstChild);
+  
+  // Attendre un court instant puis vérifier si le script est chargé
+  setTimeout(() => {
+    if (!isLovableLoaded()) {
+      console.warn("Le script Lovable n'a pas été correctement chargé après injection.");
+    } else {
+      console.log("Script Lovable injecté et chargé avec succès.");
+      
+      // Tenter d'appliquer un hack pour rafraîchir l'intégration
+      if (window.location.search.indexOf('refresh=true') === -1) {
+        console.log("Ajout du paramètre refresh=true pour forcer le rechargement...");
+        const separator = window.location.search ? '&' : '?';
+        window.location.href = window.location.href + separator + 'refresh=true';
+      }
+    }
+  }, 1000);
 }
 
 /**
@@ -60,33 +74,40 @@ export function injectLovableScript(): void {
  * Cette fonction peut être appelée au démarrage de l'application
  */
 export function initLovableIntegration(): void {
+  console.log("Initialisation de l'intégration Lovable...");
+  
   // Vérifier si le script est déjà présent
   const isScriptPresent = document.querySelector('script[src*="gptengineer.js"]') !== null;
+  
   if (isScriptPresent) {
-    console.log("Script Lovable déjà présent, pas besoin de l'injecter");
+    console.log("Script Lovable déjà présent, vérification de son état...");
+    setTimeout(() => {
+      if (!isLovableLoaded()) {
+        console.warn("Script Lovable présent mais pas correctement chargé, tentative de réinjection...");
+        injectLovableScript();
+      }
+    }, 500);
     return;
   }
 
-  // Injecter le script
-  if (typeof window !== 'undefined') {
-    injectLovableScript();
-    
-    // Double vérification après le chargement complet du DOM
-    window.addEventListener('DOMContentLoaded', () => {
-      if (!document.querySelector('script[src*="gptengineer.js"]')) {
-        console.warn("Script Lovable non détecté après DOMContentLoaded, réinjection...");
-        injectLovableScript();
-      }
-    });
-    
-    // Dernière chance: vérifier après le chargement complet de la page
-    window.addEventListener('load', () => {
-      if (!document.querySelector('script[src*="gptengineer.js"]')) {
-        console.warn("Script Lovable non détecté après load, réinjection finale...");
-        injectLovableScript();
-      }
-    });
-  }
+  // Injecter le script si nécessaire
+  injectLovableScript();
+  
+  // Double vérification après le chargement complet du DOM
+  window.addEventListener('DOMContentLoaded', () => {
+    if (!document.querySelector('script[src*="gptengineer.js"]')) {
+      console.warn("Script Lovable non détecté après DOMContentLoaded, réinjection...");
+      injectLovableScript();
+    }
+  });
+  
+  // Dernière chance: vérifier après le chargement complet de la page
+  window.addEventListener('load', () => {
+    if (!document.querySelector('script[src*="gptengineer.js"]')) {
+      console.warn("Script Lovable non détecté après load, réinjection finale...");
+      injectLovableScript();
+    }
+  });
 }
 
 // Exporter des constantes pour une utilisation facile

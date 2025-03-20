@@ -6,6 +6,7 @@
  * pour garantir qu'une seule instance de React est utilisée dans l'application.
  */
 import * as React from 'react';
+import * as ReactDOMImport from 'react-dom/client';
 
 // Fonctions React standard
 export const {
@@ -32,6 +33,9 @@ export const {
 
 // Instance de React
 export { React };
+
+// Exporter ReactDOM
+export const ReactDOM = ReactDOMImport;
 
 /**
  * Crée un contexte React de manière sécurisée pour éviter les problèmes liés aux différences

@@ -42,6 +42,14 @@ export function isLocalDevelopment(): boolean {
          window.location.hostname === '127.0.0.1';
 }
 
+// Ajout: Détection du mode production
+export function isProduction(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  return !isLocalDevelopment() && !isLovableEnvironment() && 
+         import.meta.env.MODE === 'production';
+}
+
 // Obtenir l'environnement actuel
 export function getEnvironmentType(): 'local' | 'lovable' | 'production' {
   if (isLocalDevelopment()) {
