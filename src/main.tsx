@@ -32,6 +32,10 @@ if (typeof window !== 'undefined') {
       return 'Script injecté. Rechargez la page.';
     }
     
-    return 'Diagnostic terminé. Aucune action nécessaire.';
+    // Vérifier la présence de l'objet global
+    const hasGlobal = Boolean(window.GPTEngineer || window.__GPTEngineer);
+    console.log('Objet global Lovable présent:', hasGlobal);
+    
+    return 'Diagnostic terminé. ' + (hasGlobal ? 'Tout semble correct.' : 'L\'objet global n\'est pas détecté.');
   };
 }

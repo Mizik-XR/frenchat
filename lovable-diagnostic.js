@@ -23,18 +23,23 @@ const checkDocumentState = () => {
 
 // Vérifier si le mode développement est correctement configuré
 const checkDevMode = () => {
-  const isDev = import.meta.env.MODE === 'development';
+  try {
+    const isDev = import.meta.env.MODE === 'development';
+    console.log(`Mode de développement: ${isDev ? 'Activé' : 'Désactivé'}`);
+  } catch (e) {
+    console.log('Mode de développement: Non détecté');
+  }
+  
   const hasDevTools = window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
-  console.log(`Mode de développement: ${isDev ? 'Activé' : 'Désactivé'}`);
   console.log(`React DevTools détecté: ${hasDevTools ? 'Oui' : 'Non'}`);
 };
 
 // Vérifier que le script est chargé correctement
 const checkLovableLoaded = () => {
-  if (typeof window.__LOVABLE_LOADED__ !== 'undefined') {
-    console.log('✅ Script Lovable chargé correctement');
+  if (typeof window.GPTEngineer !== 'undefined' || typeof window.__GPTEngineer !== 'undefined') {
+    console.log('✅ Objet global Lovable détecté');
   } else {
-    console.log('❌ Script Lovable n\'est pas chargé correctement');
+    console.log('❌ Objet global Lovable non détecté');
   }
 };
 

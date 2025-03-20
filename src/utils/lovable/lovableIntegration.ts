@@ -20,8 +20,7 @@ export function isLovableLoaded(): boolean {
   }
   
   // Vérifier si l'objet global est disponible
-  const hasLovableGlobal = 'GPTEngineer' in window || '__GPTEngineer' in window;
-  if (!hasLovableGlobal) {
+  if (!window.GPTEngineer && !window.__GPTEngineer) {
     console.warn("L'objet global Lovable n'est pas disponible. Le script pourrait ne pas être correctement chargé.");
     return false;
   }
@@ -58,13 +57,6 @@ export function injectLovableScript(): void {
       console.warn("Le script Lovable n'a pas été correctement chargé après injection.");
     } else {
       console.log("Script Lovable injecté et chargé avec succès.");
-      
-      // Tenter d'appliquer un hack pour rafraîchir l'intégration
-      if (window.location.search.indexOf('refresh=true') === -1) {
-        console.log("Ajout du paramètre refresh=true pour forcer le rechargement...");
-        const separator = window.location.search ? '&' : '?';
-        window.location.href = window.location.href + separator + 'refresh=true';
-      }
     }
   }, 1000);
 }

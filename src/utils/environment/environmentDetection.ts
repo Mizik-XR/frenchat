@@ -10,10 +10,12 @@ export function isLovableEnvironment(): boolean {
   
   // Vérifier l'URL
   const isLovableUrl = window.location.href.includes('lovable.dev') || 
-                       window.location.href.includes('gpteng.co');
+                       window.location.href.includes('gpteng.co') ||
+                       window.location.href.includes('lovableproject.com');
   
   // Vérifier la présence de l'objet global
-  const hasGlobalObject = 'GPTEngineer' in window || '__GPTEngineer' in window;
+  const hasGlobalObject = typeof window.GPTEngineer !== 'undefined' || 
+                          typeof window.__GPTEngineer !== 'undefined';
   
   // Vérifier si le script est chargé
   const scriptLoaded = document.querySelector('script[src*="gptengineer.js"]') !== null;

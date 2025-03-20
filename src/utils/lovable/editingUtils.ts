@@ -57,6 +57,8 @@ export function checkLovableIntegration(): void {
   console.log(`URL: ${window.location.href}`);
   console.log(`Navigateur: ${navigator.userAgent}`);
   console.log(`Mode: ${import.meta.env.MODE}`);
+  console.log(`GPTEngineer global: ${typeof window.GPTEngineer !== 'undefined' ? 'Présent' : 'Absent'}`);
+  console.log(`__GPTEngineer global: ${typeof window.__GPTEngineer !== 'undefined' ? 'Présent' : 'Absent'}`);
 
   // Vérifier si nous sommes dans un iframe (cas où l'édition peut être problématique)
   if (window !== window.parent) {
@@ -90,7 +92,5 @@ if (typeof window !== 'undefined') {
   // Utiliser un délai pour s'assurer que le DOM est complètement chargé
   setTimeout(() => {
     checkLovableIntegration();
-    // Ne pas injecter automatiquement, laisser l'application le faire explicitement
-    // pour éviter des problèmes de sécurité
   }, 1000);
 }
