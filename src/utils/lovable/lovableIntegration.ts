@@ -60,29 +60,34 @@ export function injectLovableScript(): void {
  * Cette fonction peut être appelée au démarrage de l'application
  */
 export function initLovableIntegration(): void {
-  // Injecter le script si nécessaire
+  // Vérifier si le script est déjà présent
+  const isScriptPresent = document.querySelector('script[src*="gptengineer.js"]') !== null;
+  if (isScriptPresent) {
+    console.log("Script Lovable déjà présent, pas besoin de l'injecter");
+    return;
+  }
+
+  // Injecter le script
   if (typeof window !== 'undefined') {
-    // Vérifier si nous sommes en mode production
-    const isProduction = process.env.NODE_ENV === 'production';
+    injectLovableScript();
     
-    // En développement ou si explicitement activé, injecter le script
-    if (!isProduction || process.env.VITE_ENABLE_LOVABLE === 'true') {
-      if (!isLovableLoaded()) {
+    // Double vérification après le chargement complet du DOM
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!document.querySelector('script[src*="gptengineer.js"]')) {
+        console.warn("Script Lovable non détecté après DOMContentLoaded, réinjection...");
         injectLovableScript();
       }
-      
-      // Ajouter un listener pour vérifier périodiquement
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          if (!isLovableLoaded()) {
-            console.warn("Lovable n'a pas été chargé après 3 secondes. Tentative de réinjection...");
-            injectLovableScript();
-          }
-        }, 3000);
-      });
-    }
+    });
+    
+    // Dernière chance: vérifier après le chargement complet de la page
+    window.addEventListener('load', () => {
+      if (!document.querySelector('script[src*="gptengineer.js"]')) {
+        console.warn("Script Lovable non détecté après load, réinjection finale...");
+        injectLovableScript();
+      }
+    });
   }
 }
 
-// Appeler initLovableIntegration lors de l'import de ce module
-initLovableIntegration();
+// Exporter des constantes pour une utilisation facile
+export const LOVABLE_SCRIPT_URL = 'https://cdn.gpteng.co/gptengineer.js';
