@@ -37,8 +37,8 @@ try {
             eventsPerSecond: 10
           },
           timeout: 30000, // 30 secondes
-          reconnectAfterMs: (attempt) => Math.min(attempt * 2000, 60000),
-          maxRetries: 5 // Réduire pour éviter le spam
+          reconnectAfterMs: (attempt) => Math.min(attempt * 2000, 60000)
+          // La propriété maxRetries a été supprimée car non reconnue
         },
         global: {
           fetch: (...args) => {

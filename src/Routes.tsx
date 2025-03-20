@@ -1,7 +1,7 @@
 
 import { React } from "@/core/ReactInstance";
 import { Routes as RouterRoutes, Route } from "react-router-dom";
-import { Home } from "@/pages/Home";
+import Home from "@/pages/Home";
 
 const Routes = () => {
   return (

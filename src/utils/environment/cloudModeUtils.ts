@@ -49,3 +49,26 @@ export function shouldUseCloudMode(endpoint: string): boolean {
   
   return isCloudMode() || cloudOnlyEndpoints.some(e => endpoint.includes(e));
 }
+
+// Récupérer les préférences d'environnement Lovable
+export function getLovableEnvironmentPreferences() {
+  return {
+    enableSupabase: localStorage.getItem('ENABLE_SUPABASE_IN_LOVABLE') === 'true',
+    enableLocalAI: localStorage.getItem('ENABLE_LOCAL_AI_IN_LOVABLE') === 'true'
+  };
+}
+
+// Définir les préférences d'environnement Lovable
+export function setLovableEnvironmentPreferences(enableSupabase: boolean, enableLocalAI: boolean) {
+  if (enableSupabase) {
+    localStorage.setItem('ENABLE_SUPABASE_IN_LOVABLE', 'true');
+  } else {
+    localStorage.removeItem('ENABLE_SUPABASE_IN_LOVABLE');
+  }
+  
+  if (enableLocalAI) {
+    localStorage.setItem('ENABLE_LOCAL_AI_IN_LOVABLE', 'true');
+  } else {
+    localStorage.removeItem('ENABLE_LOCAL_AI_IN_LOVABLE');
+  }
+}
