@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/hooks/useAuthSession";
 import { UserAvatar } from "@/components/auth/UserAvatar";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { isLovableEnvironment } from "@/utils/environment";
 
 export const NavBar = ({ children }: { children?: React.ReactNode }) => {

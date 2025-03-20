@@ -92,16 +92,17 @@ export function ConnectionStatusBadge() {
                 variant="ghost" 
                 size="sm" 
                 className="h-8 px-2 gap-1"
+                aria-label="État de connexion"
               >
                 {isOffline ? (
                   <>
                     <WifiOff className="h-4 w-4 text-red-500" />
-                    <Badge variant="offline" className="ml-1">Hors ligne</Badge>
+                    <Badge variant="outline" className="ml-1 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Hors ligne</Badge>
                   </>
                 ) : (
                   <>
                     <Cloud className="h-4 w-4 text-blue-500" />
-                    <Badge variant="online" className="ml-1">En ligne</Badge>
+                    <Badge variant="outline" className="ml-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">En ligne</Badge>
                   </>
                 )}
               </Button>
