@@ -3,64 +3,85 @@
  * Gestionnaire d'état OAuth pour sécuriser les flux d'authentification
  */
 
-// Génère un état aléatoire pour la demande OAuth
-export const generateOAuthState = () => {
-  const randomBytes = new Uint8Array(16);
-  window.crypto.getRandomValues(randomBytes);
-  return Array.from(randomBytes, byte => byte.toString(16).padStart(2, '0')).join('');
-};
-
-// Stocke l'état OAuth dans le stockage de session
-export const storeOAuthState = (provider: string, state: string) => {
+/**
+ * Génère un état aléatoire pour le flux OAuth et le stocke dans sessionStorage
+ * @param provider Le fournisseur OAuth (google, microsoft, etc.)
+ * @returns L'état généré
+ */
+export function generateOAuthState(provider: string): string {
+  // Création d'un identifiant aléatoire suffisamment long pour être sécurisé
+  const randomState = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  
+  // Ajout d'un timestamp pour limiter la validité dans le temps
+  const timestamp = Date.now();
+  const state = `${randomState}_${timestamp}`;
+  
+  // Stockage dans sessionStorage
   sessionStorage.setItem(`oauth_state_${provider}`, state);
-  sessionStorage.setItem(`oauth_state_time_${provider}`, Date.now().toString());
-};
+  
+  return state;
+}
 
-// Vérifie l'état OAuth retourné lors du callback
-export const verifyOAuthState = (provider: string, returnedState: string) => {
+/**
+ * Vérifie si l'état OAuth retourné correspond à celui stocké
+ * @param provider Le fournisseur OAuth
+ * @param returnedState L'état retourné dans l'URL de callback
+ * @returns true si l'état est valide, false sinon
+ */
+export function validateOAuthState(provider: string, returnedState: string): boolean {
   const storedState = sessionStorage.getItem(`oauth_state_${provider}`);
-  const stateTime = sessionStorage.getItem(`oauth_state_time_${provider}`);
   
-  // Nettoyage après vérification
-  sessionStorage.removeItem(`oauth_state_${provider}`);
-  sessionStorage.removeItem(`oauth_state_time_${provider}`);
-  
-  // Vérifier si l'état est expiré (30 minutes)
-  if (stateTime) {
-    const expiryTime = parseInt(stateTime) + (30 * 60 * 1000); // 30 minutes
-    if (Date.now() > expiryTime) {
-      console.error('État OAuth expiré');
-      return false;
-    }
-  }
-  
-  // Vérifier la correspondance des états
+  // Si pas d'état stocké ou ne correspond pas, authentification invalide
   if (!storedState || storedState !== returnedState) {
-    console.error('État OAuth non valide');
+    console.error("État OAuth invalide, possible tentative CSRF");
     return false;
   }
   
-  return true;
-};
-
-// Alias pour compatibilité avec le reste du code
-export const validateOAuthState = verifyOAuthState;
-
-// Prépare un flux d'authentification OAuth
-export const prepareOAuthFlow = (provider: string, redirectUri: string) => {
-  const state = generateOAuthState();
-  storeOAuthState(provider, state);
+  // Vérifier si l'état n'est pas trop ancien (validité de 15 minutes)
+  const timestamp = parseInt(storedState.split('_')[1], 10);
+  const now = Date.now();
+  const fifteenMinutesMs = 15 * 60 * 1000;
   
-  return {
-    state,
-    redirectUri
-  };
-};
+  if (now - timestamp > fifteenMinutesMs) {
+    console.error("État OAuth expiré");
+    return false;
+  }
+  
+  // Nettoyer l'état utilisé
+  sessionStorage.removeItem(`oauth_state_${provider}`);
+  return true;
+}
 
-export default {
-  generateOAuthState,
-  storeOAuthState,
-  verifyOAuthState,
-  validateOAuthState,
-  prepareOAuthFlow
-};
+/**
+ * Stocke de manière sécurisée un token d'accès temporaire
+ * @param provider Le fournisseur OAuth
+ * @param token Le token à stocker
+ */
+export function storeOAuthToken(provider: string, token: string): void {
+  // Utilisation de sessionStorage pour des raisons de sécurité (durée de vie limitée à la session)
+  sessionStorage.setItem(`oauth_token_${provider}`, token);
+  
+  // Définir une expiration automatique (30 minutes)
+  setTimeout(() => {
+    sessionStorage.removeItem(`oauth_token_${provider}`);
+  }, 30 * 60 * 1000);
+}
+
+/**
+ * Récupère un token OAuth stocké
+ * @param provider Le fournisseur OAuth
+ * @returns Le token ou null s'il n'existe pas
+ */
+export function getStoredOAuthToken(provider: string): string | null {
+  return sessionStorage.getItem(`oauth_token_${provider}`);
+}
+
+/**
+ * Supprime un token OAuth stocké
+ * @param provider Le fournisseur OAuth
+ */
+export function clearOAuthToken(provider: string): void {
+  sessionStorage.removeItem(`oauth_token_${provider}`);
+}

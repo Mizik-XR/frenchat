@@ -1,102 +1,115 @@
 
-import React from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { preloadSession } from '@/hooks/auth/sessionUtils';
-import { initLocalAIClient } from '@/hooks/ai/environment/apiClients';
-import { checkLLMAvailability } from '@/hooks/ai/environment/availabilityChecker';
+import { React } from '@/core/ReactInstance';
 import { toast } from '@/hooks/use-toast';
-import initLovableIntegration from '@/utils/lovable/lovableIntegration';
+import { preloadSession } from '@/integrations/supabase/client';
+import { initLovableIntegration } from '@/utils/lovable/lovableIntegration';
 
-export const setupAppEnvironment = async () => {
-  console.log('Starting application setup...');
-  
-  // 1. Vérifier la connexion à Supabase
-  await checkSupabaseConnection();
-  
-  // 2. Précharger la session utilisateur si disponible
-  await preloadSession();
-  
-  // 3. Initialiser le client d'IA locale
-  initLocalAIClient();
-  
-  // 4. Vérifier la disponibilité de l'IA locale
-  await checkLocalLLM();
-  
-  // 5. Initialiser l'intégration Lovable si nécessaire
-  setupLovableIntegration();
-  
-  console.log('Application setup complete');
-  
+/**
+ * Vérification des dépendances React
+ */
+export const checkReactDependencies = (): boolean => {
+  if (typeof React === 'undefined') {
+    console.warn("React n'est pas défini globalement - c'est normal avec les imports ES modules");
+    return false;
+  }
   return true;
 };
 
-async function checkSupabaseConnection() {
+/**
+ * Configuration explicite du DOM React
+ */
+export const setupReactDOM = (): void => {
   try {
-    const { data, error } = await supabase.from('settings').select('key').limit(1);
-    
-    if (error) {
-      console.error('Supabase connection error:', error);
-      toast({
-        title: "Problème de connexion au serveur",
-        description: "Certaines fonctionnalités peuvent être limitées en mode hors-ligne.",
-        variant: "destructive",
-      });
-      return false;
+    // Cette technique n'est pas idéale mais peut aider dans certains cas
+    if (window.React === undefined) {
+      console.log("React n'est pas disponible globalement, cela peut causer des problèmes dans certains environnements");
     }
-    
-    console.log('Supabase connection: OK');
+  } catch (e) {
+    console.warn("Erreur lors de la vérification de React:", e);
+  }
+};
+
+/**
+ * Préchargement de la session Supabase
+ */
+export const preloadSupabaseSession = async (fallbackMode: boolean): Promise<boolean> => {
+  if (fallbackMode) {
+    console.log("Mode de secours activé - certaines vérifications sont ignorées");
     return true;
-  } catch (err) {
-    console.error('Unable to check Supabase connection:', err);
-    toast({
-      title: "Problème de connexion au serveur",
-      description: "Mode hors-ligne activé.",
-      variant: "destructive",
-    });
-    return false;
   }
-}
-
-async function checkLocalLLM() {
+  
+  const supabaseUrl = "https://dbdueopvtlanxgumenpu.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiZHVlb3B2dGxhbnhndW1lbnB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5NzQ0NTIsImV4cCI6MjA1NTU1MDQ1Mn0.lPPbNJANU8Zc7i5OB9_atgDZ84Yp5SBjXCiIqjA79Tk";
+  
+  console.log("Vérification des paramètres Supabase:", {
+    url: supabaseUrl ? "Définie" : "Non définie",
+    key: supabaseKey ? "Définie" : "Non définie"
+  });
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Les paramètres Supabase sont manquants");
+  }
+  
   try {
-    const isAvailable = await checkLLMAvailability();
-    
-    if (isAvailable) {
-      console.log('Local LLM: Available');
+    await preloadSession();
+    console.log("Session Supabase préchargée avec succès");
+    return true;
+  } catch (err: any) {
+    console.warn("Erreur non bloquante lors du préchargement de la session:", err);
+    // Notifier l'utilisateur uniquement si l'erreur est critique
+    if (err?.message?.includes('network') || err?.message?.includes('fetch')) {
       toast({
-        title: "IA locale détectée",
-        description: "Le mode local est disponible pour plus de confidentialité.",
+        title: "Problème de connexion",
+        description: "Vérifiez votre connexion Internet ou réessayez plus tard.",
+        variant: "destructive"
       });
-    } else {
-      console.log('Local LLM: Not available');
     }
-    
-    return isAvailable;
-  } catch (err) {
-    console.error('Error checking local LLM:', err);
-    toast({
-      title: "IA locale non disponible",
-      description: "Basculement vers le mode cloud activé automatiquement.",
-      variant: "default",
-    });
     return false;
   }
-}
+};
 
-export const setupLovableIntegration = () => {
-  if (process.env.NODE_ENV === 'development' || window.location.hostname.includes('lovable.app')) {
-    try {
-      const isLovableEnvironment = initLovableIntegration();
-      if (isLovableEnvironment) {
-        console.log('Lovable integration initialized successfully');
-      }
-    } catch (error) {
-      console.error('Error initializing Lovable integration:', error);
-      toast({
-        title: "Problème d'initialisation Lovable",
-        description: "Certaines fonctionnalités d'édition peuvent être limitées.",
-        variant: "default",
-      });
-    }
+/**
+ * Configuration des écouteurs d'événements réseau
+ */
+export const setupNetworkListeners = (): void => {
+  window.addEventListener('online', () => {
+    toast({
+      title: "Connexion rétablie",
+      description: "Votre connexion Internet a été rétablie."
+    });
+  });
+  
+  window.addEventListener('offline', () => {
+    toast({
+      title: "Connexion perdue",
+      description: "Votre connexion Internet semble interrompue.",
+      variant: "destructive"
+    });
+  });
+};
+
+/**
+ * Initialisation de l'intégration Lovable
+ */
+export const setupLovableIntegration = (): void => {
+  // Initialiser l'intégration Lovable
+  initLovableIntegration();
+  
+  // Vérifier après un court délai si l'intégration est effective
+  if (typeof window !== 'undefined') {
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const isLoaded = document.querySelector('script[src*="gptengineer.js"]');
+        if (!isLoaded) {
+          console.warn("L'intégration Lovable n'a pas été chargée correctement");
+          // Notification toast pour alerter l'utilisateur
+          toast({
+            title: "Problème d'intégration Lovable",
+            description: "L'édition AI pourrait ne pas fonctionner. Utilisez fix-lovable-integration.sh pour réparer.",
+            variant: "destructive"
+          });
+        }
+      }, 2000);
+    });
   }
 };

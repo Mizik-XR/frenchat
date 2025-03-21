@@ -1,10 +1,12 @@
 
 /**
- * Exports de composants UI composites
+ * Export des composants composites
  * 
- * Ce fichier exporte les composants UI qui sont construits à partir 
- * de composants primitifs et qui implémentent des fonctionnalités plus complexes.
+ * Ce fichier exporte tous les composants UI composites qui dépendent
+ * d'autres composants UI primitifs.
+ * 
+ * IMPORTANT: Peut importer depuis primitives/ mais PAS depuis le dossier parent
  */
 
-// Pour l'instant, exportations directes pour éviter les dépendances circulaires
-export { default as CompositePanel } from './CompositePanel';
+// Fichier préparé pour la future migration des composants composites
+// Actuellement vide pour éviter les dépendances circulaires

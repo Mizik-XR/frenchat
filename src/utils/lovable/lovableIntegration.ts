@@ -1,116 +1,88 @@
 
 /**
- * Intégration Lovable - Fonctions d'initialisation et d'intégration
+ * Utilitaires pour l'intégration Lovable
+ * 
+ * Ce fichier contient des fonctions permettant de s'assurer que
+ * l'intégration avec Lovable fonctionne correctement.
  */
 
-// Initialise l'intégration Lovable au démarrage de l'application
-export const initLovableIntegration = () => {
-  console.log('Initialisation de l\'intégration Lovable...');
+/**
+ * Vérifie si le script Lovable est correctement chargé
+ */
+export function isLovableLoaded(): boolean {
+  if (typeof window === 'undefined') return false;
   
-  // Vérifier si l'environnement est un environnement Lovable
-  const isLovableEnvironment = checkLovableEnvironment();
-  
-  if (isLovableEnvironment) {
-    console.log('Environnement Lovable détecté, activation des fonctionnalités spécifiques');
-    setupLovableIntegration();
-  } else {
-    console.log('Environnement standard détecté');
-  }
-  
-  return isLovableEnvironment;
-};
-
-// Vérifie si nous sommes dans un environnement Lovable
-const checkLovableEnvironment = (): boolean => {
   // Vérifier si le script Lovable est présent dans le DOM
-  const hasLovableScript = document.querySelector('script[src*="gptengineer.js"]') !== null;
-  
-  // Vérifier si l'objet global Lovable est présent
-  const hasLovableGlobal = typeof window !== 'undefined' && 
-    ((window as any).GPTEngineer !== undefined || 
-    (window as any).__GPTEngineer !== undefined);
-  
-  // Vérifier si l'URL contient des paramètres spécifiques à Lovable
-  const urlParams = new URLSearchParams(window.location.search);
-  const hasLovableParams = urlParams.has('lovable') || urlParams.has('gpt-engineer');
-  
-  return hasLovableScript || hasLovableGlobal || hasLovableParams;
-};
-
-// Configure l'intégration Lovable
-const setupLovableIntegration = () => {
-  // Exposer des fonctions ou configurations nécessaires pour Lovable
-  if (typeof window !== 'undefined') {
-    (window as any).LovableApp = {
-      version: import.meta.env.VITE_LOVABLE_VERSION || '1.0.0',
-      environment: process.env.NODE_ENV,
-      diagnostic: runLovableDiagnostic
-    };
+  const lovableScripts = document.querySelectorAll('script[src*="gptengineer.js"]');
+  if (lovableScripts.length === 0) {
+    console.warn("Le script Lovable n'est pas chargé dans le DOM. L'édition AI ne fonctionnera pas.");
+    return false;
   }
   
-  // Ajouter des écouteurs d'événements spécifiques à Lovable
-  window.addEventListener('message', handleLovableMessages);
+  // Vérifier si l'objet global est disponible
+  const hasLovableGlobal = 'GPTEngineer' in window || '__GPTEngineer' in window;
+  if (!hasLovableGlobal) {
+    console.warn("L'objet global Lovable n'est pas disponible. Le script pourrait ne pas être correctement chargé.");
+    return false;
+  }
   
-  console.log('Intégration Lovable configurée avec succès');
-};
+  return true;
+}
 
-// Gère les messages provenant de l'interface Lovable
-const handleLovableMessages = (event: MessageEvent) => {
-  // Vérifier si le message provient de Lovable
-  if (event.data && event.data.source === 'lovable') {
-    console.log('Message reçu de Lovable:', event.data);
+/**
+ * Injecte le script Lovable s'il n'est pas déjà présent
+ */
+export function injectLovableScript(): void {
+  if (typeof window === 'undefined') return;
+  
+  // Ne pas réinjecter si déjà présent
+  if (document.querySelector('script[src*="gptengineer.js"]')) return;
+  
+  console.info("Injection automatique du script Lovable");
+  
+  const script = document.createElement('script');
+  script.src = 'https://cdn.gpteng.co/gptengineer.js';
+  script.type = 'module';
+  script.async = true;
+  script.dataset.injected = 'true';
+  
+  // Ajouter avant le premier script existant pour s'assurer qu'il se charge tôt
+  const firstScript = document.querySelector('script');
+  if (firstScript) {
+    firstScript.parentNode?.insertBefore(script, firstScript);
+  } else {
+    document.head.appendChild(script);
+  }
+}
+
+/**
+ * Initialise l'intégration Lovable
+ * Cette fonction peut être appelée au démarrage de l'application
+ */
+export function initLovableIntegration(): void {
+  // Injecter le script si nécessaire
+  if (typeof window !== 'undefined') {
+    // Vérifier si nous sommes en mode production
+    const isProduction = process.env.NODE_ENV === 'production';
     
-    // Traiter les différents types de messages
-    switch (event.data.type) {
-      case 'REQUEST_APP_INFO':
-        // Répondre avec les informations de l'application
-        const source = event.source as Window;
-        source.postMessage({
-          source: 'lovable-app',
-          type: 'APP_INFO',
-          data: {
-            name: 'FileChat',
-            version: import.meta.env.VITE_LOVABLE_VERSION || '1.0.0'
+    // En développement ou si explicitement activé, injecter le script
+    if (!isProduction || process.env.VITE_ENABLE_LOVABLE === 'true') {
+      if (!isLovableLoaded()) {
+        injectLovableScript();
+      }
+      
+      // Ajouter un listener pour vérifier périodiquement
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          if (!isLovableLoaded()) {
+            console.warn("Lovable n'a pas été chargé après 3 secondes. Tentative de réinjection...");
+            injectLovableScript();
           }
-        }, '*' as any);
-        break;
-        
-      case 'RELOAD_APP':
-        // Recharger l'application
-        window.location.reload();
-        break;
-        
-      default:
-        // Ignorer les messages inconnus
-        break;
+        }, 3000);
+      });
     }
   }
-};
+}
 
-// Fonction de diagnostic Lovable
-const runLovableDiagnostic = () => {
-  // Vérifier si le script Lovable est chargé
-  const scriptExists = document.querySelector('script[src*="gptengineer.js"]');
-  console.log('Script Lovable présent:', Boolean(scriptExists));
-  
-  // Vérifier la présence de l'objet global
-  const hasGlobal = Boolean(
-    (window as any).GPTEngineer || (window as any).__GPTEngineer
-  );
-  console.log('Objet global Lovable présent:', hasGlobal);
-  
-  return {
-    scriptPresent: Boolean(scriptExists),
-    globalPresent: hasGlobal,
-    status: scriptExists && hasGlobal ? 'OK' : 'PROBLÈME DÉTECTÉ',
-    timestamp: new Date().toISOString()
-  };
-};
-
-// Export de fonctions supplémentaires pour l'intégration Lovable
-export const setupLovableAnalytics = () => {
-  console.log('Configuration des analytics Lovable');
-  // Implémentation de l'analytique spécifique à Lovable
-};
-
-export default initLovableIntegration;
+// Appeler initLovableIntegration lors de l'import de ce module
+initLovableIntegration();

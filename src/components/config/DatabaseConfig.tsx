@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronDown, ChevronUp, Database, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { isLocalDevelopment } from "@/utils/environment/environmentDetection";
+import { isLocalDevelopment } from "@/services/apiConfig";
 import { buildSupabaseConsoleUrl } from "@/utils/environment/urlUtils";
 import { isUrlAccessible } from "@/utils/environment/urlUtils";
 import { Alert, AlertDescription } from "@/components/ui/alert";

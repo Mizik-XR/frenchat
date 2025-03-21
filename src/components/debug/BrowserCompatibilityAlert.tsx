@@ -1,4 +1,3 @@
-
 import { AlertCircle, X, Check, Info, AlertTriangle, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -27,28 +26,17 @@ export const BrowserCompatibilityAlert = ({
     
     useEffect(() => {
       try {
-        // CORRECTION: Ne jamais afficher l'alerte pour les navigateurs modernes comme Chrome
-        // sauf en mode développeur ou forceShow
-        const isModernBrowser = 
-          navigator.userAgent.includes('Chrome') || 
-          navigator.userAgent.includes('Firefox') || 
-          navigator.userAgent.includes('Safari') || 
-          navigator.userAgent.includes('Edge');
-        
         // N'afficher l'alerte que si:
-        // 1. forceShow est true (pour des cas spécifiques)
-        // 2. Mode développeur activé (affiche toujours les alertes)
-        // 3. Ce n'est pas un navigateur moderne ET il y a des problèmes critiques
+        // 1. Les problèmes sont critiques (même en production)
+        // 2. forceShow est true (pour des cas spécifiques)
+        // 3. Mode développeur activé (affiche toujours les alertes)
         const hasCriticalIssues = issues && issues.length > 0 && issues.some(issue => 
           issue.includes("WebAssembly") || 
           issue.includes("Web Workers") ||
           issue.includes("Fetch")
         );
         
-        const showForModernBrowser = forceShow || developerMode;
-        const showForOldBrowser = !isModernBrowser && hasCriticalIssues;
-        
-        setShouldShow(showForModernBrowser || showForOldBrowser);
+        setShouldShow(forceShow || developerMode || (hasCriticalIssues && issues.length > 0));
       } catch (error) {
         console.error("Erreur dans BrowserCompatibilityAlert:", error);
         // Par défaut, ne pas afficher en cas d'erreur
@@ -241,7 +229,7 @@ export const BrowserCompatibilityAlert = ({
       </div>
     );
   } catch (error) {
-    // En cas d'erreur catastrophique, on log l'erreur et on retourne null
+    // En cas d'erreur, on log l'erreur et on ne bloque pas l'interface
     console.error("Erreur critique dans BrowserCompatibilityAlert:", error);
     return null;
   }

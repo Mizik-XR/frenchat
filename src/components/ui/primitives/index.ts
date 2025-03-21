@@ -1,11 +1,12 @@
 
 /**
- * Exports de composants UI primitifs
+ * Export des composants primitifs
  * 
- * Ce fichier exporte les composants UI de base qui sont utilisés 
- * pour construire des composants plus complexes.
+ * Ce fichier exporte tous les composants UI primitifs qui ne dépendent
+ * pas d'autres composants UI.
+ * 
+ * IMPORTANT: Ne rien importer depuis composite/ ou le dossier parent
  */
 
-// Exports directs pour éviter les dépendances circulaires
-export { default as PrimitiveButton } from './PrimitiveButton';
-export { default as PrimitiveCard } from './PrimitiveCard';
+// Fichier préparé pour la future migration des composants primitifs
+// Actuellement vide pour éviter les dépendances circulaires

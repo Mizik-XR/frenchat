@@ -3,19 +3,18 @@ import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase, APP_STATE } from "@/integrations/supabase/client";
 import { 
-  getCachedUser, 
-  isAuthLoading, 
+  cachedUser, 
+  isSessionLoading, 
   PROTECTED_ROUTES,
   updateCachedUser,
   updateSessionLoading
 } from "./auth/authConstants";
 import { useSignOut } from "./auth/authActions";
-import useAuthStateChangeHandler from "./auth/authStateChangeHandlers";
-import useInitialSessionCheck from "./auth/initialSessionCheck";
+import { useAuthStateChangeHandler, useInitialSessionCheck } from "./auth/authEventHandlers";
 
 export function useAuthSession() {
-  const [user, setUser] = useState<User | null>(getCachedUser());
-  const [isLoading, setIsLoading] = useState(isAuthLoading());
+  const [user, setUser] = useState<User | null>(cachedUser);
+  const [isLoading, setIsLoading] = useState(isSessionLoading);
   const [offlineMode, setOfflineMode] = useState(APP_STATE.isOfflineMode);
   const signOut = useSignOut();
   

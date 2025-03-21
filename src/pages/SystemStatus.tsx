@@ -1,79 +1,228 @@
+
 import React, { useEffect, useState } from 'react';
-import { Container } from '@/components/ui/container';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { SystemDiagnostics } from '@/components/SystemDiagnostics';
+import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { supabase, APP_STATE } from '@/integrations/supabase/client';
-import { DiagnosticReport } from '@/components/debug/DiagnosticReport';
-import { useSystemCapabilities } from '@/hooks/useSystemCapabilities';
-import { SystemInfoSection } from '@/components/debug/SystemInfoSection';
-import { CompatibilitySection } from '@/components/debug/CompatibilitySection';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Activity, ArrowLeft, Bug, Database, Server } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { runSystemCheck } from '@/utils/systemDiagnostics';
+import { useAuth } from '@/components/AuthProvider';
+import { APP_STATE } from '@/integrations/supabase/client';
 
 export default function SystemStatus() {
-  const [supabaseStatus, setSupabaseStatus] = useState<boolean | null>(null);
-  const { isWebBLEAvailable, isFileSystemAPIAvailable, isWebGPUAvailable } = useSystemCapabilities();
-
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [environment, setEnvironment] = useState({
+    isDev: false,
+    isProd: false,
+    isOffline: false,
+    browserInfo: {} as any
+  });
+  
+  // Récupérer les informations sur l'environnement au chargement
   useEffect(() => {
-    const checkSupabase = async () => {
-      const isConnected = await supabase.auth.getSession()
-        .then(() => true)
-        .catch(() => false);
-      setSupabaseStatus(isConnected);
+    const isDev = import.meta.env.DEV || window.location.hostname === 'localhost';
+    const isProd = import.meta.env.PROD || window.location.hostname !== 'localhost';
+    const isOffline = APP_STATE.isOfflineMode;
+    
+    const browserInfo = {
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      online: navigator.onLine,
+      platform: navigator.platform,
+      vendor: navigator.vendor,
+      cookiesEnabled: navigator.cookieEnabled
     };
-
-    checkSupabase();
+    
+    setEnvironment({
+      isDev,
+      isProd,
+      isOffline,
+      browserInfo
+    });
+    
+    // Exécuter un diagnostic initial
+    runInitialDiagnostic();
   }, []);
-
-  const handleForceOffline = () => {
-    APP_STATE.setOfflineMode(true);
+  
+  const runInitialDiagnostic = async () => {
+    try {
+      const results = await runSystemCheck();
+      const errors = results.filter(r => r.status === 'error').length;
+      
+      if (errors > 0) {
+        toast({
+          title: `${errors} problème(s) détecté(s)`,
+          description: "Consultez les détails pour plus d'informations",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors du diagnostic initial:", error);
+    }
   };
-
-  const handleForceOnline = () => {
-    APP_STATE.setOfflineMode(false);
+  
+  const handleToggleOfflineMode = () => {
+    APP_STATE.setOfflineMode(!APP_STATE.isOfflineMode);
+    setEnvironment(prev => ({
+      ...prev,
+      isOffline: !prev.isOffline
+    }));
+    
+    toast({
+      title: APP_STATE.isOfflineMode ? "Mode hors ligne activé" : "Mode hors ligne désactivé",
+      description: "Rechargez la page pour appliquer les changements",
+    });
   };
-
+  
   return (
-    <Container className="py-10">
-      <h1 className="text-3xl font-bold mb-6">État du Système</h1>
-
-      <Card className="mb-4">
-        <CardHeader>
-          <CardTitle>Connectivité Supabase</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {supabaseStatus === null ? (
-            <p>Vérification en cours...</p>
-          ) : supabaseStatus ? (
-            <p className="text-green-500">Connecté à Supabase</p>
-          ) : (
-            <p className="text-red-500">Non connecté à Supabase</p>
-          )}
-          <div className="mt-2">
-            <Button onClick={handleForceOffline} variant="destructive">
-              Forcer le mode hors ligne
-            </Button>
-            <Button onClick={handleForceOnline} className="ml-2">
-              Forcer le mode en ligne
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <SystemInfoSection />
-
-      <CompatibilitySection
-        isWebBLEAvailable={isWebBLEAvailable}
-        isFileSystemAPIAvailable={isFileSystemAPIAvailable}
-        isWebGPUAvailable={isWebGPUAvailable}
-      />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Rapport de Diagnostic</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DiagnosticReport />
-        </CardContent>
-      </Card>
-    </Container>
+    <div className="container mx-auto py-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Retour
+          </Button>
+          <h1 className="text-2xl font-bold">État du système</h1>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Server className="h-4 w-4" />
+              Environnement
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Mode:</span>
+                <span className="font-mono">
+                  {environment.isDev ? 'Développement' : 'Production'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Version:</span>
+                <span className="font-mono">
+                  {import.meta.env.VITE_LOVABLE_VERSION || '1.0.0'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Mode hors ligne:</span>
+                <span className="font-mono">
+                  {environment.isOffline ? 'Activé' : 'Désactivé'}
+                </span>
+              </div>
+              <div className="pt-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="w-full text-xs"
+                  onClick={handleToggleOfflineMode}
+                >
+                  {environment.isOffline ? 'Désactiver' : 'Activer'} le mode hors ligne
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Base de données
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Statut:</span>
+                <span className="font-mono">
+                  {environment.isOffline 
+                    ? 'Hors ligne' 
+                    : 'Connecté'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Utilisateur:</span>
+                <span className="font-mono">
+                  {user ? 'Authentifié' : 'Anonyme'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>ID:</span>
+                <span className="font-mono max-w-[150px] truncate">
+                  {user ? user.id : 'N/A'}
+                </span>
+              </div>
+              <div className="pt-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="w-full text-xs"
+                  onClick={() => navigate('/config')}
+                >
+                  Voir la configuration
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Navigateur
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>En ligne:</span>
+                <span className="font-mono">
+                  {navigator.onLine ? 'Oui' : 'Non'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Plateforme:</span>
+                <span className="font-mono">
+                  {environment.browserInfo.platform || navigator.platform}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Langue:</span>
+                <span className="font-mono">
+                  {environment.browserInfo.language || navigator.language}
+                </span>
+              </div>
+              <div className="pt-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="w-full text-xs"
+                  onClick={() => console.log('Informations navigateur:', environment.browserInfo)}
+                >
+                  Voir détails (console)
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <SystemDiagnostics />
+      
+      <div className="text-center text-sm text-gray-500 mt-8">
+        <p>
+          Ces outils vous aident à diagnostiquer les problèmes de connexion et d'intégration.
+          Si vous rencontrez des difficultés persistantes, veuillez contacter le support.
+        </p>
+      </div>
+    </div>
   );
 }

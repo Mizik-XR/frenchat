@@ -1,86 +1,124 @@
 
-import { useCallback, useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { EdgeFunctionResponse } from '@/integrations/supabase/client';
-import { getRedirectUrl } from '@/utils/environment/urlUtils';
-import { useToast } from '@/hooks/use-toast';
-import { ServiceConfiguration } from '@/integrations/supabase/supabaseModels';
+import { useState, useEffect } from "react";
+import { supabase, EdgeFunctionResponse } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { User } from "@supabase/supabase-js";
+import { GoogleOAuthConfig } from "@/types/google-drive";
 
-export const useGoogleDrive = (user, onSuccess) => {
+const REDIRECT_URI = `${window.location.origin}/auth/callback/google`;
+
+const isGoogleOAuthConfig = (obj: unknown): obj is GoogleOAuthConfig => {
+  if (!obj || typeof obj !== 'object') {
+    console.error("La configuration n'est pas un objet valide");
+    return false;
+  }
+
+  if (!('configured' in obj)) {
+    console.error("Le statut 'configured' est manquant");
+    return false;
+  }
+
+  return true;
+};
+
+export const useGoogleDrive = (user: User | null, onConfigSave: () => void) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const { toast } = useToast();
-  
-  // Check if user is connected to Google Drive on component mount
+
   useEffect(() => {
-    const checkConnectionStatus = async () => {
+    const checkGoogleDriveConnection = async () => {
       if (!user) return;
-      
+
       try {
-        const { data, error } = await supabase
-          .from('service_configurations')
-          .select('status')
+        console.log('Vérification de la connexion Google Drive...');
+        const { data: tokenData, error: tokenError } = await supabase
+          .from('oauth_tokens')
+          .select('*')
           .eq('user_id', user.id)
-          .eq('service_type', 'google_drive')
-          .single();
-        
-        if (!error && data && data.status === 'configured') {
-          setIsConnected(true);
-          if (onSuccess && typeof onSuccess === 'function') {
-            onSuccess();
-          }
-        } else {
-          setIsConnected(false);
+          .eq('provider', 'google')
+          .maybeSingle();
+
+        if (tokenError) {
+          console.error("Erreur lors de la vérification des tokens:", tokenError);
+          return;
         }
-      } catch (error) {
-        console.error("Erreur lors de la vérification de la connexion:", error);
-        setIsConnected(false);
+
+        const { data, error: configError } = await supabase
+          .from('service_configurations')
+          .select('config')
+          .eq('service_type', 'GOOGLE_OAUTH')
+          .single();
+
+        if (configError) {
+          console.error("Erreur de configuration:", configError);
+          return;
+        }
+
+        const config = data?.config as unknown as GoogleOAuthConfig;
+        const isValidConfig = config && isGoogleOAuthConfig(config) && config.configured;
+        const hasValidToken = !!tokenData;
+
+        setIsConnected(isValidConfig && hasValidToken);
+        if (isValidConfig && hasValidToken) {
+          onConfigSave();
+        }
+      } catch (err) {
+        console.error("Erreur lors de la vérification de la connexion:", err);
       }
     };
-    
-    checkConnectionStatus();
-  }, [user, onSuccess]);
-  
-  const initiateGoogleAuth = useCallback(async () => {
-    if (!user) return;
-    
-    setIsConnecting(true);
-    try {
-      // Utiliser getRedirectUrl depuis les utilitaires d'environnement
-      const redirectUri = getRedirectUrl('auth/google/callback');
 
-      const result = await supabase.functions.invoke<EdgeFunctionResponse<{ client_id: string }>>('google-oauth', {
-        body: {
-          code: null,
-          redirectUrl: redirectUri,
-          action: 'get_client_id'
-        }
+    checkGoogleDriveConnection();
+  }, [user, onConfigSave]);
+
+  const initiateGoogleAuth = async () => {
+    if (!user) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté pour utiliser cette fonctionnalité",
+        variant: "destructive",
       });
+      return;
+    }
 
-      if (result.error || !result.data?.client_id) {
+    try {
+      setIsConnecting(true);
+      
+      type ClientIdResponse = { client_id: string };
+      
+      const { data: authData, error: authError } = await supabase.functions.invoke('google-oauth', {
+        body: { action: 'get_client_id' }
+      }) as EdgeFunctionResponse<ClientIdResponse>;
+
+      if (authError || !authData?.client_id) {
         throw new Error("Impossible de récupérer les informations d'authentification");
       }
 
-      // Construction de l'URL d'autorisation
-      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${result.data.client_id}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=https://www.googleapis.com/auth/drive.readonly&access_type=offline&prompt=consent`;
+      const scopes = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
+      const redirectUri = encodeURIComponent(REDIRECT_URI);
+      
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${authData.client_id}&` +
+        `redirect_uri=${redirectUri}&` +
+        `response_type=code&` +
+        `scope=${scopes}&` +
+        `access_type=offline&` +
+        `prompt=consent`;
 
-      // Redirection de l'utilisateur vers Google pour l'authentification
-      window.location.href = googleAuthUrl;
+      window.location.href = authUrl;
     } catch (error) {
-      console.error("Erreur lors de l'initialisation de l'authentification Google:", error);
+      console.error('Erreur lors de l\'initialisation de l\'auth Google:', error);
       toast({
-        title: "Erreur d'authentification",
-        description: "Impossible de démarrer l'authentification Google Drive.",
+        title: "Erreur de configuration",
+        description: error instanceof Error ? error.message : "Impossible d'initialiser la connexion à Google Drive",
         variant: "destructive",
       });
-    } finally {
       setIsConnecting(false);
     }
-  }, [user, toast]);
-  
+  };
+
   return {
     isConnecting,
     isConnected,
-    initiateGoogleAuth,
+    initiateGoogleAuth
   };
 };

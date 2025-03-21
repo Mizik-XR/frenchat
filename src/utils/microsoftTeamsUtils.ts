@@ -1,135 +1,153 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import type { EdgeFunctionResponse } from '@/types/adapters';
-import { validateOAuthState, generateOAuthState, storeOAuthState } from '@/utils/oauthStateManager';
+import { supabase, EdgeFunctionResponse } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { getRedirectUrl } from '@/utils/environment';
+import { generateOAuthState } from '@/utils/oauthStateManager';
 
-// Structure pour la réponse du callback Microsoft
-interface MicrosoftAuthResponse {
-  code: string;
-  state: string;
-  session_state?: string;
-}
+/**
+ * Récupère l'URL de redirection pour l'authentification OAuth Microsoft Teams
+ * @returns L'URL complète de redirection pour Microsoft OAuth
+ */
+export const getMicrosoftRedirectUrl = (): string => {
+  return getRedirectUrl('auth/microsoft/callback');
+};
 
-// Fonction pour échanger le code d'autorisation contre un jeton d'accès
-export const exchangeMicrosoftAuthCode = async (code: string) => {
+/**
+ * Initie le processus d'authentification Microsoft Teams
+ * @param userId L'ID de l'utilisateur actuel
+ * @param tenantId ID du tenant Microsoft
+ * @returns Promise avec l'URL d'authentification Microsoft
+ */
+export const initiateMicrosoftAuth = async (userId: string, tenantId: string): Promise<string> => {
+  if (!userId) {
+    throw new Error("Utilisateur non connecté");
+  }
+
+  const redirectUri = getMicrosoftRedirectUrl();
+  console.log("URL de redirection configurée:", redirectUri);
+  
+  type ClientIdResponse = { client_id: string };
+  
+  const { data: authData, error: authError } = await supabase.functions.invoke('microsoft-oauth', {
+    body: { 
+      action: 'get_client_id',
+      redirectUrl: redirectUri
+    }
+  }) as EdgeFunctionResponse<ClientIdResponse>;
+
+  if (authError || !authData?.client_id) {
+    throw new Error("Impossible de récupérer les informations d'authentification");
+  }
+
+  // Génération d'un état OAuth sécurisé pour prévenir les attaques CSRF
+  const state = generateOAuthState('microsoft');
+
+  // Demande de scopes nécessaires pour Teams
+  const scopes = encodeURIComponent(
+    'user.read ' +
+    'Files.Read.All ' +
+    'Sites.Read.All ' +
+    'ChannelMessage.Read.All ' +
+    'offline_access'
+  );
+  
+  const redirectUrl = encodeURIComponent(redirectUri);
+  
+  const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?` +
+    `client_id=${authData.client_id}&` +
+    `redirect_uri=${redirectUrl}&` +
+    `response_type=code&` +
+    `scope=${scopes}&` +
+    `state=${encodeURIComponent(state)}&` +
+    `prompt=consent`;
+
+  return authUrl;
+};
+
+/**
+ * Révoque le token Microsoft Teams et supprime les enregistrements locaux
+ * @param userId L'ID de l'utilisateur actuel
+ * @returns Promise indiquant le succès de l'opération
+ */
+export const revokeMicrosoftTeamsAccess = async (userId: string): Promise<boolean> => {
+  if (!userId) {
+    return false;
+  }
+
+  // Appel sécurisé à l'Edge Function pour révoquer le token sans l'exposer côté client
+  const { error: revokeError } = await supabase.functions.invoke('microsoft-oauth', {
+    body: { 
+      action: 'revoke_token',
+      userId: userId
+    }
+  });
+
+  if (revokeError) {
+    console.error("Erreur lors de la révocation du token:", revokeError);
+    throw new Error(`Erreur lors de la révocation: ${revokeError.message}`);
+  }
+  
+  return true;
+};
+
+/**
+ * Vérifie l'état du token Microsoft Teams et le rafraîchit si nécessaire
+ * @param userId L'ID de l'utilisateur actuel
+ * @returns Promise indiquant si le token est valide
+ */
+export const checkMicrosoftTokenStatus = async (userId: string): Promise<{isValid: boolean, expiresIn?: number}> => {
+  if (!userId) return { isValid: false };
+  
   try {
+    type TokenStatusResponse = {isValid: boolean, expiresIn?: number};
+    
     const { data, error } = await supabase.functions.invoke('microsoft-oauth', {
       body: { 
-        code,
-        action: 'exchange_code' 
+        action: 'check_token_status', 
+        userId: userId
       }
-    });
-
+    }) as EdgeFunctionResponse<TokenStatusResponse>;
+    
     if (error) {
-      console.error('Erreur lors de l\'échange du code d\'autorisation Microsoft:', error);
-      return { success: false, error };
+      console.error("Erreur lors de la vérification du token:", error);
+      return { isValid: false };
     }
-
-    return { success: true, data };
-  } catch (error) {
-    console.error('Exception lors de l\'échange du code d\'autorisation Microsoft:', error);
-    return { success: false, error };
+    
+    return data || { isValid: false };
+  } catch (e) {
+    console.error("Exception lors de la vérification du token:", e);
+    return { isValid: false };
   }
 };
 
-// Fonction pour obtenir l'URL d'autorisation Microsoft
-export const getMicrosoftAuthUrl = async () => {
+/**
+ * Tente de rafraîchir un token Microsoft Teams expiré
+ * @param userId L'ID de l'utilisateur actuel
+ * @returns Promise indiquant le succès du rafraîchissement
+ */
+export const refreshMicrosoftToken = async (userId: string): Promise<boolean> => {
+  if (!userId) return false;
+  
   try {
-    // Générer et stocker l'état OAuth pour la sécurité
-    const state = generateOAuthState();
-    storeOAuthState('microsoft', state);
-
-    // Obtenir les paramètres clients à partir de l'Edge Function
-    const { data, error } = await supabase.functions.invoke('microsoft-oauth', {
-      body: { action: 'get_auth_params' }
-    });
-
-    if (error || !data) {
-      console.error('Erreur lors de la récupération des paramètres Microsoft:', error);
-      return { success: false, error: error || 'Données non disponibles' };
+    type RefreshResponse = {success: boolean};
+    
+    const { data: refreshData, error: refreshError } = await supabase.functions.invoke('microsoft-oauth', {
+      body: { 
+        action: 'refresh_token', 
+        userId: userId,
+        redirectUrl: getMicrosoftRedirectUrl()
+      }
+    }) as EdgeFunctionResponse<RefreshResponse>;
+    
+    if (refreshError || !refreshData?.success) {
+      console.error("Erreur lors du rafraîchissement du token:", refreshError || "Token non rafraîchi");
+      return false;
     }
-
-    // Construire l'URL de redirection
-    const redirectUri = `${window.location.origin}/microsoft-auth-callback`;
-    const scopes = encodeURIComponent('Files.Read.All offline_access');
     
-    const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${data.client_id}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&response_type=code&state=${state}`;
-    
-    return { success: true, authUrl };
-  } catch (error) {
-    console.error('Exception lors de la génération de l\'URL d\'autorisation Microsoft:', error);
-    return { success: false, error };
-  }
-};
-
-// Fonction pour valider le callback Microsoft OAuth
-export function validateMicrosoftCallback(params: URLSearchParams) {
-  const code = params.get('code');
-  const state = params.get('state');
-  const error = params.get('error');
-  const errorDescription = params.get('error_description');
-  
-  if (error) {
-    return { valid: false, error, errorDescription };
-  }
-  
-  if (!code || !state) {
-    return { valid: false, error: 'Paramètres de callback incomplets' };
-  }
-  
-  // Valider l'état OAuth pour la sécurité CSRF
-  const stateValid = validateOAuthState('microsoft', state);
-  if (!stateValid) {
-    return { valid: false, error: 'État OAuth non valide' };
-  }
-  
-  return { valid: true, code, state };
-}
-
-// Fonctions supplémentaires demandées pour résoudre les erreurs
-export const getMicrosoftRedirectUrl = () => {
-  return `${window.location.origin}/microsoft-auth-callback`;
-};
-
-export const initiateMicrosoftAuth = async () => {
-  const result = await getMicrosoftAuthUrl();
-  if (result.success && result.authUrl) {
-    window.location.href = result.authUrl;
+    console.log("Token rafraîchi avec succès");
     return true;
-  }
-  return false;
-};
-
-export const revokeMicrosoftTeamsAccess = async (userId: string) => {
-  try {
-    const { data, error } = await supabase.functions.invoke('microsoft-oauth', {
-      body: { 
-        action: 'revoke_token',
-        user_id: userId
-      }
-    });
-    
-    if (error) throw error;
-    return { success: true, data };
-  } catch (error) {
-    console.error("Erreur lors de la révocation de l'accès Microsoft Teams:", error);
-    return { success: false, error };
-  }
-};
-
-export const refreshMicrosoftToken = async (userId: string) => {
-  try {
-    const { data, error } = await supabase.functions.invoke('microsoft-oauth', {
-      body: { 
-        action: 'refresh_token',
-        user_id: userId
-      }
-    });
-    
-    if (error) throw error;
-    return { success: true, data };
-  } catch (error) {
-    console.error("Erreur lors du rafraîchissement du token Microsoft:", error);
-    return { success: false, error };
+  } catch (e) {
+    console.error("Exception lors du rafraîchissement du token:", e);
+    return false;
   }
 };

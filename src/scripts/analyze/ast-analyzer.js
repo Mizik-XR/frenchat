@@ -7,6 +7,8 @@
 const parser = require('@babel/parser');
 const traverse = require('@babel/traverse').default;
 const t = require('@babel/types');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Analyse le contenu d'un fichier avec l'AST pour détecter les problèmes
@@ -85,7 +87,7 @@ function analyzeWithAST(filePath, content) {
           t.isImportDefaultSpecifier(spec)
         );
 
-        if (hasDefaultReact && source === 'react' && !filePath.includes('ReactInstance')) {
+        if (hasDefaultReact) {
           problems.push({
             type: 'direct-react-import',
             message: `Import direct de React depuis 'react'`,
@@ -103,41 +105,12 @@ function analyzeWithAST(filePath, content) {
         t.isIdentifier(path.node.property, { name: 'createContext' }) &&
         t.isCallExpression(path.parent)
       ) {
-        // Vérifier si nous sommes dans le fichier ReactInstance lui-même
-        if (!filePath.includes('ReactInstance')) {
-          problems.push({
-            type: 'react-createcontext',
-            message: 'Utilisation directe de React.createContext',
-            suggestion: `Utilisez createContextSafely depuis '@/core/ReactInstance'`,
-            location: path.node.loc
-          });
-        }
-      }
-    },
-    
-    // Détecter les utilisations incorrectes de fonctions avec des génériques
-    TSTypeParameterInstantiation(path) {
-      // Vérifier si le parent est un appel de fonction
-      if (t.isCallExpression(path.parent)) {
-        const callee = path.parent.callee;
-        
-        // Vérifier si c'est une expression membre (ex: React.useState)
-        if (t.isMemberExpression(callee)) {
-          const object = callee.object;
-          const property = callee.property;
-          
-          if (t.isIdentifier(object, { name: 'React' }) && 
-              t.isIdentifier(property) && 
-              ['useState', 'createContext'].includes(property.name)) {
-            
-            problems.push({
-              type: 'generic-usage',
-              message: `Utilisation incorrecte de génériques avec ${property.name}`,
-              suggestion: `Utilisez ${property.name} sans arguments de type explicites, laissez TypeScript les inférer`,
-              location: path.node.loc
-            });
-          }
-        }
+        problems.push({
+          type: 'react-createcontext',
+          message: 'Utilisation directe de React.createContext',
+          suggestion: `Utilisez createContext importé depuis '@/core/ReactInstance'`,
+          location: path.node.loc
+        });
       }
     }
   });

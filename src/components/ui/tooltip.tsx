@@ -1,6 +1,4 @@
 
-"use client"
-
 import * as React from "react"
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 
@@ -9,10 +7,8 @@ import { cn } from "@/lib/utils"
 const TooltipProvider = TooltipPrimitive.Provider
 
 const Tooltip = TooltipPrimitive.Root
-Tooltip.displayName = TooltipPrimitive.Root.displayName
 
 const TooltipTrigger = TooltipPrimitive.Trigger
-TooltipTrigger.displayName = TooltipPrimitive.Trigger.displayName
 
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
@@ -30,18 +26,4 @@ const TooltipContent = React.forwardRef<
 ))
 TooltipContent.displayName = TooltipPrimitive.Content.displayName
 
-// Créer un composant de tooltip composé pour une utilisation plus simple
-const ComposedTooltip = ({ children, ...props }: TooltipPrimitive.TooltipProps) => (
-  <TooltipProvider>
-    <Tooltip {...props}>
-      {children}
-    </Tooltip>
-  </TooltipProvider>
-);
-
-// Ajouter les propriétés pour permettre l'utilisation en composants imbriqués
-ComposedTooltip.Trigger = TooltipTrigger;
-ComposedTooltip.Content = TooltipContent;
-ComposedTooltip.Provider = TooltipProvider;
-
-export { ComposedTooltip as Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }

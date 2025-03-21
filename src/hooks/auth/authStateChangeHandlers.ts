@@ -1,44 +1,104 @@
 
-import { Session, AuthChangeEvent } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { APP_STATE } from '@/integrations/supabase/client';
-import { updateCachedUser, updateSessionLoading } from './authConstants';
-import { createInitialProfile } from './profile/profileUtils';
+import { Session, User } from "@supabase/supabase-js";
+import { toast } from "sonner";
+import { useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { handleAuthSession } from "./authSessionHandlers";
+import { useNavigationHelpers } from "./navigation/navigationHelpers";
+import { isAuthPagePath, isPublicPagePath } from "./routes/routeHelpers";
+import { handleProfileAndConfig } from "./profile/profileUtils";
+import { handleUserRedirection } from "./redirection/redirectionUtils";
+import { APP_STATE } from "@/integrations/supabase/client";
 
-// Gère les changements d'état d'authentification Supabase
+/**
+ * Gère les changements d'état d'authentification
+ * 
+ * @param event Le type d'événement d'authentification
+ * @param session La session utilisateur Supabase
+ * @param setIsLoading Fonction pour définir l'état de chargement
+ * @param setUser Fonction pour définir l'utilisateur authentifié
+ * @param setNeedsConfig Fonction pour définir si une configuration est nécessaire
+ */
+export const handleAuthStateChange = async (
+  event: string,
+  session: Session | null,
+  setIsLoading: (isLoading: boolean) => void,
+  setUser: (user: User | null) => void,
+  setNeedsConfig: (needsConfig: boolean) => void,
+  setIsFirstLogin?: (isFirstLogin: boolean) => void,
+  navigationHelpers?: ReturnType<typeof useNavigationHelpers>,
+  isAuthPage?: boolean
+) => {
+  console.info(`Auth state changed: ${event}`, `session: ${session ? 'User authenticated' : 'No session'}`);
+
+  switch (event) {
+    case 'INITIAL_SESSION':
+    case 'SIGNED_IN':
+      await handleAuthSession(
+        session, 
+        setIsLoading, 
+        setUser, 
+        setNeedsConfig, 
+        setIsFirstLogin,
+        navigationHelpers,
+        isAuthPage
+      );
+      break;
+    case 'SIGNED_OUT':
+      setUser(null);
+      setNeedsConfig(false);
+      if (setIsFirstLogin) setIsFirstLogin(false);
+      setIsLoading(false);
+      break;
+    default:
+      break;
+  }
+};
+
+/**
+ * Hook personnalisé pour gérer les changements d'état d'authentification
+ */
 export const useAuthStateChangeHandler = () => {
-  return async (event: AuthChangeEvent, session: Session | null) => {
-    console.log(`Événement d'authentification: ${event}`);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const navigationHelpers = useNavigationHelpers();
+  const isAuthPage = isAuthPagePath(location.pathname);
 
+  return useCallback(async (event: string, session: Session | null) => {
     if (APP_STATE.isOfflineMode) {
-      console.log("Mode hors ligne activé. Ignorant les changements d'état d'authentification.");
+      console.info("Auth state change ignored in offline mode");
       return null;
     }
 
-    // La session a été récupérée, utilisateur connecté
-    if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-      console.log('Utilisateur connecté:', session.user.id);
-      
-      // Mise à jour de l'utilisateur en cache et démarrage du traitement
-      updateCachedUser(session.user);
-      updateSessionLoading(false);
-      
-      // Vérifier/créer le profil utilisateur initial
-      await createInitialProfile(session.user);
-      
-      return { user: session.user };
-    }
-    
-    // L'utilisateur s'est déconnecté
-    if (event === 'SIGNED_OUT') {
-      console.log('Utilisateur déconnecté');
-      updateCachedUser(null);
-      updateSessionLoading(false);
-      return { user: null };
-    }
-    
-    return { user: session?.user || null };
-  };
-};
+    let user = null;
+    try {
+      let needsConfig = false;
+      let isFirstLogin = false;
 
-export default useAuthStateChangeHandler;
+      // Intercepter les événements de déconnexion pour gérer les redirection
+      if (event === 'SIGNED_OUT' && !isPublicPagePath(location.pathname)) {
+        navigate('/auth', { replace: true, state: { from: location.pathname } });
+      }
+
+      // Gérer les événements de connexion pour vérifier le profil et configurations
+      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+        // Vérifier le profil et configuration
+        const result = await handleProfileAndConfig(session.user.id);
+        needsConfig = result.needsConfig;
+        isFirstLogin = result.isFirstLogin;
+        user = session.user;
+
+        // Gérer la redirection si nécessaire
+        if (isAuthPage) {
+          handleUserRedirection(isAuthPage, needsConfig, isFirstLogin, navigationHelpers);
+        }
+      }
+
+      return { user, needsConfig, isFirstLogin };
+    } catch (error) {
+      console.error("Error handling auth state change:", error);
+      toast.error("Une erreur est survenue lors du traitement de votre authentification");
+      return null;
+    }
+  }, [navigate, location.pathname, navigationHelpers]);
+};

@@ -1,97 +1,115 @@
 
-import { isLocalDevelopment, isLovableEnvironment, isCloudMode, isProduction } from '@/utils/environment/environmentDetection';
+import { supabase } from "@/integrations/supabase/client";
+import { isProduction } from "@/utils/environment/environmentDetection";
+import { getApiBaseUrl } from "@/utils/environment/cloudModeUtils";
 
-/**
- * Configuration des API pour l'application
- */
+// Détermination dynamique de l'URL API en fonction de l'environnement
+const API_URL = getApiBaseUrl();
+const ENVIRONMENT = import.meta.env.VITE_ENVIRONMENT || (isProduction() ? 'production' : 'development');
 
-// Obtenir la base URL pour les appels API
-export function getApiBaseUrl(): string {
-  // En environnement Lovable, utiliser un endpoint mock ou proxy
-  if (isLovableEnvironment()) {
-    return '/api/proxy';
+export const apiConfig = {
+  baseURL: API_URL,
+  isProduction: ENVIRONMENT === 'production',
+  
+  async getHeaders() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '',
+      };
+    } catch (error) {
+      console.error("Erreur lors de la récupération de la session:", error);
+      return {
+        'Content-Type': 'application/json',
+      };
+    }
+  },
+
+  endpoints: {
+    textGeneration: '/generate',
+    modelInfo: '/model-info',
   }
-  
-  // En développement local
-  if (isLocalDevelopment()) {
-    return 'http://localhost:8000';
-  }
-  
-  // En production ou cloud
-  if (isProduction() || isCloudMode()) {
-    return import.meta.env.VITE_API_URL || '/api';
-  }
-  
-  // Fallback
-  return '/api';
-}
+};
 
-// Créer des en-têtes pour les appels API
-export function createApiHeaders(): HeadersInit {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  
-  // Ajouter d'autres en-têtes si nécessaire selon l'environnement
-  if (isLovableEnvironment()) {
-    headers['X-Environment'] = 'lovable';
-  }
-  
-  if (isCloudMode()) {
-    headers['X-Mode'] = 'cloud';
-  }
-  
-  return headers;
-}
+export const isLocalDevelopment = () => ENVIRONMENT === 'development';
 
-// Configuration de timeout pour les appels API
-export const API_TIMEOUT = 30000; // 30 secondes
-
-// Fonction utilitaire pour gérer les timeouts
-export function createApiRequestWithTimeout<T>(
-  promise: Promise<T>, 
-  timeoutMs: number = API_TIMEOUT
-): Promise<T> {
-  let timeoutId: NodeJS.Timeout;
+// Fonction pour nettoyer les données sensibles avant de les logger
+export const sanitizeForLogs = (data: any): any => {
+  if (!data) return data;
   
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => {
-      reject(new Error(`Request timed out after ${timeoutMs}ms`));
-    }, timeoutMs);
-  });
+  // Créer une copie profonde de l'objet
+  const sanitized = JSON.parse(JSON.stringify(data));
   
-  return Promise.race([
-    promise,
-    timeoutPromise
-  ]).finally(() => {
-    clearTimeout(timeoutId);
-  });
-}
-
-// Exporter la fonction isLocalDevelopment pour l'utiliser dans d'autres fichiers
-export { isLocalDevelopment };
-
-// Fonction sécurisée pour les requêtes API
-export async function secureApiRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
-  const baseUrl = getApiBaseUrl();
-  const url = `${baseUrl}${endpoint}`;
+  // Liste des clés sensibles à masquer
+  const sensitiveKeys = ['apiKey', 'api_key', 'password', 'token', 'secret', 'authorization'];
   
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...createApiHeaders(),
-        ...(options.headers || {})
+  // Fonction récursive pour parcourir l'objet
+  const sanitizeObject = (obj: any) => {
+    if (!obj || typeof obj !== 'object') return;
+    
+    Object.keys(obj).forEach(key => {
+      const lowerKey = key.toLowerCase();
+      
+      // Masquer les valeurs des clés sensibles
+      if (sensitiveKeys.some(k => lowerKey.includes(k))) {
+        if (typeof obj[key] === 'string' && obj[key]) {
+          obj[key] = '********';
+        }
+      } 
+      // Traiter récursivement les objets et tableaux imbriqués
+      else if (obj[key] && typeof obj[key] === 'object') {
+        sanitizeObject(obj[key]);
       }
     });
+  };
+  
+  sanitizeObject(sanitized);
+  return sanitized;
+};
+
+// Fonction pour envoyer des requêtes API sécurisées
+export const secureApiRequest = async <T>(
+  endpoint: string, 
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
+  data?: any
+): Promise<T> => {
+  try {
+    const headers = await apiConfig.getHeaders();
+    
+    // Ne pas envoyer de corps pour les requêtes GET
+    const options: RequestInit = {
+      method,
+      headers,
+      ...(method !== 'GET' && data ? { body: JSON.stringify(data) } : {})
+    };
+    
+    // Log sécurisé (sans données sensibles)
+    if (!apiConfig.isProduction) {
+      console.log(`API Request to ${endpoint}:`, {
+        method,
+        ...(data ? { body: sanitizeForLogs(data) } : {})
+      });
+    }
+    
+    const url = `${apiConfig.baseURL}${endpoint}`;
+    const response = await fetch(url, options);
     
     if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
+      // Tenter de récupérer des informations d'erreur JSON
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error || `Request failed with status ${response.status}`);
+      } catch (jsonError) {
+        // Si la réponse n'est pas JSON, utiliser le texte brut ou un message par défaut
+        const errorText = await response.text().catch(() => '');
+        throw new Error(errorText || `Request failed with status ${response.status}`);
+      }
     }
     
     return await response.json();
-  } catch (error) {
-    console.error('Secure API request failed:', error);
+  } catch (error: any) {
+    console.error(`Error in API request to ${endpoint}:`, error.message);
     throw error;
   }
-}
+};

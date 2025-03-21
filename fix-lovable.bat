@@ -1,85 +1,82 @@
 
 @echo off
-echo ===================================================
-echo     SCRIPT DE RÉPARATION DE L'INTÉGRATION LOVABLE
-echo ===================================================
-echo.
-echo Ce script va tenter de résoudre les problèmes d'intégration de Lovable.
-echo Assurez-vous que l'application est en cours d'exécution.
-echo.
-echo ===================================================
-echo.
+chcp 65001 >nul
+setlocal enabledelayedexpansion
 
-REM Vérifier si le fichier index.html existe
-if not exist "index.html" (
-    echo [ERREUR] Le fichier index.html n'a pas été trouvé dans le répertoire courant.
-    echo Veuillez exécuter ce script depuis le répertoire racine du projet.
-    goto :end
-)
+title Filechat - Fix Lovable Integration
 
-REM Vérifier si le script Lovable est présent dans index.html
-echo [ÉTAPE 1/3] Vérification de la présence du script Lovable dans index.html...
-findstr /C:"gptengineer.js" index.html >nul
-if %errorlevel% == 0 (
-    echo ✅ Le script Lovable est bien présent dans index.html.
-) else (
-    echo ❌ Le script Lovable n'est pas présent dans index.html.
-    echo Veuillez ajouter le script suivant dans la section head de index.html:
-    echo ^<script src="https://cdn.gpteng.co/gptengineer.js" type="module"^>^</script^>
-)
-
-REM Vérifier l'initialisation de Lovable dans main.tsx
+echo ===================================================
+echo     RÉPARATION INTÉGRATION LOVABLE
+echo ===================================================
 echo.
-echo [ÉTAPE 2/3] Vérification de l'initialisation de Lovable dans main.tsx...
-if exist "src\main.tsx" (
-    findstr /C:"initLovableIntegration" src\main.tsx >nul
-    if %errorlevel% == 0 (
-        echo ✅ L'initialisation de Lovable est bien présente dans main.tsx.
+echo Cet outil va résoudre les problèmes d'édition Lovable.
+echo.
+echo [ÉTAPE 1/3] Vérification du fichier index.html...
+if exist "index.html" (
+    echo [INFO] Vérification de la présence du script gptengineer.js...
+    findstr "gptengineer.js" "index.html" >nul
+    if !errorlevel! NEQ 0 (
+        echo [ATTENTION] Le script Lovable manque dans index.html, correction...
+        
+        REM Sauvegarde du fichier original
+        copy index.html index.html.backup >nul
+        
+        REM Modifier le fichier index.html pour ajouter le script manquant
+        (for /f "delims=" %%i in (index.html) do (
+            echo %%i
+            echo %%i | findstr "<script " >nul
+            if !errorlevel! EQU 0 (
+                echo     ^<script src="https://cdn.gpteng.co/gptengineer.js" type="module"^>^</script^>
+            )
+        )) > index.html.temp
+        
+        move /y index.html.temp index.html >nul
+        echo [OK] Script gptengineer.js ajouté dans index.html.
     ) else (
-        echo ⚠️ L'initialisation de Lovable n'a pas été trouvée dans main.tsx.
-        echo Veuillez vous assurer que 'initLovableIntegration()' est appelé au début de main.tsx.
+        echo [OK] Le script gptengineer.js est déjà présent dans index.html.
     )
 ) else (
-    echo ❌ Le fichier src\main.tsx n'a pas été trouvé.
+    echo [ERREUR] Le fichier index.html est manquant dans le répertoire racine.
+    pause
+    exit /b 1
 )
-
-REM Vérifier les utilitaires Lovable
 echo.
-echo [ÉTAPE 3/3] Vérification des utilitaires Lovable...
-if exist "src\utils\lovable" (
-    echo ✅ Le répertoire des utilitaires Lovable existe.
-    
-    REM Vérifier la présence des fichiers essentiels
-    if exist "src\utils\lovable\lovableIntegration.ts" (
-        echo ✅ Le fichier lovableIntegration.ts est présent.
+
+echo [ÉTAPE 2/3] Reconstruction de l'application...
+call npm run build
+if errorlevel 1 (
+    echo [ERREUR] Reconstruction de l'application échouée.
+    pause
+    exit /b 1
+) else (
+    echo [OK] Application reconstruite avec succès.
+)
+echo.
+
+echo [ÉTAPE 3/3] Vérification finale...
+if exist "dist\index.html" (
+    echo [INFO] Vérification de dist\index.html...
+    findstr "gptengineer.js" "dist\index.html" >nul
+    if !errorlevel! NEQ 0 (
+        echo [ATTENTION] Le script gptengineer.js est absent de dist\index.html.
+        echo             Application d'une correction manuelle...
+        copy /y index.html dist\index.html >nul
+        echo [OK] Correction appliquée.
     ) else (
-        echo ❌ Le fichier lovableIntegration.ts est manquant.
-    )
-    
-    if exist "src\utils\lovable\editingUtils.ts" (
-        echo ✅ Le fichier editingUtils.ts est présent.
-    ) else (
-        echo ❌ Le fichier editingUtils.ts est manquant.
+        echo [OK] Le fichier dist\index.html contient le script requis.
     )
 ) else (
-    echo ❌ Le répertoire des utilitaires Lovable est manquant.
+    echo [INFO] Le dossier dist n'existe pas encore.
 )
+echo.
 
-REM Conclusion
-echo.
 echo ===================================================
-echo               VÉRIFICATION TERMINÉE
+echo     RÉPARATION TERMINÉE
 echo ===================================================
 echo.
-echo Si des problèmes ont été identifiés, veuillez les corriger.
-echo Puis redémarrez l'application avec 'npm run dev' ou 'yarn dev'.
+echo Pour appliquer les changements:
+echo 1. Redémarrez l'application
+echo 2. Videz le cache de votre navigateur ou utilisez le mode incognito
 echo.
-echo Pour forcer la réinjection du script Lovable dans le navigateur:
-echo 1. Ouvrez la console développeur (F12)
-echo 2. Exécutez: window.forceLovableReload()
-echo 3. Rafraîchissez la page
-echo.
-echo ===================================================
-
-:end
 pause
+exit /b 0

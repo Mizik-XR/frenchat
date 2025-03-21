@@ -1,11 +1,8 @@
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, Server, ExternalLink, Info, Cloud, WifiOff } from "lucide-react";
+import { AlertTriangle, Server, ExternalLink, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isLovableEnvironment, isPreviewEnvironment } from "@/utils/environment";
-import { toast } from "@/hooks/use-toast";
-import { Switch } from "@/components/ui/switch";
-import { APP_STATE } from "@/compatibility/supabaseCompat";
 
 interface EnvironmentDetectionProps {
   children: React.ReactNode;
@@ -20,25 +17,6 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
   });
   const [isCheckingServices, setIsCheckingServices] = useState(false);
   const [checkAttempted, setCheckAttempted] = useState(false);
-  const [offlineMode, setOfflineMode] = useState(() => {
-    // Initialiser selon la valeur du localStorage ou l'état de APP_STATE
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('OFFLINE_MODE') === 'true' || APP_STATE.isOfflineMode;
-    }
-    return false;
-  });
-  const [enableSupabaseInLovable, setEnableSupabaseInLovable] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('ENABLE_SUPABASE_IN_LOVABLE') === 'true';
-    }
-    return false;
-  });
-  const [enableLocalAIInLovable, setEnableLocalAIInLovable] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('ENABLE_LOCAL_AI_IN_LOVABLE') === 'true';
-    }
-    return false;
-  });
 
   // Vérification des URLs comme étant des environnements de prévisualisation
   useEffect(() => {
@@ -51,48 +29,24 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
     // Vérifier si mode cloud est forcé par un paramètre d'URL ou une variable d'environnement
     const urlParams = new URLSearchParams(window.location.search);
     const forceCloudMode = urlParams.get('forceCloud') === 'true' || 
-                          urlParams.get('mode') === 'cloud';
+                          urlParams.get('mode') === 'cloud' ||
+                          window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true';
     
-    // Vérifier les paramètres spécifiques pour forcer le mode en ligne ou hors ligne
-    const forceOnline = urlParams.get('forceOnline') === 'true';
-    const forceOffline = urlParams.get('forceOffline') === 'true';
-    
-    if (forceOnline) {
-      APP_STATE.setOfflineMode(false);
-      localStorage.setItem('OFFLINE_MODE', 'false');
-      setOfflineMode(false);
-      toast({
-        title: "Mode en ligne forcé activé",
-        variant: "default"
-      });
-    } else if (forceOffline) {
-      APP_STATE.setOfflineMode(true);
-      localStorage.setItem('OFFLINE_MODE', 'true');
-      setOfflineMode(true);
-      toast({
-        title: "Mode hors ligne forcé activé",
-        variant: "default"
-      });
-    } else if (forceCloudMode) {
+    if (forceCloudMode) {
       console.log("Mode cloud forcé par configuration. Aucune vérification locale ne sera effectuée.");
       window.localStorage.setItem('aiServiceType', 'cloud');
       return;
     }
 
-    // Dans l'environnement Lovable, afficher un toast informant du mode actuel
-    if (isLovable) {
-      const lovableOnlineMode = localStorage.getItem('ENABLE_SUPABASE_IN_LOVABLE') === 'true';
-      if (lovableOnlineMode) {
-        toast({
-          title: "Mode Supabase activé dans l'environnement Lovable",
-          variant: "default"
-        });
-      } else {
-        toast({
-          title: "Mode hors ligne actif dans l'environnement Lovable (par défaut)",
-          variant: "default"
-        });
+    // Ne rien vérifier en environnement de prévisualisation
+    if (isPreview) {
+      // Si Lovable, forcer le mode cloud
+      if (isLovable) {
+        window.localStorage.setItem('FORCE_CLOUD_MODE', 'true');
+        window.localStorage.setItem('aiServiceType', 'cloud');
+        console.log("Environnement Lovable détecté, mode cloud activé automatiquement.");
       }
+      return;
     }
     
     // Pour localhost, vérifier mais de façon non-bloquante et très différée
@@ -165,112 +119,8 @@ export const EnvironmentDetection: React.FC<EnvironmentDetectionProps> = ({ chil
     }
   };
 
-  // Gestion du basculement du mode hors ligne
-  const handleOfflineToggle = (enabled: boolean) => {
-    APP_STATE.setOfflineMode(enabled);
-    localStorage.setItem('OFFLINE_MODE', enabled ? 'true' : 'false');
-    setOfflineMode(enabled);
-    
-    // Notification à l'utilisateur
-    toast({
-      title: enabled ? 'Mode hors ligne activé' : 'Mode hors ligne désactivé',
-      description: enabled 
-        ? 'L\'application fonctionnera sans connexion à Supabase.' 
-        : 'L\'application tentera de se connecter à Supabase.',
-      variant: enabled ? 'destructive' : 'default'
-    });
-    
-    // Rechargement de la page pour appliquer le changement
-    if (enabled) {
-      // En mode hors ligne, rediriger vers la page d'accueil si on est sur une route protégée
-      if (window.location.pathname.includes('/chat') || 
-          window.location.pathname.includes('/document')) {
-        window.location.href = '/';
-      } else {
-        window.location.reload();
-      }
-    } else {
-      window.location.reload();
-    }
-  };
-  
-  // Gestion du basculement de Supabase dans Lovable
-  const handleSupabaseInLovableToggle = (enabled: boolean) => {
-    localStorage.setItem('ENABLE_SUPABASE_IN_LOVABLE', enabled ? 'true' : 'false');
-    setEnableSupabaseInLovable(enabled);
-    
-    // Notification à l'utilisateur
-    toast({
-      title: enabled ? 'Mode Supabase activé' : 'Mode Supabase désactivé',
-      description: enabled 
-        ? 'L\'application tentera de se connecter à Supabase dans l\'environnement Lovable.' 
-        : 'L\'application fonctionnera en mode hors ligne dans l\'environnement Lovable.',
-      variant: 'default'
-    });
-    
-    // Rechargement de la page pour appliquer le changement
-    window.location.reload();
-  };
-  
-  // Gestion du basculement de l'IA locale dans Lovable
-  const handleLocalAIInLovableToggle = (enabled: boolean) => {
-    localStorage.setItem('ENABLE_LOCAL_AI_IN_LOVABLE', enabled ? 'true' : 'false');
-    setEnableLocalAIInLovable(enabled);
-    
-    // Notification à l'utilisateur
-    toast({
-      title: enabled ? 'IA locale activée' : 'IA locale désactivée',
-      description: enabled 
-        ? 'L\'application utilisera l\'IA locale dans l\'environnement Lovable.' 
-        : 'L\'application n\'utilisera pas l\'IA locale dans l\'environnement Lovable.',
-      variant: 'default'
-    });
-  };
-
   // Ne jamais bloquer le rendu de l'application
   if (isPreviewEnv || !checkAttempted || !showAlert) {
-    // Si nous sommes dans l'environnement Lovable, afficher les options de basculement
-    if (isLovableEnvironment()) {
-      return (
-        <>
-          <div className="fixed top-4 right-4 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg z-50 flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <Cloud className="h-4 w-4 text-blue-500" />
-                <span className="text-sm">Supabase</span>
-              </div>
-              <Switch
-                checked={enableSupabaseInLovable}
-                onCheckedChange={handleSupabaseInLovableToggle}
-              />
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <Server className="h-4 w-4 text-green-500" />
-                <span className="text-sm">IA Locale</span>
-              </div>
-              <Switch
-                checked={enableLocalAIInLovable}
-                onCheckedChange={handleLocalAIInLovableToggle}
-              />
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <WifiOff className="h-4 w-4 text-red-500" />
-                <span className="text-sm">Mode hors ligne</span>
-              </div>
-              <Switch
-                checked={offlineMode}
-                onCheckedChange={handleOfflineToggle}
-              />
-            </div>
-          </div>
-          {children}
-        </>
-      );
-    }
-    
-    // Sinon, rendre normalement
     return <>{children}</>;
   }
 

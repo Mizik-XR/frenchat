@@ -1,76 +1,247 @@
 
-import { React } from "@/core/ReactInstance";
-import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { useAuthSession } from "@/hooks/useAuthSession";
-import { UserAvatar } from "@/components/auth/UserAvatar";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { isLovableEnvironment } from "@/utils/environment";
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { 
+  Settings, 
+  MessageSquare, 
+  FileText, 
+  BarChart, 
+  Menu, 
+  ChevronDown,
+  MapPin
+} from 'lucide-react';
+import { ModeToggle } from "../ThemeToggle";
+import { UserAvatar } from '../auth/UserAvatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useAuth } from '../AuthProvider';
+import { Badge } from '../ui/badge';
+import { useUserNotifications } from '@/hooks/useUserNotifications';
+import { NotificationCenter } from '../notifications/NotificationCenter';
 
-export const NavBar = ({ children }: { children?: React.ReactNode }) => {
-  const { user, signOut, isOfflineMode } = useAuthSession();
-  const isLovable = isLovableEnvironment();
+export const NavBar = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { unreadCount } = useUserNotifications();
+  const [showMenu, setShowMenu] = useState(false);
+
+  const isActive = (path: string) => {
+    return location.pathname.startsWith(path);
+  };
+
+  const closeMobileMenu = () => {
+    setShowMenu(false);
+  };
+
+  const navigateTo = (path: string) => {
+    navigate(path);
+    closeMobileMenu();
+  };
+
+  const renderNavLinks = () => (
+    <>
+      <Button
+        asChild
+        variant={isActive('/chat') ? 'default' : 'ghost'}
+        size="sm"
+        className="hidden md:flex"
+      >
+        <Link to="/chat">
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Chat
+        </Link>
+      </Button>
+      <Button
+        asChild
+        variant={isActive('/documents') ? 'default' : 'ghost'}
+        size="sm"
+        className="hidden md:flex"
+      >
+        <Link to="/documents">
+          <FileText className="h-4 w-4 mr-2" />
+          Documents
+        </Link>
+      </Button>
+      <Button
+        asChild
+        variant={isActive('/monitoring') ? 'default' : 'ghost'}
+        size="sm"
+        className="hidden md:flex"
+      >
+        <Link to="/monitoring">
+          <BarChart className="h-4 w-4 mr-2" />
+          Monitoring
+        </Link>
+      </Button>
+      <Button
+        asChild
+        variant={isActive('/config') ? 'default' : 'ghost'}
+        size="sm"
+        className="hidden md:flex"
+      >
+        <Link to="/config">
+          <Settings className="h-4 w-4 mr-2" />
+          Configuration
+        </Link>
+      </Button>
+      <Button
+        onClick={() => navigate('/landing?section=roadmap')}
+        variant="ghost"
+        size="sm"
+        className="hidden md:flex"
+      >
+        <MapPin className="h-4 w-4 mr-2" />
+        Roadmap
+      </Button>
+    </>
+  );
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Link to="/" className="flex items-center">
-                <span className="text-xl font-bold text-gray-900 dark:text-white">Frenchat</span>
+    <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
+      <div className="flex items-center">
+        <Link to="/" className="flex items-center">
+          <img src="/favicon.ico" alt="filechat" className="mr-2 w-6 h-6" />
+          <span className="font-bold text-lg">filechat</span>
+        </Link>
+      </div>
+
+      <div className="flex-1 flex justify-center">
+        {renderNavLinks()}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <NotificationCenter />
+
+        <ModeToggle />
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="relative"
+            >
+              <UserAvatar />
+              <ChevronDown className="ml-2 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>
+              <div className="flex items-center gap-2">
+                <UserAvatar />
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold">Mon compte</span>
+                  {user && <span className="text-xs text-muted-foreground">{user.email}</span>}
+                </div>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link to="/chat" className="w-full cursor-pointer">
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  <span>Chat</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/documents" className="w-full cursor-pointer">
+                  <FileText className="mr-2 h-4 w-4" />
+                  <span>Documents</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/monitoring" className="w-full cursor-pointer">
+                  <BarChart className="mr-2 h-4 w-4" />
+                  <span>Monitoring</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigateTo('/landing?section=roadmap')} className="cursor-pointer">
+                <MapPin className="mr-2 h-4 w-4" />
+                <span>Roadmap</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/config" className="w-full cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configuration</span>
               </Link>
-            </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link
-                to="/chat"
-                className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white dark:hover:border-gray-600"
-              >
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => setShowMenu(!showMenu)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {showMenu && (
+        <div className="fixed inset-0 top-14 z-50 bg-background border-t md:hidden">
+          <div className="flex flex-col p-4 space-y-3">
+            <Button
+              asChild
+              variant={isActive('/chat') ? 'default' : 'ghost'}
+              onClick={closeMobileMenu}
+            >
+              <Link to="/chat">
+                <MessageSquare className="h-4 w-4 mr-2" />
                 Chat
               </Link>
-              <Link
-                to="/document"
-                className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white dark:hover:border-gray-600"
-              >
+            </Button>
+            <Button
+              asChild
+              variant={isActive('/documents') ? 'default' : 'ghost'}
+              onClick={closeMobileMenu}
+            >
+              <Link to="/documents">
+                <FileText className="h-4 w-4 mr-2" />
                 Documents
               </Link>
-              {!isOfflineMode && (
-                <Link
-                  to="/profile"
-                  className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white dark:hover:border-gray-600"
-                >
-                  Profil
-                </Link>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {children}
-            
-            <ThemeToggle />
-            
-            {user && !isLovable && (
-              <UserAvatar />
-            )}
-            
-            {user && !isOfflineMode && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => signOut()}
-                className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
-              >
-                Déconnexion
-              </Button>
-            )}
-            
-            <ConnectionStatusBadge />
+            </Button>
+            <Button
+              asChild
+              variant={isActive('/monitoring') ? 'default' : 'ghost'}
+              onClick={closeMobileMenu}
+            >
+              <Link to="/monitoring">
+                <BarChart className="h-4 w-4 mr-2" />
+                Monitoring
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant={isActive('/config') ? 'default' : 'ghost'}
+              onClick={closeMobileMenu}
+            >
+              <Link to="/config">
+                <Settings className="h-4 w-4 mr-2" />
+                Configuration
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => navigateTo('/landing?section=roadmap')}
+            >
+              <MapPin className="h-4 w-4 mr-2" />
+              Roadmap
+            </Button>
           </div>
         </div>
-      </div>
-    </nav>
+      )}
+    </header>
   );
 };
-
-export default NavBar;

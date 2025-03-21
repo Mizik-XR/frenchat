@@ -1,42 +1,25 @@
 
 /**
- * Utilitaires de détection d'environnement pour l'application
+ * Utilitaires de détection d'environnement
+ * 
+ * Ce fichier définit les fonctions primaires de détection d'environnement,
+ * qui sont ensuite réexportées par index.ts pour maintenir la compatibilité des API.
  */
 
-// Détection de l'environnement Lovable
+/**
+ * Vérifie si l'application est exécutée dans l'environnement Lovable
+ */
 export function isLovableEnvironment(): boolean {
-  // Vérifier si nous sommes en environnement Lovable
   if (typeof window === 'undefined') return false;
   
-  // Vérifier l'URL
-  const isLovableUrl = window.location.href.includes('lovable.dev') || 
-                       window.location.href.includes('gpteng.co') ||
-                       window.location.href.includes('lovableproject.com');
-  
-  // Vérifier la présence de l'objet global
-  const hasGlobalObject = typeof window.GPTEngineer !== 'undefined' || 
-                          typeof window.__GPTEngineer !== 'undefined';
-  
-  // Vérifier si le script est chargé
-  const scriptLoaded = document.querySelector('script[src*="gptengineer.js"]') !== null;
-  
-  return isLovableUrl || hasGlobalObject || scriptLoaded;
+  return window.location.hostname.includes('lovable') || 
+         window.location.hostname.includes('lovableproject.com') ||
+         window.location.hostname.includes('gpteng');
 }
 
-// Détection du mode cloud
-export function isCloudMode(): boolean {
-  // Si nous sommes dans Lovable, considérer comme mode cloud
-  if (isLovableEnvironment()) {
-    return true;
-  }
-  
-  // Sinon, utiliser la fonction existante
-  return import.meta.env.VITE_CLOUD_MODE === 'true' || 
-         Boolean(import.meta.env.VITE_CLOUD_API_URL) ||
-         Boolean(window.localStorage.getItem('CLOUD_MODE')) === true;
-}
-
-// Détection du mode développement local
+/**
+ * Vérifie si l'application est exécutée en mode développement local
+ */
 export function isLocalDevelopment(): boolean {
   if (typeof window === 'undefined') return false;
   
@@ -44,23 +27,38 @@ export function isLocalDevelopment(): boolean {
          window.location.hostname === '127.0.0.1';
 }
 
-// Ajout: Détection du mode production
-export function isProduction(): boolean {
+/**
+ * Détecte si l'application est en cours d'exécution dans un environnement de prévisualisation
+ */
+export function isPreviewEnvironment(): boolean {
   if (typeof window === 'undefined') return false;
   
-  return !isLocalDevelopment() && !isLovableEnvironment() && 
-         import.meta.env.MODE === 'production';
+  return window.location.hostname.includes('preview') || 
+         isLovableEnvironment();
 }
 
-// Obtenir l'environnement actuel
-export function getEnvironmentType(): 'local' | 'lovable' | 'production' {
-  if (isLocalDevelopment()) {
-    return 'local';
-  }
+/**
+ * Vérifie si l'application est exécutée en mode production
+ */
+export function isProduction(): boolean {
+  return import.meta.env.PROD === true && !isPreviewEnvironment();
+}
+
+/**
+ * Vérifie si l'application est exécutée en mode développement
+ */
+export function isDevelopment(): boolean {
+  return import.meta.env.DEV === true || !isProduction();
+}
+
+/**
+ * Vérifie si le mode cloud est forcé dans l'application
+ */
+export function isCloudMode(): boolean {
+  if (typeof window === 'undefined') return false;
   
-  if (isLovableEnvironment()) {
-    return 'lovable';
-  }
-  
-  return 'production';
+  return window.localStorage.getItem('FORCE_CLOUD_MODE') === 'true' ||
+         window.localStorage.getItem('aiServiceType') === 'cloud' ||
+         new URLSearchParams(window.location.search).get('mode') === 'cloud' ||
+         isLovableEnvironment();
 }

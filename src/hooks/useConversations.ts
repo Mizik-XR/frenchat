@@ -1,8 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Conversation, WebUIConfig, adaptConversation, webUIConfigToJson } from "@/integrations/supabase/adapters";
-import { toJson } from "@/integrations/supabase/adapters";
+import { Conversation, WebUIConfig } from "@/types/chat";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
 
@@ -21,7 +20,17 @@ export function useConversations() {
       
       if (error) throw error;
       
-      return data.map((conv: any): Conversation => adaptConversation(conv));
+      return data.map((conv: any): Conversation => ({
+        id: conv.id,
+        title: conv.title,
+        createdAt: new Date(conv.created_at).getTime(),
+        updatedAt: new Date(conv.updated_at).getTime(),
+        folderId: conv.folder_id,
+        isPinned: conv.is_pinned,
+        isArchived: conv.is_archived,
+        archiveDate: conv.archive_date ? new Date(conv.archive_date) : undefined,
+        settings: conv.settings
+      }));
     }
   });
 
@@ -46,7 +55,7 @@ export function useConversations() {
       .from('chat_conversations')
       .insert({
         title: "Nouvelle conversation",
-        settings: webUIConfigToJson(config),
+        settings: config,
         user_id: user.user.id,
         is_archived: false
       })
@@ -94,7 +103,7 @@ export function useConversations() {
       if (params.isPinned !== undefined) updates.is_pinned = params.isPinned;
       if (params.isArchived !== undefined) {
         updates.is_archived = params.isArchived;
-        updates.archive_date = params.isArchived ? new Date().toISOString() : null;
+        updates.archive_date = params.isArchived ? new Date() : null;
       }
 
       const { error } = await supabase
@@ -173,5 +182,3 @@ export function useConversations() {
     deleteConversation: deleteConversation.mutate
   };
 }
-
-export default useConversations;
