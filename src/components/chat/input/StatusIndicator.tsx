@@ -3,15 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip } from '@/components/ui/tooltip';
 import { APP_STATE } from "@/integrations/supabase/client";
-
-interface StatusIndicatorProps {
-  isOnline?: boolean;
-  isLoading?: boolean;
-  serviceType?: string; // Ajout de cette prop pour résoudre l'erreur
-  mode?: "auto" | "manual"; // Ajout de cette prop pour résoudre l'erreur
-  model?: string; // Ajout de cette prop pour résoudre l'erreur
-  modelSource?: "local" | "cloud"; // Ajout de cette prop pour résoudre l'erreur
-}
+import { StatusIndicatorProps } from '@/types/adapters';
 
 export function StatusIndicator({ 
   isOnline = true, 

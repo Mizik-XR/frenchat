@@ -8,11 +8,7 @@ import { cn } from "@/lib/utils"
 
 const TooltipProvider = TooltipPrimitive.Provider
 
-const Tooltip = ({ ...props }) => (
-  <TooltipProvider>
-    <TooltipPrimitive.Root {...props} />
-  </TooltipProvider>
-)
+const Tooltip = TooltipPrimitive.Root
 Tooltip.displayName = TooltipPrimitive.Root.displayName
 
 const TooltipTrigger = TooltipPrimitive.Trigger
@@ -34,9 +30,18 @@ const TooltipContent = React.forwardRef<
 ))
 TooltipContent.displayName = TooltipPrimitive.Content.displayName
 
-// Assignation des composants enfants à Tooltip
-Tooltip.Trigger = TooltipTrigger;
-Tooltip.Content = TooltipContent;
-Tooltip.Provider = TooltipProvider;
+// Créer un composant de tooltip composé pour une utilisation plus simple
+const ComposedTooltip = ({ children, ...props }: TooltipPrimitive.TooltipProps) => (
+  <TooltipProvider>
+    <Tooltip {...props}>
+      {children}
+    </Tooltip>
+  </TooltipProvider>
+);
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+// Ajouter les propriétés pour permettre l'utilisation en composants imbriqués
+ComposedTooltip.Trigger = TooltipTrigger;
+ComposedTooltip.Content = TooltipContent;
+ComposedTooltip.Provider = TooltipProvider;
+
+export { ComposedTooltip as Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
