@@ -289,13 +289,32 @@ const Landing = () => {
         </footer>
       </div>
       
-      {/* Styles pour l'animation des étoiles */}
-      <style jsx>{`
+      <style>
+        {`
         @keyframes twinkle {
           0%, 100% { opacity: 0.2; }
           50% { opacity: 0.8; }
         }
-      `}</style>
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-20px); }
+        }
+        .hover-scale:hover {
+          transform: scale(1.05);
+        }
+        .french-flag-gradient {
+          background: linear-gradient(to right, #0055A4 33.3%, white 33.3%, white 66.6%, #EF4135 66.6%);
+        }
+        .bg-grid-white\\/\\[0\\.02\\] {
+          background-size: 40px 40px;
+          background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                            linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        }
+        `}
+      </style>
     </div>
   );
 };
