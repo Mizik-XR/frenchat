@@ -1,44 +1,58 @@
 
 /**
- * Ce fichier garantit que nous n'utilisons qu'une seule instance de React dans toute l'application
+ * Instance centralisée de React pour éviter les problèmes d'instances multiples
  * 
  * Utiliser cette importation au lieu d'importer directement depuis 'react'
- * aide à éviter les problèmes avec des instances multiples de React.
+ * pour garantir qu'une seule instance de React est utilisée dans l'application.
  */
-
 import * as React from 'react';
-import { createContext, useState, useEffect, useMemo, useCallback } from 'react';
 
-// Exporter React directement
-export { React };
-
-// Exporter les hooks et autres utilitaires React
-export {
-  createContext,
+// Fonctions React standard
+export const {
   useState,
   useEffect,
+  useContext,
+  useReducer,
+  useCallback,
   useMemo,
-  useCallback
-};
+  useRef,
+  useLayoutEffect,
+  useImperativeHandle,
+  useDebugValue,
+  createContext,
+  createElement,
+  Fragment,
+  forwardRef,
+  memo,
+  lazy,
+  Suspense,
+  isValidElement,
+  Children
+} = React;
+
+// Instance de React
+export { React };
 
 /**
- * Version de React pour le débogage
+ * Crée un contexte React de manière sécurisée pour éviter les problèmes liés aux différences
+ * d'instances de React entre les composants.
+ * 
+ * @param defaultValue La valeur par défaut du contexte
  */
-export const REACT_VERSION = React.version;
-
-/**
- * Vérifie si l'instance React est correctement initialisée
- */
-export function isReactInitialized(): boolean {
-  return React != null && typeof React.createElement === 'function';
+export function createContextSafely<T>(defaultValue: T) {
+  return React.createContext(defaultValue);
 }
 
-// Fonctions utilitaires pour vérifier l'état de React
-export const ReactUtils = {
-  version: React.version,
-  isInitialized: isReactInitialized,
-  createElement: React.createElement
+/**
+ * Utilitaire pour créer des hooks personnalisés de manière sécurisée
+ * en utilisant l'instance React partagée.
+ */
+export const hooks = {
+  useState: React.useState,
+  useEffect: React.useEffect,
+  useContext: React.useContext,
+  useReducer: React.useReducer,
+  useCallback: React.useCallback,
+  useMemo: React.useMemo,
+  useRef: React.useRef
 };
-
-// Par défaut, exporter React
-export default React;

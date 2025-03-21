@@ -12,7 +12,7 @@ const path = require('path');
 const chalk = require('chalk');
 const { scanDirectory } = require('./src/scripts/analyze/file-scanner');
 const { detectCircularDependencies, generateCircularDependencySuggestions } = require('./src/scripts/analyze/dependency-analyzer');
-const { generateReport } = require('./src/scripts/analyze/report-generator');
+const { generateReport, generateImprovementSuggestions } = require('./src/scripts/analyze/report-generator');
 
 /**
  * Point d'entrée principal du script
@@ -39,6 +39,9 @@ function run() {
   
   // Générer et afficher le rapport
   generateReport(results, circularDeps, suggestions);
+  
+  // Afficher des suggestions d'amélioration
+  generateImprovementSuggestions();
   
   // Afficher le temps d'exécution
   const endTime = Date.now();
