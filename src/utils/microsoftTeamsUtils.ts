@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { EdgeFunctionResponse } from '@/integrations/supabase/client';
-import { generateOAuthState, storeOAuthState, validateOAuthState } from '@/utils/oauthStateManager';
+import type { EdgeFunctionResponse } from '@/types/adapters';
+import { validateOAuthState, generateOAuthState, storeOAuthState } from '@/utils/oauthStateManager';
 
 // Structure pour la réponse du callback Microsoft
 interface MicrosoftAuthResponse {
@@ -85,3 +85,51 @@ export function validateMicrosoftCallback(params: URLSearchParams) {
   
   return { valid: true, code, state };
 }
+
+// Fonctions supplémentaires demandées pour résoudre les erreurs
+export const getMicrosoftRedirectUrl = () => {
+  return `${window.location.origin}/microsoft-auth-callback`;
+};
+
+export const initiateMicrosoftAuth = async () => {
+  const result = await getMicrosoftAuthUrl();
+  if (result.success && result.authUrl) {
+    window.location.href = result.authUrl;
+    return true;
+  }
+  return false;
+};
+
+export const revokeMicrosoftTeamsAccess = async (userId: string) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('microsoft-oauth', {
+      body: { 
+        action: 'revoke_token',
+        user_id: userId
+      }
+    });
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error("Erreur lors de la révocation de l'accès Microsoft Teams:", error);
+    return { success: false, error };
+  }
+};
+
+export const refreshMicrosoftToken = async (userId: string) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('microsoft-oauth', {
+      body: { 
+        action: 'refresh_token',
+        user_id: userId
+      }
+    });
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error("Erreur lors du rafraîchissement du token Microsoft:", error);
+    return { success: false, error };
+  }
+};

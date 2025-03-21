@@ -1,101 +1,67 @@
 
-import { useNavigate, useLocation } from 'react-router-dom';
-import { preloadSession } from '@/integrations/supabase/client';
 import { supabase } from '@/integrations/supabase/client';
-import { updateCachedUser, updateSessionLoading, PROTECTED_ROUTES, needsConfiguration, checkUserAndConfig } from './authConstants';
-import { toast } from '@/hooks/use-toast';
+import { Session } from '@supabase/supabase-js';
 
-// Précharger la session au démarrage
-export const preloadUserSession = async () => {
+/**
+ * Précharge la session utilisateur depuis Supabase
+ */
+export const preloadSession = async (): Promise<Session | null> => {
   try {
-    const { session } = await preloadSession();
-    return session;
+    const { data } = await supabase.auth.getSession();
+    return data.session;
   } catch (error) {
     console.error("Erreur lors du préchargement de la session:", error);
     return null;
   }
 };
 
-// Vérifier si l'utilisateur est authentifié et gérer la redirection
-export const checkAuthentication = (
-  user: any, 
-  pathname: string, 
-  navigate: ReturnType<typeof useNavigate>
-) => {
-  updateCachedUser(user);
-  
-  const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
-  
-  if (!user && isProtectedRoute) {
-    toast({
-      title: "Accès non autorisé",
-      description: "Veuillez vous connecter pour accéder à cette page.",
-      variant: "destructive"
-    });
-    
-    navigate('/auth');
-  }
-  
-  updateSessionLoading(false);
-};
+/**
+ * Récupère les informations du profil utilisateur
+ */
+export const fetchUserProfile = async (userId: string) => {
+  if (!userId) return null;
 
-// Déconnexion de l'utilisateur
-export const handleSignOut = async (navigate: ReturnType<typeof useNavigate>) => {
   try {
-    const { error } = await supabase.auth.signOut();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
     
-    if (error) throw error;
-    
-    updateCachedUser(null);
-    navigate('/');
-    
-    // Vérifier si nous sommes sur une route protégée
-    const isProtectedRoute = PROTECTED_ROUTES.some(route => 
-      window.location.pathname.startsWith(route)
-    );
-    
-    if (isProtectedRoute) {
-      toast({
-        title: "Déconnecté",
-        description: "Vous avez été déconnecté avec succès.",
-      });
-      navigate('/auth');
+    if (error) {
+      console.error("Erreur lors de la récupération du profil utilisateur:", error);
+      throw error;
     }
     
-    updateSessionLoading(false);
-    return true;
+    return data;
   } catch (error) {
-    console.error("Erreur lors de la déconnexion:", error);
-    return false;
+    console.error("Exception lors de la récupération du profil:", error);
+    return null;
   }
 };
 
-// Vérifier l'état de l'utilisateur et les besoins de configuration
-export const checkUserStatus = async (user: any, pathname: string) => {
-  const { needsConfig } = checkUserAndConfig(user);
+/**
+ * Rafraîchit la session en cas d'expiration imminente
+ */
+export const refreshSessionIfNeeded = async (session: Session): Promise<boolean> => {
+  if (!session) return false;
   
-  if (user && needsConfig && !pathname.startsWith('/config')) {
-    toast({
-      title: "Configuration requise",
-      description: "Veuillez compléter la configuration de votre compte.",
-    });
-    return '/config';
+  // Calculer le temps restant avant expiration
+  const expiresAt = new Date((session.expires_at || 0) * 1000);
+  const now = new Date();
+  const timeUntilExpiry = expiresAt.getTime() - now.getTime();
+  
+  // Si moins de 5 minutes restantes, rafraîchir
+  if (timeUntilExpiry < 5 * 60 * 1000) {
+    try {
+      const { data, error } = await supabase.auth.refreshSession(session);
+      if (error) throw error;
+      return !!data.session;
+    } catch (error) {
+      console.error("Erreur lors du rafraîchissement de la session:", error);
+      return false;
+    }
   }
   
-  // Vérifier si l'utilisateur est sur une route protégée sans être authentifié
-  const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
-  
-  if (!user && isProtectedRoute) {
-    return '/auth';
-  }
-  
-  updateSessionLoading(false);
-  return null;
-};
-
-export default {
-  preloadUserSession,
-  checkAuthentication,
-  handleSignOut,
-  checkUserStatus
+  return true;
 };

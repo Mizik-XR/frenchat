@@ -108,3 +108,10 @@ export interface SettingsPanelProps {
 export interface MessageMetadata {
   [key: string]: Json;
 }
+
+// Ajout des interfaces pour les types de conversation dans /types/chat
+export interface ConversationSidebarProps {
+  showTopics: boolean;
+  setShowTopics: React.Dispatch<React.SetStateAction<boolean>>;
+}
+

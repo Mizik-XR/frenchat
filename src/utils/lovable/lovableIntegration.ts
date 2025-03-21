@@ -27,8 +27,8 @@ const checkLovableEnvironment = (): boolean => {
   
   // Vérifier si l'objet global Lovable est présent
   const hasLovableGlobal = typeof window !== 'undefined' && 
-    (window as any).GPTEngineer !== undefined || 
-    (window as any).__GPTEngineer !== undefined;
+    ((window as any).GPTEngineer !== undefined || 
+    (window as any).__GPTEngineer !== undefined);
   
   // Vérifier si l'URL contient des paramètres spécifiques à Lovable
   const urlParams = new URLSearchParams(window.location.search);
@@ -64,14 +64,15 @@ const handleLovableMessages = (event: MessageEvent) => {
     switch (event.data.type) {
       case 'REQUEST_APP_INFO':
         // Répondre avec les informations de l'application
-        event.source?.postMessage({
+        const source = event.source as Window;
+        source.postMessage({
           source: 'lovable-app',
           type: 'APP_INFO',
           data: {
             name: 'FileChat',
             version: import.meta.env.VITE_LOVABLE_VERSION || '1.0.0'
           }
-        }, '*');
+        }, '*' as any);
         break;
         
       case 'RELOAD_APP':

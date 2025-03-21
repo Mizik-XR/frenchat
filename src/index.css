@@ -183,3 +183,10 @@
   color: transparent;
   background-image: linear-gradient(to right, #0055a4, #ffffff, #ef4135);
 }
+
+/* Animation pour les étoiles de la landing page */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.8; }
+}
+
