@@ -1,17 +1,25 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ConversationList } from './ConversationList';
 import { useConversations } from '@/hooks/useConversations';
 import { adaptConversation } from '@/integrations/supabase/adapters';
+import { Conversation } from '@/integrations/supabase/adapters';
 
 export const ConversationSidebar = () => {
   const navigate = useNavigate();
-  const { conversations, isLoading, error, createConversation, currentConversation } = useConversations();
+  const { 
+    conversations, 
+    isLoading, 
+    createNewConversation, 
+    activeConversation, 
+    setActiveConversation 
+  } = useConversations();
   
   const handleNewConversation = async () => {
-    const conversation = await createConversation();
+    const conversation = await createNewConversation();
     if (conversation) {
       // Utiliser l'adaptateur pour convertir en type Conversation
       const adaptedConversation = adaptConversation(conversation);
@@ -30,12 +38,15 @@ export const ConversationSidebar = () => {
         </Button>
         {isLoading ? (
           <div>Chargement des conversations...</div>
-        ) : error ? (
-          <div>Erreur: {error.message}</div>
         ) : (
-          <ConversationList conversations={conversations} currentConversation={currentConversation} />
+          <ConversationList 
+            conversations={conversations || []} 
+            currentConversation={activeConversation} 
+          />
         )}
       </CardContent>
     </Card>
   );
 };
+
+export default ConversationSidebar;

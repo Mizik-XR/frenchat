@@ -1,87 +1,77 @@
 
 /**
- * Gestionnaire d'état OAuth pour sécuriser les flux d'authentification
+ * Gestionnaire d'état OAuth
+ * 
+ * Ce module fournit des fonctions pour générer et valider des états OAuth sécurisés
+ * afin de protéger contre les attaques CSRF.
  */
 
-/**
- * Génère un état aléatoire pour le flux OAuth et le stocke dans sessionStorage
- * @param provider Le fournisseur OAuth (google, microsoft, etc.)
- * @returns L'état généré
- */
-export function generateOAuthState(provider: string): string {
-  // Création d'un identifiant aléatoire suffisamment long pour être sécurisé
-  const randomState = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-  
-  // Ajout d'un timestamp pour limiter la validité dans le temps
-  const timestamp = Date.now();
-  const state = `${randomState}_${timestamp}`;
-  
-  // Stockage dans sessionStorage
-  sessionStorage.setItem(`oauth_state_${provider}`, state);
-  
-  return state;
-}
+import { supabase } from '@/integrations/supabase/client';
 
-/**
- * Vérifie si l'état OAuth retourné correspond à celui stocké
- * @param provider Le fournisseur OAuth
- * @param returnedState L'état retourné dans l'URL de callback
- * @returns true si l'état est valide, false sinon
- */
-export function validateOAuthState(provider: string, returnedState: string): boolean {
-  const storedState = sessionStorage.getItem(`oauth_state_${provider}`);
-  
-  // Si pas d'état stocké ou ne correspond pas, authentification invalide
-  if (!storedState || storedState !== returnedState) {
-    console.error("État OAuth invalide, possible tentative CSRF");
-    return false;
+// Génère un état sécurisé pour les redirections OAuth
+export const generateOAuthState = async (provider: string, redirectPath?: string): Promise<string> => {
+  try {
+    // Créer un ID aléatoire
+    const stateId = Math.random().toString(36).substring(2, 15);
+    
+    // Ajouter un timestamp pour limiter la durée de validité
+    const timestamp = Date.now();
+    
+    // Créer l'objet d'état
+    const stateObj = {
+      id: stateId,
+      provider,
+      timestamp,
+      redirectPath: redirectPath || '/'
+    };
+    
+    // Stocker l'état dans le localStorage pour la validation ultérieure
+    localStorage.setItem(`oauth_state_${stateId}`, JSON.stringify(stateObj));
+    
+    // Renvoyer l'ID d'état à utiliser dans l'URL de redirection
+    return stateId;
+  } catch (error) {
+    console.error('Erreur lors de la génération de l\'état OAuth:', error);
+    return Math.random().toString(36).substring(2, 15); // Fallback
   }
-  
-  // Vérifier si l'état n'est pas trop ancien (validité de 15 minutes)
-  const timestamp = parseInt(storedState.split('_')[1], 10);
-  const now = Date.now();
-  const fifteenMinutesMs = 15 * 60 * 1000;
-  
-  if (now - timestamp > fifteenMinutesMs) {
-    console.error("État OAuth expiré");
-    return false;
+};
+
+// Valide un état OAuth reçu après redirection
+export const validateOAuthState = (stateId: string): { isValid: boolean; redirectPath?: string } => {
+  try {
+    // Récupérer l'objet d'état du localStorage
+    const stateJson = localStorage.getItem(`oauth_state_${stateId}`);
+    
+    if (!stateJson) {
+      return { isValid: false };
+    }
+    
+    const stateObj = JSON.parse(stateJson);
+    
+    // Vérifier si l'état n'a pas expiré (validité de 10 minutes)
+    const now = Date.now();
+    const validityPeriod = 10 * 60 * 1000; // 10 minutes en ms
+    
+    if (now - stateObj.timestamp > validityPeriod) {
+      localStorage.removeItem(`oauth_state_${stateId}`);
+      return { isValid: false };
+    }
+    
+    // Nettoyer le localStorage
+    localStorage.removeItem(`oauth_state_${stateId}`);
+    
+    // Retourner le chemin de redirection si présent
+    return { 
+      isValid: true, 
+      redirectPath: stateObj.redirectPath 
+    };
+  } catch (error) {
+    console.error('Erreur lors de la validation de l\'état OAuth:', error);
+    return { isValid: false };
   }
-  
-  // Nettoyer l'état utilisé
-  sessionStorage.removeItem(`oauth_state_${provider}`);
-  return true;
-}
+};
 
-/**
- * Stocke de manière sécurisée un token d'accès temporaire
- * @param provider Le fournisseur OAuth
- * @param token Le token à stocker
- */
-export function storeOAuthToken(provider: string, token: string): void {
-  // Utilisation de sessionStorage pour des raisons de sécurité (durée de vie limitée à la session)
-  sessionStorage.setItem(`oauth_token_${provider}`, token);
-  
-  // Définir une expiration automatique (30 minutes)
-  setTimeout(() => {
-    sessionStorage.removeItem(`oauth_token_${provider}`);
-  }, 30 * 60 * 1000);
-}
-
-/**
- * Récupère un token OAuth stocké
- * @param provider Le fournisseur OAuth
- * @returns Le token ou null s'il n'existe pas
- */
-export function getStoredOAuthToken(provider: string): string | null {
-  return sessionStorage.getItem(`oauth_token_${provider}`);
-}
-
-/**
- * Supprime un token OAuth stocké
- * @param provider Le fournisseur OAuth
- */
-export function clearOAuthToken(provider: string): void {
-  sessionStorage.removeItem(`oauth_token_${provider}`);
-}
+export default {
+  generateOAuthState,
+  validateOAuthState
+};

@@ -39,6 +39,16 @@ export interface ChatMessage {
   userId: string;
 }
 
+// Interface pour les métadonnées de message avec index signature
+export interface MessageMetadata {
+  [key: string]: Json;
+}
+
+// Type pour la configuration de l'interface Web avec index signature
+export interface WebUIConfig {
+  [key: string]: Json;
+}
+
 // Adaptateur pour convertir de snake_case à camelCase
 export function adaptConversation(dbConversation: DbChatConversation): Conversation {
   return {
@@ -67,7 +77,7 @@ export function convertToDbConversation(conversation: Conversation): Partial<DbC
     archive_date: conversation.archiveDate,
     folder_id: conversation.folderId,
     user_id: conversation.userId,
-    settings: conversation.settings
+    settings: conversation.settings as Json
   };
 }
 
@@ -101,16 +111,21 @@ export function convertToDbChatMessage(message: ChatMessage): Partial<DbChatMess
   };
 }
 
-// Types sécurisés pour les métadonnées
-export interface MessageMetadata {
-  [key: string]: any;
-}
-
-export interface WebUIConfig {
-  [key: string]: any;
-}
-
 // Helper pour convertir un type quelconque en Json (pour Supabase)
 export function toJson<T>(data: T): Json {
   return data as unknown as Json;
 }
+
+// Helper pour convertir WebUIConfig en Json
+export function webUIConfigToJson(config: WebUIConfig): Json {
+  return config as unknown as Json;
+}
+
+export default {
+  adaptConversation,
+  convertToDbConversation,
+  adaptChatMessage,
+  convertToDbChatMessage,
+  toJson,
+  webUIConfigToJson
+};

@@ -24,11 +24,18 @@ export function StatusIndicator({ isOnline = true, isLoading = false }: StatusIn
       : "bg-red-500";
   
   return (
-    <Tooltip content={statusText}>
-      <Badge variant="outline" className="px-2 py-1 h-fit gap-2 border">
-        <div className={`w-2 h-2 rounded-full ${statusColor}`}></div>
-        <span className="text-xs font-normal">{statusText}</span>
-      </Badge>
+    <Tooltip>
+      <Tooltip.Trigger asChild>
+        <Badge variant="outline" className="px-2 py-1 h-fit gap-2 border">
+          <div className={`w-2 h-2 rounded-full ${statusColor}`}></div>
+          <span className="text-xs font-normal">{statusText}</span>
+        </Badge>
+      </Tooltip.Trigger>
+      <Tooltip.Content>
+        {statusText}
+      </Tooltip.Content>
     </Tooltip>
   );
 }
+
+export default StatusIndicator;

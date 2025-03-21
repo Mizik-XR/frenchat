@@ -36,10 +36,39 @@ export const getSupabaseApiUrl = () => {
   return "https://dbdueopvtlanxgumenpu.supabase.co";
 };
 
+// Vérifier si une URL est accessible
+export const isUrlAccessible = async (url: string): Promise<boolean> => {
+  try {
+    const response = await fetch(url, { 
+      method: 'HEAD', 
+      mode: 'no-cors',
+      cache: 'no-cache'
+    });
+    return true;
+  } catch (error) {
+    console.error(`URL ${url} est inaccessible:`, error);
+    return false;
+  }
+};
+
+// Construire l'URL vers la console Supabase
+export const buildSupabaseConsoleUrl = (projectId?: string) => {
+  const baseConsoleUrl = 'https://app.supabase.com';
+  if (!projectId) {
+    // Extraire l'ID du projet de l'URL Supabase si disponible
+    const urlMatch = getSupabaseApiUrl().match(/https:\/\/([^.]+)\.supabase\.co/);
+    projectId = urlMatch ? urlMatch[1] : '';
+  }
+  
+  return projectId ? `${baseConsoleUrl}/project/${projectId}` : baseConsoleUrl;
+};
+
 export default {
   isDevelopment,
   getBaseUrl,
   getFullUrl,
   getRedirectUrl,
-  getSupabaseApiUrl
+  getSupabaseApiUrl,
+  isUrlAccessible,
+  buildSupabaseConsoleUrl
 };

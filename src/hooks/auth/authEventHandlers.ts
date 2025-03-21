@@ -1,15 +1,22 @@
 
-// Ce fichier exporte les fonctions pour gérer les événements d'authentification
-// Il a été refactorisé pour réduire sa taille et améliorer la maintenabilité
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { supabase, APP_STATE } from '@/integrations/supabase/client';
+import { useAuthStateChangeHandler } from './authStateChangeHandlers';
 
-import { handleAuthSession } from "./authSessionHandlers";
-import { handleAuthStateChange, useAuthStateChangeHandler } from "./authStateChangeHandlers";
-import { useInitialSessionCheck } from "./initialSessionCheck";
-
-// Exporter toutes les fonctions nécessaires
-export {
-  handleAuthSession,
-  handleAuthStateChange,
-  useAuthStateChangeHandler,
-  useInitialSessionCheck
+export const setupAuthEventHandlers = () => {
+  const handleAuthStateChange = useAuthStateChangeHandler();
+  
+  // Configurer les écouteurs d'événements d'authentification
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    async (event: AuthChangeEvent, session: Session | null) => {
+      await handleAuthStateChange(event, session);
+    }
+  );
+  
+  // Fonction de nettoyage pour se désabonner lors du démontage
+  return () => {
+    subscription?.unsubscribe();
+  };
 };
+
+export default setupAuthEventHandlers;

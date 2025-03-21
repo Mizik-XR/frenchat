@@ -5,7 +5,7 @@ import { updateCachedUser, updateSessionLoading } from './authConstants';
 import { createInitialProfile } from './profile/profileUtils';
 
 // Gère les changements d'état d'authentification Supabase
-export function useAuthStateChangeHandler() {
+export const useAuthStateChangeHandler = () => {
   return async (event: AuthChangeEvent, session: Session | null) => {
     console.log(`Événement d'authentification: ${event}`);
 
@@ -38,4 +38,6 @@ export function useAuthStateChangeHandler() {
     
     return { user: session?.user || null };
   };
-}
+};
+
+export default useAuthStateChangeHandler;

@@ -37,3 +37,5 @@ export function useInitialSessionCheck() {
     }
   };
 }
+
+export default useInitialSessionCheck;
