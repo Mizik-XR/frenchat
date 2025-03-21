@@ -43,6 +43,9 @@ export const verifyOAuthState = (provider: string, returnedState: string) => {
   return true;
 };
 
+// Alias pour compatibilité avec le reste du code
+export const validateOAuthState = verifyOAuthState;
+
 // Prépare un flux d'authentification OAuth
 export const prepareOAuthFlow = (provider: string, redirectUri: string) => {
   const state = generateOAuthState();
@@ -58,5 +61,6 @@ export default {
   generateOAuthState,
   storeOAuthState,
   verifyOAuthState,
+  validateOAuthState,
   prepareOAuthFlow
 };

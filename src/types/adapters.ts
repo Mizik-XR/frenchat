@@ -1,4 +1,5 @@
 
+// Update the file to make types compatible
 import { Json } from './database';
 
 // Type pour assurer la compatibilité entre les différentes sources de données
@@ -25,6 +26,7 @@ export interface WebUIConfig {
   showTimestamp: boolean;
   autoGenerateTitle: boolean;
   messageStyle: string;
+  model?: string;
 }
 
 // Type pour l'état global de l'application
@@ -46,6 +48,7 @@ export type AppStateConfig = {
     disableLocalStorage: boolean;
     enforceStrictMode: boolean;
   };
+  setOfflineMode: (mode: boolean) => void;
 };
 
 // Interface pour les composants de mise en page du chat
@@ -56,6 +59,9 @@ export interface ChatHeaderProps {
   onStartEdit?: () => void;
   onSaveTitle?: () => void;
   onTitleChange?: (e: any) => void;
+  iaMode?: "cloud" | "auto" | "local";
+  onIAModeChange?: (mode: "cloud" | "auto" | "local") => void;
+  onResetConversation?: () => void;
 }
 
 export interface MessageAreaProps {
@@ -88,6 +94,9 @@ export interface StatusIndicatorProps {
 export interface PriorityTopicsPanelProps {
   showTopics: boolean;
   setShowTopics: React.Dispatch<React.SetStateAction<boolean>>;
+  messages?: any[];
+  onTopicSelect?: (messageId: string) => void;
+  onClose?: () => void;
 }
 
 export interface SettingsPanelProps {

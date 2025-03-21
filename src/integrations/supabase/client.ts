@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -37,6 +38,11 @@ export const APP_STATE = {
     requireLogin: false,
     disableLocalStorage: false,
     enforceStrictMode: false,
+  },
+  // Ajouté pour résoudre les erreurs de build
+  setOfflineMode: (mode: boolean) => {
+    console.log(`Mode hors ligne ${mode ? 'activé' : 'désactivé'}`);
+    APP_STATE.isOfflineMode = mode;
   }
 };
 
@@ -79,6 +85,20 @@ export const checkSupabaseConnection = async () => {
   }
 };
 
+// Type pour les réponses des Edge Functions
+export interface EdgeFunctionResponse<T> {
+  data: T | null;
+  error: { message: string } | null;
+}
+
+export const updateCachedUser = (user: any) => {
+  // Mettre à jour l'utilisateur en cache
+};
+
+export const updateSessionLoading = (isLoading: boolean) => {
+  // Mettre à jour l'état de chargement de la session
+};
+
 // Fonction pour détecter le système d'exploitation
 function detectOS() {
   const userAgent = window.navigator.userAgent;
@@ -107,17 +127,3 @@ function detectBrowserVersion() {
   const match = userAgent.match(/(chrome|firefox|safari|edge|opr|opera(?=\/))\/?\s*(\d+)/i);
   return match ? match[2] : "Unknown";
 }
-
-// Type pour les réponses des Edge Functions
-export interface EdgeFunctionResponse<T> {
-  data: T | null;
-  error: { message: string } | null;
-}
-
-export const updateCachedUser = (user: any) => {
-  // Mettre à jour l'utilisateur en cache
-};
-
-export const updateSessionLoading = (isLoading: boolean) => {
-  // Mettre à jour l'état de chargement de la session
-};
