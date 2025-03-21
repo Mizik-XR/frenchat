@@ -1,6 +1,7 @@
 
 import { Session, AuthChangeEvent } from '@supabase/supabase-js';
-import { supabase, APP_STATE } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
+import { APP_STATE } from '@/integrations/supabase/client';
 import { updateCachedUser, updateSessionLoading } from './authConstants';
 import { createInitialProfile } from './profile/profileUtils';
 

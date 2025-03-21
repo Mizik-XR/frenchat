@@ -8,9 +8,15 @@ import { cn } from "@/lib/utils"
 
 const TooltipProvider = TooltipPrimitive.Provider
 
-const Tooltip = TooltipPrimitive.Root
+const Tooltip = ({ ...props }) => (
+  <TooltipProvider>
+    <TooltipPrimitive.Root {...props} />
+  </TooltipProvider>
+)
+Tooltip.displayName = TooltipPrimitive.Root.displayName
 
 const TooltipTrigger = TooltipPrimitive.Trigger
+TooltipTrigger.displayName = TooltipPrimitive.Trigger.displayName
 
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
@@ -27,5 +33,10 @@ const TooltipContent = React.forwardRef<
   />
 ))
 TooltipContent.displayName = TooltipPrimitive.Content.displayName
+
+// Assignation des composants enfants à Tooltip
+Tooltip.Trigger = TooltipTrigger;
+Tooltip.Content = TooltipContent;
+Tooltip.Provider = TooltipProvider;
 
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }

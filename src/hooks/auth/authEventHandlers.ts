@@ -1,6 +1,7 @@
 
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
-import { supabase, APP_STATE } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
+import { APP_STATE } from '@/integrations/supabase/client';
 import { useAuthStateChangeHandler } from './authStateChangeHandlers';
 
 export const setupAuthEventHandlers = () => {

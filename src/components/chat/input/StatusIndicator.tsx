@@ -2,14 +2,25 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip } from '@/components/ui/tooltip';
-import { supabase, APP_STATE } from "@/integrations/supabase/client";
+import { APP_STATE } from "@/integrations/supabase/client";
 
 interface StatusIndicatorProps {
   isOnline?: boolean;
   isLoading?: boolean;
+  serviceType?: string; // Ajout de cette prop pour résoudre l'erreur
+  mode?: "auto" | "manual"; // Ajout de cette prop pour résoudre l'erreur
+  model?: string; // Ajout de cette prop pour résoudre l'erreur
+  modelSource?: "local" | "cloud"; // Ajout de cette prop pour résoudre l'erreur
 }
 
-export function StatusIndicator({ isOnline = true, isLoading = false }: StatusIndicatorProps) {
+export function StatusIndicator({ 
+  isOnline = true, 
+  isLoading = false,
+  serviceType,
+  mode,
+  model,
+  modelSource
+}: StatusIndicatorProps) {
   const isOfflineMode = APP_STATE.isOfflineMode;
   const statusText = isOfflineMode 
     ? "Mode hors-ligne" 
@@ -33,6 +44,8 @@ export function StatusIndicator({ isOnline = true, isLoading = false }: StatusIn
       </Tooltip.Trigger>
       <Tooltip.Content>
         {statusText}
+        {model && ` - Modèle: ${model}`}
+        {modelSource && ` - Source: ${modelSource}`}
       </Tooltip.Content>
     </Tooltip>
   );

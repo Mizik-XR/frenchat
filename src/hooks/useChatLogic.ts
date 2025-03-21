@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase, APP_STATE } from '@/integrations/supabase/client';
@@ -10,10 +11,11 @@ export function useChatLogic() {
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const { user } = useSupabaseUser();
-  const { messages, isLoading: messagesLoading, sendMessage, isGenerating } = useChatMessages(conversationId);
-  const { conversations, isLoading: conversationsLoading, currentConversation, updateConversationTitle } = useConversations();
+  const { messages, isLoading: messagesLoading, sendMessage, fetchMessages } = useChatMessages(conversationId);
+  const { conversations, isLoading: conversationsLoading, activeConversation, setActiveConversation, updateConversation } = useConversations();
   const [isInitialized, setIsInitialized] = useState(false);
   const [isOfflineMode, setIsOfflineMode] = useState(APP_STATE.isOfflineMode);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -39,12 +41,12 @@ export function useChatLogic() {
     }
 
     // Vérifier si la conversation actuelle correspond à l'ID
-    if (currentConversation && currentConversation.id !== conversationId) {
-      console.log("ID de conversation actuel:", currentConversation.id, "ID de conversation dans l'URL:", conversationId);
+    if (activeConversation && activeConversation.id !== conversationId) {
+      console.log("ID de conversation actuel:", activeConversation.id, "ID de conversation dans l'URL:", conversationId);
     }
 
     setIsInitialized(true);
-  }, [user, conversationId, conversations, navigate, currentConversation]);
+  }, [user, conversationId, conversations, navigate, activeConversation]);
 
   useEffect(() => {
     setIsOfflineMode(APP_STATE.isOfflineMode);
@@ -74,6 +76,7 @@ export function useChatLogic() {
       const { data: newConversation, error } = await supabase
         .from('chat_conversations')
         .insert([{ user_id: userId, title: 'Nouvelle conversation' }])
+        .select()
         .single();
 
       if (error) {
@@ -88,12 +91,25 @@ export function useChatLogic() {
     }
   };
 
+  // Fonction pour mettre à jour le titre de la conversation
+  const updateConversationTitle = async (id: string, title: string) => {
+    if (!id) return false;
+    
+    try {
+      await updateConversation({ id, title });
+      return true;
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du titre:", error);
+      return false;
+    }
+  };
+
   return {
     messages,
     sendMessage,
     isLoading: messagesLoading || conversationsLoading,
     conversations,
-    currentConversation,
+    activeConversation,
     updateConversationTitle,
     isOfflineMode,
     isGenerating

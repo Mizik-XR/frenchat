@@ -1,6 +1,7 @@
 
 import type { Json } from './types';
 import type { Database } from './types';
+import { MessageMetadata as MessageMetadataType, WebUIConfig as WebUIConfigType } from '@/types/chat';
 
 /**
  * Adaptateurs de types pour convertir entre les types Supabase et les types de l'application
@@ -16,7 +17,7 @@ export type DbResponseCache = Database['public']['Tables']['response_cache']['Ro
 export interface Conversation {
   id: string;
   title: string;
-  createdAt: string;
+  createdAt: string; // Pas de changement ici car le type Conversation dans types/chat.ts utilise number
   updatedAt: string;
   isArchived: boolean;
   isPinned: boolean;
@@ -116,8 +117,13 @@ export function toJson<T>(data: T): Json {
   return data as unknown as Json;
 }
 
+// Helper pour convertir MessageMetadata en Json
+export function messageMetadataToJson(metadata: MessageMetadataType): Json {
+  return metadata as unknown as Json;
+}
+
 // Helper pour convertir WebUIConfig en Json
-export function webUIConfigToJson(config: WebUIConfig): Json {
+export function webUIConfigToJson(config: WebUIConfigType): Json {
   return config as unknown as Json;
 }
 
@@ -127,5 +133,6 @@ export default {
   adaptChatMessage,
   convertToDbChatMessage,
   toJson,
+  messageMetadataToJson,
   webUIConfigToJson
 };

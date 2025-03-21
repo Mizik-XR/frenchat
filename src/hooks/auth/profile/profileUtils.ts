@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { toJson } from '@/integrations/supabase/adapters';
@@ -89,32 +90,14 @@ export const handleProfileAndConfig = async (userId: string) => {
     if (profileError) {
       console.error("Erreur lors de la récupération du profil:", profileError);
       
-      // En cas d'erreur de récursion, tenter une approche plus simple
-      if (profileError.code === "42P17") {
-        console.log("Tentative de récupération de profil avec requête simplifiée...");
-        const { data: simpleProfile } = await supabase
-          .rpc('get_minimal_profile', { user_id: userId });
-          
-        // Si même la requête RPC échoue, créer un profil minimal
-        if (!simpleProfile) {
-          return { 
-            profile: { id: userId, is_first_login: true }, 
-            profileError, 
-            configs: [], 
-            needsConfig: true, 
-            isFirstLogin: true 
-          };
-        }
-        
-        return { 
-          profile: simpleProfile, 
-          configs: [], 
-          needsConfig: true, 
-          isFirstLogin: simpleProfile?.is_first_login || true 
-        };
-      }
-      
-      return { profile: null, profileError, configs: [], needsConfig: true, isFirstLogin: false };
+      // En cas d'erreur, créer un profil minimal
+      return { 
+        profile: { id: userId, is_first_login: true }, 
+        profileError, 
+        configs: [], 
+        needsConfig: true, 
+        isFirstLogin: true 
+      };
     }
 
     // Récupérer les configurations de l'utilisateur

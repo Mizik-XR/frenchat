@@ -1,14 +1,16 @@
-import { supabase, handleProfileQuery, checkSupabaseConnection } from './client';
+
+import { supabase } from './client';
 import type { Json } from './types';
 
 // Fonction pour vérifier la connexion à Supabase
 export const ensureSupabaseConnection = async () => {
-  const isConnected = await checkSupabaseConnection();
-  if (!isConnected) {
+  try {
+    const { data } = await supabase.from('profiles').select('count').limit(1);
+    return !!data;
+  } catch (error) {
     console.error("Erreur: Impossible de se connecter à Supabase.");
     return false;
   }
-  return true;
 };
 
 // Fonction pour créer un profil initial si nécessaire
@@ -16,7 +18,12 @@ export const createInitialProfileIfNeeded = async (userId: string) => {
   if (!await ensureSupabaseConnection()) return null;
 
   try {
-    const { data, error } = await handleProfileQuery(userId);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
     if (error) {
       console.error("Erreur lors de la récupération du profil:", error);
       return null;
@@ -75,7 +82,8 @@ export const processProfileResponse = (data: any) => {
   
   // Gérer le cas où is_first_login est stocké dans metadata
   if (data.metadata && typeof data.metadata === 'object') {
-    const isFirstLogin = data.metadata.is_first_login === true;
+    const metadata = data.metadata as Record<string, any>;
+    const isFirstLogin = metadata.is_first_login === true;
     return {
       ...adaptProfile(data),
       isFirstLogin
