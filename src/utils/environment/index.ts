@@ -107,6 +107,3 @@ export function getFormattedUrlParams(): string {
   const search = window.location.search;
   return search || '';
 }
-
-// Exporter les fonctions de urlUtils pour maintenir la compatibilité
-export * from './urlUtils';

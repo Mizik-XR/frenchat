@@ -1,5 +1,5 @@
 
-import { React, useState, useEffect, createContext } from "@/core/ReactInstance";
+import React, { useState, useEffect } from "react";
 import { createContextSafely } from "@/utils/react/createContextSafely";
 
 type Theme = "dark" | "light" | "system";
@@ -21,7 +21,7 @@ const initialState: ThemeProviderState = {
 };
 
 // Création du contexte avec la nouvelle API
-const { Context: ThemeProviderContext, useContext: useThemeContext } = createContextSafely(initialState, "ThemeContext");
+const { Context: ThemeProviderContext, useContext: useThemeContext } = createContextSafely<ThemeProviderState>(initialState, "ThemeContext");
 
 export function ThemeProvider({
   children,
@@ -42,23 +42,19 @@ export function ThemeProvider({
   );
 
   useEffect(() => {
-    try {
-      const root = window.document.documentElement;
-      root.classList.remove("light", "dark");
+    const root = window.document.documentElement;
+    root.classList.remove("light", "dark");
 
-      if (theme === "system") {
-        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-          .matches
-          ? "dark"
-          : "light";
-        root.classList.add(systemTheme);
-        return;
-      }
-
-      root.classList.add(theme);
-    } catch (error) {
-      console.error("Erreur lors de l'application du thème:", error);
+    if (theme === "system") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+        .matches
+        ? "dark"
+        : "light";
+      root.classList.add(systemTheme);
+      return;
     }
+
+    root.classList.add(theme);
   }, [theme]);
 
   const value = {

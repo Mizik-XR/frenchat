@@ -1,5 +1,5 @@
 
-import { React, useEffect } from '@/core/ReactInstance';
+import { useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { APP_STATE } from '@/compatibility/supabaseCompat';
 
@@ -9,39 +9,8 @@ import { APP_STATE } from '@/compatibility/supabaseCompat';
  */
 export const ReactErrorMonitor = () => {
   useEffect(() => {
-    // Variable pour suivre les erreurs déjà signalées
-    const reportedErrors = new Set<string>();
-    
-    // Fonction qui filtre les erreurs externes non liées à notre application
-    const isExternalError = (message: string) => {
-      const externalErrorPatterns = [
-        'ambient-light-sensor',
-        'battery',
-        'facebook.com',
-        'script src',
-        'extension',
-        'adblock',
-        'google tag',
-        'analytics'
-      ];
-      
-      return externalErrorPatterns.some(pattern => 
-        message.toLowerCase().includes(pattern.toLowerCase())
-      );
-    };
-    
     // Fonction de gestion des erreurs non capturées
     const handleUncaughtError = (event: ErrorEvent) => {
-      // Ignorer les erreurs qui ne sont pas liées à notre application
-      if (event.message && isExternalError(event.message)) {
-        return;
-      }
-      
-      // Créer un identifiant unique pour cette erreur pour éviter les doublons
-      const errorId = `${event.filename}:${event.lineno}:${event.message}`;
-      if (reportedErrors.has(errorId)) return;
-      reportedErrors.add(errorId);
-      
       console.error('Erreur non gérée:', event.error);
       
       // Éviter de notifier pour les erreurs de réseau qui sont déjà gérées
@@ -59,52 +28,24 @@ export const ReactErrorMonitor = () => {
         event.message.includes('React') ||
         event.message.includes('useLayoutEffect') ||
         event.message.includes('unstable_scheduleCallback') ||
-        event.message.includes('createElement') ||
-        event.message.includes('createContext')
+        event.message.includes('createElement')
       );
       
       if (isReactError) {
-        console.warn('Erreur React potentielle détectée, tentative de récupération...');
-        
-        // Tenter de récupérer en réinitialisant l'instance React globale
-        if (typeof window !== 'undefined' && window.React) {
-          try {
-            // Réassigner React depuis l'instance globale
-            const ReactInstance = require('@/core/ReactInstance');
-            if (ReactInstance.isReactFallbackMode()) {
-              console.info('Tentative de récupération avec window.React');
-              Object.assign(ReactInstance.React, window.React);
-            }
-          } catch (e) {
-            console.error('Échec de la récupération React:', e);
-          }
-        }
-        
+        console.warn('Erreur React potentielle détectée, mise en mode fallback...');
         APP_STATE.setOfflineMode(true);
       }
       
       // Notification à l'utilisateur
       toast({
         title: "Problème détecté",
-        description: isReactError 
-          ? "Un problème d'interface a été détecté. L'application tente de récupérer automatiquement."
-          : "Une erreur s'est produite. L'application tente de récupérer automatiquement.",
+        description: "Une erreur s'est produite. L'application tente de récupérer automatiquement.",
         variant: "destructive"
       });
     };
 
     // Fonction pour gérer les rejets de promesses non capturés
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      // Ignorer les erreurs qui ne sont pas liées à notre application
-      if (event.reason?.message && isExternalError(event.reason.message)) {
-        return;
-      }
-      
-      // Créer un identifiant unique pour éviter les doublons
-      const errorId = `promise:${event.reason?.message || 'unknown'}`;
-      if (reportedErrors.has(errorId)) return;
-      reportedErrors.add(errorId);
-      
       console.error('Promesse rejetée non gérée:', event.reason);
       
       // Éviter de notifier pour certains types d'erreurs
@@ -137,13 +78,6 @@ export const ReactErrorMonitor = () => {
         variant: "destructive"
       });
     };
-    
-    // Nettoyer la liste des erreurs reportées périodiquement
-    const intervalId = setInterval(() => {
-      if (reportedErrors.size > 50) {
-        reportedErrors.clear();
-      }
-    }, 60000); // Toutes les minutes
 
     // Enregistrement des gestionnaires d'événements
     window.addEventListener('error', handleUncaughtError);
@@ -153,7 +87,6 @@ export const ReactErrorMonitor = () => {
     return () => {
       window.removeEventListener('error', handleUncaughtError);
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-      clearInterval(intervalId);
     };
   }, []);
 
