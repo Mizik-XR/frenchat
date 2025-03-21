@@ -1,8 +1,6 @@
-
-import { supabase, EdgeFunctionResponse } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { getRedirectUrl } from '@/utils/environment';
-import { generateOAuthState } from '@/utils/oauthStateManager';
+import { supabase } from '@/integrations/supabase/client';
+import { EdgeFunctionResponse } from '@/integrations/supabase/client';
+import { getRedirectUrl } from '@/utils/environment/urlUtils';
 
 /**
  * Récupère l'URL de redirection pour l'authentification OAuth Microsoft Teams
@@ -151,3 +149,17 @@ export const refreshMicrosoftToken = async (userId: string): Promise<boolean> =>
     return false;
   }
 };
+
+export async function getMicrosoftTeamsConfig(userId: string) {
+  try {
+    const { data, error } = await supabase.functions.invoke<EdgeFunctionResponse<any>>('microsoft-oauth', {
+      body: { action: 'get_config', userId }
+    });
+
+    if (error) throw new Error(error.message);
+    return data;
+  } catch (error) {
+    console.error('Error getting Microsoft Teams config:', error);
+    return null;
+  }
+}

@@ -1,11 +1,25 @@
+import { supabase, preloadSession } from '@/integrations/supabase/client';
 
-import { supabase, preloadSession } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
-import { PROTECTED_ROUTES, updateCachedUser, updateSessionLoading } from "./authConstants";
-import { checkUserAndConfig, needsConfiguration } from "./userProfileUtils";
+export const getAuthenticatedUser = async () => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  } catch (error) {
+    console.error("Error getting authenticated user:", error);
+    return null;
+  }
+};
 
-// Fonction pour vérifier la session initiale
+export const checkCurrentSession = async () => {
+  try {
+    const session = await preloadSession();
+    return session?.user || null;
+  } catch (error) {
+    console.error("Error checking current session:", error);
+    return null;
+  }
+};
+
 export async function checkInitialSession(navigate: ReturnType<typeof useNavigate>, pathname: string) {
   try {
     console.log("Checking initial session...");

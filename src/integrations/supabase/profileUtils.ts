@@ -1,22 +1,128 @@
+import { supabase, handleProfileQuery, checkSupabaseConnection } from './client';
+import type { Json } from './types';
 
-/**
- * Utilitaires pour la gestion des profils utilisateurs dans Supabase
- * 
- * Ce fichier sert désormais uniquement à réexporter les fonctions de client.ts
- * pour éviter une dépendance circulaire.
- */
+// Fonction pour vérifier la connexion à Supabase
+export const ensureSupabaseConnection = async () => {
+  const isConnected = await checkSupabaseConnection();
+  if (!isConnected) {
+    console.error("Erreur: Impossible de se connecter à Supabase.");
+    return false;
+  }
+  return true;
+};
 
-import { handleProfileQuery, checkSupabaseConnection } from './client';
-import type { UserProfile } from './supabaseModels';
+// Fonction pour créer un profil initial si nécessaire
+export const createInitialProfileIfNeeded = async (userId: string) => {
+  if (!await ensureSupabaseConnection()) return null;
 
-// Réexportation des fonctions pour maintenir la compatibilité API
-export { handleProfileQuery, checkSupabaseConnection };
+  try {
+    const { data, error } = await handleProfileQuery(userId);
+    if (error) {
+      console.error("Erreur lors de la récupération du profil:", error);
+      return null;
+    }
 
-// Réexportation des types pour maintenir la compatibilité API
-export type { UserProfile };
+    if (!data) {
+      console.log("Profil non trouvé, création d'un nouveau profil...");
+      const newProfile = {
+        id: userId,
+        full_name: 'Nouveau Utilisateur',
+        email: 'email@example.com',
+        avatar_url: null,
+        is_first_login: true
+      };
 
-// Définition du type pour la compatibilité avec les consommateurs existants
-export interface ProfileQueryResult {
-  data: UserProfile | null;
-  error: { message: string } | null;
-}
+      const { data: newProfileData, error: newProfileError } = await supabase
+        .from('profiles')
+        .insert([newProfile])
+        .select()
+        .single();
+
+      if (newProfileError) {
+        console.error("Erreur lors de la création du profil:", newProfileError);
+        return null;
+      }
+
+      console.log("Nouveau profil créé:", newProfileData);
+      return newProfileData;
+    }
+
+    console.log("Profil existant trouvé:", data);
+    return data;
+  } catch (error) {
+    console.error("Erreur lors de la création/récupération du profil:", error);
+    return null;
+  }
+};
+
+// Fonction pour adapter les profils venant de Supabase
+export const adaptProfile = (profile: any) => {
+  if (!profile) return null;
+  
+  return {
+    id: profile.id,
+    fullName: profile.full_name,
+    email: profile.email,
+    avatarUrl: profile.avatar_url,
+    isFirstLogin: profile.is_first_login === true,
+    clientId: profile.client_id
+  };
+};
+
+// Fonction pour gérer les réponses de profil Supabase
+export const processProfileResponse = (data: any) => {
+  if (!data) return null;
+  
+  // Gérer le cas où is_first_login est stocké dans metadata
+  if (data.metadata && typeof data.metadata === 'object') {
+    const isFirstLogin = data.metadata.is_first_login === true;
+    return {
+      ...adaptProfile(data),
+      isFirstLogin
+    };
+  }
+  
+  return adaptProfile(data);
+};
+
+// Fonction pour mettre à jour le profil utilisateur
+export const updateUserProfile = async (userId: string, profileData: any) => {
+  try {
+    // Convertir en format compatible avec Supabase
+    const supabaseProfileData = {
+      id: userId,
+      full_name: profileData.fullName,
+      email: profileData.email,
+      avatar_url: profileData.avatarUrl,
+      is_first_login: profileData.isFirstLogin
+    };
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .upsert(supabaseProfileData)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return processProfileResponse(data);
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour du profil:", error);
+    return null;
+  }
+};
+
+// Fonction pour supprimer un profil utilisateur
+export const deleteUserProfile = async (userId: string) => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de la suppression du profil:", error);
+    return false;
+  }
+};

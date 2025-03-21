@@ -1,8 +1,6 @@
-
-import { supabase, EdgeFunctionResponse } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { getRedirectUrl } from '@/utils/environment';
-import { generateOAuthState, validateOAuthState } from '@/utils/oauthStateManager';
+import { supabase } from '@/integrations/supabase/client';
+import { EdgeFunctionResponse } from '@/integrations/supabase/client';
+import { getRedirectUrl } from '@/utils/environment/urlUtils';
 
 /**
  * Récupère l'URL de redirection pour l'authentification OAuth Google
@@ -433,4 +431,23 @@ export interface IndexingProgress {
   updated_at: string;
   total?: number;
   processed?: number;
+}
+
+/**
+ * Récupère l'ID du dossier racine Google Drive pour un utilisateur
+ * @param userId ID de l'utilisateur
+ * @returns Promise avec l'ID du dossier racine, ou null si non trouvé
+ */
+export async function getGoogleDriveRootFolder(userId: string) {
+  try {
+    const { data, error } = await supabase.functions.invoke<EdgeFunctionResponse<{ folderId: string }>>('get-google-drive-root', {
+      body: { userId }
+    });
+
+    if (error) throw new Error(error.message);
+    return data?.folderId;
+  } catch (error) {
+    console.error('Error getting Google Drive root folder:', error);
+    return null;
+  }
 }

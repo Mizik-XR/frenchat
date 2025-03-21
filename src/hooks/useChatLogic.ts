@@ -1,68 +1,101 @@
-
-import { useChatProcessing } from "./chat/useChatProcessing";
-import { APP_STATE } from "@/integrations/supabase/client";
-import { useMemo, useState } from "react";
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase, APP_STATE } from '@/integrations/supabase/client';
+import { useChatMessages } from './useChatMessages';
+import { useConversations } from './useConversations';
+import { useSupabaseUser } from './useSupabaseUser';
+import { adaptConversation, Conversation } from '@/integrations/supabase/adapters';
 
 export function useChatLogic() {
-  const {
-    isProcessing,
-    isError,
-    error
-  } = useChatProcessing();
-  
-  const [replyToMessage, setReplyToMessage] = useState<{ id: string; content: string; role: 'user' | 'assistant' } | null>(null);
-  const [serviceType, setServiceType] = useState<'local' | 'cloud' | 'hybrid'>('cloud');
-  const [localAIUrl, setLocalAIUrl] = useState<string | null>(null);
+  const { conversationId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useSupabaseUser();
+  const { messages, isLoading: messagesLoading, sendMessage, isGenerating } = useChatMessages(conversationId);
+  const { conversations, isLoading: conversationsLoading, currentConversation, updateConversationTitle } = useConversations();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(APP_STATE.isOfflineMode);
 
-  // Function to handle reply to message
-  const handleReplyToMessage = (messageId: string, content: string, role: 'user' | 'assistant') => {
-    setReplyToMessage({ id: messageId, content, role });
+  useEffect(() => {
+    if (!user) {
+      console.warn("L'utilisateur n'est pas encore chargé.");
+      return;
+    }
+
+    if (!conversationId) {
+      // Si aucun ID de conversation n'est fourni, rediriger vers la première conversation ou en créer une nouvelle
+      if (conversations && conversations.length > 0) {
+        navigate(`/chat/${conversations[0].id}`, { replace: true });
+      } else {
+        // Créer une nouvelle conversation et rediriger
+        const createAndNavigate = async () => {
+          const newConversation = await createConversation();
+          if (newConversation) {
+            navigate(`/chat/${newConversation.id}`, { replace: true });
+          }
+        };
+        createAndNavigate();
+      }
+      return;
+    }
+
+    // Vérifier si la conversation actuelle correspond à l'ID
+    if (currentConversation && currentConversation.id !== conversationId) {
+      console.log("ID de conversation actuel:", currentConversation.id, "ID de conversation dans l'URL:", conversationId);
+    }
+
+    setIsInitialized(true);
+  }, [user, conversationId, conversations, navigate, currentConversation]);
+
+  useEffect(() => {
+    setIsOfflineMode(APP_STATE.isOfflineMode);
+    const handleOfflineChange = () => {
+      setIsOfflineMode(APP_STATE.isOfflineMode);
+    };
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'OFFLINE_MODE') {
+        handleOfflineChange();
+      }
+    });
+
+    return () => {
+      window.removeEventListener('storage', handleOfflineChange);
+    };
+  }, []);
+
+  const createConversation = async () => {
+    try {
+      const userId = user?.id;
+      if (!userId) {
+        console.error("Utilisateur non authentifié.");
+        return null;
+      }
+
+      const { data: newConversation, error } = await supabase
+        .from('chat_conversations')
+        .insert([{ user_id: userId, title: 'Nouvelle conversation' }])
+        .single();
+
+      if (error) {
+        console.error("Erreur lors de la création de la conversation:", error);
+        return null;
+      }
+
+      return newConversation;
+    } catch (error) {
+      console.error("Erreur lors de la création de la conversation:", error);
+      return null;
+    }
   };
-
-  // Function to clear reply to message
-  const clearReplyToMessage = () => {
-    setReplyToMessage(null);
-  };
-
-  // Détecter si nous sommes en mode hors ligne
-  const isOfflineMode = useMemo(() => APP_STATE.isOfflineMode, []);
-
-  // Message d'information si on est en mode hors ligne
-  const offlineInfo = useMemo(() => {
-    if (isOfflineMode) {
-      return {
-        title: "Mode hors ligne",
-        description: "L'application est en mode hors ligne en raison de problèmes de connexion. Certaines fonctionnalités peuvent être limitées."
-      };
-    }
-    return null;
-  }, [isOfflineMode]);
-
-  // Vérifier s'il y a des problèmes de configuration
-  const configIssues = useMemo(() => {
-    const issues = [];
-    
-    if (serviceType === 'local' && !localAIUrl) {
-      issues.push("Serveur IA local configuré mais non accessible");
-    }
-    
-    if (APP_STATE.hasSupabaseError) {
-      issues.push("Problèmes de connexion à la base de données");
-    }
-    
-    return issues.length > 0 ? issues : null;
-  }, [serviceType, localAIUrl]);
 
   return {
-    isLoading: isProcessing,
-    replyToMessage,
-    processMessage: (content: string) => console.log("Processing message:", content),
-    handleReplyToMessage,
-    clearReplyToMessage,
-    serviceType,
-    localAIUrl,
+    messages,
+    sendMessage,
+    isLoading: messagesLoading || conversationsLoading,
+    conversations,
+    currentConversation,
+    updateConversationTitle,
     isOfflineMode,
-    offlineInfo,
-    configIssues
+    isGenerating
   };
 }

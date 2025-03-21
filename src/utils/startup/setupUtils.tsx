@@ -1,8 +1,7 @@
-
-import { React } from '@/core/ReactInstance';
-import { toast } from '@/hooks/use-toast';
-import { preloadSession } from '@/integrations/supabase/client';
-import { initLovableIntegration } from '@/utils/lovable/lovableIntegration';
+import React from 'react';
+import { supabase, preloadSession } from '@/integrations/supabase/client';
+import { createRoot } from 'react-dom/client';
+import App from '@/App';
 
 /**
  * Vérification des dépendances React
@@ -111,5 +110,21 @@ export const setupLovableIntegration = (): void => {
         }
       }, 2000);
     });
+  }
+};
+
+/**
+ * Initialisation de l'application
+ */
+export const initializeApp = async () => {
+  // Précharger la session avant le rendu
+  await preloadSession();
+  
+  const rootElement = document.getElementById('root');
+  if (rootElement) {
+    const root = createRoot(rootElement);
+    root.render(<App />);
+  } else {
+    console.error("Élément racine 'root' non trouvé dans le DOM");
   }
 };
