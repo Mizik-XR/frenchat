@@ -9,7 +9,7 @@ import {
   checkOfflineMode,
   preloadSession as compatPreloadSession
 } from '@/compatibility/supabaseCompat';
-import type { UserProfile, EdgeFunctionResponse } from './supabaseModels';
+import { UserProfile, EdgeFunctionResponse } from './supabaseModels';
 
 // Create client with error handling
 let supabaseClient: any = null;
@@ -72,112 +72,40 @@ export const preloadSession = compatPreloadSession;
 // Réexporte le type EdgeFunctionResponse pour qu'il soit disponible aux imports
 export type { EdgeFunctionResponse };
 
-// Déplacer les fonctions de profileUtils pour éviter la dépendance circulaire
-export async function handleProfileQuery(userId: string): Promise<ProfileQueryResult> {
-  // Si on est en mode hors ligne, fournir un profil par défaut
-  if (APP_STATE.isOfflineMode || !supabase) {
-    console.log("Mode hors ligne actif, utilisation d'un profil par défaut");
-    return { 
-      data: { 
-        id: userId,
-        is_first_login: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      } as UserProfile, 
-      error: null 
-    };
-  }
-  
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-      
-    if (error) {
-      if (error.message?.includes('infinite recursion')) {
-        console.warn("Database policy recursion detected. Using fallback profile.");
-        
-        // Si nous détectons une récursion infinie, créons un profil minimal
-        try {
-          // Tenter de créer le profil manuellement
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert({ 
-              id: userId,
-              is_first_login: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .single();
-            
-          if (insertError) {
-            console.error("Erreur lors de la création du profil de secours:", insertError);
-          } else {
-            console.log("Profil de secours créé avec succès");
-            
-            // Récupérer le nouveau profil
-            const { data: newProfile, error: newError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', userId)
-              .single();
-              
-            if (!newError) {
-              return { data: newProfile, error: null };
-            }
-          }
-        } catch (createError) {
-          console.error("Erreur lors de la tentative de création de profil:", createError);
-        }
-        
-        // Return a minimal fallback profile if all else fails
-        return { 
-          data: { 
-            id: userId,
-            is_first_login: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          } as UserProfile, 
-          error: null 
-        };
-      }
-      return { data: null, error };
-    }
-    
-    return { data, error: null };
-  } catch (err) {
-    console.error("Error querying profile:", err);
-    
-    // En cas d'erreur, fournir un profil de secours
-    return { 
-      data: { 
-        id: userId,
-        is_first_login: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      } as UserProfile, 
-      error: { message: err instanceof Error ? err.message : 'Unknown error' } 
-    };
+// Importer les utilitaires de profil après l'export de supabase
+// Ceci évite la dépendance circulaire
+import { handleProfileQuery, checkSupabaseConnection } from './profileUtils';
+export { handleProfileQuery, checkSupabaseConnection };
+
+// Tester la validation des paramètres Supabase
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  console.error("ERREUR CRITIQUE: Configuration Supabase manquante!");
+  if (typeof window !== 'undefined') {
+    // Afficher une alerte dans la console du navigateur
+    console.error(
+      "%c⚠️ ERREUR DE CONFIGURATION SUPABASE ⚠️",
+      "background: #f44336; color: white; font-size: 16px; padding: 8px;"
+    );
+    console.error(
+      "%cURL Supabase ou clé d'API manquante. Vérifiez votre configuration.",
+      "font-size: 14px;"
+    );
   }
 }
 
-// Définir le type ProfileQueryResult directement dans ce fichier
-interface ProfileQueryResult {
-  data: UserProfile | null;
-  error: { message: string } | null;
-}
-
-// Fonction simplifiée pour vérifier la connexion à Supabase (déplacée de profileUtils)
-export async function checkSupabaseConnection(): Promise<boolean> {
-  if (APP_STATE.isOfflineMode) return false;
+// Preload session if we're in a browser
+if (typeof window !== 'undefined') {
+  // Non-blocking preload
+  setTimeout(() => {
+    preloadSession().catch(err => {
+      console.warn("Session preload failed:", err);
+    });
+  }, 0);
   
-  try {
-    const { error } = await supabase.from('profiles').select('count').limit(1);
-    return !error;
-  } catch (err) {
-    console.error("Erreur de connexion à Supabase:", err);
-    return false;
-  }
+  // Local AI service detection
+  setTimeout(() => {
+    detectLocalAIService().catch(err => {
+      console.warn("Local AI service detection failed:", err);
+    });
+  }, 1000);
 }

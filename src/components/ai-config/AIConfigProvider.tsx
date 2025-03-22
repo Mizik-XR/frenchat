@@ -25,10 +25,18 @@ const defaultAIConfig: AIConfigContextType = {
 };
 
 // Création du contexte avec la nouvelle API
-const AIConfigContext = createContextSafely<AIConfigContextType>(defaultAIConfig);
+const { Context: AIConfigContext, useContext: useAIConfigContextInternal } = createContextSafely<AIConfigContextType | undefined>(
+  undefined, 
+  "AIConfigContext"
+);
 
 export const useAIConfigContext = () => {
-  return AIConfigContext.useContext();
+  const context = useAIConfigContextInternal();
+  if (!context) {
+    console.error("useAIConfigContext must be used within an AIConfigProvider");
+    return defaultAIConfig;
+  }
+  return context;
 };
 
 interface AIConfigProviderProps {

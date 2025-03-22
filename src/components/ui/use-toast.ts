@@ -1,9 +1,6 @@
 
-// Réexportation simple du hook use-toast depuis son emplacement source
-export { 
-  useToast, 
-  toast,
-  type ToasterToast as Toast,
-  type ToastProps,
-  type ToastActionElement
-} from "@/hooks/use-toast";
+// Import depuis le hook original
+import { useToast, toast } from "@/hooks/use-toast";
+
+// Réexportation pour maintenir la compatibilité
+export { useToast, toast };

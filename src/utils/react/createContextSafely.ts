@@ -2,162 +2,95 @@
 /**
  * Utilitaire pour créer des contextes React de manière sécurisée
  * 
- * Ce module offre des fonctions pour créer et utiliser des contextes React
- * en garantissant une instance unique de React et en évitant les problèmes
- * liés aux différentes instances React dans les builds de production.
+ * Ce fichier fournit une méthode pour créer des contextes React tout en évitant
+ * les erreurs liées aux instances multiples de React qui peuvent survenir en production.
+ * Il inclut également des vérifications et des messages d'erreur plus clairs.
  */
 
-import { React } from '@/core/ReactInstance';
+import { React, createContext } from '@/core/ReactInstance';
 
 /**
- * Crée un contexte React avec des valeurs par défaut typées
- * @param defaultValue Valeur par défaut du contexte
- * @returns Contexte React typé
+ * Crée un contexte React avec des vérifications de sécurité
+ * et un hook useContext personnalisé avec vérification intégrée
+ * 
+ * @param defaultValue La valeur par défaut du contexte
+ * @param displayName Un nom d'affichage pour le contexte (pour le débogage)
+ * @returns Un objet contenant le contexte et un hook pour l'utiliser
  */
-export function createContextSafely<T>(defaultValue: T) {
-  const context = React.createContext(defaultValue);
+export function createContextSafely<T>(defaultValue: T, displayName: string) {
+  const Context = createContext<T>(defaultValue);
   
-  function useContextSafely() {
-    return React.useContext(context);
-  }
+  // Définir le nom d'affichage pour faciliter le débogage
+  Context.displayName = displayName;
   
-  return {
-    Provider: context.Provider,
-    useContext: useContextSafely
+  /**
+   * Hook personnalisé pour utiliser ce contexte
+   * Inclut une vérification pour s'assurer que le hook est utilisé dans un Provider
+   */
+  const useContext = () => {
+    const context = React.useContext(Context);
+    
+    if (context === undefined) {
+      throw new Error(`useContext for ${displayName} must be used within its Provider`);
+    }
+    
+    return context;
   };
+  
+  // Utilitaire pour obtenir la valeur de contexte (pour les tests)
+  const getContextValue = () => {
+    return defaultValue;
+  };
+  
+  // Retourner à la fois le contexte, le hook et la fonction utilitaire
+  return { Context, useContext, getContextValue };
 }
 
 /**
- * Récupère la valeur d'un contexte de manière sécurisée avec une valeur de fallback
- * @param context Le contexte React à utiliser
- * @param fallbackValue Valeur à retourner en cas d'erreur
- * @returns La valeur du contexte ou la valeur de fallback
+ * Fonction utilitaire pour obtenir la valeur d'un contexte avec une valeur par défaut
+ * 
+ * Cette fonction est utile pour les cas où un composant pourrait être utilisé en dehors
+ * de son Provider, fournissant une valeur de secours sécurisée.
+ * 
+ * @param context Le contexte React
+ * @param defaultValue Valeur par défaut à utiliser si le contexte est undefined
+ * @returns La valeur du contexte ou la valeur par défaut
  */
-export function getContextValue<T>(context: React.Context<T>, fallbackValue: T): T {
+export function getContextValue<T>(context: React.Context<T>, defaultValue: T): T {
+  console.warn('getContextValue est déconseillé, utilisez plutôt useContextSafely');
+  // Tenter d'accéder à la valeur actuelle du contexte (si disponible)
+  // Sinon, retourner la valeur par défaut
   try {
-    const value = React.useContext(context);
-    return value !== undefined ? value : fallbackValue;
-  } catch (error) {
-    console.error("Erreur lors de l'accès au contexte:", error);
-    return fallbackValue;
+    const value = (context as any)._currentValue;
+    return value !== undefined ? value : defaultValue;
+  } catch (e) {
+    return defaultValue;
   }
 }
 
 /**
- * Crée un contexte React qui requiert un Provider
- * @returns Contexte React avec un Provider requis
+ * Crée un contexte React avec une valeur par défaut strictement typée
+ * et des messages d'erreur plus détaillés
+ * 
+ * @param defaultValue Valeur par défaut du contexte
+ * @param contextName Nom du contexte pour les messages d'erreur
+ * @returns Le contexte React créé avec le displayName défini
  */
-export function createRequiredContext<T>() {
-  const context = React.createContext<T | undefined>(undefined);
+export function createStrictContext<T>(defaultValue: T, contextName: string) {
+  const Context = createContext<T>(defaultValue);
+  Context.displayName = contextName;
   
-  function useRequiredContext() {
-    const ctx = React.useContext(context);
-    if (ctx === undefined) {
-      throw new Error('useRequiredContext must be used within its Provider');
-    }
-    return ctx;
-  }
-  
-  return {
-    Provider: context.Provider,
-    useContext: useRequiredContext
-  };
+  return Context;
 }
 
 /**
- * Crée un hook et un Provider pour un contexte avec une logique personnalisée
- * @param useValue Hook qui fournit la valeur du contexte
- * @returns Objet contenant le Provider et un hook pour accéder au contexte
+ * Vérifie si un hook de contexte est utilisé dans un Provider
+ * 
+ * @param context La valeur retournée par useContext
+ * @param contextName Le nom du contexte pour l'erreur
  */
-export function createContextProvider<T, P = {}>(
-  useValue: (props: P) => T,
-  displayName?: string
-) {
-  const context = React.createContext<T | undefined>(undefined);
-  
-  if (displayName) {
-    context.displayName = displayName;
+export function validateContextHook<T>(context: T | undefined, contextName: string): asserts context is T {
+  if (context === undefined) {
+    throw new Error(`Le hook ${contextName} doit être utilisé dans un ${contextName}Provider`);
   }
-  
-  function Provider(props: React.PropsWithChildren<P>) {
-    const value = useValue(props);
-    return React.createElement(
-      context.Provider,
-      { value },
-      props.children
-    );
-  }
-  
-  function useContext() {
-    const ctx = React.useContext(context);
-    if (ctx === undefined) {
-      throw new Error(
-        `use${displayName || 'Context'} must be used within a ${
-          displayName || 'Context'
-        }Provider`
-      );
-    }
-    return ctx;
-  }
-  
-  return {
-    Provider,
-    useContext
-  };
-}
-
-/**
- * Crée un Provider avec un state et des actions typés
- * Utile pour implémenter des patterns de state management légers
- * @param defaultState État initial
- * @param actions Actions pour modifier l'état
- * @returns Contexte avec Provider et hook d'accès
- */
-export function createStateContext<
-  State,
-  Actions extends Record<string, (...args: any[]) => any>,
-  Result extends { state: State } & {
-    [K in keyof Actions]: Actions[K]
-  }
->(
-  defaultState: State,
-  createActions: (
-    state: State, 
-    setState: React.Dispatch<React.SetStateAction<State>>
-  ) => Actions
-) {
-  const context = React.createContext<Result | undefined>(undefined);
-  
-  function Provider({ children }: React.PropsWithChildren<{}>) {
-    const [state, setState] = React.useState(defaultState);
-    
-    const actions = React.useMemo(
-      () => createActions(state, setState),
-      [state]
-    );
-    
-    const value = {
-      state,
-      ...actions
-    } as Result;
-    
-    return React.createElement(
-      context.Provider,
-      { value },
-      children
-    );
-  }
-  
-  function useContext() {
-    const ctx = React.useContext(context);
-    if (ctx === undefined) {
-      throw new Error('useStateContext must be used within a Provider');
-    }
-    return ctx;
-  }
-  
-  return {
-    Provider,
-    useContext
-  };
 }

@@ -9,9 +9,6 @@
  * - Démarrer l'application dans différents modes (normal, récupération, cloud)
  */
 
-// Importer la configuration React en premier
-import './core/setup';
-
 // Importer React depuis l'instance unique
 import { React } from './core/ReactInstance';
 import { createRoot } from 'react-dom/client';

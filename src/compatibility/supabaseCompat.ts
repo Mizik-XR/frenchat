@@ -9,8 +9,6 @@
  * Une refactorisation plus propre devra être envisagée ultérieurement.
  */
 
-import { isLovableEnvironment, isPreviewEnvironment } from '@/utils/environment';
-
 // État de l'application partagé avec accès mutables pour compatibilité
 class CompatAppState {
   private _isOfflineMode: boolean = false;
@@ -20,7 +18,7 @@ class CompatAppState {
 
   // Propriétés
   get isOfflineMode(): boolean {
-    return this._isOfflineMode || isLovableEnvironment();
+    return this._isOfflineMode;
   }
 
   set isOfflineMode(value: boolean) {
@@ -37,8 +35,6 @@ class CompatAppState {
   }
 
   get localAIAvailable(): boolean {
-    // Dans l'environnement Lovable, considérer que les services locaux ne sont jamais disponibles
-    if (isLovableEnvironment()) return false;
     return this._localAIAvailable;
   }
 
@@ -89,12 +85,6 @@ class CompatAppState {
     console.warn('[Compat] Using detectLocalAIService from compatibility module');
     
     try {
-      // Si on est dans l'environnement Lovable, ne pas tenter de détecter les services locaux
-      if (isLovableEnvironment() || isPreviewEnvironment()) {
-        console.log("[Compat] Environnement de prévisualisation détecté, ignorant la détection de service local");
-        return { available: false, message: "Environnement de prévisualisation" };
-      }
-      
       if (this._isOfflineMode) {
         return { available: false, message: "Mode hors ligne activé" };
       }
@@ -137,14 +127,6 @@ export const APP_STATE = new CompatAppState();
 // Fonctions de compatibilité
 export const checkOfflineMode = () => {
   console.warn('[Compat] Using checkOfflineMode from compatibility module');
-  
-  // Si on est dans l'environnement Lovable, forcer le mode hors ligne
-  if (isLovableEnvironment()) {
-    localStorage.setItem('FORCE_CLOUD_MODE', 'true');
-    localStorage.setItem('aiServiceType', 'cloud');
-    return true;
-  }
-  
   // Vérifier si nous sommes dans un navigateur
   if (typeof window !== 'undefined') {
     // Vérifier si le mode hors ligne est activé dans localStorage
@@ -164,12 +146,6 @@ export const checkOfflineMode = () => {
 };
 
 export const detectLocalAIService = async (): Promise<{ available: boolean; message?: string }> => {
-  // Dans l'environnement Lovable, ne pas tenter de détecter les services locaux
-  if (isLovableEnvironment() || isPreviewEnvironment()) {
-    console.log("[Compat] Environnement de prévisualisation détecté, ignorant la détection de service local");
-    return { available: false, message: "Environnement de prévisualisation" };
-  }
-  
   return APP_STATE.detectLocalAIService();
 };
 
