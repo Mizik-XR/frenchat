@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { SystemDiagnostics } from '@/components/SystemDiagnostics';
 import { toast } from '@/hooks/use-toast';
@@ -8,7 +7,8 @@ import { Activity, ArrowLeft, Bug, Database, Server } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { runSystemCheck } from '@/utils/systemDiagnostics';
 import { useAuth } from '@/components/AuthProvider';
-import { APP_STATE } from '@/integrations/supabase/client';
+import { APP_STATE } from '@/compatibility/supabaseCompat';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function SystemStatus() {
   const navigate = useNavigate();

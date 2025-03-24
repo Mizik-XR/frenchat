@@ -1,5 +1,4 @@
-
-import React from 'react';
+import { React } from '@/core/ReactInstance';
 
 /**
  * Affiche un message de chargement initial pour feedback utilisateur

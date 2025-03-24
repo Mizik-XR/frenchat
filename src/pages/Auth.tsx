@@ -1,10 +1,11 @@
-
-import React, { useEffect, useState } from 'react';
+import { React, useEffect, useState } from '@/core/ReactInstance';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase, handleProfileQuery, APP_STATE } from '@/integrations/supabase/client';
-import { Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { handleProfileQuery } from '@/integrations/supabase/profileUtils';
+import { APP_STATE } from '@/compatibility/supabaseCompat';
+import { Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { SignInForm } from '@/components/auth/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm';
 import { AuthContainer } from '@/components/auth/AuthContainer';
@@ -83,12 +84,12 @@ export default function Auth() {
     let subscription: { unsubscribe: () => void } | null = null;
     
     if (supabase) {
-      const { data: authData } = supabase.auth.onAuthStateChange((_event, session) => {
-        console.log("Auth state changed", _event, session);
+      const { data: authData } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session) => {
+        console.log("Auth state changed", event, session);
         setSession(session);
         
         // Si user vient de s'inscrire ou de se connecter, vérifier les erreurs de base de données
-        if (session && (_event === 'SIGNED_IN' || _event === 'SIGNED_UP')) {
+        if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
           handleProfileQuery(session.user.id)
             .then(({ error }) => {
               if (error) {

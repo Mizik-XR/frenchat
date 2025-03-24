@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
-import { supabase, APP_STATE } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
+import { APP_STATE } from '@/compatibility/supabaseCompat';
 import { 
   cachedUser, 
   isSessionLoading, 

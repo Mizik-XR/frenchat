@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import { React, useState } from '@/core/ReactInstance';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";

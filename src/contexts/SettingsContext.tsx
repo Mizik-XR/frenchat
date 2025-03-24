@@ -1,5 +1,5 @@
-
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { React, createContext, useContext, useState, useEffect } from '@/core/ReactInstance';
+import type { ReactNode } from 'react';
 import { isLocalAIAllowed } from '@/hooks/ai/environment/environmentDetection';
 
 interface SettingsContextType {

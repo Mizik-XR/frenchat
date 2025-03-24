@@ -1,6 +1,8 @@
 import { AlertCircle, X, Check, Info, AlertTriangle, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useSupabaseClient } from '@/hooks/useSupabaseClient';
 
 interface BrowserCompatibilityAlertProps {
   issues: string[];
@@ -19,6 +21,17 @@ export const BrowserCompatibilityAlert = ({
   onDismiss,
   onRunDiagnostic
 }: BrowserCompatibilityAlertProps) => {
+  const { client: supabase, loading } = useSupabaseClient();
+  const [showAlert, setShowAlert] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !supabase) {
+      setShowAlert(true);
+    }
+  }, [loading, supabase]);
+
+  if (!showAlert) return null;
+
   // Protection contre les erreurs catastrophiques
   try {
     const [isVisible, setIsVisible] = useState(true);

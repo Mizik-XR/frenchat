@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import { React, useState, useEffect } from '@/core/ReactInstance';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";

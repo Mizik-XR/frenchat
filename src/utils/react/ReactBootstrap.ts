@@ -1,5 +1,4 @@
-
-import React from 'react';
+import { React } from '@/core/ReactInstance';
 
 // Export React pour garantir une seule instance
 export const ReactInstance = React;
