@@ -1,6 +1,6 @@
-
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from '@jest/globals';
 import { isPublicPagePath, isAuthPagePath } from "@/hooks/auth/routes/routeHelpers";
+import { getRedirectPath } from '@/utils/auth/routeHelpers';
 
 describe("routeHelpers", () => {
   describe("isPublicPagePath", () => {
@@ -27,5 +27,28 @@ describe("routeHelpers", () => {
       expect(isAuthPagePath("/chat")).toBe(false);
       expect(isAuthPagePath("/config")).toBe(false);
     });
+  });
+});
+
+describe('getRedirectPath', () => {
+  it('should return the default path when no redirect is provided', () => {
+    expect(getRedirectPath()).toBe('/');
+  });
+
+  it('should return the provided redirect path', () => {
+    const redirectPath = '/dashboard';
+    expect(getRedirectPath(redirectPath)).toBe(redirectPath);
+  });
+
+  it('should handle empty redirect path', () => {
+    expect(getRedirectPath('')).toBe('/');
+  });
+
+  it('should handle undefined redirect path', () => {
+    expect(getRedirectPath(undefined)).toBe('/');
+  });
+
+  it('should handle null redirect path', () => {
+    expect(getRedirectPath(null)).toBe('/');
   });
 });

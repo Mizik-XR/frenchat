@@ -1,103 +1,57 @@
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { handleRedirection } from '@/utils/auth/redirectionUtils';
+import type { Location } from 'react-router-dom';
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handleUserRedirection, checkRouteProtection } from "@/hooks/auth/redirection/redirectionUtils";
-import { resetAuthMocks } from "./__mocks__/authMocks";
-import { Location, NavigateFunction } from "react-router-dom";
+describe('redirectionUtils', () => {
+  let mockNavigate: jest.Mock;
+  let mockLocation: Location;
 
-// Create a more complete mock location that satisfies the Location interface
-const createMockLocation = (pathname: string): Location => ({
-  pathname,
-  search: "?mode=cloud&client=true",
-  hash: "",
-  state: null,
-  key: "default",
-});
-
-describe("redirectionUtils", () => {
   beforeEach(() => {
-    vi.mock("react-router-dom", () => ({
-      useNavigate: vi.fn().mockReturnValue(vi.fn()),
-      useLocation: vi.fn().mockReturnValue(createMockLocation("/test")),
-    }));
+    mockNavigate = jest.fn();
+    mockLocation = {
+      pathname: '/test',
+      search: '',
+      hash: '',
+      state: null,
+      key: 'default',
+    };
   });
 
   afterEach(() => {
-    resetAuthMocks();
+    jest.clearAllMocks();
   });
 
-  describe("handleUserRedirection", () => {
-    it("should redirect first-time users to config page", () => {
-      const navigate = vi.fn();
-      const navigationHelpers = {
-        navigate: navigate as NavigateFunction,
-        location: createMockLocation("/auth"),
-        getUrlParams: vi.fn(),
-        getNavigationPath: vi.fn().mockReturnValue("/config?mode=cloud")
-      };
-
-      handleUserRedirection(true, true, true, navigationHelpers);
-      
-      expect(navigate).toHaveBeenCalledWith("/config?mode=cloud");
-    });
-
-    it("should redirect configured users to chat page", () => {
-      const navigate = vi.fn();
-      const navigationHelpers = {
-        navigate: navigate as NavigateFunction,
-        location: createMockLocation("/auth"),
-        getUrlParams: vi.fn(),
-        getNavigationPath: vi.fn().mockReturnValue("/chat?mode=cloud")
-      };
-
-      handleUserRedirection(true, false, false, navigationHelpers);
-      
-      expect(navigate).toHaveBeenCalledWith("/chat?mode=cloud");
-    });
-
-    it("should not redirect users on non-auth pages", () => {
-      const navigate = vi.fn();
-      const navigationHelpers = {
-        navigate: navigate as NavigateFunction,
-        location: createMockLocation("/chat"),
-        getUrlParams: vi.fn(),
-        getNavigationPath: vi.fn()
-      };
-
-      handleUserRedirection(false, true, true, navigationHelpers);
-      
-      expect(navigate).not.toHaveBeenCalled();
-    });
+  it('should redirect to default path when no redirect is provided', () => {
+    handleRedirection(mockNavigate, mockLocation);
+    expect(mockNavigate).toHaveBeenCalledWith('/');
   });
 
-  describe("checkRouteProtection", () => {
-    it("should redirect unauthenticated users from protected routes", () => {
-      const navigate = vi.fn();
-      const navigationHelpers = {
-        navigate: navigate as NavigateFunction,
-        location: createMockLocation("/chat"),
-        getUrlParams: vi.fn(),
-        getNavigationPath: vi.fn().mockReturnValue("/auth?mode=cloud")
-      };
+  it('should redirect to provided path', () => {
+    const redirectPath = '/dashboard';
+    mockLocation.search = `?redirect=${encodeURIComponent(redirectPath)}`;
+    
+    handleRedirection(mockNavigate, mockLocation);
+    expect(mockNavigate).toHaveBeenCalledWith(redirectPath);
+  });
 
-      const redirected = checkRouteProtection(null, false, true, navigationHelpers);
-      
-      expect(redirected).toBe(true);
-      expect(navigate).toHaveBeenCalledWith("/auth?mode=cloud", expect.anything());
-    });
+  it('should handle empty redirect parameter', () => {
+    mockLocation.search = '?redirect=';
+    
+    handleRedirection(mockNavigate, mockLocation);
+    expect(mockNavigate).toHaveBeenCalledWith('/');
+  });
 
-    it("should not redirect authenticated users from protected routes", () => {
-      const navigate = vi.fn();
-      const navigationHelpers = {
-        navigate: navigate as NavigateFunction,
-        location: createMockLocation("/chat"),
-        getUrlParams: vi.fn(),
-        getNavigationPath: vi.fn()
-      };
+  it('should handle invalid redirect parameter', () => {
+    mockLocation.search = '?redirect=invalid%path';
+    
+    handleRedirection(mockNavigate, mockLocation);
+    expect(mockNavigate).toHaveBeenCalledWith('/');
+  });
 
-      const redirected = checkRouteProtection({ user: { id: "test" } }, false, true, navigationHelpers);
-      
-      expect(redirected).toBe(false);
-      expect(navigate).not.toHaveBeenCalled();
-    });
+  it('should handle multiple redirect parameters', () => {
+    mockLocation.search = '?redirect=/first&redirect=/second';
+    
+    handleRedirection(mockNavigate, mockLocation);
+    expect(mockNavigate).toHaveBeenCalledWith('/first');
   });
 });

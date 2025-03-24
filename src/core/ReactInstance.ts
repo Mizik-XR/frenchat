@@ -7,19 +7,38 @@
  * ou des dépendances circulaires.
  */
 
-import * as React from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  Component,
+  type FC,
+  type ReactNode,
+  type ErrorInfo
+} from 'react';
 
-// Instance React complète
-export { React };
+// Re-export tout ce dont nous avons besoin
+export {
+  React as default,
+  React,
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  Component,
+  type FC,
+  type ReactNode,
+  type ErrorInfo
+};
 
 // Hooks React principaux
-export const useState = React.useState;
-export const useEffect = React.useEffect;
-export const useContext = React.useContext;
-export const useCallback = React.useCallback;
-export const useMemo = React.useMemo;
-export const useRef = React.useRef;
-export const useReducer = React.useReducer;
 export const useLayoutEffect = React.useLayoutEffect;
 export const useImperativeHandle = React.useImperativeHandle;
 export const useDebugValue = React.useDebugValue;
@@ -29,7 +48,6 @@ export const useId = React.useId;
 
 // Méthodes pour création d'éléments et contextes
 export const createElement = React.createElement;
-export const createContext = React.createContext;
 export const createRef = React.createRef;
 export const forwardRef = React.forwardRef;
 export const lazy = React.lazy;
@@ -40,11 +58,9 @@ export const StrictMode = React.StrictMode;
 
 // Exports de types communs pour éviter des imports directs de 'react'
 export type {
-  ReactNode,
   ReactElement,
   ComponentType,
   ComponentProps,
-  FC,
   FunctionComponent,
   PropsWithChildren,
   Ref,

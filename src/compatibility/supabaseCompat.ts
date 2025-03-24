@@ -16,8 +16,7 @@
  * de fonctionnement spécifiques (mode hors ligne, test, etc.)
  */
 
-import { supabaseService, supabase } from '@/services/supabase/client';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
 // Déclaration pour gtag global
@@ -31,21 +30,28 @@ declare global {
  * Classe qui représente l'état global de l'application
  * Utilisée pour maintenir la compatibilité avec le code existant
  */
-class CompatAppState {
+export class CompatAppState {
   private _errorLog: Error[] = [];
+  private _isOffline: boolean = false;
   
-  // Proxy vers le service centralisé
-  get isOfflineMode(): boolean {
-    return supabaseService.connectivity.isOfflineMode;
+  constructor() {
+    this._isOffline = false;
   }
   
-  setOfflineMode(value: boolean): void {
-    supabaseService.connectivity.setOfflineMode(value);
+  public isOfflineMode(): boolean {
+    return this._isOffline;
   }
   
-  // Fonctions de journalisation d'erreurs pour le débogage
-  logSupabaseError(error: Error): void {
-    console.error('[Supabase Error]', error);
+  public setOfflineMode(value: boolean): void {
+    this._isOffline = value;
+    // Synchroniser avec localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('OFFLINE_MODE', value.toString());
+    }
+  }
+  
+  public logSupabaseError(error: Error): void {
+    console.error('[Supabase Error]:', error);
     this._errorLog.push(error);
     
     // Si nécessaire, journaliser l'erreur vers un service d'analytics
@@ -57,11 +63,11 @@ class CompatAppState {
     }
   }
   
-  getErrorLog(): Error[] {
+  public getErrorLog(): Error[] {
     return [...this._errorLog];
   }
   
-  clearErrorLog(): void {
+  public clearErrorLog(): void {
     this._errorLog = [];
   }
 }
@@ -69,45 +75,11 @@ class CompatAppState {
 // Singleton APP_STATE pour la compatibilité
 export const APP_STATE = new CompatAppState();
 
-/**
- * Type générique pour éviter les erreurs de type avec les noms de table dynamiques
- */
-export function createCompatClient(baseClient: SupabaseClient<Database>) {
-  return {
-    ...baseClient,
-    
-    // Ajouts pour la compatibilité v1.x
-    compat: {
-      version: '2.x',
-      
-      auth: {
-        ...baseClient.auth,
-        // Méthodes v1.x
-        user: () => baseClient.auth.getUser().then(({ data }) => data.user),
-        session: () => baseClient.auth.getSession().then(({ data }) => data.session),
-        signIn: (credentials: any) => baseClient.auth.signInWithPassword(credentials),
-        signOut: () => baseClient.auth.signOut()
-      },
-      
-      // Méthodes pour récupérer des données avec syntaxe v1.x
-      from: (table: string) => {
-        // Utiliser any ici pour permettre l'utilisation dynamique des noms de table
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const modernQuery = (baseClient.from as any)(table);
-        
-        return {
-          ...modernQuery,
-          // v1.x style: client.from('table').get()
-          get: () => modernQuery.select('*'),
-          // Autres méthodes de compatibilité...
-        };
-      }
-    }
-  };
-}
-
-// Client avec compatibilité
-export const supabaseCompat = createCompatClient(supabase);
+// Créer le client Supabase
+export const supabase = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 /**
  * Fonctions utilitaires de compatibilité
@@ -134,7 +106,7 @@ export const checkOfflineMode = (): boolean => {
 
 // Encapsuler les requêtes pour une gestion cohérente du mode hors ligne
 export async function handleProfileQuery(userId: string) {
-  if (APP_STATE.isOfflineMode) {
+  if (APP_STATE.isOfflineMode()) {
     console.log("Mode hors ligne actif, utilisation d'un profil par défaut");
     return { 
       data: { 
@@ -149,9 +121,13 @@ export async function handleProfileQuery(userId: string) {
   
   try {
     // Utiliser le nouveau service centralisé
-    return await supabaseService.profiles.getProfile(userId);
+    return await supabase.from('profiles').select('*').eq('id', userId);
   } catch (error) {
     APP_STATE.logSupabaseError(error as Error);
     return { data: null, error };
   }
+}
+
+export function isOfflineMode(): boolean {
+  return APP_STATE.isOfflineMode();
 }

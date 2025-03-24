@@ -1,4 +1,3 @@
-
 import { defineConfig, ConfigEnv, PluginOption, UserConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -91,6 +90,12 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
+        "@/core": path.resolve(__dirname, "./src/core"),
+        "@/components": path.resolve(__dirname, "./src/components"),
+        "@/utils": path.resolve(__dirname, "./src/utils"),
+        "@/hooks": path.resolve(__dirname, "./src/hooks"),
+        "@/services": path.resolve(__dirname, "./src/services"),
+        "@/types": path.resolve(__dirname, "./src/types"),
         // Forcer une seule instance de React dans toute l'application
         "react": path.resolve(__dirname, "node_modules/react"),
         "react-dom": path.resolve(__dirname, "node_modules/react-dom"),

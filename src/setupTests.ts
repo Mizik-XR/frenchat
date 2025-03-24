@@ -45,6 +45,12 @@ global.sessionStorage = sessionStorageMock;
 
 // Mock de window.location
 const locationMock = {
+  ancestorOrigins: {
+    length: 0,
+    contains: jest.fn(),
+    item: jest.fn(),
+    [Symbol.iterator]: jest.fn()
+  },
   assign: jest.fn(),
   reload: jest.fn(),
   replace: jest.fn(),
@@ -59,11 +65,15 @@ const locationMock = {
   protocol: 'http:',
   search: ''
 };
-global.location = locationMock;
+Object.defineProperty(window, 'location', {
+  value: locationMock,
+  writable: true
+});
 
 // Mock de window.crypto
 const cryptoMock = {
   getRandomValues: jest.fn((buffer) => buffer),
+  randomUUID: jest.fn(() => '00000000-0000-0000-0000-000000000000'),
   subtle: {
     digest: jest.fn(),
     encrypt: jest.fn(),
@@ -79,7 +89,10 @@ const cryptoMock = {
     unwrapKey: jest.fn()
   }
 };
-global.crypto = cryptoMock;
+Object.defineProperty(window, 'crypto', {
+  value: cryptoMock,
+  writable: true
+});
 
 // Mock de window.performance
 const performanceMock = {
@@ -93,9 +106,42 @@ const performanceMock = {
   clearMeasures: jest.fn(),
   clearResourceTimings: jest.fn(),
   setResourceTimingBufferSize: jest.fn(),
-  timeOrigin: Date.now()
+  timeOrigin: Date.now(),
+  eventCounts: new Map(),
+  navigation: {
+    type: 0,
+    redirectCount: 0
+  },
+  timing: {
+    navigationStart: Date.now(),
+    unloadEventStart: 0,
+    unloadEventEnd: 0,
+    redirectStart: 0,
+    redirectEnd: 0,
+    fetchStart: Date.now(),
+    domainLookupStart: Date.now(),
+    domainLookupEnd: Date.now(),
+    connectStart: Date.now(),
+    connectEnd: Date.now(),
+    secureConnectionStart: Date.now(),
+    requestStart: Date.now(),
+    responseStart: Date.now(),
+    responseEnd: Date.now(),
+    domLoading: Date.now(),
+    domInteractive: Date.now(),
+    domContentLoadedEventStart: Date.now(),
+    domContentLoadedEventEnd: Date.now(),
+    domComplete: Date.now(),
+    loadEventStart: Date.now(),
+    loadEventEnd: Date.now()
+  },
+  onresourcetimingbufferfull: null,
+  toJSON: jest.fn()
 };
-global.performance = performanceMock;
+Object.defineProperty(window, 'performance', {
+  value: performanceMock,
+  writable: true
+});
 
 // Mock de window.matchMedia
 global.matchMedia = jest.fn().mockImplementation(query => ({
@@ -126,6 +172,13 @@ global.IntersectionObserver = class IntersectionObserver {
   thresholds = [];
   takeRecords = jest.fn();
 };
+
+// Configuration globale pour les tests
+beforeAll(() => {
+  // Mock des variables d'environnement
+  process.env.VITE_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.VITE_SUPABASE_ANON_KEY = 'your-anon-key';
+});
 
 // Nettoyage après chaque test
 afterEach(() => {

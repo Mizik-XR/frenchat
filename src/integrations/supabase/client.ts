@@ -6,60 +6,36 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, clientConfig } from './config';
 
-let client: SupabaseClient<Database, 'public'> | null = null;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-/**
- * Obtient une instance du client Supabase.
- * Crée une nouvelle instance si elle n'existe pas déjà.
- */
-export function getSupabaseClient(): SupabaseClient<Database, 'public'> {
-  if (!client) {
-    client = createClient<Database, 'public'>(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY,
-      {
-        ...clientConfig,
-        db: {
-          schema: 'public' as const
-        }
-      }
-    );
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export const preloadSession = async () => {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error) {
+    console.error('Error preloading session:', error);
+    return null;
   }
-  return client;
-}
+  return session;
+};
 
-/**
- * Réinitialise le client Supabase.
- * Utile pour les tests ou lorsqu'on veut forcer une nouvelle instance.
- */
-export function resetSupabaseClient(): void {
-  client = null;
-}
+export const getCurrentUser = async (): Promise<User | null> => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) {
+    console.error('Error getting current user:', error);
+    return null;
+  }
+  return user;
+};
 
-/**
- * Vérifie si le client est initialisé.
- */
-export function isClientInitialized(): boolean {
-  return client !== null;
-}
-
-/**
- * Obtient l'URL de l'API Supabase.
- */
-export function getApiUrl(): string {
-  return SUPABASE_URL;
-}
-
-/**
- * Obtient la clé anonyme de l'API Supabase.
- */
-export function getAnonKey(): string {
-  return SUPABASE_ANON_KEY;
-}
-
-// Export par défaut
-export default getSupabaseClient;
+export type { SupabaseClient };
+export default supabase;

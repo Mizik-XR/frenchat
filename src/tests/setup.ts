@@ -1,13 +1,35 @@
-
 import '@testing-library/jest-dom';
-import { expect, afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
-import matchers from '@testing-library/jest-dom/matchers';
 
-// Extend Vitest's expect method with methods from react-testing-library
-expect.extend(matchers);
+// Mock localStorage
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn(),
+  key: jest.fn(),
+  length: 0,
+};
 
-// Clean up after each test case (e.g., clearing jsdom)
-afterEach(() => {
-  cleanup();
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+});
+
+// Mock gtag
+Object.defineProperty(window, 'gtag', {
+  value: jest.fn(),
+});
+
+// Mock matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
 });

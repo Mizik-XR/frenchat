@@ -50,6 +50,43 @@ export interface Database {
           }
         ]
       }
+      profiles: {
+        Row: {
+          id: string
+          user_id: string
+          created_at: string
+          updated_at: string
+          is_first_login: boolean
+          service_type: string
+          status: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          created_at?: string
+          updated_at?: string
+          is_first_login?: boolean
+          service_type?: string
+          status?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          created_at?: string
+          updated_at?: string
+          is_first_login?: boolean
+          service_type?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       documents: {
         Row: {
           id: string
@@ -58,7 +95,7 @@ export interface Database {
           user_id: string
           created_at: string
           updated_at: string
-          metadata: Json | null
+          metadata: Json
         }
         Insert: {
           id?: string
@@ -67,7 +104,7 @@ export interface Database {
           user_id: string
           created_at?: string
           updated_at?: string
-          metadata?: Json | null
+          metadata?: Json
         }
         Update: {
           id?: string
@@ -76,11 +113,57 @@ export interface Database {
           user_id?: string
           created_at?: string
           updated_at?: string
-          metadata?: Json | null
+          metadata?: Json
         }
         Relationships: [
           {
             foreignKeyName: "documents_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      archived_documents: {
+        Row: {
+          id: string
+          document_id: string
+          document_type: string
+          original_id: string
+          title: string
+          content: string
+          user_id: string
+          client_id: string
+          metadata: Json
+          archived_at: string
+        }
+        Insert: {
+          id?: string
+          document_id: string
+          document_type: string
+          original_id: string
+          title: string
+          content: string
+          user_id: string
+          client_id: string
+          metadata: Json
+          archived_at?: string
+        }
+        Update: {
+          id?: string
+          document_id?: string
+          document_type?: string
+          original_id?: string
+          title?: string
+          content?: string
+          user_id?: string
+          client_id?: string
+          metadata?: Json
+          archived_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_documents_user_id_fkey"
             columns: ["user_id"]
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -94,7 +177,7 @@ export interface Database {
           user_id: string
           created_at: string
           updated_at: string
-          last_message_at: string | null
+          metadata: Json
         }
         Insert: {
           id?: string
@@ -102,7 +185,7 @@ export interface Database {
           user_id: string
           created_at?: string
           updated_at?: string
-          last_message_at?: string | null
+          metadata?: Json
         }
         Update: {
           id?: string
@@ -110,7 +193,7 @@ export interface Database {
           user_id?: string
           created_at?: string
           updated_at?: string
-          last_message_at?: string | null
+          metadata?: Json
         }
         Relationships: [
           {
@@ -124,27 +207,30 @@ export interface Database {
       messages: {
         Row: {
           id: string
-          content: string
-          role: 'user' | 'assistant'
           conversation_id: string
+          content: string
+          role: string
           created_at: string
-          metadata: Json | null
+          updated_at: string
+          metadata: Json
         }
         Insert: {
           id?: string
-          content: string
-          role: 'user' | 'assistant'
           conversation_id: string
+          content: string
+          role: string
           created_at?: string
-          metadata?: Json | null
+          updated_at?: string
+          metadata?: Json
         }
         Update: {
           id?: string
-          content?: string
-          role?: 'user' | 'assistant'
           conversation_id?: string
+          content?: string
+          role?: string
           created_at?: string
-          metadata?: Json | null
+          updated_at?: string
+          metadata?: Json
         }
         Relationships: [
           {
