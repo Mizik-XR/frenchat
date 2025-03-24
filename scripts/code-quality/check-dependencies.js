@@ -1,34 +1,53 @@
 #!/usr/bin/env node
 /**
- * Script pour vérifier les dépendances circulaires et les imports React
+ * Script pour vérifier les dépendances circulaires et les imports directs
  * 
- * Ce script analyse le projet pour trouver les dépendances circulaires
- * et les imports directs de React (au lieu de ReactInstance).
+ * Ce script analyse le code source pour détecter deux types de problèmes:
+ * 1. Dépendances circulaires entre modules
+ * 2. Imports directs de React (au lieu d'utiliser le module centralisé)
  * 
  * Usage: node scripts/code-quality/check-dependencies.js
+ * Options:
+ *   --report-only    Générer uniquement un rapport sans échouer en cas de problèmes
+ *   --fix            Tenter de corriger automatiquement les problèmes d'import React
  */
 
-const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const child_process = require('child_process');
+const util = require('util');
 const glob = require('glob');
+const exec = util.promisify(child_process.exec);
 
 // Configuration
 const CONFIG = {
-  srcDir: path.resolve(process.cwd(), 'src'),
-  ignorePatterns: [
+  srcDir: 'src',
+  ignoredPaths: [
     '**/node_modules/**',
     '**/dist/**',
     '**/build/**',
-    '**/.git/**',
-    '**/coverage/**',
-    '**/tests/fixtures/**',
-    '**/__mocks__/**',
+    '**/.next/**',
+    '**/public/**',
+    '**/core/reactInstance.ts',
   ],
-  outputFile: path.resolve(process.cwd(), 'dependency-report.md'),
+  outputFile: 'dependency-report.md',
+  reactInstancePath: 'src/core/reactInstance.ts',
+  reportOnly: process.argv.includes('--report-only'),
+  fixReactImports: process.argv.includes('--fix'),
+  // Schéma de dépendances critiques à vérifier
+  criticalDependencies: [
+    {
+      module: 'APP_STATE',
+      shouldNotImport: ['supabase', 'supabaseClient']
+    },
+    {
+      module: 'supabase',
+      shouldNotImport: ['APP_STATE', 'appState']
+    }
+  ]
 };
 
-// Couleurs pour les logs
+// Utilitaires de journalisation
 const colors = {
   reset: '\x1b[0m',
   red: '\x1b[31m',
@@ -37,19 +56,19 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m',
+  white: '\x1b[37m',
 };
 
-// Fonctions utilitaires
-function log(message, color = colors.reset) {
+function log(message, color = colors.white) {
   console.log(`${color}${message}${colors.reset}`);
+}
+
+function info(message) {
+  log(`ℹ️ ${message}`, colors.cyan);
 }
 
 function success(message) {
   log(`✅ ${message}`, colors.green);
-}
-
-function info(message) {
-  log(`ℹ️ ${message}`, colors.blue);
 }
 
 function warn(message) {
@@ -58,244 +77,236 @@ function warn(message) {
 
 function error(message) {
   log(`❌ ${message}`, colors.red);
-  return false;
 }
 
-// Installer les dépendances nécessaires si elles ne sont pas déjà installées
-function installDependencies() {
+// Vérifier si madge est installé
+async function checkDependencies() {
   try {
-    info('Vérification des dépendances nécessaires...');
+    info('Vérification des dépendances...');
     
-    // Essayer d'exécuter madge pour voir s'il est installé
     try {
-      execSync('npx madge --version', { stdio: 'pipe' });
+      await exec('madge --version');
+      success('madge est installé');
     } catch (e) {
       warn('madge n\'est pas installé. Installation en cours...');
-      execSync('npm install --no-save madge glob', { stdio: 'inherit' });
+      await exec('npm install -g madge');
+      success('madge a été installé avec succès');
     }
     
-    success('Dépendances nécessaires installées avec succès.');
     return true;
-  } catch (e) {
-    error(`Échec de l'installation des dépendances: ${e.message}`);
+  } catch (err) {
+    error(`Erreur lors de la vérification/installation des dépendances: ${err.message}`);
     return false;
   }
 }
 
-// Trouver les dépendances circulaires
-function findCircularDependencies() {
+// Trouver les dépendances circulaires avec madge
+async function findCircularDependencies() {
   info('Recherche des dépendances circulaires...');
   
   try {
-    const result = execSync(`npx madge --circular --extensions js,jsx,ts,tsx ${CONFIG.srcDir}`, { stdio: 'pipe' }).toString();
+    const { stdout } = await exec(`npx madge --circular --extensions ts,tsx,js,jsx ${CONFIG.srcDir}`);
     
-    const circularDependencies = result.trim().split('\n').filter(line => line);
-    
-    if (circularDependencies.length === 0) {
-      success('Aucune dépendance circulaire trouvée.');
+    if (stdout.trim()) {
+      const circularDeps = stdout.trim().split('\n').filter(line => line.trim() !== '');
+      warn(`${circularDeps.length} dépendances circulaires trouvées`);
+      return circularDeps;
+    } else {
+      success('Aucune dépendance circulaire trouvée');
       return [];
     }
-    
-    warn(`${circularDependencies.length} dépendances circulaires trouvées.`);
-    circularDependencies.forEach(dep => {
-      console.log(`  ${dep}`);
-    });
-    
-    return circularDependencies;
-  } catch (e) {
-    error(`Échec de la recherche des dépendances circulaires: ${e.message}`);
+  } catch (err) {
+    error(`Erreur lors de la recherche des dépendances circulaires: ${err.message}`);
     return [];
   }
 }
 
-// Analyser un fichier pour les imports React
-function analyzeFileForReactImports(filePath) {
-  try {
-    const content = fs.readFileSync(filePath, 'utf8');
-    
-    // Regex pour trouver les imports directs de React
-    const reactImportRegex = /import\s+(?:React|{\s*(?:useState|useEffect|useContext|useRef|useMemo|useCallback|useReducer|useLayoutEffect|createContext)(?:\s*,\s*(?:useState|useEffect|useContext|useRef|useMemo|useCallback|useReducer|useLayoutEffect|createContext))*\s*})\s+from\s+['"]react['"]/g;
-    
-    const matches = content.match(reactImportRegex);
-    
-    if (matches) {
-      return {
-        path: filePath,
-        imports: matches,
-      };
-    }
-    
-    return null;
-  } catch (e) {
-    error(`Échec de l'analyse du fichier ${filePath}: ${e.message}`);
-    return null;
-  }
-}
-
-// Trouver les imports directs de React
+// Rechercher les imports directs de React
 function findDirectReactImports() {
   info('Recherche des imports directs de React...');
   
   try {
-    // Trouver tous les fichiers JS/TS
-    const files = glob.sync(`${CONFIG.srcDir}/**/*.{js,jsx,ts,tsx}`, {
-      ignore: CONFIG.ignorePatterns,
-    });
+    const importPatterns = [
+      /import\s+React(?:,\s*{([^}]*)})?\s+from\s+['"]react['"]/g,
+      /import\s+{\s*([^}]*)\s*}\s+from\s+['"]react['"]/g
+    ];
     
-    info(`${files.length} fichiers trouvés pour analyse.`);
-    
+    const files = glob.sync(`${CONFIG.srcDir}/**/*.{js,jsx,ts,tsx}`, { ignore: CONFIG.ignoredPaths });
     const directImports = [];
     
     for (const file of files) {
-      const result = analyzeFileForReactImports(file);
+      const content = fs.readFileSync(file, 'utf8');
       
-      if (result) {
-        directImports.push(result);
+      for (const pattern of importPatterns) {
+        while (pattern.exec(content) !== null) {
+          directImports.push(file);
+          break; // Un seul match par fichier suffit
+        }
+        pattern.lastIndex = 0; // Réinitialiser le regex
       }
     }
     
-    if (directImports.length === 0) {
-      success('Aucun import direct de React trouvé.');
+    if (directImports.length > 0) {
+      warn(`${directImports.length} fichiers avec des imports directs de React trouvés`);
     } else {
-      warn(`${directImports.length} fichiers avec imports directs de React trouvés.`);
-      
-      // Afficher les 5 premiers fichiers
-      directImports.slice(0, 5).forEach(({ path: filePath, imports }) => {
-        console.log(`  ${filePath.replace(process.cwd(), '')}:`);
-        imports.forEach(imp => {
-          console.log(`    ${imp}`);
-        });
-      });
-      
-      if (directImports.length > 5) {
-        console.log(`  ... et ${directImports.length - 5} fichiers de plus.`);
-      }
+      success('Aucun import direct de React trouvé');
     }
     
     return directImports;
-  } catch (e) {
-    error(`Échec de la recherche des imports directs de React: ${e.message}`);
+  } catch (err) {
+    error(`Erreur lors de la recherche des imports directs de React: ${err.message}`);
+    return [];
+  }
+}
+
+// Vérifier les dépendances critiques
+function checkCriticalDependencies() {
+  info('Vérification des dépendances critiques...');
+  
+  try {
+    const issues = [];
+    
+    for (const dep of CONFIG.criticalDependencies) {
+      const regex = new RegExp(`import\\s+.*\\s+from\\s+['"][^'"]*${dep.shouldNotImport.join('|')}['"]`, 'g');
+      const files = glob.sync(`${CONFIG.srcDir}/**/*${dep.module}*.{js,jsx,ts,tsx}`, { ignore: CONFIG.ignoredPaths });
+      
+      for (const file of files) {
+        const content = fs.readFileSync(file, 'utf8');
+        const matches = content.match(regex);
+        
+        if (matches) {
+          for (const match of matches) {
+            issues.push({
+              file,
+              module: dep.module,
+              shouldNotImport: dep.shouldNotImport.find(m => match.includes(m)),
+              line: match.trim()
+            });
+          }
+        }
+      }
+    }
+    
+    if (issues.length > 0) {
+      warn(`${issues.length} problèmes de dépendances critiques trouvés`);
+    } else {
+      success('Aucun problème de dépendances critiques trouvé');
+    }
+    
+    return issues;
+  } catch (err) {
+    error(`Erreur lors de la vérification des dépendances critiques: ${err.message}`);
     return [];
   }
 }
 
 // Générer un rapport
-function generateReport(circularDependencies, directReactImports) {
+function generateReport(circularDeps, directImports, criticalIssues) {
   info('Génération du rapport...');
   
   try {
-    let report = `# Rapport d'analyse des dépendances\n\n`;
-    report += `*Généré le: ${new Date().toLocaleString()}*\n\n`;
+    const reportContent = [
+      '# Rapport d\'analyse des dépendances',
+      '',
+      `*Généré le ${new Date().toLocaleString()}*`,
+      '',
+      '## Dépendances circulaires',
+      '',
+      circularDeps.length > 0 
+        ? circularDeps.map(dep => `- ${dep}`).join('\n') 
+        : 'Aucune dépendance circulaire trouvée ✅',
+      '',
+      '## Imports directs de React',
+      '',
+      directImports.length > 0 
+        ? directImports.map(file => `- ${file}`).join('\n') 
+        : 'Aucun import direct de React trouvé ✅',
+      '',
+      '## Problèmes de dépendances critiques',
+      '',
+      criticalIssues.length > 0 
+        ? criticalIssues.map(issue => (
+            `- **${issue.file}**: Le module \`${issue.module}\` ne devrait pas importer \`${issue.shouldNotImport}\`\n  \`${issue.line}\``
+          )).join('\n\n')
+        : 'Aucun problème de dépendances critiques trouvé ✅',
+      '',
+      '## Recommandations',
+      '',
+      circularDeps.length > 0 || directImports.length > 0 || criticalIssues.length > 0 
+        ? [
+            '### Pour résoudre les dépendances circulaires:',
+            '- Créer des modules intermédiaires pour les types partagés',
+            '- Utiliser le pattern d\'injection de dépendances',
+            '- Restructurer les modules pour éviter les imports mutuels',
+            '',
+            '### Pour corriger les imports directs de React:',
+            '- Utiliser `import React from \'@/core/reactInstance\'` à la place de `import React from \'react\'`',
+            '- Exécuter `node scripts/code-quality/fix-react-imports.js --fix` pour corriger automatiquement',
+            '',
+            '### Pour les problèmes de dépendances critiques:',
+            '- Réorganiser le code pour respecter l\'architecture définie',
+            '- Utiliser des services ou des adaptateurs pour découpler les modules',
+          ].join('\n')
+        : 'Félicitations ! Aucun problème de dépendances détecté dans le code. 🎉',
+    ].join('\n');
     
-    // Section des dépendances circulaires
-    report += `## Dépendances circulaires\n\n`;
-    
-    if (circularDependencies.length === 0) {
-      report += `✅ Aucune dépendance circulaire trouvée.\n\n`;
-    } else {
-      report += `⚠️ ${circularDependencies.length} dépendances circulaires trouvées:\n\n`;
-      
-      circularDependencies.forEach(dep => {
-        report += `- ${dep}\n`;
-      });
-      
-      report += `\n`;
-      report += `### 🛠️ Suggestions de correction\n\n`;
-      report += `Pour résoudre les dépendances circulaires, essayez les approches suivantes:\n\n`;
-      report += `1. **Extraire les interfaces partagées**: Déplacer les interfaces ou types vers un fichier séparé pour briser les cycles.\n`;
-      report += `2. **Utiliser l'inversion de dépendance**: Créer une abstraction qui peut être utilisée par les deux modules.\n`;
-      report += `3. **Créer un service centralisé**: Déplacer la logique partagée vers un service centralisé.\n`;
-      report += `4. **Restructurer les composants**: Diviser les composants pour éliminer les dépendances croisées.\n\n`;
-    }
-    
-    // Section des imports directs de React
-    report += `## Imports directs de React\n\n`;
-    
-    if (directReactImports.length === 0) {
-      report += `✅ Aucun import direct de React trouvé.\n\n`;
-    } else {
-      report += `⚠️ ${directReactImports.length} fichiers avec imports directs de React trouvés:\n\n`;
-      
-      directReactImports.forEach(({ path: filePath, imports }) => {
-        report += `### ${filePath.replace(process.cwd(), '')}\n\n`;
-        report += `\`\`\`javascript\n`;
-        imports.forEach(imp => {
-          report += `${imp}\n`;
-        });
-        report += `\`\`\`\n\n`;
-      });
-      
-      report += `### 🛠️ Correction requise\n\n`;
-      report += `Pour corriger ces imports directs de React, vous devez les remplacer par des imports depuis le module ReactInstance:\n\n`;
-      report += `\`\`\`javascript\n`;
-      report += `// ❌ INCORRECT\n`;
-      report += `import React, { useState, useEffect } from 'react';\n\n`;
-      report += `// ✅ CORRECT\n`;
-      report += `import { React, useState, useEffect } from '@/core/ReactInstance';\n`;
-      report += `\`\`\`\n\n`;
-      report += `Exécutez la commande suivante pour corriger automatiquement ces imports:\n\n`;
-      report += `\`\`\`bash\n`;
-      report += `npm run quality:fix-imports\n`;
-      report += `\`\`\`\n\n`;
-    }
-    
-    // Résumé
-    report += `## Résumé\n\n`;
-    report += `- **Dépendances circulaires**: ${circularDependencies.length === 0 ? '✅ Aucune' : `⚠️ ${circularDependencies.length}`}\n`;
-    report += `- **Imports directs de React**: ${directReactImports.length === 0 ? '✅ Aucun' : `⚠️ ${directReactImports.length}`}\n\n`;
-    
-    if (circularDependencies.length === 0 && directReactImports.length === 0) {
-      report += `### 🎉 Félicitations!\n\n`;
-      report += `Votre code est propre et ne contient ni dépendances circulaires ni imports directs de React.\n`;
-    } else {
-      report += `### ⚠️ Actions requises\n\n`;
-      report += `Veuillez résoudre les problèmes identifiés ci-dessus pour améliorer la qualité du code.\n`;
-    }
-    
-    // Écrire le rapport
-    fs.writeFileSync(CONFIG.outputFile, report);
-    
-    success(`Rapport généré avec succès: ${CONFIG.outputFile}`);
+    fs.writeFileSync(CONFIG.outputFile, reportContent, 'utf8');
+    success(`Rapport généré: ${CONFIG.outputFile}`);
     return true;
-  } catch (e) {
-    error(`Échec de la génération du rapport: ${e.message}`);
+  } catch (err) {
+    error(`Erreur lors de la génération du rapport: ${err.message}`);
     return false;
   }
 }
 
-// Fonction principale
-async function main() {
-  log('\n🔍 Vérification des dépendances', colors.cyan);
-  log('============================\n');
-  
-  let exitCode = 0;
-  
-  try {
-    if (!installDependencies()) {
-      exitCode = 1;
-      return;
-    }
-    
-    const circularDependencies = findCircularDependencies();
-    const directReactImports = findDirectReactImports();
-    
-    if (!generateReport(circularDependencies, directReactImports)) {
-      exitCode = 1;
-    }
-    
-    if (circularDependencies.length > 0 || directReactImports.length > 0) {
-      warn('\nProblèmes détectés dans votre code. Consultez le rapport pour plus de détails.\n');
-      exitCode = 1;
-    } else {
-      success('\nAucun problème détecté dans votre code! 🎉\n');
-    }
-  } catch (e) {
-    error(`Une erreur s'est produite: ${e.message}`);
-    exitCode = 1;
+// Vérification du fichier centralisé React
+function checkReactInstanceExists() {
+  if (!fs.existsSync(CONFIG.reactInstancePath)) {
+    warn(`Le fichier ${CONFIG.reactInstancePath} n'existe pas.`);
+    warn('Créez ce fichier pour centraliser les imports de React et éviter les problèmes de versions multiples.');
+    return false;
   }
-  
-  process.exit(exitCode);
+  return true;
 }
 
-// Exécuter la fonction principale
+// Fonction principale
+async function main() {
+  info('Démarrage de l\'analyse des dépendances...');
+  
+  // Vérifier les dépendances
+  const depsOk = await checkDependencies();
+  if (!depsOk) {
+    error('Impossible de continuer sans les dépendances requises.');
+    process.exit(1);
+  }
+  
+  // Vérifier l'existence du fichier reactInstance
+  checkReactInstanceExists();
+  
+  // Collecter les résultats des différentes vérifications
+  const circularDeps = await findCircularDependencies();
+  const directImports = findDirectReactImports();
+  const criticalIssues = checkCriticalDependencies();
+  
+  // Générer le rapport
+  generateReport(circularDeps, directImports, criticalIssues);
+  
+  // Déterminer si l'exécution a réussi ou échoué
+  const hasIssues = circularDeps.length > 0 || directImports.length > 0 || criticalIssues.length > 0;
+  
+  if (hasIssues) {
+    if (CONFIG.reportOnly) {
+      warn('Des problèmes ont été détectés, mais le script s\'exécute en mode rapport uniquement.');
+      info(`Consultez ${CONFIG.outputFile} pour plus de détails.`);
+    } else {
+      error('Des problèmes de dépendances ont été détectés.');
+      info(`Consultez ${CONFIG.outputFile} pour plus de détails.`);
+      process.exit(1);
+    }
+  } else {
+    success('Aucun problème de dépendances détecté !');
+  }
+}
+
+// Exécuter le script
 main(); 
