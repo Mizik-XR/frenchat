@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect  } from '@/core/reactInstance';
 import { toast } from "@/hooks/use-toast";
 import { useGoogleDriveStatus } from "@/hooks/useGoogleDriveStatus";
 import { ImportMethod } from "@/components/config/ImportMethod/ImportMethodSelector";

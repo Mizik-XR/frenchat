@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React from '@/core/reactInstance';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RotateCw } from 'lucide-react';

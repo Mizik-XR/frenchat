@@ -1,65 +1,65 @@
 /**
- * Client Supabase Minimal
+ * Client Supabase
  * 
- * Ce module fournit une instance unique du client Supabase
- * sans dépendances circulaires. Il est conçu pour être importé par
- * supabaseService qui expose les API nécessaires.
+ * Ce module initialise et exporte le client Supabase.
+ * Il utilise la configuration définie dans config.ts.
  */
 
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, clientConfig } from './config';
 
-// Configuration
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
-// Validation de la configuration
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('[Supabase] Variables d\'environnement manquantes: URL ou clé anonyme non définies.');
-}
-
-// Instance singleton
-let supabaseInstance: SupabaseClient<Database> | null = null;
+let client: SupabaseClient<Database, 'public'> | null = null;
 
 /**
- * Obtenir une instance unique du client Supabase
+ * Obtient une instance du client Supabase.
+ * Crée une nouvelle instance si elle n'existe pas déjà.
  */
-export function getSupabaseClient(): SupabaseClient<Database> {
-  if (supabaseInstance) return supabaseInstance;
-  
-  try {
-    supabaseInstance = createClient<Database>(
+export function getSupabaseClient(): SupabaseClient<Database, 'public'> {
+  if (!client) {
+    client = createClient<Database, 'public'>(
       SUPABASE_URL,
       SUPABASE_ANON_KEY,
       {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-        },
+        ...clientConfig,
+        db: {
+          schema: 'public' as const
+        }
       }
     );
-    console.info('[Supabase] Initialisation du client réussie');
-  } catch (error) {
-    console.error('[Supabase] Erreur lors de l\'initialisation du client:', error);
-    // Fallback à un client vide en mode hors ligne
-    if (!supabaseInstance) {
-      supabaseInstance = createClient<Database>(
-        SUPABASE_URL || 'https://placeholder.supabase.co',
-        SUPABASE_ANON_KEY || 'placeholder-key',
-        {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-          },
-        }
-      );
-    }
   }
-  
-  return supabaseInstance;
+  return client;
 }
 
-// Exporter le client pour compatibilité avec le code existant
-// Note: Pour les nouvelles fonctionnalités, utilisez plutôt supabaseService
-export const supabase = getSupabaseClient();
+/**
+ * Réinitialise le client Supabase.
+ * Utile pour les tests ou lorsqu'on veut forcer une nouvelle instance.
+ */
+export function resetSupabaseClient(): void {
+  client = null;
+}
+
+/**
+ * Vérifie si le client est initialisé.
+ */
+export function isClientInitialized(): boolean {
+  return client !== null;
+}
+
+/**
+ * Obtient l'URL de l'API Supabase.
+ */
+export function getApiUrl(): string {
+  return SUPABASE_URL;
+}
+
+/**
+ * Obtient la clé anonyme de l'API Supabase.
+ */
+export function getAnonKey(): string {
+  return SUPABASE_ANON_KEY;
+}
+
+// Export par défaut
+export default getSupabaseClient;

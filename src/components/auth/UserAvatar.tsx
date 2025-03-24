@@ -1,6 +1,6 @@
 import { React } from "@/core/ReactInstance";
 
-import { useState } from "react";
+import { useState  } from '@/core/reactInstance';
 import { useAuth } from "@/components/AuthProvider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState  } from '@/core/reactInstance';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';

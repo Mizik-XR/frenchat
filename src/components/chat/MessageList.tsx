@@ -1,5 +1,5 @@
-
-import React, { useRef, useEffect } from "react";
+import { React, useRef, useEffect } from '@/core/reactInstance';
+import type { FC } from '@/core/reactInstance';
 import { Message } from "@/types/chat";
 import { Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,7 +10,7 @@ interface MessageListProps {
   onReplyToMessage: (message: Message) => void;
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ 
+export const MessageList: FC<MessageListProps> = ({ 
   messages, 
   isLoading,
   onReplyToMessage

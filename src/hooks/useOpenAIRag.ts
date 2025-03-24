@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState  } from '@/core/reactInstance';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';

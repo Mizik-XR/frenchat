@@ -3,7 +3,7 @@ import { LocalAIConfig } from "../llm/LocalAIConfig";
 import { ImageConfig } from "../ImageConfig";
 import { LLMProviderType } from "@/types/config";
 import { CloudIcon, ServerIcon, InfoIcon, Lightbulb, Image } from "lucide-react";
-import { useState } from "react";
+import { useState  } from '@/core/reactInstance';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect  } from '@/core/reactInstance';
 import { AIModeBadge } from "./AIModeBadge";
 import { useSettings } from "@/contexts/SettingsContext";
 import { isOllamaAvailable } from "@/utils/environment/localAIDetection";

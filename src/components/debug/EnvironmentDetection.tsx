@@ -1,6 +1,6 @@
 import { React } from "@/core/ReactInstance";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState  } from '@/core/reactInstance';
 import { AlertTriangle, Server, ExternalLink, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isLovableEnvironment } from "@/utils/environment";

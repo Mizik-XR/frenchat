@@ -1,5 +1,5 @@
 
-import React from "react";
+import React from '@/core/reactInstance';
 import { Label } from "@/components/ui/label";
 import { ServiceType } from "@/types/config";
 import { APIKeyField } from "./APIKeyField";

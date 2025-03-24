@@ -1,10 +1,9 @@
-
 import { Info, Nut, Plus, Settings, ChevronDown } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { React, useState } from '@/core/reactInstance';
 import {
   DropdownMenu,
   DropdownMenuContent,

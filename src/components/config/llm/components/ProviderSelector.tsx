@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { LLMProviderType } from "@/types/config";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InfoIcon, ServerIcon, MoveUpRightIcon } from "lucide-react";
-import { useState } from "react";
+import { useState  } from '@/core/reactInstance';
 
 interface ProviderSelectorProps {
   localProvider: LLMProviderType;

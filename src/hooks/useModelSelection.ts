@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useLayoutEffect } from 'react';
+import { useState, useEffect, useLayoutEffect  } from '@/core/reactInstance';
 import { AIProvider } from '@/types/chat';
 
 // Hook sécurisé pour useLayoutEffect qui bascule vers useEffect côté serveur

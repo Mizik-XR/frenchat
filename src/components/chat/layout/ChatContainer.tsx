@@ -1,6 +1,6 @@
 import { React } from "@/core/ReactInstance";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect  } from '@/core/reactInstance';
 import { MainChatContainer } from './MainChatContainer';
 import { ChatInputContainer } from './ChatInputContainer';
 import { useConversations } from '@/hooks/useConversations';

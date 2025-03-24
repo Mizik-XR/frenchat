@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState  } from '@/core/reactInstance';
 import { useMutation } from '@tanstack/react-query';
 import { useConversations } from '@/hooks/useConversations';
 import { useChatProcessing } from '@/hooks/chat/useChatProcessing';

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React from '@/core/reactInstance';
 import { cn } from "@/lib/utils";
 
 interface ThreeStateToggleProps extends React.HTMLAttributes<HTMLDivElement> {

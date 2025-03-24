@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect  } from '@/core/reactInstance';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
 import { supabaseService } from '@/services/supabase/client';
 

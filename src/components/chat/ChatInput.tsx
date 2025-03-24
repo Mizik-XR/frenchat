@@ -1,4 +1,4 @@
-import { React } from "@/core/ReactInstance";
+import { React } from "@/core/reactInstance";
 
 import { Send } from "lucide-react";
 import { Input } from "@/components/ui/input";

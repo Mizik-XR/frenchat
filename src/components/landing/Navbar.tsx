@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect  } from '@/core/reactInstance';
 import { Menu, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "../ThemeToggle";

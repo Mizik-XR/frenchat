@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState  } from '@/core/reactInstance';
 import type { AIModel } from "../types";
 import { ApiKeyField } from "./fields/ApiKeyField";
 import { ModelNameField } from "./fields/ModelNameField";

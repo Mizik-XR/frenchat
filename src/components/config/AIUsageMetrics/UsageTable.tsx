@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React from '@/core/reactInstance';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ModelUsage } from "./types";
 import { formatNumber, formatDate, getTotalCost } from "./utils";

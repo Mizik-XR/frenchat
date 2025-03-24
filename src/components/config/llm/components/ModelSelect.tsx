@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState  } from '@/core/reactInstance';
 import { Check, InfoIcon, ServerIcon, CloudIcon } from "lucide-react";
 import type { AIModel } from "../types";
 import { Card } from "@/components/ui/card";

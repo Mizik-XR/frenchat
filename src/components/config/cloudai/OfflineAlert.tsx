@@ -1,5 +1,5 @@
 
-import React from "react";
+import React from '@/core/reactInstance';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 

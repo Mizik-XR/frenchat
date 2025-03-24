@@ -1,5 +1,5 @@
-import { React } from "@/core/ReactInstance";
-import { React, useState, useEffect } from '@/core/ReactInstance';
+import { React, useState, useEffect } from '@/core/reactInstance';
+import type { FC } from '@/core/reactInstance';
 import { DocumentProviderSelector } from '@/components/documents/DocumentProviderSelector';
 import { DocumentManager } from '@/components/documents/DocumentManager';
 import { DocumentGenerator } from '@/components/documents/DocumentGenerator';

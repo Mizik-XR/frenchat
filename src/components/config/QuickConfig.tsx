@@ -1,5 +1,5 @@
 
-import React from "react";
+import React from '@/core/reactInstance';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Cloud, BrainCircuit, MessageSquare } from "lucide-react";

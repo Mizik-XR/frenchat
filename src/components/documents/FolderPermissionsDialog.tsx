@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from '@/core/reactInstance';
 import { 
   Dialog, 
   DialogContent, 

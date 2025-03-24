@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState  } from '@/core/reactInstance';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";

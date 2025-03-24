@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from '@/core/reactInstance';
 import { checkGifAvailability } from '@/utils/startup/loadingUtils';
 
 interface LogoImageProps {

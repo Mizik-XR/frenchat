@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from '@/core/reactInstance';
 import { Badge } from "@/components/ui/badge";
 import { WifiOff, Wifi, Check, AlertTriangle, X, Server, Cloud, Cpu } from "lucide-react";
 import { APP_STATE } from "@/integrations/supabase/client";

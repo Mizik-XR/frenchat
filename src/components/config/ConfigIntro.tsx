@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React from '@/core/reactInstance';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, FileCheck, FolderOpen, Settings } from 'lucide-react';
 

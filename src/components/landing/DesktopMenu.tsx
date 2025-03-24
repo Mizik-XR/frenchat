@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React from '@/core/reactInstance';
 import { Button } from "@/components/ui/button";
 import { MapPin } from 'lucide-react';
 import { ModeToggle } from "../ThemeToggle";

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState  } from '@/core/reactInstance';
 import { supabaseService } from '@/services/supabase/client';
 import { checkOfflineMode, APP_STATE } from '@/compatibility/supabaseCompat';
 import type { SupabaseClient } from '@supabase/supabase-js';

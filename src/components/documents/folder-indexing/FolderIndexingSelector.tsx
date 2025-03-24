@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState } from '@/core/reactInstance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { HelpCircle, FolderOpen, Database } from 'lucide-react';

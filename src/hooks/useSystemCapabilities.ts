@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect  } from '@/core/reactInstance';
 import { SystemCapabilities } from '@/types/system';
 import { getPlatform } from '@/utils/platformUtils';
 

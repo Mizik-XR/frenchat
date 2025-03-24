@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect } from '@/core/reactInstance';
 import { Button } from "@/components/ui/button";
 import { FileUp, Send } from "lucide-react";
 

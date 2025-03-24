@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState } from '@/core/reactInstance';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Folder, Share2, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';

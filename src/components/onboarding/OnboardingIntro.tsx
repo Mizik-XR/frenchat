@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from '@/core/reactInstance';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { OnboardingStep } from "./OnboardingStep";
 import { useOnboarding } from "@/hooks/useOnboarding";

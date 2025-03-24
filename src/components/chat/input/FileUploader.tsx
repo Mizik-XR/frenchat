@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState } from '@/core/reactInstance';
 import { Button } from "@/components/ui/button";
 import { Paperclip, X } from "lucide-react";
 

@@ -8,7 +8,7 @@ import { ModelConfigurationFields } from "./components/ModelConfigurationFields"
 import { CustomModelFields } from "./components/CustomModelFields";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState } from "react";
+import { useState  } from '@/core/reactInstance';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

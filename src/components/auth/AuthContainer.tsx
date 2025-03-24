@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React from '@/core/reactInstance';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';

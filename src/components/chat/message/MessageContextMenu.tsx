@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React from '@/core/reactInstance';
 import { Message } from "@/types/chat";
 import {
   DropdownMenu,

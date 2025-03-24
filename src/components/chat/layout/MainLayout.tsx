@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState  } from '@/core/reactInstance';
 import { ChatContainer } from './ChatContainer';
 import { ConversationSidebar } from '../ConversationSidebar';
 import { PriorityTopicsPanel } from '../PriorityTopicsPanel';

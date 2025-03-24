@@ -1,6 +1,6 @@
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { AIOptionsPanel } from "@/components/ai/AIOptionsPanel";
-import { useState, useEffect } from "react";
+import { useState, useEffect  } from '@/core/reactInstance';
 import { AIMode, useAIMode } from "@/hooks/useAIMode";
 import { Outlet } from "react-router-dom";
 

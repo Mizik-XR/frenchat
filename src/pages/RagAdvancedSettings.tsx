@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect } from '@/core/reactInstance';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";

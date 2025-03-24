@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect  } from '@/core/reactInstance';
 import { ModelDownloadStatus, ModelDownloadRequest } from '@/hooks/ai/types';
 import { toast } from '@/hooks/use-toast';
 

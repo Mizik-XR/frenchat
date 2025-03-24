@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState  } from '@/core/reactInstance';
 
 export const useDragAndDrop = (conversationId: string) => {
   const [isDragging, setIsDragging] = useState(false);

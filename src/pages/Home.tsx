@@ -1,5 +1,5 @@
 import { React } from "@/core/ReactInstance";
-import { useEffect, useState } from 'react';
+import { useEffect, useState  } from '@/core/reactInstance';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React from '@/core/reactInstance';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

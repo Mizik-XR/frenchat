@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState } from '@/core/reactInstance';
 import { ZoomIn, ZoomOut, Download, Share, Check, AlertCircle, X, ChevronDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {

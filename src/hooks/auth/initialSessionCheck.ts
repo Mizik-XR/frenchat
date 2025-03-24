@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback  } from '@/core/reactInstance';
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { APP_STATE } from '@/compatibility/supabaseCompat';

@@ -1,6 +1,6 @@
 
 import { Card } from "@/components/ui/card";
-import { useState, useEffect } from "react";
+import { useState, useEffect  } from '@/core/reactInstance';
 import { AIProvider, WebUIConfig, AnalysisMode } from "@/types/chat";
 import { AutoModeToggle } from "./AutoModeToggle";
 import { ModelSourceSelector } from "./ModelSourceSelector";

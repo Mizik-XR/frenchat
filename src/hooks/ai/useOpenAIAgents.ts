@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState  } from '@/core/reactInstance';
 import { toast } from '@/hooks/use-toast';
 import { useSecureApiProxy } from '@/hooks/useSecureApiProxy';
 import { OpenAIAssistant, OpenAIThread, OpenAIMessage, OpenAIRun } from '@/types/openai';

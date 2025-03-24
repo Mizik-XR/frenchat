@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from '@/core/reactInstance';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileUploader } from '../config/ImportMethod/FileUploader';

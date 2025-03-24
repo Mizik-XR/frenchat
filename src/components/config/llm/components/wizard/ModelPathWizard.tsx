@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState  } from '@/core/reactInstance';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";

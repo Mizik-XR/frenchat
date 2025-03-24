@@ -1,0 +1,30 @@
+name: Changelog
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Générer le changelog
+      uses: TriPSs/conventional-changelog-action@v3
+      with:
+        version-file: package.json
+        output-file: CHANGELOG.md
+        git-message: 'chore: update changelog'
+        preset: 'angular'
+        tag-prefix: 'v'
+        release-count: 0
+        skip-version: true
+        skip-commit: true
+        skip-tag: true
+        release-count: 0
+        token: ${{ secrets.GITHUB_TOKEN }} 

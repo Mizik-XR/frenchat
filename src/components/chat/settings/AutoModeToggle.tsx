@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect  } from '@/core/reactInstance';
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ZapIcon, InfoIcon } from "lucide-react";

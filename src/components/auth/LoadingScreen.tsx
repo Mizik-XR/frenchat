@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from '@/core/reactInstance';
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Info, Home, Settings, AlertTriangle } from "lucide-react";
 import { LogoImage } from "@/components/common/LogoImage";

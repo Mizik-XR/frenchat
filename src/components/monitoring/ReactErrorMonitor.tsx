@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect  } from '@/core/reactInstance';
 import { toast } from '@/hooks/use-toast';
 import { APP_STATE } from '@/compatibility/supabaseCompat';
 

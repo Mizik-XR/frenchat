@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState  } from '@/core/reactInstance';
 import { WebUIConfig, AnalysisMode, AIProvider } from '@/types/chat';
 
 export const useChatState = () => {

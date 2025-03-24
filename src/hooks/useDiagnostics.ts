@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState  } from '@/core/reactInstance';
 import { toast } from '@/hooks/use-toast';
 import { checkLocalService } from './ai/aiServiceUtils';
 import { useHuggingFace } from './useHuggingFace';

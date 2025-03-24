@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback  } from '@/core/reactInstance';
 import { useSecureApiProxy } from './useSecureApiProxy';
 
 // Types pour les requêtes/réponses OpenAI

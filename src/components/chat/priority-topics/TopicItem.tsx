@@ -1,6 +1,6 @@
 
 // Updating the TopicItem component to use number for timestamp instead of Date
-import React from 'react';
+import React from '@/core/reactInstance';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Archive, CheckSquare, MessageSquare, Trash, Quote } from "lucide-react";

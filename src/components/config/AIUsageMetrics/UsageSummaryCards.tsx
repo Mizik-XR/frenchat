@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React from '@/core/reactInstance';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ModelUsage, HistoricalUsage } from "./types";
 import { formatNumber, getTotalTokens, getTotalCost, getMonthlyEstimate } from "./utils";

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from '@/core/reactInstance';
 import { MainLayout } from '@/components/chat/layout/MainLayout';
 
 // Use functional component without props to avoid type errors

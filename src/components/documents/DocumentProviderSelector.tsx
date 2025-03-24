@@ -1,5 +1,5 @@
 
-import React from "react";
+import React from '@/core/reactInstance';
 import { useAuth } from "@/components/AuthProvider";
 import { useDocumentProviders } from "@/hooks/useDocumentProviders";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

@@ -1,5 +1,5 @@
 
-import React, { useRef } from "react";
+import React, { useRef } from '@/core/reactInstance';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, X } from "lucide-react";

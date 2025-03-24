@@ -1,27 +1,32 @@
-
-FROM python:3.9-slim
+# Stage de build
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Installation des dépendances système
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    software-properties-common \
-    && rm -rf /var/lib/apt/lists/*
+# Copier les fichiers de configuration
+COPY package*.json ./
 
-# Copie des fichiers nécessaires
-COPY requirements.txt .
-COPY serve_model.py .
+# Installer les dépendances
+RUN npm ci
 
-# Installation des dépendances Python
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Copier le code source
+COPY . .
 
-# Installation de torch CPU
-RUN pip3 install --no-cache-dir torch==2.0.1+cpu --index-url https://download.pytorch.org/whl/cpu
+# Build l'application
+RUN npm run build
 
-# Exposition du port
-EXPOSE 8000
+# Stage de production
+FROM node:20-alpine AS runner
 
-# Commande de démarrage
-CMD ["python", "serve_model.py"]
+WORKDIR /app
+
+# Copier les fichiers nécessaires depuis le stage de build
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+
+# Exposer le port
+EXPOSE 3000
+
+# Démarrer l'application
+CMD ["npm", "start"]

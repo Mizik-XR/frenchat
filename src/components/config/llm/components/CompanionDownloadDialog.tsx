@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState } from '@/core/reactInstance';
 import { useModelDownload } from '@/hooks/useModelDownload';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';

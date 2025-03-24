@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect  } from '@/core/reactInstance';
 import { useGoogleDriveStatus } from '@/hooks/useGoogleDriveStatus';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';

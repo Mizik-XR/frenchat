@@ -12,11 +12,16 @@
  *  --verbose   Afficher plus de détails
  */
 
-const fs = require('fs');
-const path = require('path');
-const glob = require('glob');
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
+import fs from 'fs';
+import path from 'path';
+import { globSync } from 'glob';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import { fileURLToPath } from 'url';
+
+const execAsync = promisify(exec);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configuration
 const CONFIG = {
@@ -77,7 +82,7 @@ function checkReactInstanceExists() {
 // Trouver tous les fichiers à traiter
 function findFiles() {
   const pattern = `${CONFIG.srcDir}/**/*.{js,jsx,ts,tsx}`;
-  const allFiles = glob.sync(pattern, { ignore: CONFIG.ignorePatterns });
+  const allFiles = globSync(pattern, { ignore: CONFIG.ignorePatterns });
   logger.info(`Trouvé ${allFiles.length} fichiers à analyser`);
   return allFiles;
 }

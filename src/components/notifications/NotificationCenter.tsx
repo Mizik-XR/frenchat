@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React from '@/core/reactInstance';
 import { Bell, CheckCheck, Trash2, Share2, FileCheck, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {

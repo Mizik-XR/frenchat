@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect  } from '@/core/reactInstance';
 
 export function useIndexingProgress() {
   const [indexingProgress, setIndexingProgress] = useState(0);

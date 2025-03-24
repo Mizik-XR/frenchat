@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState  } from '@/core/reactInstance';
 import { useSupabaseAuth, useSupabaseConnectivity } from '@/hooks/useSupabaseClient';
 
 /**

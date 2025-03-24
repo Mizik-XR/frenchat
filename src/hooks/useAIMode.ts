@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback  } from '@/core/reactInstance';
 import { isOllamaAvailable } from '@/utils/environment/localAIDetection';
 import { isCloudModeForced } from '@/hooks/ai/environment/environmentDetection';
 

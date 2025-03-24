@@ -1,5 +1,5 @@
 
-import React from "react";
+import React from '@/core/reactInstance';
 import { Button } from "@/components/ui/button";
 import { HelpCircle } from "lucide-react";
 import { useOnboarding } from "@/hooks/useOnboarding";

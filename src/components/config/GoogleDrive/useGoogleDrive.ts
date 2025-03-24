@@ -1,5 +1,5 @@
 
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect  } from '@/core/reactInstance';
 import { supabase } from '@/integrations/supabase/client';
 import { getRedirectUrl } from '@/utils/environment/urlUtils';
 import { useToast } from '@/hooks/use-toast';

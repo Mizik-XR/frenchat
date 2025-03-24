@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback  } from '@/core/reactInstance';
 import { supabase } from '@/integrations/supabase/client';
 import { Folder, FolderPermissions } from '@/types/googleDrive';
 import { useAuth } from '@/components/AuthProvider';

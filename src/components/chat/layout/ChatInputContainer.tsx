@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect } from '@/core/reactInstance';
 import { Message } from "@/types/chat";
 import { ReplyBadge } from "../input/ReplyBadge";
 import { FileUploader } from "../input/FileUploader";

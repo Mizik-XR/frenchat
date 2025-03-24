@@ -81,3 +81,153 @@ Voir le fichier [TESTING.md](./TESTING.md) pour plus d'informations sur notre st
 ## Licence
 
 MIT
+
+# Module de Compatibilité Supabase
+
+Ce module fournit une couche de compatibilité pour Supabase, facilitant la migration entre différentes versions de l'API et supportant des modes de fonctionnement spécifiques comme le mode hors ligne et les tests.
+
+## Fonctionnalités
+
+- 🔄 Compatibilité avec les anciennes versions de l'API Supabase
+- 📱 Support du mode hors ligne
+- 🧪 Facilitation des tests
+- 🔒 Gestion sécurisée de l'authentification
+- 📦 Gestion d'état globale
+- 🎣 Hooks React personnalisés
+- 🔌 Support des événements temps réel
+
+## Installation
+
+```bash
+npm install supabase-compat
+# ou
+yarn add supabase-compat
+# ou
+pnpm add supabase-compat
+```
+
+## Configuration
+
+1. Créez un fichier `.env` à la racine de votre projet :
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=votre_url_supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=votre_clé_anonyme_supabase
+```
+
+2. Importez et initialisez le provider dans votre application :
+
+```tsx
+import { SupabaseProvider } from 'supabase-compat';
+
+function App() {
+  return (
+    <SupabaseProvider>
+      <YourApp />
+    </SupabaseProvider>
+  );
+}
+```
+
+## Utilisation
+
+### Hooks React
+
+```tsx
+import { useSupabase, useQuery, useSubscription, useStorage } from 'supabase-compat';
+
+function YourComponent() {
+  // Authentification
+  const { user, signIn, signOut } = useSupabase();
+
+  // Requêtes
+  const { data, loading, error } = useQuery('conversations', {
+    eq: { user_id: user?.id }
+  });
+
+  // Temps réel
+  useSubscription('messages', (payload) => {
+    console.log('Nouveau message:', payload);
+  });
+
+  // Stockage
+  const { uploadFile } = useStorage('documents');
+
+  return (
+    // Votre composant
+  );
+}
+```
+
+### Service Supabase
+
+```ts
+import { supabaseService } from 'supabase-compat';
+
+// Authentification
+await supabaseService.auth.signIn(email, password);
+
+// Base de données
+const conversations = await supabaseService.database.query('conversations', {
+  eq: { user_id: userId }
+});
+
+// Stockage
+await supabaseService.storage.uploadFile('documents', 'path/to/file.pdf', file);
+
+// Temps réel
+const subscription = supabaseService.realtime.subscribe('messages', (payload) => {
+  console.log('Nouveau message:', payload);
+});
+```
+
+### État Global
+
+```ts
+import { appState } from 'supabase-compat';
+
+// Accès à l'état
+const state = appState.getState();
+
+// Modification de l'état
+appState.setCurrentConversation(conversation);
+```
+
+## Mode Hors Ligne
+
+Le module supporte automatiquement le mode hors ligne :
+
+- Mise en cache des données
+- File d'attente des opérations
+- Synchronisation automatique
+- Gestion des conflits
+
+## Tests
+
+Le module inclut des utilitaires pour faciliter les tests :
+
+```ts
+import { setupTestEnvironment, mockSupabaseClient } from 'supabase-compat/testing';
+
+describe('Vos tests', () => {
+  beforeEach(() => {
+    setupTestEnvironment();
+  });
+
+  it('devrait gérer l\'authentification', async () => {
+    mockSupabaseClient.auth.signIn.mockResolvedValue({
+      user: { id: '123', email: 'test@example.com' }
+    });
+
+    // Vos tests
+  });
+});
+```
+
+## Contribution
+
+Les contributions sont les bienvenues ! Consultez notre guide de contribution pour plus de détails.
+
+## Licence
+
+MIT

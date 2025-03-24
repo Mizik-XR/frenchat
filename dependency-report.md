@@ -1,0 +1,264 @@
+# Rapport d'analyse des dépendances
+
+*Généré le 24/03/2025 10:50:42*
+
+## Dépendances circulaires
+
+- Processed 509 files (15.9s) (190 warnings)
+
+## Imports directs de React
+
+- src\App.tsx
+- src\utils\startup\appRenderer.tsx
+- src\services\reactInstance.ts
+- src\pages\RagAdvancedSettings.tsx
+- src\pages\MicrosoftAuthCallback.tsx
+- src\pages\LocalAISetup.tsx
+- src\pages\Landing.tsx
+- src\pages\Indexing.tsx
+- src\pages\Home.tsx
+- src\pages\GoogleDrive.tsx
+- src\pages\GoogleAuthCallback.tsx
+- src\pages\DocumentView.tsx
+- src\pages\Debug.tsx
+- src\pages\DatabaseView.tsx
+- src\pages\Chat.tsx
+- src\pages\AIConfig.tsx
+- src\hooks\useUserNotifications.ts
+- src\hooks\useTemplates.ts
+- src\hooks\useSystemCapabilities.ts
+- src\hooks\useSupabaseUser.ts
+- src\hooks\useSupabaseClient.ts
+- src\hooks\useServiceConfiguration.ts
+- src\hooks\useServiceConfig.ts
+- src\hooks\useSecureOpenAI.ts
+- src\hooks\useSecureApiProxy.ts
+- src\hooks\useRAG.ts
+- src\hooks\useOpenAIRag.ts
+- src\hooks\useOnboarding.ts
+- src\hooks\useModelSelection.ts
+- src\hooks\useModelDownload.ts
+- src\hooks\useMicrosoftTeamsStatus.ts
+- src\hooks\useIndexingProgress.ts
+- src\hooks\useImageGeneration.ts
+- src\hooks\useHuggingFace.ts
+- src\hooks\useGoogleDriveStatus.ts
+- src\hooks\useGoogleDrivePicker.ts
+- src\hooks\useGoogleDriveFolders.ts
+- src\hooks\useGoogleDriveConfig.ts
+- src\hooks\useGoogleDrive.ts
+- src\hooks\useFileUpload.ts
+- src\hooks\useFileManager.ts
+- src\hooks\useDocumentSynthesis.ts
+- src\hooks\useDocumentSummary.ts
+- src\hooks\useDiagnosticTools.ts
+- src\hooks\useDiagnostics.ts
+- src\hooks\useConversations.ts
+- src\hooks\useConfigWizard.ts
+- src\hooks\useConfig.ts
+- src\hooks\useChatState.ts
+- src\hooks\useChatMessages.ts
+- src\hooks\useChatLogic.ts
+- src\hooks\useChatActions.ts
+- src\hooks\useAuthSession.ts
+- src\hooks\useAuthForms.ts
+- src\hooks\useAuthActions.ts
+- src\hooks\useAIModelDownload.ts
+- src\hooks\useAIMode.ts
+- src\hooks\useAIConfig.ts
+- src\hooks\use-mouse-position.ts
+- src\hooks\user\useUserCreditUsage.ts
+- src\hooks\google-drive\useSharedFolders.ts
+- src\hooks\google-drive\usePersonalFolders.ts
+- src\hooks\google-drive\useFolderPermissions.ts
+- src\hooks\chat\useMessageReply.ts
+- src\hooks\chat\useChatProcessing.ts
+- src\hooks\auth\initialSessionCheck.ts
+- src\hooks\auth\authStateChangeHandlers.ts
+- src\hooks\ai\useOpenAIAgents.ts
+- src\components\SystemDiagnostics.tsx
+- src\components\GoogleDriveSync.tsx
+- src\components\GoogleDriveConnectionStatus.tsx
+- src\components\FolderTree.tsx
+- src\components\ErrorBoundary.tsx
+- src\components\EmbeddingHistory.tsx
+- src\components\DebugPanel.tsx
+- src\components\Dashboard.tsx
+- src\components\Chat.tsx
+- src\components\ui\ThreeStateToggle.tsx
+- src\components\ui\FrenchTitle.tsx
+- src\components\shared\NavbarAIStatus.tsx
+- src\components\onboarding\WelcomePage.tsx
+- src\components\onboarding\OnboardingStep.tsx
+- src\components\onboarding\OnboardingIntro.tsx
+- src\components\onboarding\OnboardingButton.tsx
+- src\components\ollama\OllamaPromotion.tsx
+- src\components\ollama\OllamaInstaller.tsx
+- src\components\ollama\ModelDownloader.tsx
+- src\components\notifications\NotificationCenter.tsx
+- src\components\navigation\Sidebar.tsx
+- src\components\navigation\PageHeader.tsx
+- src\components\navigation\NavigationControls.tsx
+- src\components\navigation\NavBar.tsx
+- src\components\monitoring\SystemReportChart.tsx
+- src\components\monitoring\ReactErrorMonitor.tsx
+- src\components\monitoring\MonitoringDashboard.tsx
+- src\components\landing\SparklesCore.tsx
+- src\components\landing\RoadmapSection.tsx
+- src\components\landing\NavbarLogo.tsx
+- src\components\landing\Navbar.tsx
+- src\components\landing\MobileMenu.tsx
+- src\components\landing\FloatingPaper.tsx
+- src\components\landing\DesktopMenu.tsx
+- src\components\landing\BestPracticesSection.tsx
+- src\components\landing\AILocalOptions.tsx
+- src\components\examples\DocExample.tsx
+- src\components\examples\AuthExample.tsx
+- src\components\documents\IndexingProgressBar.tsx
+- src\components\documents\FolderPermissionsDialog.tsx
+- src\components\documents\DocumentSummaryPanel.tsx
+- src\components\documents\DocumentSummary.tsx
+- src\components\documents\DocumentProviderSelector.tsx
+- src\components\documents\DocumentPreview.tsx
+- src\components\documents\DocumentManager.tsx
+- src\components\documents\DocumentList.tsx
+- src\components\documents\DocumentGenerator.tsx
+- src\components\documents\template\TemplateManager.tsx
+- src\components\documents\template\TemplateForm.tsx
+- src\components\documents\template\TemplateCard.tsx
+- src\components\documents\preview\DocumentPreviewPanel.tsx
+- src\components\documents\folder-indexing\SharedFoldersList.tsx
+- src\components\documents\folder-indexing\RecentKnowledgeBases.tsx
+- src\components\documents\folder-indexing\IndexingForm.tsx
+- src\components\documents\folder-indexing\FolderIndexingTabs.tsx
+- src\components\documents\folder-indexing\FolderIndexingSelector.tsx
+- src\components\documents\folder-indexing\DriveAuthCheck.tsx
+- src\components\documents\folder-indexing\ActionButtons.tsx
+- src\components\document\DocumentSummary.tsx
+- src\components\debug\EnvironmentDetection.tsx
+- src\components\debug\BrowserCompatibilityAlert.tsx
+- src\components\config\RagAdvancedConfig.tsx
+- src\components\config\QuickConfig.tsx
+- src\components\config\OpenAIAgentsConfig.tsx
+- src\components\config\ModelSelector.tsx
+- src\components\config\MicrosoftTeamsConfig.tsx
+- src\components\config\ImageConfig.tsx
+- src\components\config\GoogleDriveSetup.tsx
+- src\components\config\GoogleDriveConfig.tsx
+- src\components\config\DatabaseConfig.tsx
+- src\components\config\ConfigIntro.tsx
+- src\components\config\CloudAIConfig.tsx
+- src\components\config\APIKeyConfig.tsx
+- src\components\config\AIConfigWizard.tsx
+- src\components\config\wizard\IntelligenceStep.tsx
+- src\components\config\optimization\OptimizationConfig.tsx
+- src\components\config\MicrosoftTeams\MicrosoftTeamsConfig.tsx
+- src\components\config\llm\TransformersConfig.tsx
+- src\components\config\llm\ProviderDocs.tsx
+- src\components\config\llm\ModelSelector.tsx
+- src\components\config\llm\LocalAIConfig.tsx
+- src\components\config\llm\CustomModelForm.tsx
+- src\components\config\llm\CloudAIConfig.tsx
+- src\components\config\llm\components\ProviderSelector.tsx
+- src\components\config\llm\components\OllamaDetector.tsx
+- src\components\config\llm\components\ModelSelect.tsx
+- src\components\config\llm\components\ModelPathSelector.tsx
+- src\components\config\llm\components\ModelConfigurationFields.tsx
+- src\components\config\llm\components\FirstTimeSetup.tsx
+- src\components\config\llm\components\ConfigurationTabs.tsx
+- src\components\config\llm\components\ConfigHeader.tsx
+- src\components\config\llm\components\CompanionDownloadDialog.tsx
+- src\components\config\llm\components\CacheManager.tsx
+- src\components\config\llm\components\wizard\ModelPathWizard.tsx
+- src\components\config\llm\components\wizard\LocationSelector.tsx
+- src\components\config\llm\components\fields\ApiKeyField.tsx
+- src\components\config\ImportMethod\ImportMethodSelector.tsx
+- src\components\config\ImportMethod\FileUploader.tsx
+- src\components\config\GoogleDrive\useGoogleDrive.ts
+- src\components\config\GoogleDrive\IndexingProgress.tsx
+- src\components\config\GoogleDrive\GoogleDriveConnection.tsx
+- src\components\config\GoogleDrive\GoogleDriveConfig.tsx
+- src\components\config\GoogleDrive\GoogleDriveButton.tsx
+- src\components\config\GoogleDrive\GoogleDriveAlert.tsx
+- src\components\config\GoogleDrive\GoogleDriveAdvancedConfig.tsx
+- src\components\config\cloudai\useCloudAIConfig.ts
+- src\components\config\cloudai\ProviderConfigCard.tsx
+- src\components\config\cloudai\OnlineAlert.tsx
+- src\components\config\cloudai\OfflineAlert.tsx
+- src\components\config\cloudai\APIKeyField.tsx
+- src\components\config\AIUsageMetrics\UserCreditPanel.tsx
+- src\components\config\AIUsageMetrics\UsageTable.tsx
+- src\components\config\AIUsageMetrics\UsageSummaryCards.tsx
+- src\components\config\AIUsageMetrics\OptimizationTips.tsx
+- src\components\config\AIUsageMetrics\index.tsx
+- src\components\config\AIUsageMetrics\HistoricalChart.tsx
+- src\components\common\LogoImage.tsx
+- src\components\chat\PriorityTopicsPanel.tsx
+- src\components\chat\MessageList.tsx
+- src\components\chat\ConversationSidebar.tsx
+- src\components\chat\ConversationList.tsx
+- src\components\chat\ConversationExport.tsx
+- src\components\chat\ChatMessage.tsx
+- src\components\chat\ChatHeader.tsx
+- src\components\chat\AdaptiveAIChat.tsx
+- src\components\chat\visualization\ChartGenerator.tsx
+- src\components\chat\settings\SettingsPanel.tsx
+- src\components\chat\settings\SettingsDialog.tsx
+- src\components\chat\settings\AutoModeToggle.tsx
+- src\components\chat\priority-topics\TopicItem.tsx
+- src\components\chat\message\MessageTimestamp.tsx
+- src\components\chat\message\MessageQuote.tsx
+- src\components\chat\message\MessageContextMenu.tsx
+- src\components\chat\message\MessageContent.tsx
+- src\components\chat\message\MessageActions.tsx
+- src\components\chat\layout\MessageArea.tsx
+- src\components\chat\layout\MainLayout.tsx
+- src\components\chat\layout\MainChatContainer.tsx
+- src\components\chat\layout\ChatInputContainer.tsx
+- src\components\chat\layout\ChatInputArea.tsx
+- src\components\chat\layout\ChatHeader.tsx
+- src\components\chat\layout\ChatContainer.tsx
+- src\components\chat\input\StatusIndicator.tsx
+- src\components\chat\input\ReplyBadge.tsx
+- src\components\chat\input\ModelSelector.tsx
+- src\components\chat\input\MessageInputContainer.tsx
+- src\components\chat\input\MessageInput.tsx
+- src\components\chat\input\FileUploader.tsx
+- src\components\chat\input\AttachmentMenu.tsx
+- src\components\chat\conversation\useDragAndDrop.ts
+- src\components\chat\conversation\SearchInput.tsx
+- src\components\chat\conversation\RenameDialog.tsx
+- src\components\chat\conversation\NewFolderDialog.tsx
+- src\components\chat\conversation\DeleteDialog.tsx
+- src\components\chat\conversation\ConversationsList.tsx
+- src\components\chat\conversation\ConversationListItem.tsx
+- src\components\chat\conversation\ConversationItemMenu.tsx
+- src\components\auth\UserAvatar.tsx
+- src\components\auth\LoadingScreen.tsx
+- src\components\auth\AuthLoadingScreen.tsx
+- src\components\auth\AuthContainer.tsx
+- src\components\ai-installer\OllamaInstaller.tsx
+- src\components\ai-installer\ModelDownloader.tsx
+- src\components\ai-installer\HardwareDetection.tsx
+- src\components\ai-installer\AIInstallerWizard.tsx
+- src\components\ai-config\useAIConfigActions.ts
+- src\components\ai\AIOptionsPanel.tsx
+
+## Problèmes de dépendances critiques
+
+Aucun problème de dépendances critiques trouvé ✅
+
+## Recommandations
+
+### Pour résoudre les dépendances circulaires:
+- Créer des modules intermédiaires pour les types partagés
+- Utiliser le pattern d'injection de dépendances
+- Restructurer les modules pour éviter les imports mutuels
+
+### Pour corriger les imports directs de React:
+- Utiliser `import React from '@/core/reactInstance'` à la place de `import React from 'react'`
+- Exécuter `node scripts/code-quality/fix-react-imports.js --fix` pour corriger automatiquement
+
+### Pour les problèmes de dépendances critiques:
+- Réorganiser le code pour respecter l'architecture définie
+- Utiliser des services ou des adaptateurs pour découpler les modules

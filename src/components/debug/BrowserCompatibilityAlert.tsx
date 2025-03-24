@@ -1,5 +1,5 @@
 import { AlertCircle, X, Check, Info, AlertTriangle, ExternalLink } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect  } from '@/core/reactInstance';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';

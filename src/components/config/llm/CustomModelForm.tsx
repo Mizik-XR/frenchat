@@ -1,6 +1,6 @@
 import { React } from "@/core/ReactInstance";
 
-import { useState } from "react";
+import { useState  } from '@/core/reactInstance';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";

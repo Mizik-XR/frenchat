@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState  } from '@/core/reactInstance';
 import { useMousePosition } from "@/hooks/use-mouse-position";
 
 interface SparklesProps {

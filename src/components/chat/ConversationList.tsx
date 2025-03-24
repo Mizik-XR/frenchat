@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect  } from '@/core/reactInstance';
 import { Archive } from "lucide-react";
 import { Conversation } from "@/types/chat";
 import { ScrollArea } from "@/components/ui/scroll-area";

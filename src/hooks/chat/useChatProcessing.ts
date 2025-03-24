@@ -1,6 +1,6 @@
 
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState  } from '@/core/reactInstance';
 import { useAIProviderService } from "./services/aiProviderService";
 import { useMessageService } from "./services/messageService";
 import { SendMessageOptions, MessageResult } from "./types";

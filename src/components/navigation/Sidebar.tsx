@@ -1,5 +1,5 @@
 
-import React from "react";
+import React from '@/core/reactInstance';
 import { Link, useLocation } from "react-router-dom";
 import { 
   ChevronRight, 

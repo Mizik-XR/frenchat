@@ -3,7 +3,7 @@ import { React } from "@/core/ReactInstance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Folder, HardDrive, Check, HelpCircle, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState  } from '@/core/reactInstance';
 
 interface LocationSelectorProps {
   selectedPath: string;

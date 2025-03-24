@@ -1,5 +1,5 @@
 
-import React from "react";
+import React from '@/core/reactInstance';
 import { Button } from "@/components/ui/button";
 import { Message } from "@/types/chat";
 import { Download, Share2 } from "lucide-react";

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect  } from '@/core/reactInstance';
 import { useServiceConfiguration } from '@/hooks/useServiceConfiguration';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

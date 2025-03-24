@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState } from '@/core/reactInstance';
 import type { Message } from "@/types/chat";
 import { MessageQuote } from "./message/MessageQuote";
 import { MessageContent } from "./message/MessageContent";

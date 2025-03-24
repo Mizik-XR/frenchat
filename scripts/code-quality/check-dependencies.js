@@ -12,12 +12,16 @@
  *   --fix            Tenter de corriger automatiquement les problèmes d'import React
  */
 
-const fs = require('fs');
-const path = require('path');
-const child_process = require('child_process');
-const util = require('util');
-const glob = require('glob');
-const exec = util.promisify(child_process.exec);
+import fs from 'fs';
+import path from 'path';
+import { exec as execCallback } from 'child_process';
+import { promisify } from 'util';
+import { globSync } from 'glob';
+import { fileURLToPath } from 'url';
+
+const exec = promisify(execCallback);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configuration
 const CONFIG = {
@@ -85,11 +89,11 @@ async function checkDependencies() {
     info('Vérification des dépendances...');
     
     try {
-      await exec('madge --version');
+      await exec('npx madge --version');
       success('madge est installé');
     } catch (e) {
       warn('madge n\'est pas installé. Installation en cours...');
-      await exec('npm install -g madge');
+      await exec('npm install madge --save-dev');
       success('madge a été installé avec succès');
     }
     
@@ -131,7 +135,7 @@ function findDirectReactImports() {
       /import\s+{\s*([^}]*)\s*}\s+from\s+['"]react['"]/g
     ];
     
-    const files = glob.sync(`${CONFIG.srcDir}/**/*.{js,jsx,ts,tsx}`, { ignore: CONFIG.ignoredPaths });
+    const files = globSync(`${CONFIG.srcDir}/**/*.{js,jsx,ts,tsx}`, { ignore: CONFIG.ignoredPaths });
     const directImports = [];
     
     for (const file of files) {
@@ -168,7 +172,7 @@ function checkCriticalDependencies() {
     
     for (const dep of CONFIG.criticalDependencies) {
       const regex = new RegExp(`import\\s+.*\\s+from\\s+['"][^'"]*${dep.shouldNotImport.join('|')}['"]`, 'g');
-      const files = glob.sync(`${CONFIG.srcDir}/**/*${dep.module}*.{js,jsx,ts,tsx}`, { ignore: CONFIG.ignoredPaths });
+      const files = globSync(`${CONFIG.srcDir}/**/*${dep.module}*.{js,jsx,ts,tsx}`, { ignore: CONFIG.ignoredPaths });
       
       for (const file of files) {
         const content = fs.readFileSync(file, 'utf8');

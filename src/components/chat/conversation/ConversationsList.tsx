@@ -1,5 +1,5 @@
 
-import React from "react";
+import React from '@/core/reactInstance';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ConversationListItem } from "./ConversationListItem";
 

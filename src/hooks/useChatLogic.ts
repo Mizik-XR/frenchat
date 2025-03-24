@@ -1,7 +1,7 @@
 
 import { useChatProcessing } from "./chat/useChatProcessing";
 import { APP_STATE } from "@/integrations/supabase/client";
-import { useMemo, useState } from "react";
+import { useMemo, useState  } from '@/core/reactInstance';
 
 export function useChatLogic() {
   const {

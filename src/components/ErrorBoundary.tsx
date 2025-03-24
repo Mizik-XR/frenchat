@@ -1,6 +1,6 @@
 import { React } from "@/core/ReactInstance";
 
-import { Component, ErrorInfo, ReactNode } from "react";
+import { Component, ErrorInfo, ReactNode  } from '@/core/reactInstance';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LogoImage } from "@/components/common/LogoImage";

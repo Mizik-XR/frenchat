@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React from '@/core/reactInstance';
 import { Progress } from '@/components/ui/progress';
 import { useIndexingProgress } from '@/hooks/useIndexingProgress';
 

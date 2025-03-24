@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState  } from '@/core/reactInstance';
 import { APP_STATE } from '@/compatibility/supabaseCompat';
 
 export interface DiagnosticResults {
