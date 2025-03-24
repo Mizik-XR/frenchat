@@ -1,35 +1,83 @@
+# FileChat
 
-# Frenchat - Assistant IA Conversationnel pour Documents
+Application de chat avec gestion de fichiers et intégration de Supabase. Cette application permet aux utilisateurs de discuter en temps réel et de partager des fichiers.
 
-Frenchat est une application qui vous permet d'interroger vos documents avec l'intelligence artificielle pour obtenir des réponses précises.
+## Architecture
 
-## Installation et Démarrage Rapide
+L'application est structurée avec une architecture robuste assurant une séparation claire des préoccupations et une maintenance facilitée :
 
-### Windows
-1. Double-cliquez sur `setup.bat` pour une installation automatique complète
-2. Après l'installation, utilisez le raccourci "Frenchat" sur votre bureau pour démarrer l'application
+- **Frontend** : React avec TypeScript
+- **Backend** : Supabase pour l'authentification, le stockage de données et les fonctions serverless
+- **État global** : React Context API avec hooks personnalisés
+- **Synchronisation** : API Supabase Realtime pour les mises à jour en temps réel
 
-### macOS / Linux
-1. Ouvrez un terminal dans le dossier de l'application
-2. Exécutez la commande suivante:
-   ```
-   chmod +x start-ai-service.sh && ./start-ai-service.sh
-   ```
+## Instance React unique
 
-## Fonctionnalités
+Pour éviter les problèmes liés à plusieurs instances de React, nous utilisons un module central `ReactInstance` :
 
-- **Chat IA** - Posez des questions et obtenez des réponses basées sur vos documents
-- **Intégration Google Drive** - Connectez-vous à Google Drive pour analyser vos documents
-- **Intégration Microsoft Teams** - Accédez aux fichiers partagés dans Teams (bientôt disponible)
-- **Génération de documents structurés** - Créez des rapports et résumés intelligents
-- **IA locale** - Fonctionne en local sur votre ordinateur, sans envoyer vos données à l'extérieur
+```typescript
+// Correct usage
+import { React, useState, useEffect } from '@/core/ReactInstance';
+```
 
-## Configuration Requise
+## Installation
 
-- Windows 10/11 ou macOS 10.15+ ou Linux
-- 8 Go de RAM minimum (16 Go recommandés)
-- Connexion internet pour l'installation initiale et l'accès aux services cloud
+```bash
+# Installation des dépendances
+npm install
 
-## Support
+# Démarrage en mode développement
+npm run dev
 
-Pour toute question ou assistance, veuillez contacter le support technique.
+# Construction pour production
+npm run build
+```
+
+## Commandes disponibles
+
+### Développement
+
+- `npm run dev` - Démarre le serveur de développement
+- `npm run build` - Construit l'application pour la production
+- `npm run preview` - Prévisualise la version de production localement
+
+### Tests
+
+- `npm run test` - Exécute tous les tests (unitaires, intégration, performance)
+- `npm run test:unit` - Exécute uniquement les tests unitaires
+- `npm run test:integration` - Exécute uniquement les tests d'intégration
+- `npm run test:perf` - Exécute uniquement les tests de performance
+- `npm run setup:tests` - Configure l'environnement pour les tests
+
+### Qualité du code
+
+- `npm run lint` - Vérifie le code avec ESLint
+- `npm run lint:fix` - Corrige automatiquement les problèmes de linting
+- `npm run quality:check` - Vérifie les dépendances circulaires et les imports React
+- `npm run quality:fix-imports` - Corrige automatiquement les imports directs de React
+
+### Intégration Supabase
+
+- `npm run supabase:types` - Génère les types TypeScript à partir du schéma Supabase
+- `npm run supabase:validate` - Valide le schéma Supabase contre les types locaux
+- `npm run supabase:migrations` - Exécute les migrations Supabase et met à jour les types
+
+### CI/CD
+
+- `npm run ci` - Exécute l'intégralité de la pipeline CI localement
+
+## Mode hors ligne
+
+L'application prend en charge un mode hors ligne, permettant aux utilisateurs de continuer à utiliser l'application même sans connexion Internet. La synchronisation se fait automatiquement lorsque la connexion est rétablie.
+
+## Compatibilité
+
+Le module `supabaseCompat.ts` assure la compatibilité entre différentes versions de l'API Supabase, facilitant les migrations et garantissant la stabilité du code existant.
+
+## Tests
+
+Voir le fichier [TESTING.md](./TESTING.md) pour plus d'informations sur notre stratégie de tests.
+
+## Licence
+
+MIT

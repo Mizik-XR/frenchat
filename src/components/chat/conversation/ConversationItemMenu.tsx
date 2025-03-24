@@ -1,3 +1,4 @@
+import { React } from "@/core/ReactInstance";
 
 import { useState } from "react";
 import { Conversation } from "@/types/chat";

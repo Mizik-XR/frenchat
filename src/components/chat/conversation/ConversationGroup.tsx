@@ -1,3 +1,4 @@
+import { React } from "@/core/ReactInstance";
 
 import { Conversation } from "@/types/chat";
 import { ConversationItem } from "./ConversationItem";

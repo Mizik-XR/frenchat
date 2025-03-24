@@ -8,4 +8,9 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Créer une instance unique de Supabase pour éviter la dépendance circulaire
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+// Fournir une fonction d'initialisation pour les cas où un import dynamique est préféré
+let _supabaseClient = supabase;
+export const getSupabaseClient = () => _supabaseClient;

@@ -9,6 +9,7 @@ import { useNavigationHelpers } from "./navigation/navigationHelpers";
 import { isAuthPagePath, isPublicPagePath } from "./routes/routeHelpers";
 import { handleProfileAndConfig } from "./profile/profileUtils";
 import { handleUserRedirection } from "./redirection/redirectionUtils";
+import { useState, useEffect, useRef } from '@/core/ReactInstance';
 
 /**
  * Gère les changements d'état d'authentification

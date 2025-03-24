@@ -1,3 +1,4 @@
+import { React } from "@/core/ReactInstance";
 
 import { Button } from "@/components/ui/button";
 

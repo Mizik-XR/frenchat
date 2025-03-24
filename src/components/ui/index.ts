@@ -1,4 +1,3 @@
-
 /**
  * Fichier d'exportation centralisé pour les composants UI
  * 
@@ -56,8 +55,9 @@ export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
 export { Textarea } from './textarea';
 export { ThreeStateToggle } from './ThreeStateToggle';
 export { FrenchTitle } from './FrenchTitle';
-// Importer et exporter le toast d'un fichier toast séparé
-export { toast } from '@/hooks/use-toast';
+// Ne pas importer le toast depuis index.ts pour éviter les dépendances circulaires
+// Au lieu de cela, exportez-le directement depuis son fichier d'origine
+// export { toast } from '@/hooks/use-toast';
 export { Toaster } from './toaster';
 export { Toggle, toggleVariants } from './toggle';
 export { ToggleGroup, ToggleGroupItem } from './toggle-group';

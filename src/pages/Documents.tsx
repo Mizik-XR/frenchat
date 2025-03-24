@@ -1,3 +1,4 @@
+import { React } from "@/core/ReactInstance";
 import { React, useState, useEffect } from '@/core/ReactInstance';
 import { DocumentProviderSelector } from '@/components/documents/DocumentProviderSelector';
 import { DocumentManager } from '@/components/documents/DocumentManager';

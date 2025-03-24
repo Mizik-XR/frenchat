@@ -1,3 +1,4 @@
+import { React } from "@/core/ReactInstance";
 
 import { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";

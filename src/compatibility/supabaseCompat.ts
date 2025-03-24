@@ -1,4 +1,3 @@
-
 /**
  * MODULE DE COMPATIBILITÉ GLOBAL
  * 
@@ -9,133 +8,121 @@
  * Une refactorisation plus propre devra être envisagée ultérieurement.
  */
 
-// État de l'application partagé avec accès mutables pour compatibilité
-class CompatAppState {
-  private _isOfflineMode: boolean = false;
-  private _supabaseErrors: Array<{message: string, timestamp: Date, context?: string}> = [];
-  private _lastError: Error | null = null;
-  private _localAIAvailable: boolean = false;
+/**
+ * Module de compatibilité Supabase
+ * 
+ * Ce module fournit des couches de compatibilité pour faciliter la migration
+ * entre différentes versions de l'API Supabase ou pour supporter des modes
+ * de fonctionnement spécifiques (mode hors ligne, test, etc.)
+ */
 
-  // Propriétés
-  get isOfflineMode(): boolean {
-    return this._isOfflineMode;
-  }
+import { supabaseService, supabase } from '@/services/supabase/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/integrations/supabase/types';
 
-  set isOfflineMode(value: boolean) {
-    console.warn('[Compat] Setting isOfflineMode directly via APP_STATE (deprecated)');
-    this._isOfflineMode = value;
-  }
-
-  get supabaseErrors(): Array<{message: string, timestamp: Date, context?: string}> {
-    return [...this._supabaseErrors];
-  }
-
-  get lastError(): Error | null {
-    return this._lastError;
-  }
-
-  get localAIAvailable(): boolean {
-    return this._localAIAvailable;
-  }
-
-  get hasSupabaseError(): boolean {
-    return this._supabaseErrors.length > 0;
-  }
-
-  // Méthodes
-  setOfflineMode(value: boolean): void {
-    this._isOfflineMode = value;
-    console.log(`[Compat] Mode hors ligne ${value ? 'activé' : 'désactivé'}`);
-    // Propager le changement aux composants qui écoutent via localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('OFFLINE_MODE', value ? 'true' : 'false');
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'OFFLINE_MODE',
-        newValue: value ? 'true' : 'false'
-      }));
-    }
-  }
-
-  logSupabaseError(error: Error, context?: string): void {
-    console.error(`[Compat] Erreur Supabase ${context ? `(${context})` : ''}: ${error.message}`);
-    this._lastError = error;
-    this._supabaseErrors.push({
-      message: error.message,
-      timestamp: new Date(),
-      context
-    });
-    
-    // Limiter le nombre d'erreurs stockées
-    if (this._supabaseErrors.length > 50) {
-      this._supabaseErrors = this._supabaseErrors.slice(-50);
-    }
-  }
-
-  clearErrors(): void {
-    this._supabaseErrors = [];
-    this._lastError = null;
-  }
-
-  setLocalAIAvailable(value: boolean): void {
-    this._localAIAvailable = value;
-  }
-
-  // Cette fonction est nécessaire pour éviter les erreurs de compilation
-  detectLocalAIService = async (): Promise<{ available: boolean; message?: string }> => {
-    console.warn('[Compat] Using detectLocalAIService from compatibility module');
-    
-    try {
-      if (this._isOfflineMode) {
-        return { available: false, message: "Mode hors ligne activé" };
-      }
-      
-      // Simuler une tentative de connexion à un service local
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        
-        const response = await fetch('http://localhost:8000/health', {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          const data = await response.json();
-          this.setLocalAIAvailable(true);
-          return { available: true, message: data.status || "Service disponible" };
-        } else {
-          this.setLocalAIAvailable(false);
-          return { available: false, message: "Service indisponible" };
-        }
-      } catch (error) {
-        this.setLocalAIAvailable(false);
-        return { available: false, message: error instanceof Error ? error.message : "Erreur inconnue" };
-      }
-    } catch (error) {
-      console.error('[Compat] Erreur lors de la détection du service IA local:', error);
-      return { available: false, message: "Erreur lors de la vérification" };
-    }
+// Déclaration pour gtag global
+declare global {
+  interface Window {
+    gtag?: (command: string, action: string, params: object) => void;
   }
 }
 
-// Instance unique exportée
+/**
+ * Classe qui représente l'état global de l'application
+ * Utilisée pour maintenir la compatibilité avec le code existant
+ */
+class CompatAppState {
+  private _errorLog: Error[] = [];
+  
+  // Proxy vers le service centralisé
+  get isOfflineMode(): boolean {
+    return supabaseService.connectivity.isOfflineMode;
+  }
+  
+  setOfflineMode(value: boolean): void {
+    supabaseService.connectivity.setOfflineMode(value);
+  }
+  
+  // Fonctions de journalisation d'erreurs pour le débogage
+  logSupabaseError(error: Error): void {
+    console.error('[Supabase Error]', error);
+    this._errorLog.push(error);
+    
+    // Si nécessaire, journaliser l'erreur vers un service d'analytics
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'supabase_error', {
+        error_message: error.message,
+        error_stack: error.stack
+      });
+    }
+  }
+  
+  getErrorLog(): Error[] {
+    return [...this._errorLog];
+  }
+  
+  clearErrorLog(): void {
+    this._errorLog = [];
+  }
+}
+
+// Singleton APP_STATE pour la compatibilité
 export const APP_STATE = new CompatAppState();
 
-// Fonctions de compatibilité
-export const checkOfflineMode = () => {
-  console.warn('[Compat] Using checkOfflineMode from compatibility module');
-  // Vérifier si nous sommes dans un navigateur
+/**
+ * Type générique pour éviter les erreurs de type avec les noms de table dynamiques
+ */
+export function createCompatClient(baseClient: SupabaseClient<Database>) {
+  return {
+    ...baseClient,
+    
+    // Ajouts pour la compatibilité v1.x
+    compat: {
+      version: '2.x',
+      
+      auth: {
+        ...baseClient.auth,
+        // Méthodes v1.x
+        user: () => baseClient.auth.getUser().then(({ data }) => data.user),
+        session: () => baseClient.auth.getSession().then(({ data }) => data.session),
+        signIn: (credentials: any) => baseClient.auth.signInWithPassword(credentials),
+        signOut: () => baseClient.auth.signOut()
+      },
+      
+      // Méthodes pour récupérer des données avec syntaxe v1.x
+      from: (table: string) => {
+        // Utiliser any ici pour permettre l'utilisation dynamique des noms de table
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const modernQuery = (baseClient.from as any)(table);
+        
+        return {
+          ...modernQuery,
+          // v1.x style: client.from('table').get()
+          get: () => modernQuery.select('*'),
+          // Autres méthodes de compatibilité...
+        };
+      }
+    }
+  };
+}
+
+// Client avec compatibilité
+export const supabaseCompat = createCompatClient(supabase);
+
+/**
+ * Fonctions utilitaires de compatibilité
+ */
+
+// Vérifier si nous sommes en mode hors ligne
+export const checkOfflineMode = (): boolean => {
+  // Vérifier localStorage
   if (typeof window !== 'undefined') {
-    // Vérifier si le mode hors ligne est activé dans localStorage
     const storedOfflineMode = localStorage.getItem('OFFLINE_MODE');
     if (storedOfflineMode === 'true') {
       APP_STATE.setOfflineMode(true);
     }
     
-    // Vérifier l'état de la connexion
+    // Vérifier l'état de la connexion réseau
     if (!navigator.onLine) {
       console.log('[Compat] Pas de connexion réseau, activation du mode hors ligne');
       APP_STATE.setOfflineMode(true);
@@ -145,53 +132,26 @@ export const checkOfflineMode = () => {
   return APP_STATE.isOfflineMode;
 };
 
-export const detectLocalAIService = async (): Promise<{ available: boolean; message?: string }> => {
-  return APP_STATE.detectLocalAIService();
-};
-
-// Helpers pour le module de compatibilité
-export const logCompat = (functionName: string) => {
-  console.log(`[Compat] ${functionName} appelée depuis le module de compatibilité`);
-};
-
-// Export de fonctions et constantes pour éviter les dépendances circulaires
-export const preloadSession = async () => {
-  console.warn('[Compat] Using preloadSession from compatibility module');
-  
+// Encapsuler les requêtes pour une gestion cohérente du mode hors ligne
+export async function handleProfileQuery(userId: string) {
   if (APP_STATE.isOfflineMode) {
-    console.log("[Compat] Application en mode hors ligne, préchargement de session ignoré.");
-    return { session: null };
+    console.log("Mode hors ligne actif, utilisation d'un profil par défaut");
+    return { 
+      data: { 
+        id: userId,
+        is_first_login: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, 
+      error: null 
+    };
   }
   
   try {
-    console.log("[Compat] Tentative de préchargement de la session...");
-    
-    // Cette implémentation est juste un stub
-    // Dans un vrai cas d'utilisation, nous importerions la vraie fonction d'un autre module
-    return { session: null, error: null };
+    // Utiliser le nouveau service centralisé
+    return await supabaseService.profiles.getProfile(userId);
   } catch (error) {
-    console.error("[Compat] Erreur de préchargement de session:", error);
-    
-    // Si c'est une erreur réseau, activer le mode hors ligne
-    if (error instanceof Error && (
-      error.message.includes('Failed to fetch') || 
-      error.message.includes('NetworkError') || 
-      error.message.includes('Network request failed')
-    )) {
-      APP_STATE.setOfflineMode(true);
-    }
-    
-    throw error;
+    APP_STATE.logSupabaseError(error as Error);
+    return { data: null, error };
   }
-};
-
-// Fonctions de diagnostic pour vérifier la santé du système
-export const checkApplicationHealth = async () => {
-  console.warn('[Compat] Using checkApplicationHealth from compatibility module');
-  
-  return {
-    localAI: APP_STATE.localAIAvailable,
-    supabase: !APP_STATE.isOfflineMode,
-    internetConnection: typeof navigator !== 'undefined' ? navigator.onLine : true
-  };
-};
+}

@@ -1,3 +1,4 @@
+import { React } from "@/core/ReactInstance";
 
 import { useState, useEffect } from 'react';
 import { MainChatContainer } from './MainChatContainer';

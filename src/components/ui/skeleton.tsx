@@ -1,5 +1,7 @@
-
+import { React } from "@/core/ReactInstance";
 import { cn } from "@/lib/utils"
+
+interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 function Skeleton({
   className,

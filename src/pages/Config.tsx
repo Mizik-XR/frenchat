@@ -1,3 +1,4 @@
+import { React } from "@/core/ReactInstance";
 import { React, useState } from '@/core/ReactInstance';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

@@ -1,4 +1,3 @@
-
 /**
  * Point d'entrée principal de l'application
  * 
@@ -10,7 +9,7 @@
  */
 
 // Importer React depuis l'instance unique
-import { React } from './core/ReactInstance';
+import { React } from '@/core/ReactInstance';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import './styles/message-styles.css';

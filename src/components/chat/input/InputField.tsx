@@ -1,3 +1,4 @@
+import { React } from "@/core/ReactInstance";
 
 import { ArrowUp } from 'lucide-react';
 import { Textarea } from "@/components/ui/textarea";

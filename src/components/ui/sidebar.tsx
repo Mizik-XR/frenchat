@@ -1,3 +1,4 @@
+import { React } from "@/core/ReactInstance";
 
 import { isLocalDevelopment } from "@/services/apiConfig";
 import { Link } from "react-router-dom";

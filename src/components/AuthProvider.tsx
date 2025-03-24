@@ -1,4 +1,3 @@
-
 import { React } from "@/core/ReactInstance";
 import { User } from "@supabase/supabase-js";
 import { useAuthSession } from "@/hooks/useAuthSession";

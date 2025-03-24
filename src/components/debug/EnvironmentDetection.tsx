@@ -1,3 +1,4 @@
+import { React } from "@/core/ReactInstance";
 
 import { useEffect, useState } from "react";
 import { AlertTriangle, Server, ExternalLink, Info } from "lucide-react";
