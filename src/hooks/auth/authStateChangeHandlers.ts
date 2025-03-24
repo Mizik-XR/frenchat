@@ -1,3 +1,5 @@
+import { APP_STATE } from '@/compatibility/supabaseCompat';
+import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { useCallback } from "react";
@@ -7,8 +9,6 @@ import { useNavigationHelpers } from "./navigation/navigationHelpers";
 import { isAuthPagePath, isPublicPagePath } from "./routes/routeHelpers";
 import { handleProfileAndConfig } from "./profile/profileUtils";
 import { handleUserRedirection } from "./redirection/redirectionUtils";
-import { APP_STATE } from '@/compatibility/supabaseCompat';
-import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Gère les changements d'état d'authentification

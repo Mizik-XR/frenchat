@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { React, useEffect, useState } from '@/core/ReactInstance';
 import { SystemDiagnostics } from '@/components/SystemDiagnostics';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';

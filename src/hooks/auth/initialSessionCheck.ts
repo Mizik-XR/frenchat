@@ -5,8 +5,8 @@ import { APP_STATE } from '@/compatibility/supabaseCompat';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigationHelpers } from "./navigation/navigationHelpers";
 import { isPublicPagePath } from "./routes/routeHelpers";
-import { checkRouteProtection } from "./redirection/redirectionUtils";
-import { PROTECTED_ROUTES } from "./authConstants";
+import { PROTECTED_ROUTES } from "./routes/routeConstants";
+import { checkRouteProtection } from "./routes/routeProtection";
 
 /**
  * Hook personnalisé pour vérifier la session initiale
