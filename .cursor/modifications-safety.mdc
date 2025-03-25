@@ -1,0 +1,69 @@
+# Sécurité des Modifications
+
+## Intention
+Protéger les fonctionnalités essentielles existantes tout en permettant l'évolution du projet de manière contrôlée et sécurisée.
+
+## Principes Directeurs
+- Approche incrémentale des modifications
+- Documentation des changements proposés
+- Tests exhaustifs avant modification
+- Conservation des fonctionnalités clés
+- Rétrocompatibilité privilégiée
+
+## Zones Protégées
+- Composants UI principaux
+- Logique de chat et traitement documentaire
+- Intégration Supabase
+- Architecture fondamentale
+- Mécanismes d'authentification
+
+## Exemples Illustratifs
+
+### Processus de Modification
+```typescript
+// Approche recommandée pour les modifications
+class DocumentProcessor extends ExistingDocumentProcessor {
+  // Extension plutôt que remplacement
+  async processDocument(doc: Document): Promise<ProcessedDocument> {
+    // Conserver la logique existante
+    const baseResult = await super.processDocument(doc)
+    
+    // Ajouter des fonctionnalités
+    return this.enhanceResult(baseResult)
+  }
+}
+
+// Modification d'interface utilisateur
+const EnhancedChatInterface: FC = () => {
+  // Utiliser le composant existant
+  return (
+    <ExistingChatInterface
+      // Ajouter des props sans modifier le composant
+      enhancedFeatures={newFeatures}
+      onCustomAction={handleCustomAction}
+    />
+  )
+}
+```
+
+### Processus de Test
+```typescript
+describe('Modified DocumentProcessor', () => {
+  it('preserves existing functionality', async () => {
+    const processor = new DocumentProcessor()
+    const result = await processor.processDocument(testDoc)
+    
+    // Vérifier que les fonctionnalités existantes sont préservées
+    expect(result).toMatchExistingBehavior()
+    // Puis tester les nouvelles fonctionnalités
+    expect(result.enhancedFeatures).toBeDefined()
+  })
+})
+```
+
+## Justification
+- Stabilité du système
+- Confiance utilisateur maintenue
+- Évolution contrôlée
+- Réduction des régressions
+- Maintenance facilitée 

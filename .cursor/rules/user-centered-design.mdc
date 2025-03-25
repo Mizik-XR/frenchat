@@ -1,0 +1,62 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Design centré utilisateur avec conscience de la confidentialité
+
+Principes de conception centrés sur l'utilisateur, intégrant les aspects de confidentialité des données.
+
+## À privilégier
+- Créer des interfaces intuitives qui rassurent l'utilisateur face à l'IA
+- Communiquer clairement sur le traitement des données (local vs cloud)
+- Offrir des contrôles visibles pour le choix des modèles et la confidentialité
+- Fournir un feedback transparent sur les actions du système
+
+## À éviter
+- Ne pas utiliser de jargon technique inaccessible dans l'interface
+- Ne pas cacher les informations sur le traitement des données
+- Ne pas imposer des choix qui compromettent la confidentialité
+- Ne pas concevoir des interfaces anxiogènes autour de l'IA
+
+## Exemples illustratifs
+```tsx
+// Exemple de composant de sélection de modèle conscient de la confidentialité
+function ModelSelectionComponent() {
+  return (
+    <Card className="p-4 border-0 shadow-sm">
+      <CardHeader>
+        <CardTitle>Choisissez votre mode de traitement</CardTitle>
+        <CardDescription>
+          Ce choix affecte où vos données sont traitées et le niveau de confidentialité.
+        </CardDescription>
+      </CardHeader>
+      
+      <CardContent>
+        <RadioGroup defaultValue="local">
+          <div className="flex items-center space-x-2 mb-3">
+            <RadioGroupItem value="local" id="local" />
+            <Label htmlFor="local" className="font-medium">
+              Traitement local
+              <Badge className="ml-2 bg-green-100 text-green-800">Recommandé</Badge>
+            </Label>
+          </div>
+          <Text className="text-sm text-gray-500 mb-4 ml-6">
+            Vos données restent sur votre appareil. Performance légèrement réduite.
+          </Text>
+          
+          {/* Options supplémentaires avec explications claires */}
+        </RadioGroup>
+      </CardContent>
+      
+      <Alert variant="info" className="mt-4">
+        <AlertIcon />
+        <AlertTitle>Confidentialité des données</AlertTitle>
+        <AlertDescription>
+          Tous les modèles d'IA que nous proposons respectent votre vie privée, mais
+          le traitement local offre le plus haut niveau de confidentialité.
+        </AlertDescription>
+      </Alert>
+    </Card>
+  );
+}

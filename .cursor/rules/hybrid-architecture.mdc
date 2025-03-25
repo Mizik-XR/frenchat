@@ -1,0 +1,60 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Architecture hybride local/cloud
+
+Principes pour structurer le code afin de supporter efficacement l'approche hybride local/cloud.
+
+## À privilégier
+- Concevoir des interfaces abstraites communes pour les services locaux et cloud
+- Implémenter des stratégies de basculement transparent entre local et cloud
+- Utiliser des adaptateurs pour uniformiser l'interface des différents services
+- Structurer le code pour faciliter les tests avec les deux modes
+
+## À éviter
+- Ne pas dupliquer la logique métier entre implémentations locales et cloud
+- Ne pas créer de dépendances directes aux APIs spécifiques
+- Ne pas mélanger la logique de décision du mode et l'implémentation
+- Ne pas ignorer les différences de performance et de capacités
+
+## Exemples illustratifs
+```typescript
+// Architecture en couches avec abstraction
+// Fichier: src/services/ai/types.ts
+interface AIService {
+  generateResponse(prompt: string, options?: GenerationOptions): Promise<string>;
+  embedText(text: string): Promise<number[]>;
+  // autres méthodes communes
+}
+
+// Fichier: src/services/ai/local-service.ts
+class LocalAIService implements AIService {
+  // Implémentation pour Ollama/modèles locaux
+}
+
+// Fichier: src/services/ai/cloud-service.ts
+class CloudAIService implements AIService {
+  // Implémentation pour APIs cloud
+}
+
+// Fichier: src/services/ai/hybrid-service.ts
+class HybridAIService implements AIService {
+  private localService: LocalAIService;
+  private cloudService: CloudAIService;
+  private strategyDecider: AIStrategyDecider;
+  
+  async generateResponse(prompt: string, options?: GenerationOptions): Promise<string> {
+    const strategy = await this.strategyDecider.determineStrategy(prompt, options);
+    
+    if (strategy === 'local') {
+      return this.localService.generateResponse(prompt, options);
+    } else {
+      return this.cloudService.generateResponse(prompt, options);
+    }
+  }
+  
+  // autres méthodes avec logique hybride similaire
+}

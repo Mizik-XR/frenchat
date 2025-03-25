@@ -1,0 +1,202 @@
+# Sécurité des Données et Gestion des Secrets
+
+## Intention
+Établir des règles de sécurité NON NÉGOCIABLES pour protéger les données sensibles, les secrets et l'intégrité du système.
+
+## Règles Absolues
+
+### INTERDICTIONS FORMELLES ⛔
+- Stockage de secrets dans le code source
+- Désactivation des politiques RLS Supabase
+- Exposition d'informations sensibles dans les logs
+- Exécution de code arbitraire d'origine utilisateur
+- Commit de fichiers .env ou secrets
+- Communication non chiffrée de données sensibles
+- Accès direct à la base sans RLS
+- Stockage en clair de données sensibles
+- Utilisation de eval(), Function(), new Function() ou similaires
+- Désactivation des vérifications TypeScript (// @ts-ignore, any)
+- Stockage de tokens JWT en localStorage (utiliser sessionStorage)
+- Exposition de stacktraces aux utilisateurs
+- Utilisation de bibliothèques obsolètes ou non maintenues
+- Désactivation des CSP (Content Security Policy)
+- Requêtes SQL concaténées avec des entrées utilisateur
+- Partage de sessions entre différents utilisateurs
+- Stockage de mots de passe même hashés (utiliser Supabase Auth)
+- Upload de fichiers sans validation stricte du type MIME
+
+### OBLIGATIONS STRICTES ✓
+- Utilisation exclusive de variables d'environnement pour les secrets
+- Chiffrement systématique des données sensibles
+- Validation et assainissement de toutes les entrées
+- Implémentation de contrôles d'accès multiniveaux
+- Respect absolu des politiques RLS
+- Audit régulier des mécanismes de sécurité
+- Activation du mode strict TypeScript ("strict": true)
+- Implémentation de rate limiting sur toutes les API
+- Configuration des CORS avec des origines explicites
+- Validation côté serveur ET client
+- Rotation régulière des clés de chiffrement
+- Journalisation sécurisée des événements critiques
+- Tests de sécurité automatisés dans la CI/CD
+- Scan régulier des dépendances (npm audit)
+- Utilisation de prepared statements pour SQL
+- Implémentation de timeouts sur toutes les sessions
+- Headers de sécurité (HSTS, X-Frame-Options, etc.)
+- Validation des URLs externes avant redirection
+
+## Exemples de Conformité
+
+### Gestion des Secrets
+```typescript
+// ✓ CORRECT : Variables d'environnement
+const config = {
+  supabaseUrl: process.env.VITE_SUPABASE_URL,
+  supabaseKey: process.env.VITE_SUPABASE_ANON_KEY,
+  encryptionKey: process.env.VITE_ENCRYPTION_KEY
+}
+
+// ⛔ INCORRECT : Secrets en dur
+const apiKey = "sk_live_..." // JAMAIS FAIRE CECI
+```
+
+### Validation des Entrées
+```typescript
+// ✓ CORRECT : Validation stricte avec types MIME
+class FileUploadValidator {
+  static async validateFile(file: File): Promise<boolean> {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!allowedTypes.includes(file.type)) {
+      throw new SecurityError('Type de fichier non autorisé');
+    }
+
+    if (file.size > maxSize) {
+      throw new SecurityError('Fichier trop volumineux');
+    }
+
+    // Validation approfondie du contenu
+    const fileHeader = await this.readFileHeader(file);
+    if (!this.isValidFileSignature(fileHeader, file.type)) {
+      throw new SecurityError('Signature de fichier invalide');
+    }
+
+    return true;
+  }
+}
+
+// ✓ CORRECT : Protection contre les injections XSS
+class ContentSanitizer {
+  static sanitizeHTML(content: string): string {
+    // Utilisation de DOMPurify ou équivalent
+    const sanitized = DOMPurify.sanitize(content, {
+      ALLOWED_TAGS: ['p', 'b', 'i', 'em', 'strong'],
+      ALLOWED_ATTR: ['href', 'title', 'target'],
+    });
+    return sanitized;
+  }
+}
+```
+
+### Politiques RLS
+```sql
+-- ✓ CORRECT : Politique RLS stricte
+CREATE POLICY "documents_access_policy" ON documents
+FOR ALL USING (
+  auth.uid() = owner_id AND
+  security_level <= (
+    SELECT max_security_level 
+    FROM user_permissions 
+    WHERE user_id = auth.uid()
+  )
+);
+
+-- ⛔ INCORRECT : Désactivation RLS
+ALTER TABLE documents DISABLE ROW LEVEL SECURITY; -- JAMAIS FAIRE CECI
+```
+
+### Chiffrement des Données
+```typescript
+// ✓ CORRECT : Chiffrement systématique
+class SecureStorage {
+  static async store(userId: string, data: SensitiveData): Promise<void> {
+    const encrypted = await this.encrypt(data);
+    await supabase
+      .from('sensitive_data')
+      .insert({
+        user_id: userId,
+        data: encrypted,
+        encryption_version: CURRENT_ENCRYPTION_VERSION
+      });
+  }
+
+  private static async encrypt(data: SensitiveData): Promise<string> {
+    // Utilisation d'algorithmes standards et éprouvés
+    return await encryptionService.encrypt(data);
+  }
+}
+
+// ⛔ INCORRECT : Stockage en clair
+function storeUserData(data: SensitiveData) {
+  return supabase.from('user_data').insert({ data }); // DANGEREUX
+}
+```
+
+### Sécurité des Sessions
+```typescript
+// ✓ CORRECT : Gestion sécurisée des sessions
+class SessionManager {
+  static initSession(userData: UserData): void {
+    // Stockage sécurisé du token
+    sessionStorage.setItem('auth_token', userData.token);
+    
+    // Configuration des timeouts
+    this.setupSessionTimeout();
+    
+    // Journalisation sécurisée
+    this.logSecureEvent('session_start', {
+      userId: userData.id,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  private static setupSessionTimeout(): void {
+    const TIMEOUT = 30 * 60 * 1000; // 30 minutes
+    setTimeout(() => this.endSession(), TIMEOUT);
+  }
+}
+```
+
+## Procédures de Sécurité
+
+### Vérifications Obligatoires
+1. Audit complet des politiques RLS
+2. Tests de pénétration réguliers
+3. Revue de code axée sécurité
+4. Validation des contrôles d'accès
+5. Scan des secrets dans le code
+6. Vérification des configurations CORS
+7. Audit des permissions des fichiers
+8. Test des mécanismes de rate limiting
+9. Validation des headers de sécurité
+10. Contrôle des dépendances obsolètes
+
+### En Cas de Faille
+1. Documentation immédiate
+2. Alerte de l'équipe sécurité
+3. Blocage des déploiements
+4. Correctif avec défense en profondeur
+5. Audit des systèmes similaires
+6. Révocation immédiate des tokens compromis
+7. Notification aux utilisateurs si nécessaire
+8. Post-mortem et mise à jour des procédures
+9. Renforcement des tests de sécurité
+10. Formation de l'équipe sur la faille
+
+## Justification
+- Protection des données utilisateurs
+- Conformité réglementaire
+- Intégrité du système
+- Confiance des utilisateurs
+- Réduction des risques de sécurité 

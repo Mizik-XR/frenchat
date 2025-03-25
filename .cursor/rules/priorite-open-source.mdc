@@ -1,0 +1,43 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Priorité aux solutions open source
+
+Principes directeurs pour privilégier les technologies open source, particulièrement pour les modèles d'IA.
+
+## À privilégier
+- Utiliser Mistral Small 3.1 comme modèle d'IA local par défaut
+- Intégrer des alternatives open source pour chaque fonctionnalité propriétaire
+- Implémenter des mécanismes de basculement intelligent entre modèles locaux et cloud
+- Proposer l'activation des APIs propriétaires uniquement comme option utilisateur
+
+## À éviter
+- Ne pas dépendre exclusivement de services cloud propriétaires
+- Ne pas coder en dur des références à des modèles spécifiques sans alternative
+- Ne pas ignorer les considérations de performance des modèles locaux
+
+## Exemples illustratifs
+```typescript
+// Approche recommandée : sélection flexible de modèle
+function getAIModel(userPreferences) {
+  // Priorité au modèle local si disponible
+  if (isLocalModelAvailable('mistral-small-3.1') && 
+      (userPreferences.preferLocalModels !== false)) {
+    return getLocalModel('mistral-small-3.1');
+  }
+  
+  // Alternative open source dans le cloud si préférée
+  if (userPreferences.preferOpenSource !== false) {
+    return getOpenSourceCloudModel();
+  }
+  
+  // Solution propriétaire uniquement si explicitement autorisée
+  if (userPreferences.allowProprietaryModels === true) {
+    return getProprietaryModel();
+  }
+  
+  // Fallback sur modèle open source par défaut
+  return getDefaultOpenSourceModel();
+}
