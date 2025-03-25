@@ -1,0 +1,52 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Règle de standards de tests
+
+Standards pour les tests unitaires et d'intégration.
+
+## À faire
+- Utiliser Jest pour tous les tests
+- Utiliser React Testing Library pour les tests de composants
+- Créer des mocks cohérents pour Supabase et autres services
+- Structurer les tests avec describe/it/expect
+- Tester les cas nominaux et les cas d'erreur
+
+## À éviter
+- Ne pas mélanger Jest et Vitest
+- Ne pas créer de nouveaux mocks pour Supabase dans chaque test
+- Ne pas tester l'implémentation interne, mais les comportements
+
+## Exemples corrects
+```typescript
+// Import correct pour les tests
+import { render, screen, fireEvent } from '@testing-library/react';
+import { mockSupabase } from '@/tests/mocks/supabaseMock';
+
+// Structure correcte de test
+describe('MonComposant', () => {
+  beforeEach(() => {
+    // Configuration commune
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
+  });
+
+  it('affiche le contenu correct quand l\'utilisateur est connecté', async () => {
+    render(<MonComposant />);
+    expect(await screen.findByText('Bienvenue')).toBeInTheDocument();
+  });
+
+  it('gère correctement les erreurs', async () => {
+    mockSupabase.auth.getUser.mockRejectedValue(new Error('Test error'));
+    render(<MonComposant />);
+    expect(await screen.findByText('Erreur')).toBeInTheDocument();
+  });
+});
+Exemples incorrects
+typescriptCopier// Mauvais - test d'implémentation
+test('le composant appelle useState', () => {
+  const useStateSpy = jest.spyOn(React, 'useState');
+  render(<MonComposant />);
+  expect(useStateSpy).toHaveBeenCalled();
+});

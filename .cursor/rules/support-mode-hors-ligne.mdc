@@ -1,0 +1,49 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Règle de support du mode hors ligne
+
+Standards pour assurer le fonctionnement de l'application en mode hors ligne.
+
+## À faire
+- Vérifier isOfflineMode() avant toute requête réseau
+- Implémenter des fallbacks pour les fonctionnalités en mode hors ligne
+- Mettre en cache les données importantes pour une utilisation hors ligne
+- Informer clairement l'utilisateur du mode hors ligne
+
+## À éviter
+- Ne pas bloquer l'interface utilisateur lors de l'absence de connexion
+- Ne pas ignorer la vérification du mode hors ligne
+- Ne pas laisser des fonctionnalités inutilisables sans message explicatif
+
+## Exemples corrects
+```typescript
+// Bon support du mode hors ligne
+import { isOfflineMode, APP_STATE } from '@/compatibility/supabaseCompat';
+
+async function fetchUserData(userId) {
+  if (isOfflineMode()) {
+    // Utiliser les données en cache
+    return getCachedUserData(userId);
+  }
+  
+  try {
+    const result = await supabase.from('users').select('*').eq('id', userId);
+    // Mettre en cache pour utilisation hors ligne
+    cacheUserData(userId, result.data);
+    return result.data;
+  } catch (error) {
+    APP_STATE.logSupabaseError(error);
+    // Essayer d'utiliser le cache même en cas d'erreur
+    return getCachedUserData(userId) || defaultUserData;
+  }
+}
+Exemples incorrects
+typescriptCopier// Mauvais - aucune gestion du mode hors ligne
+async function fetchUserData(userId) {
+  const result = await supabase.from('users').select('*').eq('id', userId);
+  return result.data;
+}

@@ -1,0 +1,51 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Règle de gestion des erreurs
+
+Standards pour la gestion des erreurs dans l'application.
+
+## À faire
+- Toujours utiliser try/catch pour les appels asynchrones
+- Logger les erreurs via APP_STATE.logSupabaseError()
+- Fournir des messages d'erreur clairs et utiles aux utilisateurs
+- Implémenter des fallbacks en cas d'erreur
+
+## À éviter
+- Ne pas ignorer les erreurs potentielles
+- Ne pas utiliser console.error directement
+- Ne pas afficher les erreurs techniques brutes aux utilisateurs
+
+## Exemples corrects
+```typescript
+// Bonne gestion d'erreur
+import { APP_STATE } from '@/compatibility/supabaseCompat';
+
+async function fetchData() {
+  try {
+    const result = await supabase.from('profiles').select('*');
+    return result.data;
+  } catch (error) {
+    APP_STATE.logSupabaseError(error);
+    // Message d'erreur utilisateur
+    showUserFriendlyError('Impossible de charger votre profil');
+    // Retour de données par défaut
+    return defaultData;
+  }
+}
+Exemples incorrects
+typescriptCopier// Mauvais - pas de gestion d'erreur
+async function fetchData() {
+  const result = await supabase.from('profiles').select('*');
+  return result.data;
+}
+
+// Mauvais - erreur technique exposée à l'utilisateur
+try {
+  await fetchData();
+} catch (error) {
+  showError(error.message); // Affiche un message technique
+}

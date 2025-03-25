@@ -1,0 +1,45 @@
+# Solutions Open Source en Priorité
+
+## Intention
+Privilégier les solutions open source pour garantir la transparence, la liberté de l'utilisateur et la pérennité du projet.
+
+## Principes Directeurs
+- Évaluer d'abord les solutions open source existantes
+- Privilégier les projets maintenus activement
+- Documenter les alternatives propriétaires comme options
+- Maintenir une liste des dépendances open source
+
+## Pratiques à Éviter
+- Dépendances propriétaires sans alternative open source
+- Solutions fermées sans justification claire
+- Licences restrictives sans accord explicite
+
+## Exemples Illustratifs
+
+### Bonnes Pratiques
+```typescript
+// Préférer
+import { MistralModel } from '@ollama/mistral'
+import { VectorStore } from '@langchain/vectorstores'
+
+// À éviter
+import { OpenAI } from '@openai/api' // Sans alternative open source
+```
+
+### Configuration
+```typescript
+// Configuration flexible
+interface AIModelConfig {
+  type: 'local' | 'cloud'
+  provider: 'ollama' | 'openai' // Avec option de désactivation
+  model: string
+  fallback?: string // Alternative open source
+}
+```
+
+## Justification
+- Contrôle utilisateur maximal
+- Transparence du code
+- Indépendance des fournisseurs
+- Pérennité du projet
+- Économies potentielles 

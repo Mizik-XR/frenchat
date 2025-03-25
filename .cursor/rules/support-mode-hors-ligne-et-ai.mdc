@@ -1,0 +1,68 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Règle de support du mode hors ligne et passerelle IA
+
+Standards pour assurer le fonctionnement de l'application en mode hors ligne avec basculement entre IA locale et cloud.
+
+## À faire
+- Vérifier isOfflineMode() avant toute requête réseau
+- Implémenter la détection automatique d'Ollama pour l'IA locale
+- Basculer intelligemment entre IA locale (Ollama) et IA cloud
+- Mettre en cache les données importantes pour une utilisation hors ligne
+- Informer l'utilisateur du mode actuellement utilisé (hors ligne/local/cloud)
+
+## À éviter
+- Ne pas bloquer les fonctionnalités d'IA lorsque le cloud est indisponible
+- Ne pas ignorer la vérification de la disponibilité d'Ollama
+- Ne pas effectuer des appels API cloud inutiles quand l'IA locale est disponible
+
+## Exemples corrects
+```typescript
+// Détection et utilisation d'Ollama ou IA cloud
+import { isOfflineMode, detectLocalAIService } from '@/compatibility/supabaseCompat';
+
+async function processUserQuery(query) {
+  // Vérifier la disponibilité d'Ollama et l'état de la connexion
+  const ollamaAvailable = await detectLocalAIService();
+  const isOffline = isOfflineMode();
+  
+  if (isOffline || ollamaAvailable) {
+    try {
+      // Utiliser Ollama pour le traitement local
+      return await processWithOllama(query);
+    } catch (error) {
+      logAIProcessingError(error);
+      if (isOffline) {
+        return getFallbackResponse(query);
+      }
+      // Si en ligne, tenter une bascule vers le cloud
+    }
+  }
+  
+  if (!isOffline) {
+    // Utiliser l'IA cloud
+    try {
+      return await processWithCloudAI(query);
+    } catch (error) {
+      logAIProcessingError(error);
+      return getFallbackResponse(query);
+    }
+  }
+  
+  // Fallback final
+  return getFallbackResponse(query);
+}
+Exemples incorrects
+typescriptCopier// Mauvais - aucune gestion du basculement IA locale/cloud
+async function processUserQuery(query) {
+  // Utilise toujours le cloud sans vérifier Ollama ou le mode hors ligne
+  const result = await fetch('https://ai-api.cloud.com/process', {
+    method: 'POST',
+    body: JSON.stringify({ query })
+  });
+  return result.json();
+}

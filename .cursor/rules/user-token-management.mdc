@@ -1,0 +1,66 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Règle de gestion des tokens utilisateur
+
+Standards pour l'implémentation du système de gestion des tokens API par utilisateur.
+
+## À faire
+- Implémenter un système de stockage sécurisé des clés API dans Supabase
+- Créer un mécanisme de comptage des tokens utilisés par requête
+- Mettre en place un système de quotas et d'allocation par utilisateur/groupe
+- Implémenter des notifications de seuil d'utilisation
+- Concevoir une interface d'administration des clés API
+
+## À éviter
+- Ne pas stocker les clés API en clair dans la base de données
+- Ne pas partager les mêmes clés entre différents utilisateurs
+- Ne pas ignorer les politiques RLS pour l'accès aux clés
+- Ne pas exposer les clés API complètes dans l'interface utilisateur
+
+## Exemples corrects
+```typescript
+// Gestion sécurisée des tokens API
+import { supabase } from '@/services/supabase';
+import { encryptionService } from '@/services/encryption';
+
+class APITokenManager {
+  // Récupérer une clé API pour un utilisateur
+  async getUserAPIKey(userId, service) {
+    const { data, error } = await supabase
+      .from('user_api_tokens')
+      .select('encrypted_key, usage_count, quota')
+      .eq('user_id', userId)
+      .eq('service', service)
+      .single();
+      
+    if (error || !data) return null;
+    
+    // Déchiffrer la clé
+    const apiKey = await encryptionService.decrypt(data.encrypted_key);
+    return {
+      key: apiKey,
+      usage: data.usage_count,
+      quota: data.quota
+    };
+  }
+  
+  // Enregistrer l'utilisation d'une clé
+  async recordTokenUsage(userId, service, tokenCount) {
+    const { error } = await supabase.rpc('increment_token_usage', {
+      p_user_id: userId,
+      p_service: service,
+      p_token_count: tokenCount
+    });
+    
+    if (error) {
+      console.error('Failed to record token usage:', error);
+      throw new Error('Failed to record token usage');
+    }
+    
+    // Vérifier le quota et notifier si nécessaire
+    await this.checkQuotaAndNotify(userId, service);
+  }
+}

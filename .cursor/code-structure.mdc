@@ -1,0 +1,85 @@
+# Structure du Code
+
+## Intention
+Maintenir une base de code claire, maintenable et évolutive qui facilite la collaboration et l'évolution du projet.
+
+## Principes Directeurs
+- Organisation logique des fichiers
+- Séparation claire des responsabilités
+- Nommage explicite et descriptif
+- Documentation accessible
+- Tests intégrés
+
+## Pratiques à Éviter
+- Couplage fort entre modules
+- Duplication de code
+- Nommage ambigu
+- Documentation obsolète
+- Tests manquants
+
+## Exemples Illustratifs
+
+### Structure des Dossiers
+```
+src/
+  ├── components/     # Composants React réutilisables
+  ├── features/      # Fonctionnalités métier
+  ├── services/      # Services et API
+  ├── utils/         # Utilitaires partagés
+  ├── types/         # Types TypeScript
+  └── tests/         # Tests unitaires et d'intégration
+```
+
+### Bonnes Pratiques
+```typescript
+// Séparation claire des responsabilités
+interface DocumentService {
+  importFromDrive(): Promise<void>
+  importFromTeams(): Promise<void>
+  processDocument(): Promise<void>
+}
+
+// Tests intégrés
+describe('DocumentService', () => {
+  it('should import from Drive successfully', async () => {
+    const service = new DocumentService()
+    await expect(service.importFromDrive()).resolves.not.toThrow()
+  })
+})
+
+// Documentation claire
+/**
+ * Service de gestion des documents
+ * @class DocumentService
+ * @description Gère l'importation et le traitement des documents
+ */
+class DocumentService {
+  // ...
+}
+```
+
+### Configuration
+```typescript
+// Configuration modulaire
+interface AppConfig {
+  features: {
+    drive: boolean
+    teams: boolean
+    ai: {
+      enabled: boolean
+      type: 'local' | 'cloud'
+    }
+  }
+  paths: {
+    uploads: string
+    cache: string
+  }
+}
+```
+
+## Justification
+- Facilité de maintenance
+- Collaboration simplifiée
+- Évolutivité du projet
+- Réduction des bugs
+- Performance optimisée 

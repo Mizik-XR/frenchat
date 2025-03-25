@@ -1,9 +1,12 @@
+require('dotenv').config({ path: '.env.test' });
+
 /** @type {import('jest').Config} */
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   setupFilesAfterEnv: ['<rootDir>/src/tests/setup.ts'],
   testMatch: ['**/__tests__/**/*.ts?(x)', '**/?(*.)+(spec|test).ts?(x)'],
@@ -26,6 +29,9 @@ module.exports = {
       statements: 80,
     },
   },
+  transformIgnorePatterns: [
+    '/node_modules/(?!(@supabase|@testing-library)/)',
+  ],
   globals: {
     'ts-jest': {
       isolatedModules: true,

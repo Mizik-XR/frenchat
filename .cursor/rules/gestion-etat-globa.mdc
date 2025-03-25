@@ -1,0 +1,42 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Règle de gestion d'état global
+
+Utiliser une approche cohérente pour la gestion de l'état global de l'application.
+
+## À faire
+- Utiliser `APP_STATE` depuis supabaseCompat.ts pour l'état global
+- Préférer les hooks React pour la gestion d'état locale des composants
+- Utiliser des contextes pour partager l'état entre composants proches
+
+## À éviter
+- Ne pas créer de gestionnaires d'état globaux multiples
+- Ne pas mélanger différentes approches de gestion d'état
+- Ne pas stocker l'état utilisateur en dehors d'APP_STATE
+
+## Exemples corrects
+```typescript
+// État global
+import { APP_STATE } from '@/compatibility/supabaseCompat';
+
+// État local
+import { React, useState } from '@/core/ReactInstance';
+
+function MonComposant() {
+  const [localState, setLocalState] = useState(initialValue);
+  
+  // Accès à l'état global
+  const isOffline = APP_STATE.isOfflineMode();
+  
+  // ...
+}
+Exemples incorrects
+typescriptCopier// Mauvais - création d'une variable globale
+let globalCounter = 0;
+
+// Mauvais - stockage dans window
+window.appState = { user: currentUser };

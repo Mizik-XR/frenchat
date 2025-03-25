@@ -1,0 +1,44 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Règle d'architecture IA hybride
+
+Standards pour l'implémentation du système IA hybride local/cloud.
+
+## À faire
+- Implémenter une détection automatique d'Ollama pour l'IA locale
+- Créer un système de basculement intelligent entre modèles locaux et cloud
+- Utiliser Transformers JS/Hugging Face pour l'exécution des modèles
+- Implémenter un système de mise en cache des réponses pour optimiser les coûts
+- Supporter Mistral Small comme modèle par défaut (local et cloud)
+
+## À éviter
+- Ne pas coder en dur les chemins vers les modèles
+- Ne pas dépendre exclusivement des API cloud
+- Ne pas ignorer les capacités matérielles de l'utilisateur
+- Ne pas dupliquer la logique de traitement entre local et cloud
+
+## Exemples corrects
+```typescript
+// Détection et sélection intelligente du modèle
+import { detectHardwareCapabilities } from '@/utils/hardware';
+import { Ollama } from '@/services/ai/ollama';
+import { MistralAPI } from '@/services/ai/mistral-cloud';
+
+async function getAIProvider(query, modelPreference = 'mistral') {
+  // Détection des capacités locales
+  const hardwareCapabilities = await detectHardwareCapabilities();
+  const ollamaAvailable = await Ollama.isAvailable();
+  
+  // Déterminer la complexité de la requête
+  const complexity = assessQueryComplexity(query);
+  
+  if (ollamaAvailable && hardwareCapabilities.canRunModel(modelPreference) && complexity <= hardwareCapabilities.maxComplexity) {
+    return new Ollama(modelPreference);
+  } else {
+    return new MistralAPI(modelPreference);
+  }
+}

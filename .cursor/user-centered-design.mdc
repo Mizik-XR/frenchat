@@ -1,0 +1,72 @@
+# Design Centré Utilisateur
+
+## Intention
+Créer une interface intuitive et rassurante qui met l'utilisateur en confiance avec les technologies d'IA.
+
+## Principes Directeurs
+- Simplicité et clarté dans l'interface
+- Explications transparentes des fonctionnalités
+- Contrôle utilisateur sur les paramètres
+- Feedback immédiat sur les actions
+- Accessibilité universelle
+
+## Pratiques à Éviter
+- Interfaces complexes ou techniques
+- Terminologie IA non expliquée
+- Actions sans confirmation
+- Absence de feedback
+- Paramètres cachés
+
+## Exemples Illustratifs
+
+### Bonnes Pratiques
+```typescript
+// Composant avec explications claires
+const AIModelSelector = () => (
+  <div className="model-selector">
+    <h3>Choisissez votre modèle d'IA</h3>
+    <p className="help-text">
+      Le modèle local fonctionne sans connexion internet et garde vos données privées.
+      Le modèle cloud offre plus de capacités mais nécessite une connexion.
+    </p>
+    <ModelOptions />
+  </div>
+)
+
+// Feedback utilisateur
+const ProcessingStatus = ({ status }) => (
+  <div className="status-indicator">
+    <ProgressBar value={status.progress} />
+    <p>{status.message}</p>
+    <CancelButton onCancel={handleCancel} />
+  </div>
+)
+```
+
+### Configuration
+```typescript
+interface UserPreferences {
+  // Préférences explicites
+  aiModel: {
+    type: 'local' | 'cloud'
+    explanation: string
+    impact: string
+  }
+  privacy: {
+    dataCollection: boolean
+    explanation: string
+  }
+  // Feedback
+  notifications: {
+    type: 'toast' | 'modal' | 'inline'
+    importance: 'info' | 'warning' | 'error'
+  }
+}
+```
+
+## Justification
+- Réduction de la courbe d'apprentissage
+- Augmentation de la confiance utilisateur
+- Meilleure adoption des fonctionnalités
+- Réduction des erreurs
+- Satisfaction utilisateur accrue 

@@ -1,0 +1,63 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Règle de standards de documentation
+
+Standards pour la documentation du code.
+
+## À faire
+- Documenter tous les modules, classes et fonctions exportées avec JSDoc
+- Inclure une description en tête de chaque fichier
+- Documenter les paramètres, types de retour et exceptions
+- Maintenir la documentation à jour avec le code
+
+## À éviter
+- Ne pas laisser de fonctions exportées sans documentation
+- Ne pas utiliser de commentaires obsolètes
+- Ne pas surcharger avec des commentaires évidents
+
+## Exemples corrects
+```typescript
+/**
+ * Module de gestion des profils utilisateurs
+ * 
+ * Ce module fournit des fonctions pour récupérer, créer et mettre à jour
+ * les profils utilisateurs dans Supabase.
+ */
+
+/**
+ * Récupère le profil d'un utilisateur par son ID
+ * 
+ * @param {string} userId - L'identifiant de l'utilisateur
+ * @returns {Promise<Profile|null>} Le profil utilisateur ou null si non trouvé
+ * @throws {Error} Si une erreur se produit pendant la requête
+ */
+export async function getUserProfile(userId: string): Promise<Profile|null> {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    APP_STATE.logSupabaseError(error);
+    throw error;
+  }
+}
+Exemples incorrects
+typescriptCopier// Fonction sans documentation
+export async function getUserProfile(userId) {
+  const { data } = await supabase.from('profiles').select('*').eq('id', userId);
+  return data;
+}
+
+// Commentaire non informatif
+// Cette fonction fait quelque chose
+export function doSomething() {
+  // ...
+}

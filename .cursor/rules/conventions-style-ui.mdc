@@ -1,0 +1,59 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Règle de conventions de style et UI
+
+Standards pour l'utilisation des composants UI et des styles.
+
+## À faire
+- Utiliser les composants UI standardisés depuis @/components/ui/
+- Suivre les directives de design système pour l'apparence
+- Utiliser tailwind ou les classes utilitaires définies
+- Maintenir une hiérarchie visuelle cohérente
+
+## À éviter
+- Ne pas utiliser de styles inline à moins d'une nécessité absolue
+- Ne pas créer de nouveaux composants duplicatifs
+- Ne pas mélanger différentes approches de styling
+- Ne pas ignorer l'accessibilité
+
+## Exemples corrects
+```tsx
+// Bon usage des composants UI
+import { Button, Card, Input } from '@/components/ui';
+
+function LoginForm() {
+  return (
+    <Card className="p-4 m-2">
+      <h2 className="text-xl font-bold mb-4">Connexion</h2>
+      <Input 
+        type="email" 
+        placeholder="Email" 
+        className="mb-2" 
+        aria-label="Adresse email"
+      />
+      <Button variant="primary" className="mt-2">
+        Se connecter
+      </Button>
+    </Card>
+  );
+}
+Exemples incorrects
+tsxCopier// Mauvais - styles inline et non-utilisation des composants UI
+function LoginForm() {
+  return (
+    <div style={{ padding: '16px', margin: '8px', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+      <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>Connexion</h2>
+      <input 
+        type="email" 
+        placeholder="Email" 
+        style={{ marginBottom: '8px', padding: '8px', width: '100%' }}
+      />
+      <button style={{ backgroundColor: 'blue', color: 'white', padding: '8px 16px' }}>
+        Se connecter
+      </button>
+    </div>
+  );
+}

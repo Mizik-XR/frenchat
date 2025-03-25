@@ -1,0 +1,58 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Règle d'intégration des SDK Agents
+
+Standards pour l'implémentation des agents IA (OpenAI et alternatives open source).
+
+## À faire
+- Créer une interface unifiée pour différents fournisseurs d'agents (OpenAI, LangChain, etc.)
+- Implémenter des agents spécialisés (recherche, analyse, résumé)
+- Utiliser une architecture d'outils extensible
+- Maintenir une mémoire partagée entre agents
+- Supporter le passage de contexte entre conversations
+
+## À éviter
+- Ne pas créer de dépendances directes à l'API OpenAI sans abstraction
+- Ne pas dupliquer la logique métier dans chaque agent
+- Ne pas stocker d'informations sensibles dans la mémoire des agents
+- Ne pas ignorer la possibilité d'utiliser des agents open source
+
+## Exemples corrects
+```typescript
+// Architecture d'agents modulaire
+import { AgentFactory } from '@/services/agents/factory';
+import { ToolRegistry } from '@/services/agents/tools';
+
+// Enregistrement des outils disponibles
+ToolRegistry.register('web-search', new WebSearchTool());
+ToolRegistry.register('document-query', new DocumentQueryTool());
+ToolRegistry.register('calculator', new CalculatorTool());
+
+async function handleUserRequest(userQuery, conversation) {
+  // Analyse de la requête pour déterminer l'agent approprié
+  const requiredCapabilities = analyzeQueryRequirements(userQuery);
+  
+  // Création de l'agent avec les outils nécessaires
+  const agent = await AgentFactory.create({
+    type: requiredCapabilities.primaryAgentType,
+    tools: requiredCapabilities.requiredTools,
+    memory: conversation.memory,
+    provider: userPreferences.aiProvider || 'default'
+  });
+  
+  // Exécution de la requête
+  const response = await agent.execute(userQuery, {
+    conversation: conversation.history,
+    maxSteps: 10,
+    timeoutMs: 30000
+  });
+  
+  // Mise à jour de la mémoire partagée
+  conversation.memory.update(response.memoryUpdates);
+  
+  return response;
+}
+

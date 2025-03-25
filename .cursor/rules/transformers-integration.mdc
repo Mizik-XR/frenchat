@@ -1,0 +1,57 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Règle d'intégration des Transformers
+
+Standards pour l'utilisation des bibliothèques Transformers de Hugging Face.
+
+## À faire
+- Utiliser @huggingface/inference pour les appels cloud
+- Implémenter @huggingface/transformers-js pour l'exécution locale
+- Créer des adaptateurs pour différents modèles (Mistral, Llama, etc.)
+- Optimiser les modèles pour l'exécution locale (quantification, pruning)
+- Implémenter un système de gestion de pipeline modulaire
+
+## À éviter
+- Ne pas mélanger différentes versions des bibliothèques Transformers
+- Ne pas charger des modèles trop volumineux sans vérification des ressources
+- Ne pas réinitialiser les modèles entre chaque requête
+- Ne pas ignorer les capacités de streaming pour les réponses longues
+
+## Exemples corrects
+```typescript
+// Utilisation modulaire des transformers
+import { pipeline, AutoTokenizer, AutoModel } from '@huggingface/transformers-js';
+import { optimizeModelForDevice } from '@/utils/model-optimization';
+
+class TransformersService {
+  private models = new Map();
+  
+  async getModel(modelId, task = 'text-generation') {
+    const cacheKey = `${modelId}_${task}`;
+    
+    if (this.models.has(cacheKey)) {
+      return this.models.get(cacheKey);
+    }
+    
+    const deviceCapabilities = await getDeviceCapabilities();
+    const optimizedModelConfig = optimizeModelForDevice(modelId, deviceCapabilities);
+    
+    const model = await pipeline(task, modelId, optimizedModelConfig);
+    this.models.set(cacheKey, model);
+    
+    return model;
+  }
+  
+  async generate(modelId, prompt, options = {}) {
+    const model = await this.getModel(modelId);
+    return model(prompt, {
+      max_length: 1024,
+      temperature: 0.7,
+      streaming: true,
+      ...options
+    });
+  }
+}

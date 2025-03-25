@@ -1,0 +1,40 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Règle de structure Supabase
+
+Toutes les interactions avec Supabase doivent passer par le module de compatibilité centralisé.
+
+## À faire
+- Toujours utiliser le module `supabaseCompat.ts` pour accéder au client Supabase
+- Utiliser les fonctions utilitaires fournies par le module de compatibilité
+- Gérer correctement les erreurs avec `APP_STATE.logSupabaseError()`
+
+## À éviter
+- Ne pas créer de nouveaux clients Supabase dans les composants
+- Ne pas importer directement depuis '@supabase/supabase-js'
+- Ne pas utiliser des configurations Supabase locales
+
+## Exemples corrects
+```typescript
+// Bon
+import { supabase, handleProfileQuery, APP_STATE } from '@/compatibility/supabaseCompat';
+
+// Utilisation avec gestion d'erreurs
+try {
+  const result = await handleProfileQuery(userId);
+  // Traitement du résultat
+} catch (error) {
+  APP_STATE.logSupabaseError(error);
+}
+
+Exemples incorrects
+typescriptCopier// Mauvais - création d'un nouveau client
+import { createClient } from '@supabase/supabase-js';
+const supabase = createClient(url, key);
+
+// Mauvais - pas de gestion d'erreurs
+const { data } = await supabase.from('profiles').select('*');

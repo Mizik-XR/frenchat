@@ -1,0 +1,38 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Règle d'imports React standardisés
+
+Tous les imports de React doivent utiliser l'instance unique depuis le module ReactInstance.
+
+## À faire
+- Toujours importer React depuis `@/core/ReactInstance`
+- Importer tous les hooks (useState, useEffect, etc.) depuis `@/core/ReactInstance`
+- Pour les types, utiliser `import type { FC } from '@/core/ReactInstance'`
+
+## À éviter
+- N'importez jamais React directement depuis 'react'
+- Ne créez pas de nouvelles instances de React
+- N'utilisez pas d'imports comme `import React from 'react'`
+
+## Exemples corrects
+```typescript
+// Bon
+import { React, useState, useEffect } from '@/core/ReactInstance';
+import type { FC, ReactNode } from '@/core/ReactInstance';
+
+// Pour les composants fonctionnels
+const MonComposant: FC<MonComposantProps> = (props) => {
+  // ...
+};
+Exemples incorrects
+typescriptCopier// Mauvais
+import React from 'react';
+import { useState } from 'react';
+
+// Mauvais - mélange des sources
+import { React } from '@/core/ReactInstance';
+import { useState } from 'react';
+
