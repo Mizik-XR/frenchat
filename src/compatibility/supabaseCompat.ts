@@ -128,6 +128,5 @@ export async function handleProfileQuery(userId: string) {
   }
 }
 
-export function isOfflineMode(): boolean {
-  return APP_STATE.isOfflineMode();
-}
+// Fonction utilitaire pour vérifier le mode hors ligne
+export const isOfflineMode = (): boolean => APP_STATE.isOfflineMode();

@@ -1,4 +1,10 @@
 import '@testing-library/jest-dom';
+import { TextEncoder, TextDecoder } from 'util';
+import { jest } from '@jest/globals';
+
+// Mock TextEncoder/TextDecoder
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 
 // Mock localStorage
 const localStorageMock = {
@@ -14,12 +20,7 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 });
 
-// Mock gtag
-Object.defineProperty(window, 'gtag', {
-  value: jest.fn(),
-});
-
-// Mock matchMedia
+// Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: jest.fn().mockImplementation(query => ({
@@ -33,3 +34,30 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: jest.fn(),
   })),
 });
+
+// Mock window.gtag
+Object.defineProperty(window, 'gtag', {
+  writable: true,
+  value: jest.fn(),
+});
+
+// Mock ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+  observe = jest.fn();
+  unobserve = jest.fn();
+  disconnect = jest.fn();
+};
+
+// Mock IntersectionObserver
+global.IntersectionObserver = class IntersectionObserver {
+  observe = jest.fn();
+  unobserve = jest.fn();
+  disconnect = jest.fn();
+  root = null;
+  rootMargin = '';
+  thresholds = [];
+  takeRecords = () => [];
+  constructor() {
+    // Constructor implementation
+  }
+};

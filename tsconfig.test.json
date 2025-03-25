@@ -1,8 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["jest", "node"],
-    "isolatedModules": false,
+    "types": ["jest", "node", "@testing-library/jest-dom"],
+    "isolatedModules": true,
     "esModuleInterop": true,
     "jsx": "react-jsx"
   },
@@ -10,8 +10,7 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.test.ts",
-    "src/**/*.test.tsx",
-    "src/setupTests.ts"
+    "src/**/*.test.tsx"
   ],
   "exclude": [
     "node_modules"
