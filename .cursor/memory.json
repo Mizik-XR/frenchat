@@ -1,0 +1,5 @@
+{
+  "enableWorkingMemory": true,
+  "persistenceLevel": "project",
+  "contextRetention": "high"
+}

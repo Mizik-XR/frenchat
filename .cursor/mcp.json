@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "${process.env.VITE_SUPABASE_URL}"
+      ],
+      "env": {
+        "PGPASSWORD": "${process.env.VITE_SUPABASE_SERVICE_KEY}",
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+      },
+      "options": {
+        "timeout": 30000,
+        "maxBuffer": 1024 * 1024 * 10
+      }
+    }
+  },
+  "mcpConfig": {
+    "schemaRefreshInterval": 3600,
+    "logLevel": "info",
+    "enableIntrospection": true
+  }
+} 
